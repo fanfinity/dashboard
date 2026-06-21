@@ -1,6 +1,8 @@
 // https://github.com/michael-ciniawsky/postcss-load-config
 
 import autoprefixer from 'autoprefixer'
+// Tailwind v4 is processed by the @tailwindcss/vite plugin (see quasar.config.js),
+// not via PostCSS — the Vite plugin runs at the right point in the pipeline.
 // import rtlcss from 'postcss-rtlcss'
 
 export default {

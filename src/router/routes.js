@@ -3,8 +3,41 @@ const routes = [
     path: '/',
     component: () => import('@/layouts/MainLayout.vue'),
     children: [
-      { path: '', component: () => import('@/pages/IndexPage.vue') },
-      { path: 'second', component: () => import('@/pages/SecondPage.vue') }
+      {
+        path: '',
+        name: 'overview',
+        component: () => import('@/pages/OverviewPage.vue')
+      },
+      {
+        path: 'contacts',
+        name: 'contacts',
+        component: () => import('@/pages/ContactsPage.vue')
+      },
+      {
+        path: 'segments',
+        name: 'segments',
+        component: () => import('@/pages/SegmentsPage.vue')
+      },
+      {
+        path: 'activation',
+        name: 'activation',
+        component: () => import('@/pages/ActivationPage.vue')
+      },
+      {
+        path: 'communications',
+        name: 'communications',
+        component: () => import('@/pages/CommunicationsPage.vue')
+      },
+      {
+        path: 'integrations',
+        name: 'integrations',
+        component: () => import('@/pages/IntegrationsPage.vue')
+      },
+      {
+        path: 'sources',
+        name: 'sources',
+        component: () => import('@/pages/SourcesPage.vue')
+      }
     ]
   },
 

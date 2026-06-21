@@ -1,0 +1,36 @@
+/* Tailwind entry — MUST be a plain .css file.
+   Tailwind v4 is processed by @tailwindcss/postcss and is NOT compatible with the
+   Sass pipeline (a .scss file makes Dart Sass inline the import before PostCSS can
+   expand the utilities). Keep all Tailwind directives + tokens here. */
+
+/* Self-hosted Plus Jakarta Sans — the Figma design font. Served from 'self' so it
+   complies with the app's CSP (the Google Fonts CDN is blocked by default-src 'self';
+   @fontsource ships the same Google font as local files). */
+@import '@fontsource/plus-jakarta-sans/400.css';
+@import '@fontsource/plus-jakarta-sans/500.css';
+@import '@fontsource/plus-jakarta-sans/600.css';
+@import '@fontsource/plus-jakarta-sans/700.css';
+@import 'tailwindcss';
+
+/* Design tokens from the Fanfinity dashboard (Figma node 93:2869) */
+@theme {
+  --color-brand: #3800c1; /* active item / accent (brand purple) */
+  --color-ink: #030712; /* Greyscale/900 — primary text */
+  --color-muted: #4a5565; /* Greyscale/500 — menu/body text */
+  --color-subtle: #6a7282; /* Greyscale/400 — placeholder text */
+  --color-sidebar: #f9fafb; /* Greyscale/5 — sidebar background */
+  --color-fill: #f3f4f6; /* Greyscale/10 — shortcut chip bg */
+  --color-line: #e7e9ed; /* Greyscale/50 — dividers / borders */
+  --color-line2: #e5e7eb; /* Greyscale/100 — control borders */
+  --color-success: #029855; /* Alert/Success/100 */
+  --color-success-bg: #edfdf2; /* Alert/Success/0 */
+  --color-success-line: #bce9cd; /* Alert/Success/5 */
+
+  --font-sans:
+    'Plus Jakarta Sans', ui-sans-serif, system-ui, sans-serif;
+}
+
+body {
+  font-family:
+    'Plus Jakarta Sans', ui-sans-serif, system-ui, sans-serif;
+}
