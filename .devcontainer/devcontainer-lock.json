@@ -9,6 +9,11 @@
       "version": "4.0.0",
       "resolved": "ghcr.io/devcontainer-config/features/dot-config@sha256:d9ca770ccb218e619d5725fd50f00dfacdf582d92a8c3901f11b53b1caddd878",
       "integrity": "sha256:d9ca770ccb218e619d5725fd50f00dfacdf582d92a8c3901f11b53b1caddd878"
+    },
+    "ghcr.io/devcontainers-extra/features/pnpm:2": {
+      "version": "2.0.5",
+      "resolved": "ghcr.io/devcontainers-extra/features/pnpm@sha256:694c2b6182435c9e9c06f6071728b087c1181b38c18cecf0defe2ab8c11cddd6",
+      "integrity": "sha256:694c2b6182435c9e9c06f6071728b087c1181b38c18cecf0defe2ab8c11cddd6"
     }
   }
 }

@@ -1,0 +1,22 @@
+{
+  "recommendations": [
+    "oxc.oxc-vscode",
+    "editorconfig.editorconfig",
+    "vue.volar",
+    "dbaeumer.vscode-eslint",
+    "esbenp.prettier-vscode",
+    "EditorConfig.EditorConfig",
+    "wayou.vscode-todo-highlight",
+    "eamodio.gitlens",
+    "wix.vscode-import-cost",
+    "vscode-icons-team.vscode-icons",
+    "CodeCoaching.quasar-docs",
+    "simonhe.common-intellisense"
+  ],
+  "unwantedRecommendations": [
+    "octref.vetur",
+    "hookyqr.beautify",
+    "dbaeumer.jshint",
+    "ms-vscode.vscode-typescript-tslint-plugin"
+  ]
+}

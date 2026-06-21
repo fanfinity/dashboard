@@ -6,7 +6,8 @@
 	"image": "mcr.microsoft.com/devcontainers/typescript-node:4-24-bookworm",
 	"features": {
 		"ghcr.io/devcontainer-community/devcontainer-features/github.com-cli:1": {},
-		"ghcr.io/devcontainer-config/features/dot-config:4": {}
+		"ghcr.io/devcontainer-config/features/dot-config:4": {},
+		"ghcr.io/devcontainers-extra/features/pnpm:2": {}
 	}    
 
 	// Features to add to the dev container. More info: https://containers.dev/features.
