@@ -7,8 +7,8 @@
           >Contacts</h1
         >
         <p class="mt-1 text-sm text-muted"
-          ><span class="font-medium text-ink">842K</span> verified, deduplicated
-          fans across all your sources.</p
+          ><span class="font-medium text-ink">{{ totalLabel }}</span> verified,
+          deduplicated fans across all your sources.</p
         >
       </div>
 
@@ -24,20 +24,6 @@
             class="min-w-0 flex-1 border-0 bg-transparent text-sm text-ink outline-none placeholder:text-subtle"
           />
         </div>
-        <button
-          class="flex h-9 items-center gap-1.5 rounded-lg border border-line2 bg-white px-3 text-sm font-medium text-ink shadow-sm hover:bg-fill"
-        >
-          <svg viewBox="0 0 16 16" class="size-4 text-subtle" fill="none">
-            <path
-              d="M8 2v8m0 0L5 7m3 3l3-3M3 13h10"
-              stroke="currentColor"
-              stroke-width="1.5"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-            />
-          </svg>
-          Export
-        </button>
       </div>
     </div>
 
@@ -48,10 +34,11 @@
         :key="f.label"
         class="rounded-lg border px-3 py-1.5 text-sm"
         :class="
-          f.active
+          activeFilter === f.label
             ? 'border-brand/40 bg-brand/5 font-medium text-brand'
             : 'border-line2 bg-white text-muted hover:bg-fill'
         "
+        @click="activeFilter = f.label"
       >
         {{ f.label }}
       </button>
@@ -66,18 +53,59 @@
           <tr class="border-b border-line text-left">
             <th
               v-for="h in tableHeads"
-              :key="h"
-              class="px-5 py-3 text-[11px] font-semibold uppercase tracking-[0.4px] text-subtle"
-              :class="h === 'Engagement' ? 'text-right' : ''"
-              >{{ h }}</th
+              :key="h.key"
+              class="cursor-pointer select-none px-5 py-3 text-[11px] font-semibold uppercase tracking-[0.4px] text-subtle hover:text-ink"
+              :class="h.key === 'lastSeen' ? 'text-right' : ''"
+              @click="toggleSort(h.key)"
             >
+              <span
+                class="inline-flex items-center gap-1"
+                :class="h.key === 'lastSeen' ? 'flex-row-reverse' : ''"
+              >
+                {{ h.label }}
+                <span
+                  class="text-[8px] leading-none"
+                  :class="sortKey === h.key ? 'text-brand' : 'text-transparent'"
+                  >{{
+                    sortKey === h.key && sortDir === 'desc' ? '▼' : '▲'
+                  }}</span
+                >
+              </span>
+            </th>
           </tr>
         </thead>
         <tbody>
+          <tr v-if="loading">
+            <td
+              :colspan="tableHeads.length"
+              class="px-5 py-10 text-center text-muted"
+              >Loading contacts…</td
+            >
+          </tr>
+          <tr v-else-if="error">
+            <td
+              :colspan="tableHeads.length"
+              class="px-5 py-10 text-center text-rose-500"
+              >Couldn't load contacts: {{ error }}</td
+            >
+          </tr>
+          <tr v-else-if="!filteredContacts.length">
+            <td
+              :colspan="tableHeads.length"
+              class="px-5 py-10 text-center text-muted"
+              >No contacts match your filters.</td
+            >
+          </tr>
           <tr
-            v-for="c in filteredContacts"
+            v-for="c in pagedContacts"
             :key="c.email"
-            class="border-b border-line last:border-0 hover:bg-sidebar"
+            class="cursor-pointer border-b border-line last:border-0 hover:bg-sidebar"
+            @click="
+              router.push({
+                name: 'contact-detail',
+                params: { email: c.email }
+              })
+            "
           >
             <td class="px-5 py-3.5">
               <div class="flex items-center gap-3">
@@ -119,14 +147,22 @@
       <div
         class="flex items-center justify-between border-t border-line px-5 py-3 text-xs text-muted"
       >
-        <span>Showing {{ filteredContacts.length }} of 842,104 contacts</span>
+        <span
+          >Showing {{ rangeStart }}–{{ rangeEnd }} of
+          {{ filteredContacts.length.toLocaleString() }} contacts</span
+        >
         <div class="flex items-center gap-1">
           <button
-            class="rounded-md border border-line2 bg-white px-2.5 py-1 hover:bg-fill"
+            class="rounded-md border border-line2 bg-white px-2.5 py-1 hover:bg-fill disabled:cursor-not-allowed disabled:opacity-40"
+            :disabled="page <= 1"
+            @click="page--"
             >Prev</button
           >
+          <span class="px-1">Page {{ page }} of {{ pageCount }}</span>
           <button
-            class="rounded-md border border-line2 bg-white px-2.5 py-1 hover:bg-fill"
+            class="rounded-md border border-line2 bg-white px-2.5 py-1 hover:bg-fill disabled:cursor-not-allowed disabled:opacity-40"
+            :disabled="page >= pageCount"
+            @click="page++"
             >Next</button
           >
         </div>
@@ -136,110 +172,156 @@
 </template>
 
 <script setup>
-import { computed, ref } from 'vue'
+import { computed, ref, watch, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
 import icSearch from '@/assets/dashboard/ic-search.svg'
 
+const router = useRouter()
+
 const query = ref('')
+const activeFilter = ref('All')
+const page = ref(1)
+const PER_PAGE = 25
 
-const tableHeads = ['Name', 'Contact', 'Segment', 'Source', 'Status', 'Engagement']
+// Default to sorting by engagement (most recently seen first).
+const sortKey = ref('lastSeen')
+const sortDir = ref('asc')
 
-const filters = [
-  { label: 'All', active: true },
-  { label: 'Verified', active: false },
-  { label: 'Super Fans', active: false },
-  { label: 'Opted in', active: false },
-  { label: 'Lapsed', active: false }
+// Each column carries the contact field it sorts by. 'Contact' sorts by email,
+// 'Engagement' sorts by recency (see engagementRank).
+const tableHeads = [
+  { label: 'Name', key: 'name' },
+  { label: 'Contact', key: 'email' },
+  { label: 'Segment', key: 'segment' },
+  { label: 'Source', key: 'source' },
+  { label: 'Status', key: 'status' },
+  { label: 'Engagement', key: 'lastSeen' }
 ]
 
-const contacts = [
-  {
-    name: 'Faisal Al-Qahtani',
-    city: 'Riyadh',
-    email: 'faisal.q@mail.com',
-    phone: '+966 50 123 4567',
-    segment: 'Super Fans',
-    source: 'WhatsApp',
-    status: 'Verified',
-    lastSeen: '2h ago',
-    color: 'bg-brand'
-  },
-  {
-    name: 'Noura Al-Saud',
-    city: 'Jeddah',
-    email: 'noura.s@mail.com',
-    phone: '+966 55 987 6543',
-    segment: 'Hot Al-Hilal',
-    source: 'Quiz',
-    status: 'Verified',
-    lastSeen: '5h ago',
-    color: 'bg-emerald-500'
-  },
-  {
-    name: 'Omar Al-Harbi',
-    city: 'Dammam',
-    email: 'omar.h@mail.com',
-    phone: '+966 56 222 1188',
-    segment: 'Match-day buyers',
-    source: 'Tickets',
-    status: 'Verified',
-    lastSeen: '1d ago',
-    color: 'bg-amber-500'
-  },
-  {
-    name: 'Sara Al-Dossari',
-    city: 'Riyadh',
-    email: 'sara.d@mail.com',
-    phone: '+966 53 444 7799',
-    segment: 'La Liga readers',
-    source: 'Email',
-    status: 'Pending',
-    lastSeen: '2d ago',
-    color: 'bg-pink-500'
-  },
-  {
-    name: 'Khalid Al-Mutairi',
-    city: 'Mecca',
-    email: 'khalid.m@mail.com',
-    phone: '+966 59 333 0021',
-    segment: 'Repeat Fan',
-    source: 'Poll',
-    status: 'Verified',
-    lastSeen: '3d ago',
-    color: 'bg-indigo-500'
-  },
-  {
-    name: 'Layla Al-Otaibi',
-    city: 'Medina',
-    email: 'layla.o@mail.com',
-    phone: '+966 50 778 9900',
-    segment: 'Lapsed fans',
-    source: 'CRM',
-    status: 'Lapsed',
-    lastSeen: '74d ago',
-    color: 'bg-rose-500'
-  },
-  {
-    name: 'Yousef Al-Ghamdi',
-    city: 'Jeddah',
-    email: 'yousef.g@mail.com',
-    phone: '+966 54 010 2233',
-    segment: 'Travel Fan',
-    source: 'WhatsApp',
-    status: 'Verified',
-    lastSeen: '4d ago',
-    color: 'bg-cyan-600'
+function toggleSort(key) {
+  if (sortKey.value === key) {
+    sortDir.value = sortDir.value === 'asc' ? 'desc' : 'asc'
+  } else {
+    sortKey.value = key
+    sortDir.value = 'asc'
   }
+}
+
+const filters = [
+  { label: 'All' },
+  { label: 'Verified' },
+  { label: 'Super Fans' },
+  { label: 'Opted in' },
+  { label: 'Lapsed' }
+]
+
+// Maps each filter chip to a predicate over a contact. 'All' has no predicate.
+const FILTER_PREDICATES = {
+  Verified: c => c.status === 'Verified',
+  'Super Fans': c => c.segment === 'Super Fans',
+  'Opted in': c => c.optedIn === true,
+  Lapsed: c => c.status === 'Lapsed'
+}
+
+const contacts = ref([])
+const loading = ref(false)
+const error = ref(null)
+
+async function loadContacts() {
+  loading.value = true
+  error.value = null
+  try {
+    const res = await fetch(`${import.meta.env.BASE_URL}data/contacts.json`, {
+      headers: { Accept: 'application/json' }
+    })
+    if (!res.ok) {
+      throw new Error(`Request failed (${res.status})`)
+    }
+    const data = await res.json()
+    contacts.value = Array.isArray(data) ? data : []
+  } catch (e) {
+    error.value = e instanceof Error ? e.message : String(e)
+    contacts.value = []
+  } finally {
+    loading.value = false
+  }
+}
+
+onMounted(loadContacts)
+
+const totalLabel = computed(() => contacts.value.length.toLocaleString())
+
+// Fields the search box matches against — every column the user can see.
+const SEARCH_FIELDS = [
+  'name',
+  'city',
+  'email',
+  'phone',
+  'segment',
+  'source',
+  'status'
 ]
 
 const filteredContacts = computed(() => {
   const q = query.value.trim().toLowerCase()
-  if (!q) return contacts
-  return contacts.filter(
-    c =>
-      c.name.toLowerCase().includes(q) ||
-      c.email.toLowerCase().includes(q) ||
-      c.segment.toLowerCase().includes(q)
-  )
+  const predicate = FILTER_PREDICATES[activeFilter.value]
+  return contacts.value.filter(c => {
+    if (predicate && !predicate(c)) return false
+    if (!q) return true
+    return SEARCH_FIELDS.some(f =>
+      String(c[f] ?? '')
+        .toLowerCase()
+        .includes(q)
+    )
+  })
+})
+
+// Converts an "engagement" string like "2h ago" / "74d ago" into minutes, so the
+// column sorts by real recency (smaller = more recently seen) instead of alphabetically.
+const UNIT_MINUTES = { m: 1, h: 60, d: 1440, w: 10080, mo: 43200, y: 525600 }
+function engagementRank(s) {
+  const m = String(s).match(/(\d+)\s*([a-z]+)/i)
+  if (!m) return Infinity
+  return Number(m[1]) * (UNIT_MINUTES[m[2].toLowerCase()] ?? 60)
+}
+
+function sortValue(c, key) {
+  if (key === 'lastSeen') return engagementRank(c.lastSeen)
+  const v = c[key]
+  return typeof v === 'string' ? v.toLowerCase() : v
+}
+
+const sortedContacts = computed(() => {
+  if (!sortKey.value) return filteredContacts.value
+  const dir = sortDir.value === 'asc' ? 1 : -1
+  return [...filteredContacts.value].sort((a, b) => {
+    const av = sortValue(a, sortKey.value)
+    const bv = sortValue(b, sortKey.value)
+    if (av < bv) return -dir
+    if (av > bv) return dir
+    return 0
+  })
+})
+
+const pageCount = computed(() =>
+  Math.max(1, Math.ceil(filteredContacts.value.length / PER_PAGE))
+)
+
+const pagedContacts = computed(() => {
+  const start = (page.value - 1) * PER_PAGE
+  return sortedContacts.value.slice(start, start + PER_PAGE)
+})
+
+const rangeStart = computed(() =>
+  filteredContacts.value.length ? (page.value - 1) * PER_PAGE + 1 : 0
+)
+const rangeEnd = computed(() =>
+  Math.min(page.value * PER_PAGE, filteredContacts.value.length)
+)
+
+// Reset to the first page whenever the result set changes.
+watch([query, activeFilter], () => {
+  page.value = 1
 })
 
 function initials(name) {

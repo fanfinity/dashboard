@@ -17,7 +17,12 @@
           class="flex h-14 shrink-0 items-center border-b border-line px-3"
           :class="mini ? 'justify-center' : 'justify-between'"
         >
-          <img v-if="!mini" :src="logo" alt="Fanfinity" class="h-[17px] w-auto" />
+          <img
+            v-if="!mini"
+            :src="logo"
+            alt="Fanfinity"
+            class="h-[17px] w-auto"
+          />
           <q-btn
             flat
             dense
@@ -46,11 +51,9 @@
             @click="select(item)"
           >
             <img :src="item.icon" :alt="item.label" class="size-4 shrink-0" />
-            <span
-              v-if="!mini"
-              class="flex-1 text-sm tracking-[-0.35px]"
-              >{{ item.label }}</span
-            >
+            <span v-if="!mini" class="flex-1 text-sm tracking-[-0.35px]">{{
+              item.label
+            }}</span>
             <img
               v-if="!mini && item.chevron"
               :src="icChevron"
@@ -74,16 +77,17 @@
               v-for="item in bottomMenu"
               :key="item.label"
               clickable
-              :class="[itemClass(item), mini ? 'justify-center px-0!' : 'px-3!']"
+              :class="[
+                itemClass(item),
+                mini ? 'justify-center px-0!' : 'px-3!'
+              ]"
               class="min-h-9! rounded-lg! py-2! mb-0.5 flex items-center gap-2"
               @click="select(item)"
             >
               <img :src="item.icon" :alt="item.label" class="size-4 shrink-0" />
-              <span
-                v-if="!mini"
-                class="flex-1 text-sm tracking-[-0.35px]"
-                >{{ item.label }}</span
-              >
+              <span v-if="!mini" class="flex-1 text-sm tracking-[-0.35px]">{{
+                item.label
+              }}</span>
               <q-tooltip
                 v-if="mini"
                 anchor="center right"

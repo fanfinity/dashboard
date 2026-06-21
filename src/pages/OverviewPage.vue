@@ -57,9 +57,7 @@
           <span class="text-2xl font-semibold tracking-[-0.5px] text-ink">{{
             kpi.value
           }}</span>
-          <span
-            v-if="kpi.delta"
-            class="text-xs font-medium text-success"
+          <span v-if="kpi.delta" class="text-xs font-medium text-success"
             >↑ {{ kpi.delta }}</span
           >
         </div>
@@ -154,10 +152,9 @@
             >
           </div>
         </div>
-        <div
-          class="mt-4 border-t border-line pt-3 text-xs text-muted"
-        >
-          <p>M <span class="font-medium text-ink">69%</span> · F
+        <div class="mt-4 border-t border-line pt-3 text-xs text-muted">
+          <p
+            >M <span class="font-medium text-ink">69%</span> · F
             <span class="font-medium text-ink">31%</span></p
           >
           <p class="mt-1"

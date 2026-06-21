@@ -58,7 +58,9 @@
               v-for="h in tableHeads"
               :key="h"
               class="px-5 py-3 text-[11px] font-semibold uppercase tracking-[0.4px] text-subtle"
-              :class="['Sent', 'Delivered', 'Updated'].includes(h) ? 'text-right' : ''"
+              :class="
+                ['Sent', 'Delivered', 'Updated'].includes(h) ? 'text-right' : ''
+              "
               >{{ h }}</th
             >
           </tr>

@@ -26,11 +26,9 @@
   --color-success-bg: #edfdf2; /* Alert/Success/0 */
   --color-success-line: #bce9cd; /* Alert/Success/5 */
 
-  --font-sans:
-    'Plus Jakarta Sans', ui-sans-serif, system-ui, sans-serif;
+  --font-sans: 'Plus Jakarta Sans', ui-sans-serif, system-ui, sans-serif;
 }
 
 body {
-  font-family:
-    'Plus Jakarta Sans', ui-sans-serif, system-ui, sans-serif;
+  font-family: 'Plus Jakarta Sans', ui-sans-serif, system-ui, sans-serif;
 }

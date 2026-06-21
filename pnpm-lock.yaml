@@ -17,6 +17,9 @@ importers:
       '@quasar/extras':
         specifier: ^2.0.0
         version: 2.0.1
+      apexcharts:
+        specifier: ^5.15.2
+        version: 5.15.2
       quasar:
         specifier: ^2.20.0
         version: 2.20.1
@@ -26,6 +29,9 @@ importers:
       vue-router:
         specifier: ^5.0.6
         version: 5.1.0(@vue/compiler-sfc@3.5.38)(vite@8.0.16(jiti@2.7.0)(sass-embedded@1.100.0)(sass@1.100.0)(terser@5.48.0)(yaml@2.9.0))(vue@3.5.38)
+      vue3-apexcharts:
+        specifier: ^1.11.1
+        version: 1.11.1(apexcharts@5.15.2)(vue@3.5.38)
     devDependencies:
       '@quasar/app-vite':
         specifier: ^3.0.0-rc.3
@@ -962,6 +968,9 @@ packages:
     engines: {node: '>=0.4.0'}
     hasBin: true
 
+  apexcharts@5.15.2:
+    resolution: {integrity: sha512-qbd+ehDiRxo++wAqaGLmJcd683ktulTqoku4WYYyQ3XOgJIn4yhOQGV27KcdK7c2yhwxblyh4mgMm8ukI0wC0Q==}
+
   asn1js@3.0.10:
     resolution: {integrity: sha512-S2s3aOytiKdFRdulw2qPE51MzjzVOisppcVv7jVFR+Kw0kxwvFrDcYA0h7Ndqbmj0HkMIXYWaoj7fli8kgx1eg==}
     engines: {node: '>=12.0.0'}
@@ -1860,6 +1869,12 @@ packages:
       vite:
         optional: true
 
+  vue3-apexcharts@1.11.1:
+    resolution: {integrity: sha512-MbN3vg8bMG19wc0Lm1HkeQvODgLm56DgpIxtNUO0xpf/JCzYWVGE4jzXp2JISzy2s3Kul1yOxNQUYsLvKQ5L9g==}
+    peerDependencies:
+      apexcharts: '>=5.10.0'
+      vue: '>=3.0.0'
+
   vue@3.5.38:
     resolution: {integrity: sha512-vAMKHfImQlYSy0C+PBue4s3ERZ2xGKfgZg5GXAsLInq1dyh2H78ILVP5sK0KPFPVW4kv+OGCIvBEondcjpZp7A==}
     peerDependencies:
@@ -2645,6 +2660,8 @@ snapshots:
   '@vue/shared@3.5.38': {}
 
   acorn@8.17.0: {}
+
+  apexcharts@5.15.2: {}
 
   asn1js@3.0.10:
     dependencies:
@@ -3450,6 +3467,11 @@ snapshots:
     optionalDependencies:
       '@vue/compiler-sfc': 3.5.38
       vite: 8.0.16(jiti@2.7.0)(sass-embedded@1.100.0)(sass@1.100.0)(terser@5.48.0)(yaml@2.9.0)
+
+  vue3-apexcharts@1.11.1(apexcharts@5.15.2)(vue@3.5.38):
+    dependencies:
+      apexcharts: 5.15.2
+      vue: 3.5.38
 
   vue@3.5.38:
     dependencies:

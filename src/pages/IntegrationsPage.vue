@@ -5,7 +5,9 @@
       <h1 class="text-2xl! font-semibold! tracking-[-0.5px]! text-ink"
         >Integrations</h1
       >
-      <p class="mt-1 text-sm text-muted">Push verified segments to ad platforms.</p>
+      <p class="mt-1 text-sm text-muted"
+        >Push verified segments to ad platforms.</p
+      >
     </div>
 
     <!-- Platform cards -->
@@ -50,10 +52,12 @@
           <button
             class="flex h-9 w-full items-center justify-between gap-2 rounded-lg border border-line2 bg-white px-3 text-sm text-ink shadow-sm hover:bg-fill"
           >
-            <span class="truncate"
-              >Hot Al-Hilal · Riyadh — 88,120 fans</span
+            <span class="truncate">Hot Al-Hilal · Riyadh — 88,120 fans</span>
+            <svg
+              viewBox="0 0 16 16"
+              class="size-3.5 shrink-0 text-subtle"
+              fill="none"
             >
-            <svg viewBox="0 0 16 16" class="size-3.5 shrink-0 text-subtle" fill="none">
               <path
                 d="M4 6l4 4 4-4"
                 stroke="currentColor"

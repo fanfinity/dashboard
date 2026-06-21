@@ -56,6 +56,27 @@
           </tr>
         </thead>
         <tbody>
+          <tr v-if="loading">
+            <td
+              :colspan="tableHeads.length"
+              class="px-5 py-10 text-center text-muted"
+              >Loading segments…</td
+            >
+          </tr>
+          <tr v-else-if="error">
+            <td
+              :colspan="tableHeads.length"
+              class="px-5 py-10 text-center text-rose-500"
+              >Couldn't load segments: {{ error }}</td
+            >
+          </tr>
+          <tr v-else-if="!segments.length">
+            <td
+              :colspan="tableHeads.length"
+              class="px-5 py-10 text-center text-muted"
+              >No segments yet.</td
+            >
+          </tr>
           <tr
             v-for="row in segments"
             :key="row.name"
@@ -66,7 +87,7 @@
               <p class="mt-0.5 text-xs text-muted">{{ row.definition }}</p>
             </td>
             <td class="px-5 py-4 text-right font-medium text-ink">{{
-              row.fans
+              row.fans.toLocaleString()
             }}</td>
             <td class="px-5 py-4">
               <div class="flex items-center gap-2">
@@ -76,7 +97,9 @@
                     :style="{ width: row.index + '%' }"
                   />
                 </div>
-                <span class="text-xs font-medium text-ink">{{ row.index }}</span>
+                <span class="text-xs font-medium text-ink">{{
+                  row.index
+                }}</span>
               </div>
             </td>
             <td class="px-5 py-4">
@@ -104,61 +127,134 @@
 </template>
 
 <script setup>
-const tableHeads = [
-  'Segment',
-  'Fans',
-  'Value index',
-  'Sources',
-  'Updated',
-  ''
-]
+import { computed, ref, onMounted } from 'vue'
 
-const stats = [
-  { label: 'Total segments', value: '24' },
-  { label: 'Addressable fans', value: '842K' },
-  { label: 'Avg. match rate', value: '78%' }
-]
+const tableHeads = ['Segment', 'Fans', 'Value index', 'Sources', 'Updated', '']
 
-const segments = [
-  {
-    name: 'Super Fans',
-    definition: 'Engaged 5+ times · last 30 days',
-    fans: '102,400',
-    index: 100,
-    sources: ['WhatsApp', 'Quizzes'],
-    updated: '2h ago'
-  },
-  {
-    name: 'Hot Al-Hilal',
-    definition: 'Riyadh · Al-Hilal supporters',
-    fans: '88,120',
-    index: 76,
-    sources: ['Polls', 'Tickets'],
-    updated: '1d ago'
-  },
-  {
-    name: 'La Liga readers',
-    definition: 'Opened La Liga newsletter',
-    fans: '64,310',
-    index: 58,
-    sources: ['Email'],
-    updated: '3d ago'
-  },
-  {
-    name: 'Match-day buyers',
-    definition: 'Bought a ticket in last 90 days',
-    fans: '41,890',
-    index: 41,
-    sources: ['Tickets', 'CRM'],
-    updated: '4d ago'
-  },
-  {
-    name: 'Lapsed fans',
-    definition: 'No engagement · 60+ days',
-    fans: '156,200',
-    index: 22,
-    sources: ['CRM'],
-    updated: '6d ago'
+// Short, human descriptions per segment. Only labels are static here —
+// every number below is derived from the loaded contacts.
+const DEFINITIONS = {
+  'Super Fans': 'Engaged repeatedly · last 30 days',
+  'Hot Al-Hilal': 'Riyadh · Al-Hilal supporters',
+  'La Liga readers': 'Opened La Liga newsletter',
+  'Match-day buyers': 'Bought a ticket in last 90 days',
+  'Lapsed fans': 'No engagement · 60+ days',
+  'Repeat Fan': 'Returned 3+ times',
+  'Travel Fan': 'Bought away-match travel'
+}
+
+const contacts = ref([])
+const loading = ref(false)
+const error = ref(null)
+
+// Same source-of-truth as the Contacts page — segments are aggregated from it.
+async function loadContacts() {
+  loading.value = true
+  error.value = null
+  try {
+    const res = await fetch(`${import.meta.env.BASE_URL}data/contacts.json`, {
+      headers: { Accept: 'application/json' }
+    })
+    if (!res.ok) {
+      throw new Error(`Request failed (${res.status})`)
+    }
+    const data = await res.json()
+    contacts.value = Array.isArray(data) ? data : []
+  } catch (e) {
+    error.value = e instanceof Error ? e.message : String(e)
+    contacts.value = []
+  } finally {
+    loading.value = false
   }
-]
+}
+
+onMounted(loadContacts)
+
+// Turn an "engagement" string like "2h ago" / "74d ago" into minutes, so we can
+// find the most-recent contact in a segment (smaller = more recently seen).
+const UNIT_MINUTES = { m: 1, h: 60, d: 1440, w: 10080, mo: 43200, y: 525600 }
+function engagementRank(s) {
+  const m = String(s).match(/(\d+)\s*([a-z]+)/i)
+  if (!m) return Infinity
+  return Number(m[1]) * (UNIT_MINUTES[m[2].toLowerCase()] ?? 60)
+}
+
+// Compact a large fan count to e.g. "842K" / "1.2M".
+function compact(n) {
+  if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`
+  if (n >= 1_000) return `${Math.round(n / 1_000)}K`
+  return String(n)
+}
+
+// Aggregate the raw contacts into one row per segment. Every figure — fan count,
+// value index, sources, last-updated, match rate — is computed from real members.
+const segments = computed(() => {
+  const groups = new Map()
+  for (const c of contacts.value) {
+    const key = c.segment || 'Unsegmented'
+    if (!groups.has(key)) groups.set(key, [])
+    groups.get(key).push(c)
+  }
+
+  const rows = []
+  for (const [name, members] of groups) {
+    const fans = members.length
+    const verified = members.filter(c => c.status === 'Verified').length
+    const optedIn = members.filter(c => c.optedIn === true).length
+
+    // Value index (0–100): blend of how verified, opted-in and recently active the
+    // segment is, normalised against the freshest possible contact (~1h).
+    const avgRecency =
+      members.reduce((s, c) => s + engagementRank(c.lastSeen), 0) / fans
+    const recencyScore = Math.max(
+      0,
+      1 - avgRecency / engagementRank('120d ago')
+    )
+    const score =
+      0.4 * (verified / fans) + 0.3 * (optedIn / fans) + 0.3 * recencyScore
+    const index = Math.round(score * 100)
+
+    // Top sources within the segment, busiest first.
+    const srcCount = {}
+    for (const c of members) srcCount[c.source] = (srcCount[c.source] || 0) + 1
+    const sources = Object.entries(srcCount)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 3)
+      .map(([s]) => s)
+
+    // Most recently seen member drives the "Updated" column.
+    const updated = members.reduce(
+      (best, c) =>
+        engagementRank(c.lastSeen) < engagementRank(best) ? c.lastSeen : best,
+      members[0].lastSeen
+    )
+
+    rows.push({
+      name,
+      definition: DEFINITIONS[name] || 'Custom audience',
+      fans,
+      index,
+      matchRate: Math.round((optedIn / fans) * 100),
+      sources,
+      updated
+    })
+  }
+
+  // Largest audiences first.
+  return rows.sort((a, b) => b.fans - a.fans)
+})
+
+// Stat strip — all three figures roll up from the aggregated segments.
+const stats = computed(() => {
+  const rows = segments.value
+  const totalFans = rows.reduce((sum, r) => sum + r.fans, 0)
+  const avgMatch = rows.length
+    ? Math.round(rows.reduce((sum, r) => sum + r.matchRate, 0) / rows.length)
+    : 0
+  return [
+    { label: 'Total segments', value: rows.length.toLocaleString() },
+    { label: 'Addressable fans', value: compact(totalFans) },
+    { label: 'Avg. match rate', value: `${avgMatch}%` }
+  ]
+})
 </script>
