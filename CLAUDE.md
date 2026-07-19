@@ -1,0 +1,118 @@
+# CLAUDE.md
+
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+
+## Commands
+
+Package manager is **pnpm** (Node `>= 22.12`). `postinstall` runs `quasar prepare`.
+
+```bash
+pnpm install       # install deps (regenerates .quasar/)
+pnpm dev           # quasar dev — HMR dev server, opens browser, runs the /japi proxy
+pnpm build         # quasar build — static SPA into dist/spa
+pnpm lint          # oxfmt (format) then oxlint --fix
+pnpm lint:check    # oxfmt --check then oxlint (CI-style, no writes)
+```
+
+Linting/formatting is **oxlint + oxfmt**, not ESLint/Prettier. oxfmt style: no semicolons,
+single quotes, printWidth 80, `arrowParens: avoid`, no trailing commas. oxlint runs only the
+`correctness` category as errors (max 10 warnings).
+
+There is **no test runner configured** — `playwright` is a devDependency but no test scripts
+or specs exist yet.
+
+**Never run `pnpm dev` (or `quasar dev`) yourself.** The user always runs the dev server
+themselves in watch mode, in a separate terminal. It's already running with HMR — edits to
+source files apply automatically, so there's no need to start, stop, or restart it.
+
+## Stack
+
+Quasar 2 (Quasar CLI with Vite) + Vue 3 (`<script setup>`) + vue-router. Styling is **Tailwind
+CSS v4** (via `@tailwindcss/vite` + PostCSS) used alongside Quasar's own components and SCSS —
+both `app.scss` and `tailwind.css` are loaded. Charts use ApexCharts (`vue3-apexcharts`).
+
+Router uses **hash mode** (`vueRouterMode: 'hash'` in `quasar.config.js`). The `@/` alias maps
+to `src/`. All app routes are children of `src/layouts/MainLayout.vue`; see `src/router/routes.js`.
+
+## Data architecture
+
+There is no owned application backend. Pages get data from three places, and the composables
+all follow the same `{ data, loading, error, load() }` contract (`src/composables/`):
+
+1. **Static mock JSON** in `public/data/*.json`, fetched via `import.meta.env.BASE_URL`
+   (e.g. `ContactDetailPage.vue` loads `data/contacts.json` + `data/contact-details.json`).
+   Most pages also define inline mock arrays for demo content.
+
+2. **The Jitsu events backend** (`console.fanfinity.io`):
+   - **Read** incoming events (`useLiveEvents.js`) through a same-origin dev proxy: the browser
+     calls `/japi/*`, and `devServer.proxy` in `quasar.config.js` forwards to
+     `https://console.fanfinity.io/api/*` with an API key as a Bearer token. This endpoint
+     requires auth and is not CORS-enabled, so the proxy is the only way to reach it from the
+     browser — **and the proxy only exists in `pnpm dev`**. A production build has no proxy and
+     needs an equivalent reverse proxy in front of it.
+   - **Write** events (`useJitsu.js`) via the bundled `@jitsu/js` browser SDK (POSTs directly to
+     the console origin, allowed by CSP).
+   - The public connector catalog (`useSourcesCatalog.js`) hits `/api/sources` directly — that
+     endpoint is public/CORS-open, no key.
+
+3. **Derived / client-only state** built on top of the event stream:
+   - `useJitsuContacts.js` folds the raw event log into unique contact records so real visitors
+     appear in the same Contacts table as mock contacts.
+   - `useIdentityResolution.js` does probabilistic identity stitching over those contacts
+     (rarity-weighted, Fellegi–Sunter-style scoring — see the file's header comment).
+   - `useSegments.js` persists segment filter definitions in `localStorage` (no backend to
+     store them). Its `FIELDS` accessors read the event shape produced by
+     `useLiveEvents`' `mapIncomingEvent()` — keep them in sync if that mapper changes.
+
+## Content-Security-Policy constraints
+
+`index.html` sets a strict CSP: `default-src 'self'`, `script-src 'self'`, images/connections
+whitelisted only to `console.fanfinity.io` (plus `ws://localhost:*` in dev). This shapes several
+decisions and will break new code that ignores it:
+
+- **Any new external host** (API, image CDN, font, analytics) must be added to the CSP meta tag.
+- `assetsInlineLimit` is forced to `0` in `quasar.config.js` so no asset is inlined as a `data:`
+  URI (which the CSP would block). Prefer real asset files / SVG endpoints over data URIs.
+- Third-party JS must be bundled via npm (first-party `script-src 'self'`), not loaded from a CDN.
+
+## Authentication & multi-tenancy
+
+Sign-in is Google Cloud Identity Platform (the Firebase Auth JS SDK) email/password auth,
+gated by [multi-tenancy](https://docs.cloud.google.com/identity-platform/docs/multi-tenancy):
+
+- `src/firebase.js` calls `initializeApp`/`getAuth`, then pins `auth.tenantId` from
+  `VITE_FIREBASE_DEFAULT_TENANT_ID` at module init. `auth.tenantId` is an in-memory-only
+  SDK property (never persisted), so it must be re-set on every full page load — which
+  happens naturally here since this module's top-level code reruns each load.
+- `src/composables/useAuth.js` follows the same module-singleton pattern as `useJitsu.js`:
+  a lazily-attached `onAuthStateChanged` listener backing reactive `user`/`loading`/`error`,
+  exposed via `useAuth()` returning `{ user, loading, error, signUp, signIn, logOut,
+tenantId }`. It also exports `waitForAuthReady()`, a promise resolved on the _first_
+  auth-state callback — needed because that callback is async, so anything deciding access
+  on page load (like the router guard) must await it rather than read `user.value`
+  immediately.
+- `src/router/routes.js` tags the top-level `/` (`MainLayout`) route with
+  `meta: { requiresAuth: true }`; `src/router/index.js`'s `beforeEach` awaits
+  `waitForAuthReady()` and redirects to `/login?redirect=<path>` if signed out. `/login`
+  itself carries no such meta.
+- **Only one tenant exists today** (`fanfinity-app-fcsgt` / display name `fanfinity-app`,
+  in the `koratona-9791a` project), so every user authenticates into it via the env var
+  above — there is no per-user or per-email-domain tenant selection. Building that requires
+  a lookup mechanism backed by a database/backend (Identity Platform's client SDK has no
+  tenant-discovery API), and this repo has no owned backend (see "Data architecture" above).
+  That's intentionally deferred until a second tenant exists to justify it — don't add a
+  static domain→tenant mapping as a substitute; it won't scale past one real lookup case.
+
+## Environment / secrets
+
+Config lives in a gitignored `.env` at the project root:
+
+- `EVENTS_API_KEY` (`keyId:secret`) — read **server-side** by `quasar.config.js` at config time
+  (via `process.loadEnvFile`) and injected by the dev proxy. Never shipped to the client bundle.
+- `VITE_*` vars (`VITE_EVENTS_WORKSPACE_ID`, `VITE_EVENTS_ACTOR_ID`, `VITE_JITSU_HOST`,
+  `VITE_JITSU_WRITE_KEY`) are client-exposed by design and override in-code fallbacks. The Jitsu
+  browser write key is public by design (it only authorizes ingestion).
+
+Jitsu ingestion is **consent-gated**: `useJitsu.js` starts in a restrictive privacy mode
+(nothing sent, IPs stripped, no user IDs) until the user answers `JitsuConsentBanner.vue`;
+the decision is stored under the `fanfinity_jitsu_consent` localStorage key.

@@ -7,6 +7,7 @@ import {
 } from 'vue-router'
 
 import routes from './routes.js'
+import { user, waitForAuthReady } from '@/composables/useAuth'
 
 /*
  * If not building with SSR mode, you can
@@ -32,6 +33,16 @@ export default defineRouter((/* { store, ssrContext } */) => {
     // quasar.conf.js -> build -> vueRouterMode
     // quasar.conf.js -> build -> publicPath
     history: createHistory(import.meta.env.QUASAR_VUE_ROUTER_BASE)
+  })
+
+  // Gate routes tagged requiresAuth (see routes.js) behind sign-in. Firebase's
+  // first auth-state callback is async, so wait for it before deciding —
+  // otherwise a signed-in user would be bounced to /login on cold load.
+  Router.beforeEach(async to => {
+    if (!to.matched.some(record => record.meta.requiresAuth)) return true
+    await waitForAuthReady()
+    if (!user.value) return { path: '/login', query: { redirect: to.fullPath } }
+    return true
   })
 
   return Router
