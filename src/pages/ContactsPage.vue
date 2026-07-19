@@ -98,12 +98,12 @@
           </tr>
           <tr
             v-for="c in pagedContacts"
-            :key="c.email"
+            :key="c.routeKey ?? c.email"
             class="cursor-pointer border-b border-line last:border-0 hover:bg-sidebar"
             @click="
               router.push({
                 name: 'contact-detail',
-                params: { email: c.email }
+                params: { email: c.routeKey ?? c.email }
               })
             "
           >
@@ -130,7 +130,16 @@
                 >{{ c.segment }}</span
               >
             </td>
-            <td class="px-5 py-3.5 text-muted">{{ c.source }}</td>
+            <td class="px-5 py-3.5 text-muted">
+              <span
+                v-if="c.origin === 'jitsu'"
+                class="inline-flex items-center gap-1.5 rounded-md border border-brand/30 bg-brand/5 px-2 py-0.5 text-xs font-medium text-brand"
+              >
+                <span class="size-1.5 rounded-full bg-brand"></span>
+                CDP
+              </span>
+              <span v-else>{{ c.source }}</span>
+            </td>
             <td class="px-5 py-3.5">
               <span
                 :class="badgeClass(c.status)"
@@ -175,8 +184,13 @@
 import { computed, ref, watch, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import icSearch from '@/assets/dashboard/ic-search.svg'
+import { useJitsuContacts } from '@/composables/useJitsuContacts'
 
 const router = useRouter()
+
+// Real Jitsu visitors, derived from the incoming-events log. These sit in the same
+// table as the mock contacts and power the "Anonymous users" / "Jitsu users" filters.
+const { jitsuContacts, loadJitsuContacts } = useJitsuContacts()
 
 const query = ref('')
 const activeFilter = ref('All')
@@ -209,6 +223,8 @@ function toggleSort(key) {
 
 const filters = [
   { label: 'All' },
+  { label: 'Anonymous users' },
+  { label: 'CDP users' },
   { label: 'Verified' },
   { label: 'Super Fans' },
   { label: 'Opted in' },
@@ -216,7 +232,11 @@ const filters = [
 ]
 
 // Maps each filter chip to a predicate over a contact. 'All' has no predicate.
+// 'Anonymous users' / 'Jitsu users' split the Jitsu-derived rows by whether the
+// visitor has been identified (userId/email) or is still anonymous.
 const FILTER_PREDICATES = {
+  'Anonymous users': c => c.origin === 'jitsu' && c.isAnonymous,
+  'CDP users': c => c.origin === 'jitsu' && !c.isAnonymous,
   Verified: c => c.status === 'Verified',
   'Super Fans': c => c.segment === 'Super Fans',
   'Opted in': c => c.optedIn === true,
@@ -238,7 +258,9 @@ async function loadContacts() {
       throw new Error(`Request failed (${res.status})`)
     }
     const data = await res.json()
-    contacts.value = Array.isArray(data) ? data : []
+    contacts.value = Array.isArray(data)
+      ? data.map(c => ({ ...c, origin: 'mock' }))
+      : []
   } catch (e) {
     error.value = e instanceof Error ? e.message : String(e)
     contacts.value = []
@@ -247,9 +269,17 @@ async function loadContacts() {
   }
 }
 
-onMounted(loadContacts)
+onMounted(() => {
+  loadContacts()
+  // Best-effort: a Jitsu fetch failure must never break the mock-contacts table,
+  // so we don't await it or surface its error here (the composable swallows it).
+  loadJitsuContacts()
+})
 
-const totalLabel = computed(() => contacts.value.length.toLocaleString())
+// Mock contacts plus the live Jitsu-derived ones, shown together in one table.
+const allContacts = computed(() => [...contacts.value, ...jitsuContacts.value])
+
+const totalLabel = computed(() => allContacts.value.length.toLocaleString())
 
 // Fields the search box matches against — every column the user can see.
 const SEARCH_FIELDS = [
@@ -265,7 +295,7 @@ const SEARCH_FIELDS = [
 const filteredContacts = computed(() => {
   const q = query.value.trim().toLowerCase()
   const predicate = FILTER_PREDICATES[activeFilter.value]
-  return contacts.value.filter(c => {
+  return allContacts.value.filter(c => {
     if (predicate && !predicate(c)) return false
     if (!q) return true
     return SEARCH_FIELDS.some(f =>
@@ -335,6 +365,7 @@ function initials(name) {
 const STATUS = {
   Verified: 'border-success-line bg-success-bg text-success',
   Pending: 'border-amber-200 bg-amber-50 text-amber-600',
+  Anonymous: 'border-violet-200 bg-violet-50 text-violet-600',
   Lapsed: 'border-line2 bg-fill text-subtle'
 }
 function badgeClass(status) {

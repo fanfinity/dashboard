@@ -12,6 +12,7 @@
       </div>
       <button
         class="flex h-9 items-center gap-1.5 rounded-lg bg-brand px-3.5 text-sm font-medium text-white shadow-sm hover:opacity-90"
+        @click="builderOpen = true"
       >
         <svg viewBox="0 0 16 16" class="size-4" fill="none">
           <path
@@ -70,7 +71,7 @@
               >Couldn't load segments: {{ error }}</td
             >
           </tr>
-          <tr v-else-if="!segments.length">
+          <tr v-else-if="!allRows.length">
             <td
               :colspan="tableHeads.length"
               class="px-5 py-10 text-center text-muted"
@@ -78,12 +79,19 @@
             >
           </tr>
           <tr
-            v-for="row in segments"
-            :key="row.name"
+            v-for="row in allRows"
+            :key="row.key"
             class="border-b border-line last:border-0 hover:bg-sidebar"
           >
             <td class="px-5 py-4">
-              <p class="font-medium text-ink">{{ row.name }}</p>
+              <p class="flex items-center gap-2 font-medium text-ink">
+                {{ row.name }}
+                <span
+                  v-if="row.dynamic"
+                  class="inline-flex items-center rounded-md bg-brand/10 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-[0.4px] text-brand"
+                  >Dynamic</span
+                >
+              </p>
               <p class="mt-0.5 text-xs text-muted">{{ row.definition }}</p>
             </td>
             <td class="px-5 py-4 text-right font-medium text-ink">{{
@@ -114,22 +122,60 @@
             </td>
             <td class="px-5 py-4 text-subtle">{{ row.updated }}</td>
             <td class="px-5 py-4 text-right">
-              <button
-                class="rounded-lg border border-line2 bg-white px-3 py-1.5 text-xs font-medium text-brand shadow-sm hover:bg-fill"
-                >Push</button
-              >
+              <div class="flex items-center justify-end gap-2">
+                <button
+                  v-if="row.dynamic"
+                  class="rounded-lg border border-line2 bg-white px-2.5 py-1.5 text-xs font-medium text-rose-500 shadow-sm hover:bg-fill"
+                  title="Delete segment"
+                  @click="deleteSegment(row.id)"
+                  >Delete</button
+                >
+                <button
+                  class="rounded-lg border border-line2 bg-white px-3 py-1.5 text-xs font-medium text-brand shadow-sm hover:bg-fill"
+                  >Push</button
+                >
+              </div>
             </td>
           </tr>
         </tbody>
       </table>
     </div>
+
+    <SegmentBuilderDialog
+      v-model="builderOpen"
+      :events="events"
+      @save="onSaveSegment"
+    />
   </q-page>
 </template>
 
 <script setup>
 import { computed, ref, onMounted } from 'vue'
+import { useLiveEvents, DEFAULT_ACTOR_ID } from '@/composables/useLiveEvents'
+import {
+  useSegments,
+  countMatches,
+  describeRules
+} from '@/composables/useSegments'
+import SegmentBuilderDialog from '@/components/SegmentBuilderDialog.vue'
 
 const tableHeads = ['Segment', 'Fans', 'Value index', 'Sources', 'Updated', '']
+
+// Incoming Jitsu events power the live counts for dynamic segments.
+const { events, load: loadEvents } = useLiveEvents()
+// Dynamic segments persisted in localStorage + their rule engine.
+const {
+  segments: dynamicSegments,
+  loadSegments,
+  saveSegment,
+  deleteSegment
+} = useSegments()
+
+const builderOpen = ref(false)
+
+function onSaveSegment(def) {
+  saveSegment(def)
+}
 
 // Short, human descriptions per segment. Only labels are static here —
 // every number below is derived from the loaded contacts.
@@ -168,7 +214,26 @@ async function loadContacts() {
   }
 }
 
-onMounted(loadContacts)
+onMounted(() => {
+  loadContacts()
+  loadSegments()
+  // Pull a generous recent window so dynamic-segment counts are meaningful.
+  loadEvents({ actorId: DEFAULT_ACTOR_ID, limit: 1000 })
+})
+
+// Turn an ISO event date into a relative "Xh ago" label (event dates are ISO,
+// unlike the contacts' pre-formatted strings).
+function relativeTime(iso) {
+  if (!iso) return '—'
+  const then = new Date(iso).getTime()
+  if (isNaN(then)) return '—'
+  const mins = Math.max(0, Math.round((Date.now() - then) / 60000))
+  if (mins < 1) return 'just now'
+  if (mins < 60) return `${mins}m ago`
+  const hrs = Math.round(mins / 60)
+  if (hrs < 24) return `${hrs}h ago`
+  return `${Math.round(hrs / 24)}d ago`
+}
 
 // Turn an "engagement" string like "2h ago" / "74d ago" into minutes, so we can
 // find the most-recent contact in a segment (smaller = more recently seen).
@@ -244,7 +309,37 @@ const segments = computed(() => {
   return rows.sort((a, b) => b.fans - a.fans)
 })
 
-// Stat strip — all three figures roll up from the aggregated segments.
+// Dynamic segments → table rows, with counts computed live from loaded events.
+const dynamicRows = computed(() => {
+  const total = events.value.length || 1
+  return dynamicSegments.value.map(seg => {
+    const { eventCount, fanCount, hosts, lastSeen } = countMatches(
+      events.value,
+      seg
+    )
+    return {
+      key: `dyn-${seg.id}`,
+      id: seg.id,
+      dynamic: true,
+      name: seg.name,
+      definition: seg.description || describeRules(seg),
+      fans: fanCount,
+      index: Math.round((eventCount / total) * 100),
+      matchRate: 0,
+      sources: hosts,
+      updated: lastSeen ? relativeTime(lastSeen) : '—'
+    }
+  })
+})
+
+// Dynamic segments first, then the contacts-derived ones.
+const allRows = computed(() => [
+  ...dynamicRows.value,
+  ...segments.value.map(r => ({ ...r, key: `seg-${r.name}`, dynamic: false }))
+])
+
+// Stat strip — figures roll up from the contacts-derived segments; the segment
+// count includes dynamic segments too.
 const stats = computed(() => {
   const rows = segments.value
   const totalFans = rows.reduce((sum, r) => sum + r.fans, 0)
@@ -252,7 +347,7 @@ const stats = computed(() => {
     ? Math.round(rows.reduce((sum, r) => sum + r.matchRate, 0) / rows.length)
     : 0
   return [
-    { label: 'Total segments', value: rows.length.toLocaleString() },
+    { label: 'Total segments', value: allRows.value.length.toLocaleString() },
     { label: 'Addressable fans', value: compact(totalFans) },
     { label: 'Avg. match rate', value: `${avgMatch}%` }
   ]

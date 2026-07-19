@@ -1,13 +1,11 @@
 {
-  "name": "quasar-project",
+  "name": "fanfinity-dashboard",
   "version": "0.0.1",
   "private": true,
-  "description": "A Quasar Project",
+  "description": "Fanfinity dashboard",
   "keywords": [
-    "quasar",
-    "quasar-app",
-    "quasar-app-vite",
-    "quasar-cli",
+    "dashboard",
+    "fanfinity",
     "vite",
     "vue",
     "vuejs"
@@ -24,6 +22,7 @@
   "dependencies": {
     "@fontsource/inter": "^5.2.8",
     "@fontsource/plus-jakarta-sans": "^5.2.8",
+    "@jitsu/js": "^1.10.4",
     "@quasar/extras": "^2.0.0",
     "apexcharts": "^5.15.2",
     "quasar": "^2.20.0",
@@ -45,5 +44,5 @@
   "engines": {
     "node": ">= 26 || ^24 || ^22.12"
   },
-  "productName": "Quasar App"
+  "productName": "Fanfinity"
 }

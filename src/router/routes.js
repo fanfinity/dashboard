@@ -19,6 +19,11 @@ const routes = [
         component: () => import('@/pages/ContactDetailPage.vue')
       },
       {
+        path: 'identity-resolution',
+        name: 'identity-resolution',
+        component: () => import('@/pages/IdentityResolutionPage.vue')
+      },
+      {
         path: 'segments',
         name: 'segments',
         component: () => import('@/pages/SegmentsPage.vue')
@@ -42,6 +47,16 @@ const routes = [
         path: 'sources',
         name: 'sources',
         component: () => import('@/pages/SourcesPage.vue')
+      },
+      {
+        path: 'live-events',
+        name: 'live-events',
+        component: () => import('@/pages/LiveEventsPage.vue')
+      },
+      {
+        path: 'events-demo',
+        name: 'events-demo',
+        component: () => import('@/pages/JitsuDemoPage.vue')
       }
     ]
   },

@@ -2,6 +2,15 @@
 // https://v2.quasar.dev/quasar-cli-vite/quasar-config-file
 
 import { defineConfig } from '#q-app'
+import { existsSync } from 'node:fs'
+
+// The build tooling loads .env for client code only — it does NOT populate
+// process.env, which the devServer proxy below reads for the EVENTS_API_KEY (kept
+// server-side). Load it here so the dev server works from .env without exporting
+// the var in the shell.
+if (existsSync('.env')) {
+  process.loadEnvFile('.env')
+}
 
 export default defineConfig((/* ctx */) => {
   return {
@@ -65,7 +74,33 @@ export default defineConfig((/* ctx */) => {
     // https://v2.quasar.dev/quasar-cli-vite/quasar-config-file#devserver
     devServer: {
       // https: true,
-      open: true // opens browser window automatically
+      open: true, // opens browser window automatically
+
+      // Same-origin proxy to the events backend (console.fanfinity.io). The Live
+      // Events page calls /japi/... (same origin → no CORS), and this proxy forwards
+      // to https://console.fanfinity.io/api/... while injecting an API key as a
+      // Bearer token. The key (format `keyId:secret`, created in the console under
+      // Settings → API Keys) is read from the EVENTS_API_KEY env var at config time
+      // (Node side) so it never ends up in the client bundle. The events endpoint
+      // requires auth + is not CORS-enabled, so this proxy is the only way to reach
+      // it from the browser in development.
+      proxy: {
+        '/japi': {
+          target: 'https://console.fanfinity.io',
+          changeOrigin: true,
+          rewrite: path => path.replace(/^\/japi/, '/api'),
+          configure: proxy => {
+            proxy.on('proxyReq', proxyReq => {
+              if (process.env.EVENTS_API_KEY) {
+                proxyReq.setHeader(
+                  'authorization',
+                  `Bearer ${process.env.EVENTS_API_KEY}`
+                )
+              }
+            })
+          }
+        }
+      }
     },
 
     // https://v2.quasar.dev/quasar-cli-vite/quasar-config-file#framework
@@ -177,7 +212,7 @@ export default defineConfig((/* ctx */) => {
       builder: {
         // https://www.electron.build/configuration
 
-        appId: 'quasar-project'
+        appId: 'fanfinity-dashboard'
       }
     },
 

@@ -1,10 +1,10 @@
 import { ref } from 'vue'
 
-// Base URL of the Jitsu/console deployment that serves the public connector catalog.
+// Base URL of the backend that serves the public connector catalog.
 // The /api/sources endpoint is public (auth: false, CORS open) — no key needed to browse.
 // Configurable for later (self-hosted / staging); keep in sync with the CSP host in index.html.
 const BASE = (
-  import.meta.env.VITE_JITSU_BASE || 'https://console.fanfinity.io'
+  import.meta.env.VITE_EVENTS_BASE || 'https://console.fanfinity.io'
 ).replace(/\/$/, '')
 
 /**

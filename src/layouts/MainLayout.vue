@@ -204,6 +204,11 @@ const route = useRoute()
 const mainMenu = [
   { label: 'Overview', icon: icOverview, to: '/' },
   { label: 'Contacts', icon: icContacts, to: '/contacts' },
+  {
+    label: 'Identity Resolution',
+    icon: icContacts,
+    to: '/identity-resolution'
+  },
   { label: 'Segments', icon: icSegments, to: '/segments' },
   { label: 'Activation', icon: icActivation, to: '/activation', chevron: true },
   {
@@ -212,7 +217,9 @@ const mainMenu = [
     to: '/communications',
     chevron: true
   },
-  { label: 'Integrations', icon: icIntegrations, to: '/integrations' }
+  { label: 'Integrations', icon: icIntegrations, to: '/integrations' },
+  { label: 'Live Events', icon: icOverview, to: '/live-events' },
+  { label: 'Events Demo', icon: icOverview, to: '/events-demo' }
 ]
 
 const bottomMenu = [
