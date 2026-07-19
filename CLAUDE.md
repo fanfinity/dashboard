@@ -21,6 +21,10 @@ single quotes, printWidth 80, `arrowParens: avoid`, no trailing commas. oxlint r
 There is **no test runner configured** — `playwright` is a devDependency but no test scripts
 or specs exist yet.
 
+**Never run `pnpm dev` (or `quasar dev`) yourself.** The user always runs the dev server
+themselves in watch mode, in a separate terminal. It's already running with HMR — edits to
+source files apply automatically, so there's no need to start, stop, or restart it.
+
 ## Stack
 
 Quasar 2 (Quasar CLI with Vite) + Vue 3 (`<script setup>`) + vue-router. Styling is **Tailwind
@@ -70,6 +74,34 @@ decisions and will break new code that ignores it:
 - `assetsInlineLimit` is forced to `0` in `quasar.config.js` so no asset is inlined as a `data:`
   URI (which the CSP would block). Prefer real asset files / SVG endpoints over data URIs.
 - Third-party JS must be bundled via npm (first-party `script-src 'self'`), not loaded from a CDN.
+
+## Authentication & multi-tenancy
+
+Sign-in is Google Cloud Identity Platform (the Firebase Auth JS SDK) email/password auth,
+gated by [multi-tenancy](https://docs.cloud.google.com/identity-platform/docs/multi-tenancy):
+
+- `src/firebase.js` calls `initializeApp`/`getAuth`, then pins `auth.tenantId` from
+  `VITE_FIREBASE_DEFAULT_TENANT_ID` at module init. `auth.tenantId` is an in-memory-only
+  SDK property (never persisted), so it must be re-set on every full page load — which
+  happens naturally here since this module's top-level code reruns each load.
+- `src/composables/useAuth.js` follows the same module-singleton pattern as `useJitsu.js`:
+  a lazily-attached `onAuthStateChanged` listener backing reactive `user`/`loading`/`error`,
+  exposed via `useAuth()` returning `{ user, loading, error, signUp, signIn, logOut,
+tenantId }`. It also exports `waitForAuthReady()`, a promise resolved on the _first_
+  auth-state callback — needed because that callback is async, so anything deciding access
+  on page load (like the router guard) must await it rather than read `user.value`
+  immediately.
+- `src/router/routes.js` tags the top-level `/` (`MainLayout`) route with
+  `meta: { requiresAuth: true }`; `src/router/index.js`'s `beforeEach` awaits
+  `waitForAuthReady()` and redirects to `/login?redirect=<path>` if signed out. `/login`
+  itself carries no such meta.
+- **Only one tenant exists today** (`fanfinity-app-fcsgt` / display name `fanfinity-app`,
+  in the `koratona-9791a` project), so every user authenticates into it via the env var
+  above — there is no per-user or per-email-domain tenant selection. Building that requires
+  a lookup mechanism backed by a database/backend (Identity Platform's client SDK has no
+  tenant-discovery API), and this repo has no owned backend (see "Data architecture" above).
+  That's intentionally deferred until a second tenant exists to justify it — don't add a
+  static domain→tenant mapping as a substitute; it won't scale past one real lookup case.
 
 ## Environment / secrets
 

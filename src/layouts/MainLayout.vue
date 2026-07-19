@@ -159,8 +159,23 @@
             <img :src="icHelp" alt="Help" class="size-5" />
           </q-btn>
 
-          <q-avatar size="32px">
+          <q-avatar size="32px" class="cursor-pointer">
             <img :src="avatar" alt="Account" />
+            <q-menu anchor="bottom right" self="top right">
+              <q-list style="min-width: 180px">
+                <q-item class="pointer-events-none">
+                  <q-item-section>
+                    <q-item-label caption class="truncate">{{
+                      user?.email
+                    }}</q-item-label>
+                  </q-item-section>
+                </q-item>
+                <q-separator />
+                <q-item clickable v-close-popup @click="handleLogout">
+                  <q-item-section>Sign out</q-item-section>
+                </q-item>
+              </q-list>
+            </q-menu>
           </q-avatar>
         </div>
       </q-toolbar>
@@ -177,6 +192,7 @@
 import { computed, ref } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useQuasar } from 'quasar'
+import { useAuth } from '@/composables/useAuth'
 
 import logo from '@/assets/dashboard/logo.svg'
 import avatar from '@/assets/dashboard/avatar.jpg'
@@ -200,6 +216,7 @@ import icHelp from '@/assets/dashboard/ic-help.svg'
 const $q = useQuasar()
 const router = useRouter()
 const route = useRoute()
+const { user, logOut } = useAuth()
 
 const mainMenu = [
   { label: 'Overview', icon: icOverview, to: '/' },
@@ -226,7 +243,7 @@ const bottomMenu = [
   { label: 'Setup', icon: icSetup },
   { label: 'Sources', icon: icSources, to: '/sources' },
   { label: 'Settings', icon: icSettings },
-  { label: 'Logout', icon: icLogout }
+  { label: 'Logout', icon: icLogout, action: 'logout' }
 ]
 
 const search = ref('')
@@ -255,7 +272,16 @@ function itemClass(item) {
     : 'text-muted'
 }
 
+async function handleLogout() {
+  await logOut()
+  router.push('/login')
+}
+
 function select(item) {
+  if (item.action === 'logout') {
+    handleLogout()
+    return
+  }
   if (item.to) {
     router.push(item.to)
     if ($q.screen.lt.md) leftDrawerOpen.value = false
