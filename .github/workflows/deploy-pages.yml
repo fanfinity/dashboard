@@ -1,0 +1,61 @@
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Only one deploy at a time; let an in-flight run finish rather than cancelling it.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    # VITE_* values live as github-pages Environment secrets/variables, only
+    # visible to a job that declares this environment.
+    environment:
+      name: github-pages
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - run: pnpm build
+        env:
+          VITE_EVENTS_WORKSPACE_ID: ${{ vars.VITE_EVENTS_WORKSPACE_ID }}
+          VITE_EVENTS_ACTOR_ID: ${{ vars.VITE_EVENTS_ACTOR_ID }}
+          VITE_JITSU_HOST: ${{ vars.VITE_JITSU_HOST }}
+          VITE_JITSU_WRITE_KEY: ${{ secrets.VITE_JITSU_WRITE_KEY }}
+          VITE_FIREBASE_API_KEY: ${{ secrets.VITE_FIREBASE_API_KEY }}
+          VITE_FIREBASE_AUTH_DOMAIN: ${{ vars.VITE_FIREBASE_AUTH_DOMAIN }}
+          VITE_FIREBASE_DEFAULT_TENANT_ID: ${{ vars.VITE_FIREBASE_DEFAULT_TENANT_ID }}
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist/spa
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

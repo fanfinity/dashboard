@@ -50,10 +50,9 @@ export default defineConfig((/* ctx */) => {
       // filenameBasedRouting: true,
 
       vueRouterMode: 'hash', // available values: 'hash', 'history'
-      // vueRouterBase,
-      // vueDevtools,
+      // vueRouterBase, // defaults to publicPath, which is enough for hash mode
 
-      // publicPath: '/',
+      // publicPath: '/', // served from the app-dev.fanfinity.io custom domain root — no repo subpath needed
       // define: {},
       // defineEnv: {}
       // ignorePublicFolder: true,
