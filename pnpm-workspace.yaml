@@ -1,12 +1,12 @@
 # https://pnpm.io/settings
 
 allowBuilds:
-  '@firebase/util': set this to true or false
+  '@firebase/util': true
   '@parcel/watcher': true
   core-js: true
   electron-winstaller: true
   esbuild: true
   lightningcss: true
-  protobufjs: set this to true or false
+  protobufjs: true
   rolldown: true
   unrs-resolver: true
