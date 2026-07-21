@@ -7,11 +7,12 @@
       >
       <p class="mt-1 max-w-3xl text-sm text-muted">
         Probabilistic matches inferred from live event signals — when two
-        profiles are likely the <span class="font-medium text-ink">same person</span>
+        profiles are likely the
+        <span class="font-medium text-ink">same person</span>
         without ever sharing an email or user ID. Each match is scored across
         device, location, behavior and timing, and weighted by how
-        <span class="font-medium text-ink">rare</span> the shared signals are, so
-        only meaningful overlaps surface.
+        <span class="font-medium text-ink">rare</span> the shared signals are,
+        so only meaningful overlaps surface.
       </p>
     </div>
 
@@ -127,10 +128,12 @@
                 <td class="py-0.5 pr-3 font-sans">{{ s.label }}</td>
                 <td class="py-0.5 pr-3 text-right">{{ pct(s.score) }}%</td>
                 <td class="py-0.5 pr-3 text-center text-subtle">×</td>
-                <td class="py-0.5 pr-3 text-right">{{ s.weight.toFixed(2) }}</td>
-                <td class="py-0.5 text-right text-ink"
-                  >{{ s.contribution.toFixed(1) }}</td
-                >
+                <td class="py-0.5 pr-3 text-right">{{
+                  s.weight.toFixed(2)
+                }}</td>
+                <td class="py-0.5 text-right text-ink">{{
+                  s.contribution.toFixed(1)
+                }}</td>
               </tr>
             </tbody>
             <tfoot>
@@ -138,7 +141,9 @@
                 <td class="py-1 pr-3 font-sans text-ink" colspan="4"
                   >Total confidence</td
                 >
-                <td class="py-1 text-right" :class="confidenceClass(m.confidence)"
+                <td
+                  class="py-1 text-right"
+                  :class="confidenceClass(m.confidence)"
                   >{{ sumContributions(m).toFixed(1) }}
                   <span class="text-subtle">→ {{ m.confidence }}%</span></td
                 >
@@ -146,11 +151,11 @@
             </tfoot>
           </table>
           <p class="mt-2 text-[11px] leading-relaxed text-subtle">
-            Each signal score already factors in <span class="font-medium">rarity</span> —
-            a shared value common across all visitors scores low, a near-unique
-            one scores high. Scores are weighted by dimension
-            (device 0.30, geo 0.25, behavioral 0.25, temporal 0.20) and summed to
-            the confidence above.
+            Each signal score already factors in
+            <span class="font-medium">rarity</span> — a shared value common
+            across all visitors scores low, a near-unique one scores high.
+            Scores are weighted by dimension (device 0.30, geo 0.25, behavioral
+            0.25, temporal 0.20) and summed to the confidence above.
           </p>
         </div>
       </article>
@@ -206,7 +211,7 @@ function initials(name) {
 }
 
 // A compact, clickable profile cell reused for both sides of a match.
-const ProfileChip = (props) => {
+const ProfileChip = props => {
   const c = props.contact
   return h(
     'button',
@@ -230,7 +235,9 @@ const ProfileChip = (props) => {
       h('span', { class: 'min-w-0' }, [
         h(
           'span',
-          { class: 'block max-w-[180px] truncate text-sm font-medium text-ink' },
+          {
+            class: 'block max-w-[180px] truncate text-sm font-medium text-ink'
+          },
           c.name
         ),
         h(

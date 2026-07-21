@@ -2,11 +2,13 @@ import { ref } from 'vue'
 import { Notify } from 'quasar'
 import {
   createUserWithEmailAndPassword,
+  sendEmailVerification,
   signInWithEmailAndPassword,
   signOut,
   onAuthStateChanged
 } from 'firebase/auth'
 import { auth } from '@/firebase'
+import { loadMe, clearMe } from '@/composables/useMe'
 
 // Module-scoped singletons so every useAuth() call shares one reactive view
 // of the signed-in user, mirroring the pattern in useJitsu.js.
@@ -29,6 +31,10 @@ function ensureListener() {
   authReady = true
   onAuthStateChanged(auth, firebaseUser => {
     user.value = firebaseUser
+    // Best-effort session bootstrap from the backend (fire-and-forget so a
+    // backend hiccup never delays resolveAuthReady / the router guard).
+    if (firebaseUser) loadMe()
+    else clearMe()
     resolveAuthReady()
   })
 }
@@ -75,7 +81,21 @@ export function useAuth() {
   ensureListener()
 
   const signUp = (email, password) =>
-    run(() => createUserWithEmailAndPassword(auth, email, password))
+    run(async () => {
+      const cred = await createUserWithEmailAndPassword(auth, email, password)
+      // The backend API rejects unverified emails (its JIT user provisioning
+      // trusts the email claim), so kick off verification immediately.
+      // Best-effort: a failed send shouldn't fail the whole sign-up.
+      try {
+        await sendEmailVerification(cred.user)
+        Notify.create({
+          type: 'info',
+          message: `Verification email sent to ${email}.`
+        })
+      } catch {
+        /* user can be re-sent one later */
+      }
+    })
 
   const signIn = (email, password) =>
     run(() => signInWithEmailAndPassword(auth, email, password))

@@ -10,3 +10,4 @@ allowBuilds:
   protobufjs: true
   rolldown: true
   unrs-resolver: true
+  vue-demi: true

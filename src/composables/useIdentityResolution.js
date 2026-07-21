@@ -73,8 +73,7 @@ function fingerprint(contact) {
 
     // Geo / IP. IP may come through the context or the forwarded header.
     const ip =
-      c.ip ||
-      (e.httpHeaders?.['x-forwarded-for'] || '').split(',')[0].trim()
+      c.ip || (e.httpHeaders?.['x-forwarded-for'] || '').split(',')[0].trim()
     if (ip) fp.ips.add(ip)
     const geo = c.geo || {}
     const country = geo.country?.name || geo.country?.code

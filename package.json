@@ -17,13 +17,17 @@
     "lint:check": "oxfmt --check && oxlint",
     "dev": "quasar dev",
     "build": "quasar build",
-    "postinstall": "quasar prepare --silent"
+    "postinstall": "quasar prepare --silent",
+    "openapi:pull": "curl -fsS https://api-staging.fanfinity.io/openapi.json -o openapi/fanfinity-api.json",
+    "openapi:generate": "orval --config orval.config.js",
+    "openapi": "pnpm openapi:pull && pnpm openapi:generate"
   },
   "dependencies": {
     "@fontsource/inter": "^5.2.8",
     "@fontsource/plus-jakarta-sans": "^5.2.8",
     "@jitsu/js": "^1.10.4",
     "@quasar/extras": "^2.0.0",
+    "@tanstack/vue-query": "^5.101.3",
     "apexcharts": "^5.15.2",
     "firebase": "^12.16.0",
     "quasar": "^2.20.0",
@@ -36,6 +40,7 @@
     "@tailwindcss/postcss": "^4.3.1",
     "@tailwindcss/vite": "^4.3.1",
     "autoprefixer": "^10.5.0",
+    "orval": "^8.22.0",
     "oxfmt": "^0.x",
     "oxlint": "^1.x",
     "playwright": "^1.61.0",

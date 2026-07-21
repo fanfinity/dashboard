@@ -475,13 +475,17 @@ function formatEventStamp(iso) {
 // Maps one mapped CDP event (see useLiveEvents) to a history row.
 function cdpEventToHistory(e) {
   const payload = e.event || {}
-  let type, icon, link = false, name
+  let type,
+    icon,
+    link = false,
+    name
   switch (e.type) {
     case 'page':
       type = 'Page hit'
       icon = 'link'
       link = true
-      name = e.pageURL || e.pagePath || e.pageTitle || payload.name || 'Page view'
+      name =
+        e.pageURL || e.pagePath || e.pageTitle || payload.name || 'Page view'
       break
     case 'track':
       type = 'Track event'
@@ -718,7 +722,11 @@ const channels = computed(() => {
       name: 'Email',
       icon: 'mail',
       active: !!c.email,
-      status: c.optedIn ? 'Subscribed' : c.email ? 'Not subscribed' : 'No address',
+      status: c.optedIn
+        ? 'Subscribed'
+        : c.email
+          ? 'Not subscribed'
+          : 'No address',
       detail: emails ? `${emails} sent` : c.email || '—'
     },
     {
@@ -726,7 +734,9 @@ const channels = computed(() => {
       icon: 'globe',
       active: pageHits > 0,
       status: pageHits > 0 ? 'Tracked' : 'No visits',
-      detail: pageHits ? `${pageHits} page ${pageHits === 1 ? 'hit' : 'hits'}` : '—'
+      detail: pageHits
+        ? `${pageHits} page ${pageHits === 1 ? 'hit' : 'hits'}`
+        : '—'
     },
     {
       name: 'SMS',

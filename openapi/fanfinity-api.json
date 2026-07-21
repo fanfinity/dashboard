@@ -1,0 +1,3095 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Fanfinity Backend",
+    "version": "0.1.0"
+  },
+  "paths": {
+    "/v1/me": {
+      "get": {
+        "tags": ["identity"],
+        "summary": "Get Me",
+        "operationId": "getMe",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Me"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid credentials",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "properties": {
+                    "type": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ],
+                      "title": "Type",
+                      "default": "about:blank"
+                    },
+                    "title": {
+                      "type": "string",
+                      "title": "Title"
+                    },
+                    "status": {
+                      "type": "integer",
+                      "title": "Status"
+                    },
+                    "detail": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ],
+                      "title": "Detail"
+                    },
+                    "instance": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ],
+                      "title": "Instance"
+                    }
+                  },
+                  "type": "object",
+                  "required": ["title", "status"],
+                  "title": "Problem",
+                  "description": "RFC 9457 problem details."
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Request failed validation",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "properties": {
+                    "type": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ],
+                      "title": "Type",
+                      "default": "about:blank"
+                    },
+                    "title": {
+                      "type": "string",
+                      "title": "Title"
+                    },
+                    "status": {
+                      "type": "integer",
+                      "title": "Status"
+                    },
+                    "detail": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ],
+                      "title": "Detail"
+                    },
+                    "instance": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ],
+                      "title": "Instance"
+                    }
+                  },
+                  "type": "object",
+                  "required": ["title", "status"],
+                  "title": "Problem",
+                  "description": "RFC 9457 problem details."
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/v1/accounts": {
+      "post": {
+        "tags": ["accounts"],
+        "summary": "Create Account Route",
+        "operationId": "createAccount",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 255,
+                  "pattern": "^[A-Za-z0-9._-]+$"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Client-generated key making this POST safely retryable.",
+              "title": "Idempotency-Key"
+            },
+            "description": "Client-generated key making this POST safely retryable."
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AccountCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Account"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Malformed request body",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "description": "RFC 9457 problem details.",
+                  "properties": {
+                    "type": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ],
+                      "default": "about:blank",
+                      "title": "Type"
+                    },
+                    "title": {
+                      "title": "Title",
+                      "type": "string"
+                    },
+                    "status": {
+                      "title": "Status",
+                      "type": "integer"
+                    },
+                    "detail": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ],
+                      "title": "Detail"
+                    },
+                    "instance": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ],
+                      "title": "Instance"
+                    }
+                  },
+                  "required": ["title", "status"],
+                  "title": "Problem",
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid credentials",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "description": "RFC 9457 problem details.",
+                  "properties": {
+                    "type": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ],
+                      "default": "about:blank",
+                      "title": "Type"
+                    },
+                    "title": {
+                      "title": "Title",
+                      "type": "string"
+                    },
+                    "status": {
+                      "title": "Status",
+                      "type": "integer"
+                    },
+                    "detail": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ],
+                      "title": "Detail"
+                    },
+                    "instance": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ],
+                      "title": "Instance"
+                    }
+                  },
+                  "required": ["title", "status"],
+                  "title": "Problem",
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflicts with existing state",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "description": "RFC 9457 problem details.",
+                  "properties": {
+                    "type": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ],
+                      "default": "about:blank",
+                      "title": "Type"
+                    },
+                    "title": {
+                      "title": "Title",
+                      "type": "string"
+                    },
+                    "status": {
+                      "title": "Status",
+                      "type": "integer"
+                    },
+                    "detail": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ],
+                      "title": "Detail"
+                    },
+                    "instance": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ],
+                      "title": "Instance"
+                    }
+                  },
+                  "required": ["title", "status"],
+                  "title": "Problem",
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Request failed validation",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "description": "RFC 9457 problem details.",
+                  "properties": {
+                    "type": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ],
+                      "default": "about:blank",
+                      "title": "Type"
+                    },
+                    "title": {
+                      "title": "Title",
+                      "type": "string"
+                    },
+                    "status": {
+                      "title": "Status",
+                      "type": "integer"
+                    },
+                    "detail": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ],
+                      "title": "Detail"
+                    },
+                    "instance": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ],
+                      "title": "Instance"
+                    }
+                  },
+                  "required": ["title", "status"],
+                  "title": "Problem",
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "tags": ["accounts"],
+        "summary": "List Accounts Route",
+        "operationId": "listAccounts",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "description": "Page number",
+              "default": 1,
+              "title": "Page"
+            },
+            "description": "Page number"
+          },
+          {
+            "name": "size",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 1,
+              "description": "Page size",
+              "default": 50,
+              "title": "Size"
+            },
+            "description": "Page size"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Page_Account_"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid credentials",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "description": "RFC 9457 problem details.",
+                  "properties": {
+                    "type": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ],
+                      "default": "about:blank",
+                      "title": "Type"
+                    },
+                    "title": {
+                      "title": "Title",
+                      "type": "string"
+                    },
+                    "status": {
+                      "title": "Status",
+                      "type": "integer"
+                    },
+                    "detail": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ],
+                      "title": "Detail"
+                    },
+                    "instance": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ],
+                      "title": "Instance"
+                    }
+                  },
+                  "required": ["title", "status"],
+                  "title": "Problem",
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Request failed validation",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "description": "RFC 9457 problem details.",
+                  "properties": {
+                    "type": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ],
+                      "default": "about:blank",
+                      "title": "Type"
+                    },
+                    "title": {
+                      "title": "Title",
+                      "type": "string"
+                    },
+                    "status": {
+                      "title": "Status",
+                      "type": "integer"
+                    },
+                    "detail": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ],
+                      "title": "Detail"
+                    },
+                    "instance": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ],
+                      "title": "Instance"
+                    }
+                  },
+                  "required": ["title", "status"],
+                  "title": "Problem",
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/accounts/{account_id}": {
+      "get": {
+        "tags": ["accounts"],
+        "summary": "Get Account Route",
+        "operationId": "getAccount",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "account_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Account Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Account"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid credentials",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "description": "RFC 9457 problem details.",
+                  "properties": {
+                    "type": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ],
+                      "default": "about:blank",
+                      "title": "Type"
+                    },
+                    "title": {
+                      "title": "Title",
+                      "type": "string"
+                    },
+                    "status": {
+                      "title": "Status",
+                      "type": "integer"
+                    },
+                    "detail": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ],
+                      "title": "Detail"
+                    },
+                    "instance": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ],
+                      "title": "Instance"
+                    }
+                  },
+                  "required": ["title", "status"],
+                  "title": "Problem",
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Authenticated but not permitted",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "description": "RFC 9457 problem details.",
+                  "properties": {
+                    "type": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ],
+                      "default": "about:blank",
+                      "title": "Type"
+                    },
+                    "title": {
+                      "title": "Title",
+                      "type": "string"
+                    },
+                    "status": {
+                      "title": "Status",
+                      "type": "integer"
+                    },
+                    "detail": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ],
+                      "title": "Detail"
+                    },
+                    "instance": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ],
+                      "title": "Instance"
+                    }
+                  },
+                  "required": ["title", "status"],
+                  "title": "Problem",
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Resource not found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "description": "RFC 9457 problem details.",
+                  "properties": {
+                    "type": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ],
+                      "default": "about:blank",
+                      "title": "Type"
+                    },
+                    "title": {
+                      "title": "Title",
+                      "type": "string"
+                    },
+                    "status": {
+                      "title": "Status",
+                      "type": "integer"
+                    },
+                    "detail": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ],
+                      "title": "Detail"
+                    },
+                    "instance": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ],
+                      "title": "Instance"
+                    }
+                  },
+                  "required": ["title", "status"],
+                  "title": "Problem",
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Request failed validation",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "description": "RFC 9457 problem details.",
+                  "properties": {
+                    "type": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ],
+                      "default": "about:blank",
+                      "title": "Type"
+                    },
+                    "title": {
+                      "title": "Title",
+                      "type": "string"
+                    },
+                    "status": {
+                      "title": "Status",
+                      "type": "integer"
+                    },
+                    "detail": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ],
+                      "title": "Detail"
+                    },
+                    "instance": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ],
+                      "title": "Instance"
+                    }
+                  },
+                  "required": ["title", "status"],
+                  "title": "Problem",
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/accounts/{account_id}/members": {
+      "get": {
+        "tags": ["members"],
+        "summary": "List Members Route",
+        "operationId": "listMembers",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "account_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Account Id"
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "description": "Page number",
+              "default": 1,
+              "title": "Page"
+            },
+            "description": "Page number"
+          },
+          {
+            "name": "size",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 1,
+              "description": "Page size",
+              "default": 50,
+              "title": "Size"
+            },
+            "description": "Page size"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Page_Member_"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid credentials",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "description": "RFC 9457 problem details.",
+                  "properties": {
+                    "type": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ],
+                      "default": "about:blank",
+                      "title": "Type"
+                    },
+                    "title": {
+                      "title": "Title",
+                      "type": "string"
+                    },
+                    "status": {
+                      "title": "Status",
+                      "type": "integer"
+                    },
+                    "detail": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ],
+                      "title": "Detail"
+                    },
+                    "instance": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ],
+                      "title": "Instance"
+                    }
+                  },
+                  "required": ["title", "status"],
+                  "title": "Problem",
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Authenticated but not permitted",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "description": "RFC 9457 problem details.",
+                  "properties": {
+                    "type": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ],
+                      "default": "about:blank",
+                      "title": "Type"
+                    },
+                    "title": {
+                      "title": "Title",
+                      "type": "string"
+                    },
+                    "status": {
+                      "title": "Status",
+                      "type": "integer"
+                    },
+                    "detail": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ],
+                      "title": "Detail"
+                    },
+                    "instance": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ],
+                      "title": "Instance"
+                    }
+                  },
+                  "required": ["title", "status"],
+                  "title": "Problem",
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Resource not found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "description": "RFC 9457 problem details.",
+                  "properties": {
+                    "type": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ],
+                      "default": "about:blank",
+                      "title": "Type"
+                    },
+                    "title": {
+                      "title": "Title",
+                      "type": "string"
+                    },
+                    "status": {
+                      "title": "Status",
+                      "type": "integer"
+                    },
+                    "detail": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ],
+                      "title": "Detail"
+                    },
+                    "instance": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ],
+                      "title": "Instance"
+                    }
+                  },
+                  "required": ["title", "status"],
+                  "title": "Problem",
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Request failed validation",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "description": "RFC 9457 problem details.",
+                  "properties": {
+                    "type": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ],
+                      "default": "about:blank",
+                      "title": "Type"
+                    },
+                    "title": {
+                      "title": "Title",
+                      "type": "string"
+                    },
+                    "status": {
+                      "title": "Status",
+                      "type": "integer"
+                    },
+                    "detail": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ],
+                      "title": "Detail"
+                    },
+                    "instance": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ],
+                      "title": "Instance"
+                    }
+                  },
+                  "required": ["title", "status"],
+                  "title": "Problem",
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": ["members"],
+        "summary": "Invite Member Route",
+        "operationId": "inviteMember",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "account_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Account Id"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 255,
+                  "pattern": "^[A-Za-z0-9._-]+$"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Client-generated key making this POST safely retryable.",
+              "title": "Idempotency-Key"
+            },
+            "description": "Client-generated key making this POST safely retryable."
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MemberInvite"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Member"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Malformed request body",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "description": "RFC 9457 problem details.",
+                  "properties": {
+                    "type": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ],
+                      "default": "about:blank",
+                      "title": "Type"
+                    },
+                    "title": {
+                      "title": "Title",
+                      "type": "string"
+                    },
+                    "status": {
+                      "title": "Status",
+                      "type": "integer"
+                    },
+                    "detail": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ],
+                      "title": "Detail"
+                    },
+                    "instance": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ],
+                      "title": "Instance"
+                    }
+                  },
+                  "required": ["title", "status"],
+                  "title": "Problem",
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid credentials",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "description": "RFC 9457 problem details.",
+                  "properties": {
+                    "type": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ],
+                      "default": "about:blank",
+                      "title": "Type"
+                    },
+                    "title": {
+                      "title": "Title",
+                      "type": "string"
+                    },
+                    "status": {
+                      "title": "Status",
+                      "type": "integer"
+                    },
+                    "detail": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ],
+                      "title": "Detail"
+                    },
+                    "instance": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ],
+                      "title": "Instance"
+                    }
+                  },
+                  "required": ["title", "status"],
+                  "title": "Problem",
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Authenticated but not permitted",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "description": "RFC 9457 problem details.",
+                  "properties": {
+                    "type": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ],
+                      "default": "about:blank",
+                      "title": "Type"
+                    },
+                    "title": {
+                      "title": "Title",
+                      "type": "string"
+                    },
+                    "status": {
+                      "title": "Status",
+                      "type": "integer"
+                    },
+                    "detail": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ],
+                      "title": "Detail"
+                    },
+                    "instance": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ],
+                      "title": "Instance"
+                    }
+                  },
+                  "required": ["title", "status"],
+                  "title": "Problem",
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Resource not found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "description": "RFC 9457 problem details.",
+                  "properties": {
+                    "type": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ],
+                      "default": "about:blank",
+                      "title": "Type"
+                    },
+                    "title": {
+                      "title": "Title",
+                      "type": "string"
+                    },
+                    "status": {
+                      "title": "Status",
+                      "type": "integer"
+                    },
+                    "detail": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ],
+                      "title": "Detail"
+                    },
+                    "instance": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ],
+                      "title": "Instance"
+                    }
+                  },
+                  "required": ["title", "status"],
+                  "title": "Problem",
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Request failed validation",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "description": "RFC 9457 problem details.",
+                  "properties": {
+                    "type": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ],
+                      "default": "about:blank",
+                      "title": "Type"
+                    },
+                    "title": {
+                      "title": "Title",
+                      "type": "string"
+                    },
+                    "status": {
+                      "title": "Status",
+                      "type": "integer"
+                    },
+                    "detail": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ],
+                      "title": "Detail"
+                    },
+                    "instance": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ],
+                      "title": "Instance"
+                    }
+                  },
+                  "required": ["title", "status"],
+                  "title": "Problem",
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflicts with existing state",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "description": "RFC 9457 problem details.",
+                  "properties": {
+                    "type": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ],
+                      "default": "about:blank",
+                      "title": "Type"
+                    },
+                    "title": {
+                      "title": "Title",
+                      "type": "string"
+                    },
+                    "status": {
+                      "title": "Status",
+                      "type": "integer"
+                    },
+                    "detail": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ],
+                      "title": "Detail"
+                    },
+                    "instance": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ],
+                      "title": "Instance"
+                    }
+                  },
+                  "required": ["title", "status"],
+                  "title": "Problem",
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/accounts/{account_id}/members/{user_id}": {
+      "delete": {
+        "tags": ["members"],
+        "summary": "Remove Member Route",
+        "operationId": "removeMember",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "user_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "User Id"
+            }
+          },
+          {
+            "name": "account_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Account Id"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "401": {
+            "description": "Missing or invalid credentials",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "description": "RFC 9457 problem details.",
+                  "properties": {
+                    "type": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ],
+                      "default": "about:blank",
+                      "title": "Type"
+                    },
+                    "title": {
+                      "title": "Title",
+                      "type": "string"
+                    },
+                    "status": {
+                      "title": "Status",
+                      "type": "integer"
+                    },
+                    "detail": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ],
+                      "title": "Detail"
+                    },
+                    "instance": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ],
+                      "title": "Instance"
+                    }
+                  },
+                  "required": ["title", "status"],
+                  "title": "Problem",
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Authenticated but not permitted",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "description": "RFC 9457 problem details.",
+                  "properties": {
+                    "type": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ],
+                      "default": "about:blank",
+                      "title": "Type"
+                    },
+                    "title": {
+                      "title": "Title",
+                      "type": "string"
+                    },
+                    "status": {
+                      "title": "Status",
+                      "type": "integer"
+                    },
+                    "detail": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ],
+                      "title": "Detail"
+                    },
+                    "instance": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ],
+                      "title": "Instance"
+                    }
+                  },
+                  "required": ["title", "status"],
+                  "title": "Problem",
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Resource not found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "description": "RFC 9457 problem details.",
+                  "properties": {
+                    "type": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ],
+                      "default": "about:blank",
+                      "title": "Type"
+                    },
+                    "title": {
+                      "title": "Title",
+                      "type": "string"
+                    },
+                    "status": {
+                      "title": "Status",
+                      "type": "integer"
+                    },
+                    "detail": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ],
+                      "title": "Detail"
+                    },
+                    "instance": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ],
+                      "title": "Instance"
+                    }
+                  },
+                  "required": ["title", "status"],
+                  "title": "Problem",
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Request failed validation",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "description": "RFC 9457 problem details.",
+                  "properties": {
+                    "type": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ],
+                      "default": "about:blank",
+                      "title": "Type"
+                    },
+                    "title": {
+                      "title": "Title",
+                      "type": "string"
+                    },
+                    "status": {
+                      "title": "Status",
+                      "type": "integer"
+                    },
+                    "detail": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ],
+                      "title": "Detail"
+                    },
+                    "instance": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ],
+                      "title": "Instance"
+                    }
+                  },
+                  "required": ["title", "status"],
+                  "title": "Problem",
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/support-sessions": {
+      "post": {
+        "tags": ["support"],
+        "summary": "Create Support Session Route",
+        "operationId": "createSupportSession",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 255,
+                  "pattern": "^[A-Za-z0-9._-]+$"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Client-generated key making this POST safely retryable.",
+              "title": "Idempotency-Key"
+            },
+            "description": "Client-generated key making this POST safely retryable."
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SupportSessionCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SupportSessionCreated"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Malformed request body",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "description": "RFC 9457 problem details.",
+                  "properties": {
+                    "type": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ],
+                      "default": "about:blank",
+                      "title": "Type"
+                    },
+                    "title": {
+                      "title": "Title",
+                      "type": "string"
+                    },
+                    "status": {
+                      "title": "Status",
+                      "type": "integer"
+                    },
+                    "detail": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ],
+                      "title": "Detail"
+                    },
+                    "instance": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ],
+                      "title": "Instance"
+                    }
+                  },
+                  "required": ["title", "status"],
+                  "title": "Problem",
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid credentials",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "description": "RFC 9457 problem details.",
+                  "properties": {
+                    "type": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ],
+                      "default": "about:blank",
+                      "title": "Type"
+                    },
+                    "title": {
+                      "title": "Title",
+                      "type": "string"
+                    },
+                    "status": {
+                      "title": "Status",
+                      "type": "integer"
+                    },
+                    "detail": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ],
+                      "title": "Detail"
+                    },
+                    "instance": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ],
+                      "title": "Instance"
+                    }
+                  },
+                  "required": ["title", "status"],
+                  "title": "Problem",
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Authenticated but not permitted",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "description": "RFC 9457 problem details.",
+                  "properties": {
+                    "type": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ],
+                      "default": "about:blank",
+                      "title": "Type"
+                    },
+                    "title": {
+                      "title": "Title",
+                      "type": "string"
+                    },
+                    "status": {
+                      "title": "Status",
+                      "type": "integer"
+                    },
+                    "detail": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ],
+                      "title": "Detail"
+                    },
+                    "instance": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ],
+                      "title": "Instance"
+                    }
+                  },
+                  "required": ["title", "status"],
+                  "title": "Problem",
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Resource not found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "description": "RFC 9457 problem details.",
+                  "properties": {
+                    "type": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ],
+                      "default": "about:blank",
+                      "title": "Type"
+                    },
+                    "title": {
+                      "title": "Title",
+                      "type": "string"
+                    },
+                    "status": {
+                      "title": "Status",
+                      "type": "integer"
+                    },
+                    "detail": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ],
+                      "title": "Detail"
+                    },
+                    "instance": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ],
+                      "title": "Instance"
+                    }
+                  },
+                  "required": ["title", "status"],
+                  "title": "Problem",
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Request failed validation",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "description": "RFC 9457 problem details.",
+                  "properties": {
+                    "type": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ],
+                      "default": "about:blank",
+                      "title": "Type"
+                    },
+                    "title": {
+                      "title": "Title",
+                      "type": "string"
+                    },
+                    "status": {
+                      "title": "Status",
+                      "type": "integer"
+                    },
+                    "detail": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ],
+                      "title": "Detail"
+                    },
+                    "instance": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ],
+                      "title": "Instance"
+                    }
+                  },
+                  "required": ["title", "status"],
+                  "title": "Problem",
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "tags": ["support"],
+        "summary": "List Support Sessions Route",
+        "operationId": "listSupportSessions",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "description": "Page number",
+              "default": 1,
+              "title": "Page"
+            },
+            "description": "Page number"
+          },
+          {
+            "name": "size",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 1,
+              "description": "Page size",
+              "default": 50,
+              "title": "Size"
+            },
+            "description": "Page size"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Page_SupportSession_"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid credentials",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "description": "RFC 9457 problem details.",
+                  "properties": {
+                    "type": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ],
+                      "default": "about:blank",
+                      "title": "Type"
+                    },
+                    "title": {
+                      "title": "Title",
+                      "type": "string"
+                    },
+                    "status": {
+                      "title": "Status",
+                      "type": "integer"
+                    },
+                    "detail": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ],
+                      "title": "Detail"
+                    },
+                    "instance": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ],
+                      "title": "Instance"
+                    }
+                  },
+                  "required": ["title", "status"],
+                  "title": "Problem",
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Authenticated but not permitted",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "description": "RFC 9457 problem details.",
+                  "properties": {
+                    "type": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ],
+                      "default": "about:blank",
+                      "title": "Type"
+                    },
+                    "title": {
+                      "title": "Title",
+                      "type": "string"
+                    },
+                    "status": {
+                      "title": "Status",
+                      "type": "integer"
+                    },
+                    "detail": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ],
+                      "title": "Detail"
+                    },
+                    "instance": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ],
+                      "title": "Instance"
+                    }
+                  },
+                  "required": ["title", "status"],
+                  "title": "Problem",
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Request failed validation",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "description": "RFC 9457 problem details.",
+                  "properties": {
+                    "type": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ],
+                      "default": "about:blank",
+                      "title": "Type"
+                    },
+                    "title": {
+                      "title": "Title",
+                      "type": "string"
+                    },
+                    "status": {
+                      "title": "Status",
+                      "type": "integer"
+                    },
+                    "detail": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ],
+                      "title": "Detail"
+                    },
+                    "instance": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ],
+                      "title": "Instance"
+                    }
+                  },
+                  "required": ["title", "status"],
+                  "title": "Problem",
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/support-sessions/{session_id}": {
+      "delete": {
+        "tags": ["support"],
+        "summary": "End Support Session Route",
+        "operationId": "endSupportSession",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "session_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Session Id"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "401": {
+            "description": "Missing or invalid credentials",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "description": "RFC 9457 problem details.",
+                  "properties": {
+                    "type": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ],
+                      "default": "about:blank",
+                      "title": "Type"
+                    },
+                    "title": {
+                      "title": "Title",
+                      "type": "string"
+                    },
+                    "status": {
+                      "title": "Status",
+                      "type": "integer"
+                    },
+                    "detail": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ],
+                      "title": "Detail"
+                    },
+                    "instance": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ],
+                      "title": "Instance"
+                    }
+                  },
+                  "required": ["title", "status"],
+                  "title": "Problem",
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Authenticated but not permitted",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "description": "RFC 9457 problem details.",
+                  "properties": {
+                    "type": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ],
+                      "default": "about:blank",
+                      "title": "Type"
+                    },
+                    "title": {
+                      "title": "Title",
+                      "type": "string"
+                    },
+                    "status": {
+                      "title": "Status",
+                      "type": "integer"
+                    },
+                    "detail": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ],
+                      "title": "Detail"
+                    },
+                    "instance": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ],
+                      "title": "Instance"
+                    }
+                  },
+                  "required": ["title", "status"],
+                  "title": "Problem",
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Resource not found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "description": "RFC 9457 problem details.",
+                  "properties": {
+                    "type": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ],
+                      "default": "about:blank",
+                      "title": "Type"
+                    },
+                    "title": {
+                      "title": "Title",
+                      "type": "string"
+                    },
+                    "status": {
+                      "title": "Status",
+                      "type": "integer"
+                    },
+                    "detail": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ],
+                      "title": "Detail"
+                    },
+                    "instance": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ],
+                      "title": "Instance"
+                    }
+                  },
+                  "required": ["title", "status"],
+                  "title": "Problem",
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Request failed validation",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "description": "RFC 9457 problem details.",
+                  "properties": {
+                    "type": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ],
+                      "default": "about:blank",
+                      "title": "Type"
+                    },
+                    "title": {
+                      "title": "Title",
+                      "type": "string"
+                    },
+                    "status": {
+                      "title": "Status",
+                      "type": "integer"
+                    },
+                    "detail": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ],
+                      "title": "Detail"
+                    },
+                    "instance": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ],
+                      "title": "Instance"
+                    }
+                  },
+                  "required": ["title", "status"],
+                  "title": "Problem",
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/version": {
+      "get": {
+        "tags": ["health"],
+        "summary": "Build & release info",
+        "operationId": "version_version_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "string"
+                  },
+                  "type": "object",
+                  "title": "Response Version Version Get"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/healthz": {
+      "get": {
+        "tags": ["health"],
+        "summary": "Liveness probe",
+        "operationId": "healthz_healthz_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "string"
+                  },
+                  "type": "object",
+                  "title": "Response Healthz Healthz Get"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/readyz": {
+      "get": {
+        "tags": ["health"],
+        "summary": "Readiness probe",
+        "operationId": "readyz_readyz_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "string"
+                  },
+                  "type": "object",
+                  "title": "Response Readyz Readyz Get"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Account": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "slug": {
+            "type": "string",
+            "title": "Slug"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          }
+        },
+        "type": "object",
+        "required": ["id", "name", "slug", "created_at"],
+        "title": "Account"
+      },
+      "AccountCreate": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "maxLength": 255,
+            "minLength": 1,
+            "title": "Name"
+          },
+          "slug": {
+            "type": "string",
+            "maxLength": 255,
+            "minLength": 1,
+            "pattern": "^[a-z0-9][a-z0-9-]*$",
+            "title": "Slug"
+          }
+        },
+        "type": "object",
+        "required": ["name", "slug"],
+        "title": "AccountCreate"
+      },
+      "AccountMembership": {
+        "properties": {
+          "account": {
+            "$ref": "#/components/schemas/Account"
+          },
+          "role": {
+            "$ref": "#/components/schemas/Role"
+          }
+        },
+        "type": "object",
+        "required": ["account", "role"],
+        "title": "AccountMembership"
+      },
+      "Me": {
+        "properties": {
+          "user": {
+            "$ref": "#/components/schemas/User"
+          },
+          "memberships": {
+            "items": {
+              "$ref": "#/components/schemas/AccountMembership"
+            },
+            "type": "array",
+            "title": "Memberships"
+          }
+        },
+        "type": "object",
+        "required": ["user", "memberships"],
+        "title": "Me"
+      },
+      "Member": {
+        "properties": {
+          "user": {
+            "$ref": "#/components/schemas/User"
+          },
+          "role": {
+            "$ref": "#/components/schemas/Role"
+          }
+        },
+        "type": "object",
+        "required": ["user", "role"],
+        "title": "Member"
+      },
+      "MemberInvite": {
+        "properties": {
+          "email": {
+            "type": "string",
+            "format": "email",
+            "title": "Email"
+          },
+          "role": {
+            "$ref": "#/components/schemas/Role"
+          }
+        },
+        "type": "object",
+        "required": ["email", "role"],
+        "title": "MemberInvite"
+      },
+      "Page_Account_": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/Account"
+            },
+            "type": "array",
+            "title": "Items"
+          },
+          "total": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Total"
+          },
+          "page": {
+            "type": "integer",
+            "minimum": 1.0,
+            "title": "Page"
+          },
+          "size": {
+            "type": "integer",
+            "minimum": 1.0,
+            "title": "Size"
+          },
+          "pages": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Pages"
+          }
+        },
+        "type": "object",
+        "required": ["items", "total", "page", "size", "pages"],
+        "title": "Page[Account]"
+      },
+      "Page_Member_": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/Member"
+            },
+            "type": "array",
+            "title": "Items"
+          },
+          "total": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Total"
+          },
+          "page": {
+            "type": "integer",
+            "minimum": 1.0,
+            "title": "Page"
+          },
+          "size": {
+            "type": "integer",
+            "minimum": 1.0,
+            "title": "Size"
+          },
+          "pages": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Pages"
+          }
+        },
+        "type": "object",
+        "required": ["items", "total", "page", "size", "pages"],
+        "title": "Page[Member]"
+      },
+      "Page_SupportSession_": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/SupportSession"
+            },
+            "type": "array",
+            "title": "Items"
+          },
+          "total": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Total"
+          },
+          "page": {
+            "type": "integer",
+            "minimum": 1.0,
+            "title": "Page"
+          },
+          "size": {
+            "type": "integer",
+            "minimum": 1.0,
+            "title": "Size"
+          },
+          "pages": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Pages"
+          }
+        },
+        "type": "object",
+        "required": ["items", "total", "page", "size", "pages"],
+        "title": "Page[SupportSession]"
+      },
+      "Role": {
+        "type": "string",
+        "enum": ["owner", "admin", "member", "viewer"],
+        "title": "Role"
+      },
+      "SupportSession": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "account_id": {
+            "type": "string",
+            "title": "Account Id"
+          },
+          "staff_id": {
+            "type": "string",
+            "title": "Staff Id"
+          },
+          "target_user_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Target User Id"
+          },
+          "reason": {
+            "type": "string",
+            "title": "Reason"
+          },
+          "scopes": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Scopes"
+          },
+          "status": {
+            "$ref": "#/components/schemas/SupportSessionStatus"
+          },
+          "expires_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Expires At"
+          },
+          "ended_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ended At"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "account_id",
+          "staff_id",
+          "reason",
+          "scopes",
+          "status",
+          "expires_at",
+          "created_at"
+        ],
+        "title": "SupportSession"
+      },
+      "SupportSessionCreate": {
+        "properties": {
+          "account_id": {
+            "type": "string",
+            "title": "Account Id"
+          },
+          "reason": {
+            "type": "string",
+            "maxLength": 500,
+            "minLength": 1,
+            "title": "Reason"
+          },
+          "target_user_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Target User Id"
+          },
+          "scopes": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Scopes",
+            "description": "Requested permissions; capped to the support-allowed set."
+          }
+        },
+        "type": "object",
+        "required": ["account_id", "reason"],
+        "title": "SupportSessionCreate"
+      },
+      "SupportSessionCreated": {
+        "properties": {
+          "session": {
+            "$ref": "#/components/schemas/SupportSession"
+          },
+          "token": {
+            "type": "string",
+            "title": "Token",
+            "description": "The short-lived support token \u2014 send as the X-Support-Token header. Valid until the session expires or is ended."
+          }
+        },
+        "type": "object",
+        "required": ["session", "token"],
+        "title": "SupportSessionCreated"
+      },
+      "SupportSessionStatus": {
+        "type": "string",
+        "enum": ["active", "ended", "expired"],
+        "title": "SupportSessionStatus"
+      },
+      "User": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "email": {
+            "type": "string",
+            "format": "email",
+            "title": "Email"
+          },
+          "display_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Display Name"
+          }
+        },
+        "type": "object",
+        "required": ["id", "email"],
+        "title": "User"
+      }
+    },
+    "securitySchemes": {
+      "HTTPBearer": {
+        "type": "http",
+        "description": "Identity Platform ID token",
+        "scheme": "bearer"
+      }
+    }
+  }
+}
