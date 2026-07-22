@@ -162,12 +162,21 @@
           <q-avatar size="32px" class="cursor-pointer">
             <img :src="avatar" alt="Account" />
             <q-menu anchor="bottom right" self="top right">
-              <q-list style="min-width: 180px">
+              <q-list style="min-width: 200px">
                 <q-item class="pointer-events-none">
                   <q-item-section>
+                    <q-item-label v-if="currentAccount" class="truncate">{{
+                      currentAccount.name
+                    }}</q-item-label>
                     <q-item-label caption class="truncate">{{
                       user?.email
                     }}</q-item-label>
+                    <q-item-label
+                      v-if="currentRole"
+                      caption
+                      class="capitalize"
+                      >{{ currentRole }}</q-item-label
+                    >
                   </q-item-section>
                 </q-item>
                 <q-separator />
@@ -193,6 +202,7 @@ import { computed, ref } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useQuasar } from 'quasar'
 import { useAuth } from '@/composables/useAuth'
+import { useMe } from '@/composables/useMe'
 
 import logo from '@/assets/dashboard/logo.svg'
 import avatar from '@/assets/dashboard/avatar.jpg'
@@ -217,6 +227,7 @@ const $q = useQuasar()
 const router = useRouter()
 const route = useRoute()
 const { user, logOut } = useAuth()
+const { currentAccount, currentRole } = useMe()
 
 const mainMenu = [
   { label: 'Overview', icon: icOverview, to: '/' },

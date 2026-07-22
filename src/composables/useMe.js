@@ -1,4 +1,4 @@
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import { getMe } from '@/api/fanfinity'
 
 // Session bootstrap: the signed-in user's backend record + account
@@ -10,6 +10,20 @@ export const me = ref(null)
 export const memberships = ref([])
 const loading = ref(false)
 const error = ref(null)
+
+// The account the user acts in: prefer one they own, else their first
+// membership. Every signed-up user now has at least one (the backend
+// auto-provisions a personal account + owner role on first login), so this is
+// null only before GET /v1/me returns.
+export const currentMembership = computed(() => {
+  const list = memberships.value
+  if (!list.length) return null
+  return list.find(m => m.role === 'owner') || list[0]
+})
+export const currentAccount = computed(
+  () => currentMembership.value?.account ?? null
+)
+export const currentRole = computed(() => currentMembership.value?.role ?? null)
 
 // Best-effort: errors land in `error` instead of throwing, so a backend
 // hiccup never blocks routing (the router guard only awaits Firebase auth).
@@ -34,5 +48,14 @@ export function clearMe() {
 }
 
 export function useMe() {
-  return { me, memberships, loading, error, loadMe }
+  return {
+    me,
+    memberships,
+    currentMembership,
+    currentAccount,
+    currentRole,
+    loading,
+    error,
+    loadMe
+  }
 }
