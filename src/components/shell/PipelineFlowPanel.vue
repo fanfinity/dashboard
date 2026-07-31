@@ -46,8 +46,11 @@
                 stroke-linejoin="round"
               />
             </svg>
+            <!-- Important suffixes are required: Quasar styles bare h1-h6 with its
+                 own font-size/weight/line-height, which otherwise wins and renders
+                 these section labels at heading scale. -->
             <h3
-              class="text-[11px] font-semibold uppercase tracking-[0.4px] text-subtle"
+              class="text-[11px]! font-semibold! uppercase leading-4! tracking-[0.4px]! text-subtle"
               >{{ column.title }}</h3
             >
           </div>
