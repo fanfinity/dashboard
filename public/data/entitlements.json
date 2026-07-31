@@ -1,0 +1,5 @@
+[
+  { "key": "engage", "name": "Engage", "enabled": true },
+  { "key": "engage-reporting", "name": "Engage Reporting", "enabled": true },
+  { "key": "posthog-analytics", "name": "PostHog Analytics", "enabled": false }
+]
