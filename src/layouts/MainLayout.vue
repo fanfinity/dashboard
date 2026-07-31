@@ -43,6 +43,17 @@
         <!-- Main menu -->
         <q-list data-smoke="nav" class="flex-1 overflow-y-auto p-3">
           <template v-for="group in visibleGroups" :key="group.key">
+            <!-- Section caption: marks where a stage of the product story
+                 begins. The rail has no room for the text, so it degrades to a
+                 plain rule that still separates the sections. -->
+            <div
+              v-if="group.caption && !mini"
+              class="px-3 pb-1 pt-4 text-[11px]! font-semibold uppercase tracking-wider text-subtle"
+            >
+              {{ group.caption }}
+            </div>
+            <q-separator v-else-if="group.caption" class="my-2 bg-line!" />
+
             <!-- Leaf entry: navigates directly -->
             <q-item
               v-if="!group.children"
@@ -67,7 +78,7 @@
                 anchor="center right"
                 self="center left"
                 class="bg-ink! text-xs"
-                >{{ group.label }}</q-tooltip
+                >{{ railLabel(group) }}</q-tooltip
               >
             </q-item>
 
@@ -91,6 +102,11 @@
                 <span v-if="!mini" class="flex-1 text-sm tracking-[-0.35px]">{{
                   group.label
                 }}</span>
+                <span
+                  v-if="!mini && group.badge"
+                  :class="[BADGE_BASE, BADGES[group.badge].class]"
+                  >{{ BADGES[group.badge].label }}</span
+                >
                 <img
                   v-if="!mini"
                   :src="icChevron"
@@ -103,7 +119,7 @@
                   anchor="center right"
                   self="center left"
                   class="bg-ink! text-xs"
-                  >{{ group.label }}</q-tooltip
+                  >{{ railLabel(group) }}</q-tooltip
                 >
               </q-item>
 
@@ -122,6 +138,12 @@
                   <span class="flex-1 text-[13px] tracking-[-0.3px]">{{
                     child.label
                   }}</span>
+                  <span
+                    v-if="child.badge"
+                    :class="[BADGE_BASE, BADGES[child.badge].class]"
+                    class="ml-1.5"
+                    >{{ BADGES[child.badge].label }}</span
+                  >
                 </q-item>
               </div>
             </template>
@@ -288,22 +310,69 @@ const route = useRoute()
 const { user, logOut } = useAuth()
 const { currentAccount, currentRole } = useMe()
 
+// Badge vocabulary, borrowed from the marketing site's Live/Preview pills so the
+// dashboard tells the same story with the same honesty: `live` = backed by real
+// network data today, `demo` = illustrative fixture, `preview` = module designed
+// but not built. Unbadged rows are ordinary product surface — badging all ~30
+// mock screens would be noise, so only the exceptions carry a pill. Palettes are
+// StatusBadge's success/neutral/brand strings, so a nav pill and a table pill
+// read as the same object.
+//
+// Today the only pill in the tree is `preview` on Engage. Nothing renders real
+// data — the events read path 401s and those pages fall back to mock JSON — so a
+// `live` pill would overclaim, and the demo-only legacy pages that carried `demo`
+// are gone. Both keys stay: re-badge `live` the day the events key works again
+// rather than reinventing the mechanism.
+const BADGES = {
+  live: {
+    label: 'Live',
+    class: 'border-success-line bg-success-bg text-success'
+  },
+  demo: { label: 'Demo', class: 'border-line2 bg-fill text-subtle' },
+  preview: { label: 'Preview', class: 'border-brand/30 bg-brand/5 text-brand' }
+}
+
+const BADGE_BASE =
+  'inline-flex shrink-0 items-center rounded-md border px-1.5 py-px text-[10px]! font-medium uppercase tracking-wide'
+
+// A rail is icons and tooltips only, so the pill has nowhere to render — the
+// tooltip carries the same word instead rather than dropping the honesty cue.
+function railLabel(item) {
+  return item.badge ? `${item.label} — ${BADGES[item.badge].label}` : item.label
+}
+
 // FROZEN. Screens are registered in src/router/screens.js; this list decides what
 // is *reachable from the sidebar* and how it is grouped. Only list views belong
 // here — create/detail/trash screens are reached from within their list.
 //
 // A group with no `children` is a direct link. Groups auto-expand when one of
 // their screens is active.
+//
+// The order is the product story, so the sidebar reads top-to-bottom the way the
+// data flows: collect → fans → activate → engage → measure, with the demo lab
+// last. Monitoring sits inside COLLECT because errors and health are read by the
+// same engineer who is watching the pipeline, not by a separate ops persona.
+// `caption` marks the first group of a section and renders as a small uppercase
+// label (a plain rule in rail mode, where there is no room for text); keeping it
+// on the group rather than in a wrapper array means an entitlement-gated section
+// takes its own caption with it when it disappears. `badge` is a key into BADGES
+// above.
+//
+// One surface per concept: the legacy duplicate pages (Contacts, the live
+// identity graph, Segments, Activation, Communications, Integrations, Fan
+// overview) were deleted, so FANS is Profiles alone and every row below points at
+// a product screen.
 const navGroups = [
   { key: 'dashboard', label: 'Dashboard', icon: icOverview, to: '/' },
   {
     key: 'sources',
+    caption: 'COLLECT',
     label: 'Sources',
     icon: icSources,
     children: [
       { label: 'Event streams', to: '/sources' },
-      { label: 'Demo store', to: '/demo-store' },
-      { label: 'Event inspector', to: '/demo-event-inspector' }
+      { label: 'Live events', to: '/live-events' },
+      { label: 'Connectors', to: '/connectors' }
     ]
   },
   { key: 'pipes', label: 'Pipes', icon: icIntegrations, to: '/pipes' },
@@ -314,21 +383,8 @@ const navGroups = [
     to: '/destinations'
   },
   {
-    key: 'profiles',
-    label: 'Profiles',
-    icon: icContacts,
-    children: [
-      { label: 'Attributes', to: '/attributes' },
-      { label: 'Identity resolution', to: '/profiles/identity-resolution' },
-      { label: 'Profile search', to: '/profiles/search' },
-      { label: 'Profile API', to: '/profile-api' },
-      { label: 'Live profile syncs', to: '/live-profile-syncs' },
-      { label: 'Profile DWH syncs', to: '/profile-dwh-syncs' }
-    ]
-  },
-  {
     key: 'warehouse',
-    label: 'Connections',
+    label: 'Warehouse',
     icon: icSetup,
     children: [
       { label: 'Warehouse connections', to: '/dwh-connections' },
@@ -342,54 +398,90 @@ const navGroups = [
     icon: icBell,
     children: [
       { label: 'Errors', to: '/errors' },
-      { label: 'Health', to: '/health' },
-      { label: 'Reporting', to: '/reporting' }
+      { label: 'Health', to: '/health' }
+    ]
+  },
+  {
+    key: 'profiles',
+    caption: 'FANS',
+    label: 'Profiles',
+    icon: icContacts,
+    children: [
+      { label: 'Profile search', to: '/profiles/search' },
+      { label: 'Identity resolution', to: '/profiles/identity-resolution' },
+      { label: 'Attributes', to: '/attributes' },
+      { label: 'Profile API', to: '/profile-api' },
+      { label: 'Live profile syncs', to: '/live-profile-syncs' },
+      { label: 'Profile DWH syncs', to: '/profile-dwh-syncs' }
+    ]
+  },
+  {
+    key: 'audiences',
+    caption: 'ACTIVATE',
+    label: 'Audiences',
+    icon: icSegments,
+    to: '/audiences'
+  },
+  {
+    key: 'campaigns',
+    label: 'Campaigns',
+    icon: icComm,
+    children: [
+      { label: 'Journeys', to: '/journeys' },
+      // Goals belong to journeys — a goal is what a journey is measured
+      // against — so they sit together rather than under Audiences.
+      { label: 'Goals', to: '/goals' },
+      { label: 'Email campaigns', to: '/channels/email' },
+      { label: 'Assets', to: '/assets' },
+      { label: 'Catalogs', to: '/catalogs' },
+      { label: 'Channel settings', to: '/channels/settings' }
     ]
   },
   {
     key: 'engage',
+    caption: 'ENGAGE',
     label: 'Engage',
     icon: icComm,
     entitlement: 'engage',
+    badge: 'preview',
     children: [
-      { label: 'Audiences', to: '/audiences' },
-      { label: 'Journeys', to: '/journeys' },
-      { label: 'Goals', to: '/goals' },
       { label: 'Surveys', to: '/surveys' },
-      { label: 'Assets', to: '/assets' },
-      { label: 'Catalogs', to: '/catalogs' },
-      { label: 'Email campaigns', to: '/channels/email' },
-      { label: 'Channel settings', to: '/channels/settings' },
       { label: 'Engage settings', to: '/engage-settings' },
       { label: 'Operator work log', to: '/engage-operator/work-log' }
     ]
   },
   {
-    key: 'legacy',
-    label: 'Fan CDP',
-    icon: icSegments,
+    key: 'reporting',
+    caption: 'MEASURE',
+    label: 'Reporting',
+    icon: icOverview,
+    to: '/reporting'
+  },
+  {
+    key: 'demo',
+    caption: 'SYSTEM',
+    label: 'Demo lab',
+    icon: icSetup,
     children: [
-      { label: 'Fan overview', to: '/fan-overview' },
-      { label: 'Contacts', to: '/contacts' },
-      { label: 'Segments', to: '/segments' },
-      { label: 'Activation', to: '/activation' },
-      { label: 'Communications', to: '/communications' },
-      { label: 'Integrations', to: '/integrations' },
-      { label: 'Live events', to: '/live-events' },
+      { label: 'Demo store', to: '/demo-store' },
+      { label: 'Event inspector', to: '/demo-event-inspector' },
       { label: 'Events demo', to: '/events-demo' }
     ]
   }
 ]
 
 const bottomMenu = [
-  { label: 'Authentication', icon: icSetup, to: '/authorizations' },
+  { label: 'Authorizations', icon: icSetup, to: '/authorizations' },
   { label: 'Secrets', icon: icSettings, to: '/secrets' },
-  { label: 'Connectors', icon: icSources, to: '/connectors' },
   { label: 'Settings', icon: icSettings, to: '/settings' },
   { label: 'Logout', icon: icLogout, action: 'logout' }
 ]
 
-const { isEnabled } = useEntitlements()
+const { isEnabled, load: loadEntitlements } = useEntitlements()
+
+// Without this the gate never reads public/data/entitlements.json and every
+// entitlement silently falls back to its optimistic default.
+loadEntitlements()
 
 // Entitlement-gated groups disappear entirely rather than rendering dead links.
 const visibleGroups = computed(() =>
