@@ -460,6 +460,16 @@ export const screens = [
 // Pre-existing pages, kept working while the new product is built out.
 export const legacyScreens = [
   {
+    // The original demo overview. `/` is now the operational pipeline dashboard,
+    // so this keeps the audience/campaign demo surface reachable. Its figures are
+    // hardcoded illustrations, not measured — see the note in the component.
+    path: '/fan-overview',
+    name: 'fan-overview',
+    component: 'legacy/FanOverviewPage.vue',
+    title: 'Fan Overview',
+    group: 'legacy'
+  },
+  {
     path: '/contacts',
     name: 'contacts',
     component: 'ContactsPage.vue',

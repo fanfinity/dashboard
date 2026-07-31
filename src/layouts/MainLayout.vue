@@ -369,6 +369,7 @@ const navGroups = [
     label: 'Fan CDP',
     icon: icSegments,
     children: [
+      { label: 'Fan overview', to: '/fan-overview' },
       { label: 'Contacts', to: '/contacts' },
       { label: 'Segments', to: '/segments' },
       { label: 'Activation', to: '/activation' },
