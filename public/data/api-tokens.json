@@ -1,0 +1,59 @@
+[
+  {
+    "id": "tok_terraform",
+    "name": "Terraform CI",
+    "description": "Provisions sources and pipes from infrastructure-as-code.",
+    "tokenPreview": "ffp_live_…a91c",
+    "scopes": ["sources:write", "pipes:write", "destinations:write"],
+    "createdBy": "usr_mahmoud",
+    "createdByName": "Mahmoud Abu Musa",
+    "lastUsedAt": "2026-07-30T18:22:00.000Z",
+    "expiresAt": "2027-02-11T00:00:00.000Z",
+    "isRevoked": false,
+    "createdAt": "2026-02-11T11:00:00.000Z",
+    "updatedAt": "2026-07-30T18:22:00.000Z"
+  },
+  {
+    "id": "tok_profile_api_kiosk",
+    "name": "Kiosk read-only",
+    "description": "Profile API reads for the stadium kiosk fleet.",
+    "tokenPreview": "ffp_live_…4d02",
+    "scopes": ["profiles:read"],
+    "createdBy": "usr_dana",
+    "createdByName": "Dana Rashid",
+    "lastUsedAt": "2026-07-31T05:59:31.000Z",
+    "expiresAt": null,
+    "isRevoked": false,
+    "createdAt": "2026-04-08T12:35:00.000Z",
+    "updatedAt": "2026-04-08T12:35:00.000Z"
+  },
+  {
+    "id": "tok_bi_export",
+    "name": "BI export",
+    "description": "Reporting exports pulled nightly by the BI stack.",
+    "tokenPreview": "ffp_live_…77b8",
+    "scopes": ["reporting:read", "profiles:read"],
+    "createdBy": "usr_dana",
+    "createdByName": "Dana Rashid",
+    "lastUsedAt": "2026-07-31T02:10:00.000Z",
+    "expiresAt": "2026-12-31T23:59:59.000Z",
+    "isRevoked": false,
+    "createdAt": "2026-05-30T09:00:00.000Z",
+    "updatedAt": "2026-05-30T09:00:00.000Z"
+  },
+  {
+    "id": "tok_old_laptop",
+    "name": "Legacy migration script",
+    "description": "One-off backfill script. Revoked after the migration finished.",
+    "tokenPreview": "ffp_live_…0c15",
+    "scopes": ["profiles:write"],
+    "createdBy": "usr_mahmoud",
+    "createdByName": "Mahmoud Abu Musa",
+    "lastUsedAt": "2026-03-14T22:40:00.000Z",
+    "expiresAt": null,
+    "isRevoked": true,
+    "revokedAt": "2026-03-15T08:00:00.000Z",
+    "createdAt": "2026-03-11T10:20:00.000Z",
+    "updatedAt": "2026-03-15T08:00:00.000Z"
+  }
+]

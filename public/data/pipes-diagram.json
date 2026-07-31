@@ -1,0 +1,166 @@
+{
+  "sources": [
+    {
+      "id": "src_web_sdk",
+      "name": "Web SDK",
+      "slug": "web-sdk",
+      "sourceType": "event_stream",
+      "isEnabled": true,
+      "eventCountLastHour": 18420,
+      "templateIcon": "web-sdk"
+    },
+    {
+      "id": "src_ios_sdk",
+      "name": "iOS SDK",
+      "slug": "ios-sdk",
+      "sourceType": "event_stream",
+      "isEnabled": true,
+      "eventCountLastHour": 6215,
+      "templateIcon": "ios-sdk"
+    },
+    {
+      "id": "src_android_sdk",
+      "name": "Android SDK",
+      "slug": "android-sdk",
+      "sourceType": "event_stream",
+      "isEnabled": false,
+      "eventCountLastHour": 0,
+      "templateIcon": "android-sdk"
+    },
+    {
+      "id": "src_shopify",
+      "name": "Shopify Store",
+      "slug": "shopify-store",
+      "sourceType": "cloud_app",
+      "isEnabled": true,
+      "eventCountLastHour": 214,
+      "templateIcon": "shopify"
+    },
+    {
+      "id": "src_ticketing_api",
+      "name": "Ticketing API",
+      "slug": "ticketing-api",
+      "sourceType": "event_stream",
+      "isEnabled": false,
+      "eventCountLastHour": 0,
+      "templateIcon": "http-api"
+    },
+    {
+      "id": "src_stadium_wifi",
+      "name": "Stadium Wi-Fi Portal",
+      "slug": "stadium-wifi-portal",
+      "sourceType": "event_stream",
+      "isEnabled": true,
+      "eventCountLastHour": 1103,
+      "templateIcon": "http-api"
+    }
+  ],
+  "eventDestinations": [
+    {
+      "id": "dst_snowflake",
+      "name": "Snowflake",
+      "slug": "snowflake",
+      "isEnabled": true,
+      "deliveryCountLastHour": 24218,
+      "templateIcon": null
+    },
+    {
+      "id": "dst_meta_capi",
+      "name": "Meta Conversions API",
+      "slug": "meta-conversions-api",
+      "isEnabled": true,
+      "deliveryCountLastHour": 18420,
+      "templateIcon": "meta"
+    },
+    {
+      "id": "dst_tiktok_events",
+      "name": "TikTok Events API",
+      "slug": "tiktok-events-api",
+      "isEnabled": false,
+      "deliveryCountLastHour": 0,
+      "templateIcon": "tiktok"
+    },
+    {
+      "id": "dst_bigquery",
+      "name": "BigQuery Archive",
+      "slug": "bigquery-archive",
+      "isEnabled": false,
+      "deliveryCountLastHour": 0,
+      "templateIcon": null
+    },
+    {
+      "id": "dst_ops_webhook",
+      "name": "Ops Webhook",
+      "slug": "ops-webhook",
+      "isEnabled": true,
+      "deliveryCountLastHour": 214,
+      "templateIcon": "webhook"
+    },
+    {
+      "id": "dst_s3_archive",
+      "name": "S3 Cold Storage",
+      "slug": "s3-cold-storage",
+      "isEnabled": true,
+      "deliveryCountLastHour": 0,
+      "templateIcon": "s3"
+    }
+  ],
+  "pipes": [
+    {
+      "id": "pipe_web_to_snowflake",
+      "name": "Web SDK to Snowflake",
+      "sourceId": "src_web_sdk",
+      "eventDestinationId": "dst_snowflake",
+      "isEnabled": true,
+      "deliveryCountLastHour": 18420
+    },
+    {
+      "id": "pipe_web_to_meta",
+      "name": "Web SDK to Meta CAPI",
+      "sourceId": "src_web_sdk",
+      "eventDestinationId": "dst_meta_capi",
+      "isEnabled": true,
+      "deliveryCountLastHour": 18420
+    },
+    {
+      "id": "pipe_ios_to_snowflake",
+      "name": "iOS SDK to Snowflake",
+      "sourceId": "src_ios_sdk",
+      "eventDestinationId": "dst_snowflake",
+      "isEnabled": true,
+      "deliveryCountLastHour": 6215
+    },
+    {
+      "id": "pipe_android_to_tiktok",
+      "name": "Android SDK to TikTok",
+      "sourceId": "src_android_sdk",
+      "eventDestinationId": "dst_tiktok_events",
+      "isEnabled": false,
+      "deliveryCountLastHour": 0
+    },
+    {
+      "id": "pipe_ticketing_to_bigquery",
+      "name": "Ticketing to BigQuery",
+      "sourceId": "src_ticketing_api",
+      "eventDestinationId": "dst_bigquery",
+      "isEnabled": false,
+      "deliveryCountLastHour": 0
+    },
+    {
+      "id": "pipe_shopify_to_webhook",
+      "name": "Shopify to Ops Webhook",
+      "sourceId": "src_shopify",
+      "eventDestinationId": "dst_ops_webhook",
+      "isEnabled": true,
+      "deliveryCountLastHour": 214
+    },
+    {
+      "id": "pipe_wifi_to_snowflake",
+      "name": "Stadium Wi-Fi to Snowflake",
+      "sourceId": "src_stadium_wifi",
+      "eventDestinationId": "dst_snowflake",
+      "isEnabled": true,
+      "deliveryCountLastHour": 1103
+    }
+  ]
+}

@@ -1,0 +1,79 @@
+{
+  "managedUsers": [
+    {
+      "id": "usr_mahmoud",
+      "pk": 201,
+      "email": "m.abumusa@fanfinity.io",
+      "username": "m_abumusa_fanfinity_io",
+      "name": "Mahmoud Abu Musa",
+      "role": "owner",
+      "isActive": true,
+      "lastLogin": "2026-07-31T05:41:02.118400Z",
+      "createdAt": "2026-02-11T08:00:00.000Z"
+    },
+    {
+      "id": "usr_dana",
+      "pk": 214,
+      "email": "dana.rashid@fanfinity.io",
+      "username": "dana_rashid_fanfinity_io",
+      "name": "Dana Rashid",
+      "role": "admin",
+      "isActive": true,
+      "lastLogin": "2026-07-30T16:12:44.902110Z",
+      "createdAt": "2026-02-20T09:30:00.000Z"
+    },
+    {
+      "id": "usr_faisal",
+      "pk": 233,
+      "email": "faisal.otaibi@fanfinity.io",
+      "username": "faisal_otaibi_fanfinity_io",
+      "name": "Faisal Al-Otaibi",
+      "role": "editor",
+      "isActive": true,
+      "lastLogin": "2026-07-29T11:05:31.220004Z",
+      "createdAt": "2026-04-01T10:00:00.000Z"
+    },
+    {
+      "id": "usr_hana",
+      "pk": 251,
+      "email": "hana.said@fanfinity.io",
+      "username": "hana_said_fanfinity_io",
+      "name": "Hana Said",
+      "role": "viewer",
+      "isActive": true,
+      "lastLogin": "2026-06-11T08:44:12.004500Z",
+      "createdAt": "2026-05-14T13:20:00.000Z"
+    },
+    {
+      "id": "usr_contractor",
+      "pk": 259,
+      "email": "kareem.data@contractor.example.com",
+      "username": "kareem_data_contractor_example_com",
+      "name": "Kareem (contractor)",
+      "role": "viewer",
+      "isActive": false,
+      "lastLogin": "2026-05-30T22:30:30.933511Z",
+      "createdAt": "2026-05-02T09:00:00.000Z"
+    }
+  ],
+  "pendingUsers": [
+    {
+      "id": "inv_layla",
+      "email": "layla.khan@fanfinity.io",
+      "role": "editor",
+      "invitedBy": "usr_mahmoud",
+      "invitedByName": "Mahmoud Abu Musa",
+      "invitedAt": "2026-07-28T09:00:00.000Z",
+      "expiresAt": "2026-08-04T09:00:00.000Z"
+    },
+    {
+      "id": "inv_saeed",
+      "email": "saeed.marketing@fanfinity.io",
+      "role": "viewer",
+      "invitedBy": "usr_dana",
+      "invitedByName": "Dana Rashid",
+      "invitedAt": "2026-07-30T14:22:00.000Z",
+      "expiresAt": "2026-08-06T14:22:00.000Z"
+    }
+  ]
+}

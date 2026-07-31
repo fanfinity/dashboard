@@ -1,0 +1,74 @@
+[
+  {
+    "id": "web-sdk",
+    "name": "Web SDK",
+    "description": "Drop a script tag on your site and capture page views, clicks and custom events from the browser.",
+    "sourceType": "event_stream",
+    "version": "2026-06-25",
+    "icon": "web-sdk",
+    "tags": ["sdk", "web", "first-party"],
+    "defaults": { "name": "Web SDK" },
+    "eventTypeCount": 52,
+    "realtimeAttributeCount": 0
+  },
+  {
+    "id": "ios-sdk",
+    "name": "iOS SDK",
+    "description": "Swift package that streams screen views, taps and lifecycle events from a native iOS app.",
+    "sourceType": "event_stream",
+    "version": "2026-06-25",
+    "icon": "ios-sdk",
+    "tags": ["sdk", "mobile", "ios"],
+    "defaults": { "name": "iOS SDK" },
+    "eventTypeCount": 41,
+    "realtimeAttributeCount": 0
+  },
+  {
+    "id": "android-sdk",
+    "name": "Android SDK",
+    "description": "Kotlin library that streams screen views, taps and lifecycle events from a native Android app.",
+    "sourceType": "event_stream",
+    "version": "2026-06-25",
+    "icon": "android-sdk",
+    "tags": ["sdk", "mobile", "android"],
+    "defaults": { "name": "Android SDK" },
+    "eventTypeCount": 41,
+    "realtimeAttributeCount": 0
+  },
+  {
+    "id": "http-api",
+    "name": "HTTP API",
+    "description": "Server-side ingest. POST batches of events to a write-key protected endpoint.",
+    "sourceType": "event_stream",
+    "version": "2026-06-25",
+    "icon": "http-api",
+    "tags": ["server", "api", "first-party"],
+    "defaults": { "name": "HTTP API" },
+    "eventTypeCount": 0,
+    "realtimeAttributeCount": 0
+  },
+  {
+    "id": "shopify",
+    "name": "Shopify",
+    "description": "Pull orders, carts, refunds and customer records from a Shopify storefront.",
+    "sourceType": "cloud_app",
+    "version": "2026-05-02",
+    "icon": "shopify",
+    "tags": ["ecommerce", "cloud-app"],
+    "defaults": { "name": "Shopify Store" },
+    "eventTypeCount": 12,
+    "realtimeAttributeCount": 3
+  },
+  {
+    "id": "stripe",
+    "name": "Stripe",
+    "description": "Payments, subscriptions and invoice events from a Stripe account.",
+    "sourceType": "cloud_app",
+    "version": "2026-05-02",
+    "icon": "stripe",
+    "tags": ["payments", "cloud-app"],
+    "defaults": { "name": "Stripe" },
+    "eventTypeCount": 18,
+    "realtimeAttributeCount": 2
+  }
+]

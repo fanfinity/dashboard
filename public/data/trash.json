@@ -1,0 +1,261 @@
+{
+  "sources": [
+    {
+      "id": "src_legacy_gtm",
+      "name": "Legacy GTM Tag",
+      "slug": "legacy-gtm-tag",
+      "sourceType": "event_stream",
+      "isEnabled": false,
+      "eventCountLastHour": 0,
+      "templateId": "web-sdk",
+      "templateVersion": "2025-11-04",
+      "latestTemplateVersion": "2026-06-25",
+      "templateIcon": "web-sdk",
+      "version": 2,
+      "createdAt": "2026-02-11T09:16:00.000Z",
+      "deletedAt": "2026-06-30T10:12:00.000Z",
+      "deletedBy": "usr_mahmoud",
+      "deletedByName": "Mahmoud Abu Musa"
+    },
+    {
+      "id": "src_test_sandbox",
+      "name": "Sandbox test stream",
+      "slug": "sandbox-test-stream",
+      "sourceType": "event_stream",
+      "isEnabled": false,
+      "eventCountLastHour": 0,
+      "templateId": "http-api",
+      "templateVersion": "2026-06-25",
+      "latestTemplateVersion": "2026-06-25",
+      "templateIcon": "http-api",
+      "version": 1,
+      "createdAt": "2026-07-04T08:00:00.000Z",
+      "deletedAt": "2026-07-22T16:44:00.000Z",
+      "deletedBy": "usr_faisal",
+      "deletedByName": "Faisal Al-Otaibi"
+    }
+  ],
+  "destinations": [
+    {
+      "id": "dst_old_ga4",
+      "name": "GA4 (retired)",
+      "slug": "ga4-retired",
+      "description": "Replaced by the warehouse-first reporting stack.",
+      "isEnabled": false,
+      "pipeCount": 0,
+      "deliveryCountLastHour": 0,
+      "warehouseConnections": [],
+      "templateId": "ga4",
+      "templateVersion": "2025-12-01",
+      "latestTemplateVersion": "2026-04-10",
+      "templateIcon": "ga4",
+      "version": 3,
+      "createdAt": "2026-02-18T10:00:00.000Z",
+      "deletedAt": "2026-05-14T09:30:00.000Z",
+      "deletedBy": "usr_dana",
+      "deletedByName": "Dana Rashid"
+    }
+  ],
+  "pipes": [
+    {
+      "id": "pipe_web_to_ga4",
+      "name": "Web SDK to GA4",
+      "sourceId": "src_web_sdk",
+      "sourceName": "Web SDK",
+      "sourceSlug": "web-sdk",
+      "sourceType": "event_stream",
+      "eventDestinationId": "dst_old_ga4",
+      "eventDestinationName": "GA4 (retired)",
+      "eventDestinationSlug": "ga4-retired",
+      "isEnabled": false,
+      "version": 2,
+      "hasFunctionCode": false,
+      "destinationParams": {},
+      "deliveryCountLastHour": 0,
+      "createdAt": "2026-02-18T10:20:00.000Z",
+      "deletedAt": "2026-05-14T09:30:00.000Z",
+      "deletedBy": "usr_dana",
+      "deletedByName": "Dana Rashid"
+    },
+    {
+      "id": "pipe_legacy_gtm_to_snowflake",
+      "name": "Legacy GTM to Snowflake",
+      "sourceId": "src_legacy_gtm",
+      "sourceName": "Legacy GTM Tag",
+      "sourceSlug": "legacy-gtm-tag",
+      "sourceType": "event_stream",
+      "eventDestinationId": "dst_snowflake",
+      "eventDestinationName": "Snowflake",
+      "eventDestinationSlug": "snowflake",
+      "isEnabled": false,
+      "version": 1,
+      "hasFunctionCode": true,
+      "destinationParams": { "table": "raw_gtm_events" },
+      "deliveryCountLastHour": 0,
+      "createdAt": "2026-02-11T09:40:00.000Z",
+      "deletedAt": "2026-06-30T10:12:00.000Z",
+      "deletedBy": "usr_mahmoud",
+      "deletedByName": "Mahmoud Abu Musa"
+    }
+  ],
+  "attributes": [
+    {
+      "id": "favourite_player",
+      "name": "Favourite player",
+      "type": "realtime",
+      "dataModelId": null,
+      "dataModelName": null,
+      "algorithm": "last",
+      "version": 1,
+      "createdAt": "2026-03-30T10:00:00.000Z",
+      "deletedAt": "2026-07-05T12:00:00.000Z",
+      "deletedBy": "usr_dana",
+      "deletedByName": "Dana Rashid"
+    },
+    {
+      "id": "trial_score_v1",
+      "name": "Fan score (v1)",
+      "type": "warehouse",
+      "dataModelId": "model_fan_orders",
+      "dataModelName": "Fan orders",
+      "algorithm": "sum",
+      "version": 4,
+      "createdAt": "2026-04-11T09:00:00.000Z",
+      "deletedAt": "2026-07-18T15:22:00.000Z",
+      "deletedBy": "usr_faisal",
+      "deletedByName": "Faisal Al-Otaibi"
+    }
+  ],
+  "profile-api-endpoints": [
+    {
+      "id": "papi_beta_widget",
+      "name": "Beta widget lookup",
+      "slug": "beta-widget-lookup",
+      "path": "/v1/profile/beta-widget-lookup",
+      "method": "GET",
+      "identifierTypeId": "idt_browser",
+      "identifierTypeName": "browser",
+      "isEnabled": false,
+      "version": 1,
+      "createdAt": "2026-05-01T10:00:00.000Z",
+      "deletedAt": "2026-06-11T09:00:00.000Z",
+      "deletedBy": "usr_mahmoud",
+      "deletedByName": "Mahmoud Abu Musa"
+    }
+  ],
+  "profile-dwh-syncs": [
+    {
+      "id": "pdsync_old_redshift",
+      "name": "Profiles to Redshift (retired)",
+      "dwhConnectionId": "dwh_redshift_legacy",
+      "dwhConnectionName": "Redshift Legacy",
+      "targetTable": "public.profiles",
+      "isEnabled": false,
+      "version": 2,
+      "createdAt": "2026-03-12T10:00:00.000Z",
+      "deletedAt": "2026-07-20T09:00:00.000Z",
+      "deletedBy": "usr_mahmoud",
+      "deletedByName": "Mahmoud Abu Musa"
+    }
+  ],
+  "live-profile-syncs": [
+    {
+      "id": "lps_tiktok_audience",
+      "name": "TikTok custom audience",
+      "profileDestinationId": "pdst_tiktok",
+      "profileDestinationName": "TikTok Audiences",
+      "audienceId": "aud_matchday_attendees",
+      "audienceName": "Matchday attendees",
+      "identifierTypeId": "idt_email",
+      "identifierTypeName": "email",
+      "isEnabled": false,
+      "version": 1,
+      "createdAt": "2026-04-16T09:00:00.000Z",
+      "deletedAt": "2026-06-02T14:20:00.000Z",
+      "deletedBy": "usr_dana",
+      "deletedByName": "Dana Rashid"
+    }
+  ],
+  "dwh-connections": [
+    {
+      "id": "dwh_staging_postgres",
+      "name": "Staging Postgres",
+      "type": "postgres",
+      "host": "staging-db.internal.fanfinity.io",
+      "port": 5432,
+      "database": "staging",
+      "status": "disconnected",
+      "version": 1,
+      "createdAt": "2026-03-20T11:00:00.000Z",
+      "deletedAt": "2026-06-05T13:15:00.000Z",
+      "deletedBy": "usr_faisal",
+      "deletedByName": "Faisal Al-Otaibi"
+    }
+  ],
+  "dwh-syncs": [
+    {
+      "id": "dsync_staging_smoke",
+      "name": "Staging smoke sync",
+      "dwhConnectionId": "dwh_staging_postgres",
+      "dwhConnectionName": "Staging Postgres",
+      "direction": "inbound",
+      "sourceTable": "public.smoke",
+      "targetTable": "profiles",
+      "isEnabled": false,
+      "version": 1,
+      "createdAt": "2026-03-20T11:30:00.000Z",
+      "deletedAt": "2026-06-05T13:15:00.000Z",
+      "deletedBy": "usr_faisal",
+      "deletedByName": "Faisal Al-Otaibi"
+    }
+  ],
+  "warehouse-models": [],
+  "audiences": [
+    {
+      "id": "aud_test_cohort",
+      "name": "Test cohort",
+      "description": "Throwaway cohort used to validate the audience builder.",
+      "type": "realtime",
+      "isEnabled": false,
+      "profileCount": 12,
+      "version": 1,
+      "createdAt": "2026-06-30T10:00:00.000Z",
+      "deletedAt": "2026-07-01T09:00:00.000Z",
+      "deletedBy": "usr_faisal",
+      "deletedByName": "Faisal Al-Otaibi"
+    }
+  ],
+  "goals": [],
+  "surveys": [],
+  "assets": [
+    {
+      "id": "ast_away_kit_draft",
+      "name": "away-kit-draft.jpg",
+      "type": "image",
+      "mimeType": "image/jpeg",
+      "folderId": "fld_store",
+      "folderName": "Store",
+      "sizeBytes": 812004,
+      "version": 1,
+      "createdAt": "2026-06-14T10:00:00.000Z",
+      "deletedAt": "2026-07-02T09:20:00.000Z",
+      "deletedBy": "usr_faisal",
+      "deletedByName": "Faisal Al-Otaibi"
+    }
+  ],
+  "secrets": [
+    {
+      "id": "sec_old_ga4_key",
+      "key": "GA4_API_SECRET",
+      "description": "Measurement Protocol secret for the retired GA4 destination.",
+      "valuePreview": "••••••••",
+      "usedByCount": 0,
+      "version": 1,
+      "createdAt": "2026-02-18T09:55:00.000Z",
+      "deletedAt": "2026-05-14T09:31:00.000Z",
+      "deletedBy": "usr_dana",
+      "deletedByName": "Dana Rashid"
+    }
+  ],
+  "api-tokens": []
+}

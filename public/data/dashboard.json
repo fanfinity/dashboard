@@ -1,0 +1,2048 @@
+{
+  "updatedAt": "2026-07-31T06:00:00.000Z",
+  "totalSources": 6,
+  "totalEventDestinations": 6,
+  "totalPipes": 7,
+  "totalEventsLastHour": 25952,
+  "activeSourcesLastHour": 4,
+  "activeEventTypesLastHour": 23,
+  "activeEventStreamSourcesLastHour": 3,
+  "activeCloudAppSourcesLastHour": 1,
+  "activeEventDestinationsLastHour": 3,
+  "routedEventsLastHour": 42852,
+  "failedProfileDeliveriesLastHour": 2,
+  "activeLiveProfileSyncsLastHour": 3,
+  "profilesRefreshedLastHour": 9042,
+  "profilesRoutedLastHour": 1002,
+  "errorsLastHour": 37,
+  "routingRate": 1.65,
+  "sourceSeries": [
+    {
+      "bucket": "2026-07-31T05:01:00.000Z",
+      "web_sdk": 316,
+      "ios_sdk": 110,
+      "shopify_store": 4,
+      "stadium_wifi_portal": 19
+    },
+    {
+      "bucket": "2026-07-31T05:02:00.000Z",
+      "web_sdk": 310,
+      "ios_sdk": 109,
+      "shopify_store": 5,
+      "stadium_wifi_portal": 21
+    },
+    {
+      "bucket": "2026-07-31T05:03:00.000Z",
+      "web_sdk": 358,
+      "ios_sdk": 118,
+      "shopify_store": 6,
+      "stadium_wifi_portal": 21
+    },
+    {
+      "bucket": "2026-07-31T05:04:00.000Z",
+      "web_sdk": 370,
+      "ios_sdk": 124,
+      "shopify_store": 6,
+      "stadium_wifi_portal": 25
+    },
+    {
+      "bucket": "2026-07-31T05:05:00.000Z",
+      "web_sdk": 358,
+      "ios_sdk": 128,
+      "shopify_store": 7,
+      "stadium_wifi_portal": 26
+    },
+    {
+      "bucket": "2026-07-31T05:06:00.000Z",
+      "web_sdk": 395,
+      "ios_sdk": 132,
+      "shopify_store": 7,
+      "stadium_wifi_portal": 25
+    },
+    {
+      "bucket": "2026-07-31T05:07:00.000Z",
+      "web_sdk": 393,
+      "ios_sdk": 140,
+      "shopify_store": 7,
+      "stadium_wifi_portal": 28
+    },
+    {
+      "bucket": "2026-07-31T05:08:00.000Z",
+      "web_sdk": 402,
+      "ios_sdk": 138,
+      "shopify_store": 7,
+      "stadium_wifi_portal": 28
+    },
+    {
+      "bucket": "2026-07-31T05:09:00.000Z",
+      "web_sdk": 365,
+      "ios_sdk": 128,
+      "shopify_store": 7,
+      "stadium_wifi_portal": 25
+    },
+    {
+      "bucket": "2026-07-31T05:10:00.000Z",
+      "web_sdk": 364,
+      "ios_sdk": 128,
+      "shopify_store": 7,
+      "stadium_wifi_portal": 26
+    },
+    {
+      "bucket": "2026-07-31T05:11:00.000Z",
+      "web_sdk": 344,
+      "ios_sdk": 122,
+      "shopify_store": 6,
+      "stadium_wifi_portal": 22
+    },
+    {
+      "bucket": "2026-07-31T05:12:00.000Z",
+      "web_sdk": 351,
+      "ios_sdk": 116,
+      "shopify_store": 5,
+      "stadium_wifi_portal": 22
+    },
+    {
+      "bucket": "2026-07-31T05:13:00.000Z",
+      "web_sdk": 330,
+      "ios_sdk": 113,
+      "shopify_store": 5,
+      "stadium_wifi_portal": 19
+    },
+    {
+      "bucket": "2026-07-31T05:14:00.000Z",
+      "web_sdk": 280,
+      "ios_sdk": 97,
+      "shopify_store": 4,
+      "stadium_wifi_portal": 17
+    },
+    {
+      "bucket": "2026-07-31T05:15:00.000Z",
+      "web_sdk": 286,
+      "ios_sdk": 92,
+      "shopify_store": 3,
+      "stadium_wifi_portal": 17
+    },
+    {
+      "bucket": "2026-07-31T05:16:00.000Z",
+      "web_sdk": 236,
+      "ios_sdk": 83,
+      "shopify_store": 3,
+      "stadium_wifi_portal": 12
+    },
+    {
+      "bucket": "2026-07-31T05:17:00.000Z",
+      "web_sdk": 225,
+      "ios_sdk": 81,
+      "shopify_store": 2,
+      "stadium_wifi_portal": 11
+    },
+    {
+      "bucket": "2026-07-31T05:18:00.000Z",
+      "web_sdk": 235,
+      "ios_sdk": 73,
+      "shopify_store": 1,
+      "stadium_wifi_portal": 9
+    },
+    {
+      "bucket": "2026-07-31T05:19:00.000Z",
+      "web_sdk": 226,
+      "ios_sdk": 75,
+      "shopify_store": 1,
+      "stadium_wifi_portal": 9
+    },
+    {
+      "bucket": "2026-07-31T05:20:00.000Z",
+      "web_sdk": 228,
+      "ios_sdk": 68,
+      "shopify_store": 1,
+      "stadium_wifi_portal": 10
+    },
+    {
+      "bucket": "2026-07-31T05:21:00.000Z",
+      "web_sdk": 224,
+      "ios_sdk": 74,
+      "shopify_store": 2,
+      "stadium_wifi_portal": 10
+    },
+    {
+      "bucket": "2026-07-31T05:22:00.000Z",
+      "web_sdk": 220,
+      "ios_sdk": 81,
+      "shopify_store": 2,
+      "stadium_wifi_portal": 10
+    },
+    {
+      "bucket": "2026-07-31T05:23:00.000Z",
+      "web_sdk": 230,
+      "ios_sdk": 77,
+      "shopify_store": 2,
+      "stadium_wifi_portal": 11
+    },
+    {
+      "bucket": "2026-07-31T05:24:00.000Z",
+      "web_sdk": 240,
+      "ios_sdk": 89,
+      "shopify_store": 3,
+      "stadium_wifi_portal": 13
+    },
+    {
+      "bucket": "2026-07-31T05:25:00.000Z",
+      "web_sdk": 283,
+      "ios_sdk": 91,
+      "shopify_store": 3,
+      "stadium_wifi_portal": 16
+    },
+    {
+      "bucket": "2026-07-31T05:26:00.000Z",
+      "web_sdk": 281,
+      "ios_sdk": 99,
+      "shopify_store": 4,
+      "stadium_wifi_portal": 18
+    },
+    {
+      "bucket": "2026-07-31T05:27:00.000Z",
+      "web_sdk": 319,
+      "ios_sdk": 113,
+      "shopify_store": 5,
+      "stadium_wifi_portal": 20
+    },
+    {
+      "bucket": "2026-07-31T05:28:00.000Z",
+      "web_sdk": 344,
+      "ios_sdk": 117,
+      "shopify_store": 5,
+      "stadium_wifi_portal": 24
+    },
+    {
+      "bucket": "2026-07-31T05:29:00.000Z",
+      "web_sdk": 351,
+      "ios_sdk": 120,
+      "shopify_store": 6,
+      "stadium_wifi_portal": 23
+    },
+    {
+      "bucket": "2026-07-31T05:30:00.000Z",
+      "web_sdk": 374,
+      "ios_sdk": 132,
+      "shopify_store": 6,
+      "stadium_wifi_portal": 26
+    },
+    {
+      "bucket": "2026-07-31T05:31:00.000Z",
+      "web_sdk": 386,
+      "ios_sdk": 130,
+      "shopify_store": 7,
+      "stadium_wifi_portal": 25
+    },
+    {
+      "bucket": "2026-07-31T05:32:00.000Z",
+      "web_sdk": 397,
+      "ios_sdk": 131,
+      "shopify_store": 7,
+      "stadium_wifi_portal": 27
+    },
+    {
+      "bucket": "2026-07-31T05:33:00.000Z",
+      "web_sdk": 390,
+      "ios_sdk": 139,
+      "shopify_store": 7,
+      "stadium_wifi_portal": 28
+    },
+    {
+      "bucket": "2026-07-31T05:34:00.000Z",
+      "web_sdk": 378,
+      "ios_sdk": 137,
+      "shopify_store": 7,
+      "stadium_wifi_portal": 26
+    },
+    {
+      "bucket": "2026-07-31T05:35:00.000Z",
+      "web_sdk": 384,
+      "ios_sdk": 128,
+      "shopify_store": 6,
+      "stadium_wifi_portal": 24
+    },
+    {
+      "bucket": "2026-07-31T05:36:00.000Z",
+      "web_sdk": 350,
+      "ios_sdk": 120,
+      "shopify_store": 6,
+      "stadium_wifi_portal": 24
+    },
+    {
+      "bucket": "2026-07-31T05:37:00.000Z",
+      "web_sdk": 348,
+      "ios_sdk": 121,
+      "shopify_store": 5,
+      "stadium_wifi_portal": 22
+    },
+    {
+      "bucket": "2026-07-31T05:38:00.000Z",
+      "web_sdk": 321,
+      "ios_sdk": 114,
+      "shopify_store": 5,
+      "stadium_wifi_portal": 21
+    },
+    {
+      "bucket": "2026-07-31T05:39:00.000Z",
+      "web_sdk": 275,
+      "ios_sdk": 107,
+      "shopify_store": 4,
+      "stadium_wifi_portal": 17
+    },
+    {
+      "bucket": "2026-07-31T05:40:00.000Z",
+      "web_sdk": 264,
+      "ios_sdk": 91,
+      "shopify_store": 3,
+      "stadium_wifi_portal": 14
+    },
+    {
+      "bucket": "2026-07-31T05:41:00.000Z",
+      "web_sdk": 235,
+      "ios_sdk": 82,
+      "shopify_store": 3,
+      "stadium_wifi_portal": 15
+    },
+    {
+      "bucket": "2026-07-31T05:42:00.000Z",
+      "web_sdk": 241,
+      "ios_sdk": 83,
+      "shopify_store": 2,
+      "stadium_wifi_portal": 11
+    },
+    {
+      "bucket": "2026-07-31T05:43:00.000Z",
+      "web_sdk": 228,
+      "ios_sdk": 77,
+      "shopify_store": 2,
+      "stadium_wifi_portal": 9
+    },
+    {
+      "bucket": "2026-07-31T05:44:00.000Z",
+      "web_sdk": 217,
+      "ios_sdk": 72,
+      "shopify_store": 1,
+      "stadium_wifi_portal": 10
+    },
+    {
+      "bucket": "2026-07-31T05:45:00.000Z",
+      "web_sdk": 226,
+      "ios_sdk": 71,
+      "shopify_store": 1,
+      "stadium_wifi_portal": 8
+    },
+    {
+      "bucket": "2026-07-31T05:46:00.000Z",
+      "web_sdk": 218,
+      "ios_sdk": 80,
+      "shopify_store": 1,
+      "stadium_wifi_portal": 10
+    },
+    {
+      "bucket": "2026-07-31T05:47:00.000Z",
+      "web_sdk": 212,
+      "ios_sdk": 75,
+      "shopify_store": 2,
+      "stadium_wifi_portal": 9
+    },
+    {
+      "bucket": "2026-07-31T05:48:00.000Z",
+      "web_sdk": 241,
+      "ios_sdk": 82,
+      "shopify_store": 2,
+      "stadium_wifi_portal": 10
+    },
+    {
+      "bucket": "2026-07-31T05:49:00.000Z",
+      "web_sdk": 254,
+      "ios_sdk": 87,
+      "shopify_store": 2,
+      "stadium_wifi_portal": 12
+    },
+    {
+      "bucket": "2026-07-31T05:50:00.000Z",
+      "web_sdk": 257,
+      "ios_sdk": 99,
+      "shopify_store": 3,
+      "stadium_wifi_portal": 15
+    },
+    {
+      "bucket": "2026-07-31T05:51:00.000Z",
+      "web_sdk": 292,
+      "ios_sdk": 99,
+      "shopify_store": 3,
+      "stadium_wifi_portal": 16
+    },
+    {
+      "bucket": "2026-07-31T05:52:00.000Z",
+      "web_sdk": 327,
+      "ios_sdk": 107,
+      "shopify_store": 5,
+      "stadium_wifi_portal": 19
+    },
+    {
+      "bucket": "2026-07-31T05:53:00.000Z",
+      "web_sdk": 341,
+      "ios_sdk": 119,
+      "shopify_store": 6,
+      "stadium_wifi_portal": 21
+    },
+    {
+      "bucket": "2026-07-31T05:54:00.000Z",
+      "web_sdk": 347,
+      "ios_sdk": 126,
+      "shopify_store": 6,
+      "stadium_wifi_portal": 25
+    },
+    {
+      "bucket": "2026-07-31T05:55:00.000Z",
+      "web_sdk": 375,
+      "ios_sdk": 124,
+      "shopify_store": 7,
+      "stadium_wifi_portal": 25
+    },
+    {
+      "bucket": "2026-07-31T05:56:00.000Z",
+      "web_sdk": 378,
+      "ios_sdk": 127,
+      "shopify_store": 7,
+      "stadium_wifi_portal": 28
+    },
+    {
+      "bucket": "2026-07-31T05:57:00.000Z",
+      "web_sdk": 383,
+      "ios_sdk": 138,
+      "shopify_store": 7,
+      "stadium_wifi_portal": 26
+    },
+    {
+      "bucket": "2026-07-31T05:58:00.000Z",
+      "web_sdk": 377,
+      "ios_sdk": 133,
+      "shopify_store": 7,
+      "stadium_wifi_portal": 25
+    },
+    {
+      "bucket": "2026-07-31T05:59:00.000Z",
+      "web_sdk": 375,
+      "ios_sdk": 128,
+      "shopify_store": 6,
+      "stadium_wifi_portal": 27
+    },
+    {
+      "bucket": "2026-07-31T06:00:00.000Z",
+      "web_sdk": 377,
+      "ios_sdk": 123,
+      "shopify_store": 7,
+      "stadium_wifi_portal": 27
+    }
+  ],
+  "eventTypeSeries": [
+    {
+      "bucket": "2026-07-31T05:01:00.000Z",
+      "page_view": 204,
+      "identify": 38,
+      "add_to_cart": 22,
+      "ticket_scan": 13,
+      "wifi_signin": 17
+    },
+    {
+      "bucket": "2026-07-31T05:02:00.000Z",
+      "page_view": 231,
+      "identify": 41,
+      "add_to_cart": 26,
+      "ticket_scan": 14,
+      "wifi_signin": 22
+    },
+    {
+      "bucket": "2026-07-31T05:03:00.000Z",
+      "page_view": 241,
+      "identify": 45,
+      "add_to_cart": 25,
+      "ticket_scan": 15,
+      "wifi_signin": 23
+    },
+    {
+      "bucket": "2026-07-31T05:04:00.000Z",
+      "page_view": 259,
+      "identify": 50,
+      "add_to_cart": 30,
+      "ticket_scan": 16,
+      "wifi_signin": 24
+    },
+    {
+      "bucket": "2026-07-31T05:05:00.000Z",
+      "page_view": 262,
+      "identify": 51,
+      "add_to_cart": 29,
+      "ticket_scan": 17,
+      "wifi_signin": 26
+    },
+    {
+      "bucket": "2026-07-31T05:06:00.000Z",
+      "page_view": 272,
+      "identify": 53,
+      "add_to_cart": 31,
+      "ticket_scan": 17,
+      "wifi_signin": 26
+    },
+    {
+      "bucket": "2026-07-31T05:07:00.000Z",
+      "page_view": 263,
+      "identify": 52,
+      "add_to_cart": 32,
+      "ticket_scan": 18,
+      "wifi_signin": 25
+    },
+    {
+      "bucket": "2026-07-31T05:08:00.000Z",
+      "page_view": 276,
+      "identify": 50,
+      "add_to_cart": 33,
+      "ticket_scan": 18,
+      "wifi_signin": 25
+    },
+    {
+      "bucket": "2026-07-31T05:09:00.000Z",
+      "page_view": 275,
+      "identify": 53,
+      "add_to_cart": 32,
+      "ticket_scan": 18,
+      "wifi_signin": 24
+    },
+    {
+      "bucket": "2026-07-31T05:10:00.000Z",
+      "page_view": 263,
+      "identify": 51,
+      "add_to_cart": 31,
+      "ticket_scan": 17,
+      "wifi_signin": 24
+    },
+    {
+      "bucket": "2026-07-31T05:11:00.000Z",
+      "page_view": 247,
+      "identify": 49,
+      "add_to_cart": 28,
+      "ticket_scan": 15,
+      "wifi_signin": 25
+    },
+    {
+      "bucket": "2026-07-31T05:12:00.000Z",
+      "page_view": 225,
+      "identify": 45,
+      "add_to_cart": 27,
+      "ticket_scan": 15,
+      "wifi_signin": 21
+    },
+    {
+      "bucket": "2026-07-31T05:13:00.000Z",
+      "page_view": 221,
+      "identify": 40,
+      "add_to_cart": 24,
+      "ticket_scan": 13,
+      "wifi_signin": 20
+    },
+    {
+      "bucket": "2026-07-31T05:14:00.000Z",
+      "page_view": 201,
+      "identify": 41,
+      "add_to_cart": 21,
+      "ticket_scan": 12,
+      "wifi_signin": 17
+    },
+    {
+      "bucket": "2026-07-31T05:15:00.000Z",
+      "page_view": 187,
+      "identify": 38,
+      "add_to_cart": 17,
+      "ticket_scan": 9,
+      "wifi_signin": 16
+    },
+    {
+      "bucket": "2026-07-31T05:16:00.000Z",
+      "page_view": 181,
+      "identify": 32,
+      "add_to_cart": 18,
+      "ticket_scan": 10,
+      "wifi_signin": 14
+    },
+    {
+      "bucket": "2026-07-31T05:17:00.000Z",
+      "page_view": 170,
+      "identify": 29,
+      "add_to_cart": 15,
+      "ticket_scan": 7,
+      "wifi_signin": 12
+    },
+    {
+      "bucket": "2026-07-31T05:18:00.000Z",
+      "page_view": 163,
+      "identify": 30,
+      "add_to_cart": 15,
+      "ticket_scan": 6,
+      "wifi_signin": 10
+    },
+    {
+      "bucket": "2026-07-31T05:19:00.000Z",
+      "page_view": 158,
+      "identify": 29,
+      "add_to_cart": 13,
+      "ticket_scan": 6,
+      "wifi_signin": 10
+    },
+    {
+      "bucket": "2026-07-31T05:20:00.000Z",
+      "page_view": 139,
+      "identify": 30,
+      "add_to_cart": 14,
+      "ticket_scan": 5,
+      "wifi_signin": 9
+    },
+    {
+      "bucket": "2026-07-31T05:21:00.000Z",
+      "page_view": 146,
+      "identify": 28,
+      "add_to_cart": 11,
+      "ticket_scan": 6,
+      "wifi_signin": 10
+    },
+    {
+      "bucket": "2026-07-31T05:22:00.000Z",
+      "page_view": 159,
+      "identify": 30,
+      "add_to_cart": 15,
+      "ticket_scan": 8,
+      "wifi_signin": 11
+    },
+    {
+      "bucket": "2026-07-31T05:23:00.000Z",
+      "page_view": 168,
+      "identify": 32,
+      "add_to_cart": 16,
+      "ticket_scan": 9,
+      "wifi_signin": 11
+    },
+    {
+      "bucket": "2026-07-31T05:24:00.000Z",
+      "page_view": 177,
+      "identify": 33,
+      "add_to_cart": 18,
+      "ticket_scan": 9,
+      "wifi_signin": 14
+    },
+    {
+      "bucket": "2026-07-31T05:25:00.000Z",
+      "page_view": 189,
+      "identify": 38,
+      "add_to_cart": 19,
+      "ticket_scan": 11,
+      "wifi_signin": 17
+    },
+    {
+      "bucket": "2026-07-31T05:26:00.000Z",
+      "page_view": 215,
+      "identify": 39,
+      "add_to_cart": 22,
+      "ticket_scan": 11,
+      "wifi_signin": 17
+    },
+    {
+      "bucket": "2026-07-31T05:27:00.000Z",
+      "page_view": 227,
+      "identify": 41,
+      "add_to_cart": 23,
+      "ticket_scan": 13,
+      "wifi_signin": 20
+    },
+    {
+      "bucket": "2026-07-31T05:28:00.000Z",
+      "page_view": 237,
+      "identify": 47,
+      "add_to_cart": 26,
+      "ticket_scan": 15,
+      "wifi_signin": 22
+    },
+    {
+      "bucket": "2026-07-31T05:29:00.000Z",
+      "page_view": 259,
+      "identify": 48,
+      "add_to_cart": 28,
+      "ticket_scan": 17,
+      "wifi_signin": 24
+    },
+    {
+      "bucket": "2026-07-31T05:30:00.000Z",
+      "page_view": 258,
+      "identify": 48,
+      "add_to_cart": 30,
+      "ticket_scan": 16,
+      "wifi_signin": 27
+    },
+    {
+      "bucket": "2026-07-31T05:31:00.000Z",
+      "page_view": 269,
+      "identify": 53,
+      "add_to_cart": 33,
+      "ticket_scan": 17,
+      "wifi_signin": 27
+    },
+    {
+      "bucket": "2026-07-31T05:32:00.000Z",
+      "page_view": 273,
+      "identify": 54,
+      "add_to_cart": 33,
+      "ticket_scan": 19,
+      "wifi_signin": 25
+    },
+    {
+      "bucket": "2026-07-31T05:33:00.000Z",
+      "page_view": 281,
+      "identify": 53,
+      "add_to_cart": 31,
+      "ticket_scan": 17,
+      "wifi_signin": 26
+    },
+    {
+      "bucket": "2026-07-31T05:34:00.000Z",
+      "page_view": 269,
+      "identify": 50,
+      "add_to_cart": 29,
+      "ticket_scan": 16,
+      "wifi_signin": 27
+    },
+    {
+      "bucket": "2026-07-31T05:35:00.000Z",
+      "page_view": 269,
+      "identify": 51,
+      "add_to_cart": 30,
+      "ticket_scan": 18,
+      "wifi_signin": 24
+    },
+    {
+      "bucket": "2026-07-31T05:36:00.000Z",
+      "page_view": 252,
+      "identify": 47,
+      "add_to_cart": 29,
+      "ticket_scan": 15,
+      "wifi_signin": 24
+    },
+    {
+      "bucket": "2026-07-31T05:37:00.000Z",
+      "page_view": 229,
+      "identify": 45,
+      "add_to_cart": 27,
+      "ticket_scan": 16,
+      "wifi_signin": 21
+    },
+    {
+      "bucket": "2026-07-31T05:38:00.000Z",
+      "page_view": 226,
+      "identify": 41,
+      "add_to_cart": 24,
+      "ticket_scan": 14,
+      "wifi_signin": 20
+    },
+    {
+      "bucket": "2026-07-31T05:39:00.000Z",
+      "page_view": 208,
+      "identify": 38,
+      "add_to_cart": 20,
+      "ticket_scan": 13,
+      "wifi_signin": 16
+    },
+    {
+      "bucket": "2026-07-31T05:40:00.000Z",
+      "page_view": 195,
+      "identify": 36,
+      "add_to_cart": 18,
+      "ticket_scan": 9,
+      "wifi_signin": 15
+    },
+    {
+      "bucket": "2026-07-31T05:41:00.000Z",
+      "page_view": 176,
+      "identify": 33,
+      "add_to_cart": 16,
+      "ticket_scan": 8,
+      "wifi_signin": 14
+    },
+    {
+      "bucket": "2026-07-31T05:42:00.000Z",
+      "page_view": 160,
+      "identify": 31,
+      "add_to_cart": 14,
+      "ticket_scan": 7,
+      "wifi_signin": 10
+    },
+    {
+      "bucket": "2026-07-31T05:43:00.000Z",
+      "page_view": 148,
+      "identify": 31,
+      "add_to_cart": 13,
+      "ticket_scan": 7,
+      "wifi_signin": 9
+    },
+    {
+      "bucket": "2026-07-31T05:44:00.000Z",
+      "page_view": 154,
+      "identify": 29,
+      "add_to_cart": 14,
+      "ticket_scan": 6,
+      "wifi_signin": 8
+    },
+    {
+      "bucket": "2026-07-31T05:45:00.000Z",
+      "page_view": 156,
+      "identify": 30,
+      "add_to_cart": 13,
+      "ticket_scan": 6,
+      "wifi_signin": 8
+    },
+    {
+      "bucket": "2026-07-31T05:46:00.000Z",
+      "page_view": 163,
+      "identify": 28,
+      "add_to_cart": 12,
+      "ticket_scan": 5,
+      "wifi_signin": 10
+    },
+    {
+      "bucket": "2026-07-31T05:47:00.000Z",
+      "page_view": 168,
+      "identify": 29,
+      "add_to_cart": 15,
+      "ticket_scan": 7,
+      "wifi_signin": 9
+    },
+    {
+      "bucket": "2026-07-31T05:48:00.000Z",
+      "page_view": 158,
+      "identify": 31,
+      "add_to_cart": 14,
+      "ticket_scan": 6,
+      "wifi_signin": 11
+    },
+    {
+      "bucket": "2026-07-31T05:49:00.000Z",
+      "page_view": 169,
+      "identify": 32,
+      "add_to_cart": 17,
+      "ticket_scan": 9,
+      "wifi_signin": 12
+    },
+    {
+      "bucket": "2026-07-31T05:50:00.000Z",
+      "page_view": 194,
+      "identify": 38,
+      "add_to_cart": 18,
+      "ticket_scan": 9,
+      "wifi_signin": 15
+    },
+    {
+      "bucket": "2026-07-31T05:51:00.000Z",
+      "page_view": 213,
+      "identify": 37,
+      "add_to_cart": 22,
+      "ticket_scan": 11,
+      "wifi_signin": 19
+    },
+    {
+      "bucket": "2026-07-31T05:52:00.000Z",
+      "page_view": 229,
+      "identify": 44,
+      "add_to_cart": 24,
+      "ticket_scan": 13,
+      "wifi_signin": 18
+    },
+    {
+      "bucket": "2026-07-31T05:53:00.000Z",
+      "page_view": 232,
+      "identify": 45,
+      "add_to_cart": 28,
+      "ticket_scan": 15,
+      "wifi_signin": 23
+    },
+    {
+      "bucket": "2026-07-31T05:54:00.000Z",
+      "page_view": 251,
+      "identify": 47,
+      "add_to_cart": 29,
+      "ticket_scan": 16,
+      "wifi_signin": 22
+    },
+    {
+      "bucket": "2026-07-31T05:55:00.000Z",
+      "page_view": 254,
+      "identify": 50,
+      "add_to_cart": 31,
+      "ticket_scan": 17,
+      "wifi_signin": 25
+    },
+    {
+      "bucket": "2026-07-31T05:56:00.000Z",
+      "page_view": 263,
+      "identify": 51,
+      "add_to_cart": 30,
+      "ticket_scan": 18,
+      "wifi_signin": 27
+    },
+    {
+      "bucket": "2026-07-31T05:57:00.000Z",
+      "page_view": 272,
+      "identify": 50,
+      "add_to_cart": 33,
+      "ticket_scan": 17,
+      "wifi_signin": 28
+    },
+    {
+      "bucket": "2026-07-31T05:58:00.000Z",
+      "page_view": 269,
+      "identify": 50,
+      "add_to_cart": 34,
+      "ticket_scan": 19,
+      "wifi_signin": 28
+    },
+    {
+      "bucket": "2026-07-31T05:59:00.000Z",
+      "page_view": 273,
+      "identify": 49,
+      "add_to_cart": 32,
+      "ticket_scan": 19,
+      "wifi_signin": 27
+    },
+    {
+      "bucket": "2026-07-31T06:00:00.000Z",
+      "page_view": 267,
+      "identify": 49,
+      "add_to_cart": 30,
+      "ticket_scan": 18,
+      "wifi_signin": 25
+    }
+  ],
+  "routedSeries": [
+    {
+      "bucket": "2026-07-31T05:01:00.000Z",
+      "snowflake": 385,
+      "meta_conversions_api": 317,
+      "ops_webhook": 4
+    },
+    {
+      "bucket": "2026-07-31T05:02:00.000Z",
+      "snowflake": 433,
+      "meta_conversions_api": 336,
+      "ops_webhook": 5
+    },
+    {
+      "bucket": "2026-07-31T05:03:00.000Z",
+      "snowflake": 451,
+      "meta_conversions_api": 346,
+      "ops_webhook": 5
+    },
+    {
+      "bucket": "2026-07-31T05:04:00.000Z",
+      "snowflake": 488,
+      "meta_conversions_api": 364,
+      "ops_webhook": 6
+    },
+    {
+      "bucket": "2026-07-31T05:05:00.000Z",
+      "snowflake": 492,
+      "meta_conversions_api": 391,
+      "ops_webhook": 7
+    },
+    {
+      "bucket": "2026-07-31T05:06:00.000Z",
+      "snowflake": 516,
+      "meta_conversions_api": 389,
+      "ops_webhook": 7
+    },
+    {
+      "bucket": "2026-07-31T05:07:00.000Z",
+      "snowflake": 530,
+      "meta_conversions_api": 374,
+      "ops_webhook": 6
+    },
+    {
+      "bucket": "2026-07-31T05:08:00.000Z",
+      "snowflake": 528,
+      "meta_conversions_api": 396,
+      "ops_webhook": 7
+    },
+    {
+      "bucket": "2026-07-31T05:09:00.000Z",
+      "snowflake": 522,
+      "meta_conversions_api": 400,
+      "ops_webhook": 7
+    },
+    {
+      "bucket": "2026-07-31T05:10:00.000Z",
+      "snowflake": 500,
+      "meta_conversions_api": 353,
+      "ops_webhook": 7
+    },
+    {
+      "bucket": "2026-07-31T05:11:00.000Z",
+      "snowflake": 455,
+      "meta_conversions_api": 359,
+      "ops_webhook": 6
+    },
+    {
+      "bucket": "2026-07-31T05:12:00.000Z",
+      "snowflake": 449,
+      "meta_conversions_api": 351,
+      "ops_webhook": 5
+    },
+    {
+      "bucket": "2026-07-31T05:13:00.000Z",
+      "snowflake": 423,
+      "meta_conversions_api": 322,
+      "ops_webhook": 5
+    },
+    {
+      "bucket": "2026-07-31T05:14:00.000Z",
+      "snowflake": 402,
+      "meta_conversions_api": 294,
+      "ops_webhook": 4
+    },
+    {
+      "bucket": "2026-07-31T05:15:00.000Z",
+      "snowflake": 345,
+      "meta_conversions_api": 283,
+      "ops_webhook": 3
+    },
+    {
+      "bucket": "2026-07-31T05:16:00.000Z",
+      "snowflake": 331,
+      "meta_conversions_api": 250,
+      "ops_webhook": 2
+    },
+    {
+      "bucket": "2026-07-31T05:17:00.000Z",
+      "snowflake": 318,
+      "meta_conversions_api": 215,
+      "ops_webhook": 2
+    },
+    {
+      "bucket": "2026-07-31T05:18:00.000Z",
+      "snowflake": 315,
+      "meta_conversions_api": 220,
+      "ops_webhook": 1
+    },
+    {
+      "bucket": "2026-07-31T05:19:00.000Z",
+      "snowflake": 311,
+      "meta_conversions_api": 229,
+      "ops_webhook": 1
+    },
+    {
+      "bucket": "2026-07-31T05:20:00.000Z",
+      "snowflake": 294,
+      "meta_conversions_api": 211,
+      "ops_webhook": 1
+    },
+    {
+      "bucket": "2026-07-31T05:21:00.000Z",
+      "snowflake": 320,
+      "meta_conversions_api": 206,
+      "ops_webhook": 1
+    },
+    {
+      "bucket": "2026-07-31T05:22:00.000Z",
+      "snowflake": 303,
+      "meta_conversions_api": 230,
+      "ops_webhook": 1
+    },
+    {
+      "bucket": "2026-07-31T05:23:00.000Z",
+      "snowflake": 336,
+      "meta_conversions_api": 230,
+      "ops_webhook": 2
+    },
+    {
+      "bucket": "2026-07-31T05:24:00.000Z",
+      "snowflake": 347,
+      "meta_conversions_api": 263,
+      "ops_webhook": 3
+    },
+    {
+      "bucket": "2026-07-31T05:25:00.000Z",
+      "snowflake": 386,
+      "meta_conversions_api": 269,
+      "ops_webhook": 3
+    },
+    {
+      "bucket": "2026-07-31T05:26:00.000Z",
+      "snowflake": 389,
+      "meta_conversions_api": 291,
+      "ops_webhook": 4
+    },
+    {
+      "bucket": "2026-07-31T05:27:00.000Z",
+      "snowflake": 417,
+      "meta_conversions_api": 306,
+      "ops_webhook": 4
+    },
+    {
+      "bucket": "2026-07-31T05:28:00.000Z",
+      "snowflake": 458,
+      "meta_conversions_api": 341,
+      "ops_webhook": 6
+    },
+    {
+      "bucket": "2026-07-31T05:29:00.000Z",
+      "snowflake": 475,
+      "meta_conversions_api": 366,
+      "ops_webhook": 6
+    },
+    {
+      "bucket": "2026-07-31T05:30:00.000Z",
+      "snowflake": 512,
+      "meta_conversions_api": 378,
+      "ops_webhook": 6
+    },
+    {
+      "bucket": "2026-07-31T05:31:00.000Z",
+      "snowflake": 522,
+      "meta_conversions_api": 386,
+      "ops_webhook": 7
+    },
+    {
+      "bucket": "2026-07-31T05:32:00.000Z",
+      "snowflake": 499,
+      "meta_conversions_api": 383,
+      "ops_webhook": 7
+    },
+    {
+      "bucket": "2026-07-31T05:33:00.000Z",
+      "snowflake": 530,
+      "meta_conversions_api": 393,
+      "ops_webhook": 7
+    },
+    {
+      "bucket": "2026-07-31T05:34:00.000Z",
+      "snowflake": 524,
+      "meta_conversions_api": 368,
+      "ops_webhook": 7
+    },
+    {
+      "bucket": "2026-07-31T05:35:00.000Z",
+      "snowflake": 499,
+      "meta_conversions_api": 386,
+      "ops_webhook": 7
+    },
+    {
+      "bucket": "2026-07-31T05:36:00.000Z",
+      "snowflake": 494,
+      "meta_conversions_api": 338,
+      "ops_webhook": 6
+    },
+    {
+      "bucket": "2026-07-31T05:37:00.000Z",
+      "snowflake": 456,
+      "meta_conversions_api": 333,
+      "ops_webhook": 5
+    },
+    {
+      "bucket": "2026-07-31T05:38:00.000Z",
+      "snowflake": 412,
+      "meta_conversions_api": 321,
+      "ops_webhook": 4
+    },
+    {
+      "bucket": "2026-07-31T05:39:00.000Z",
+      "snowflake": 376,
+      "meta_conversions_api": 277,
+      "ops_webhook": 4
+    },
+    {
+      "bucket": "2026-07-31T05:40:00.000Z",
+      "snowflake": 388,
+      "meta_conversions_api": 279,
+      "ops_webhook": 3
+    },
+    {
+      "bucket": "2026-07-31T05:41:00.000Z",
+      "snowflake": 358,
+      "meta_conversions_api": 242,
+      "ops_webhook": 3
+    },
+    {
+      "bucket": "2026-07-31T05:42:00.000Z",
+      "snowflake": 323,
+      "meta_conversions_api": 245,
+      "ops_webhook": 1
+    },
+    {
+      "bucket": "2026-07-31T05:43:00.000Z",
+      "snowflake": 313,
+      "meta_conversions_api": 212,
+      "ops_webhook": 1
+    },
+    {
+      "bucket": "2026-07-31T05:44:00.000Z",
+      "snowflake": 304,
+      "meta_conversions_api": 229,
+      "ops_webhook": 1
+    },
+    {
+      "bucket": "2026-07-31T05:45:00.000Z",
+      "snowflake": 305,
+      "meta_conversions_api": 205,
+      "ops_webhook": 1
+    },
+    {
+      "bucket": "2026-07-31T05:46:00.000Z",
+      "snowflake": 316,
+      "meta_conversions_api": 222,
+      "ops_webhook": 1
+    },
+    {
+      "bucket": "2026-07-31T05:47:00.000Z",
+      "snowflake": 296,
+      "meta_conversions_api": 212,
+      "ops_webhook": 2
+    },
+    {
+      "bucket": "2026-07-31T05:48:00.000Z",
+      "snowflake": 309,
+      "meta_conversions_api": 241,
+      "ops_webhook": 2
+    },
+    {
+      "bucket": "2026-07-31T05:49:00.000Z",
+      "snowflake": 337,
+      "meta_conversions_api": 241,
+      "ops_webhook": 2
+    },
+    {
+      "bucket": "2026-07-31T05:50:00.000Z",
+      "snowflake": 366,
+      "meta_conversions_api": 270,
+      "ops_webhook": 3
+    },
+    {
+      "bucket": "2026-07-31T05:51:00.000Z",
+      "snowflake": 379,
+      "meta_conversions_api": 306,
+      "ops_webhook": 3
+    },
+    {
+      "bucket": "2026-07-31T05:52:00.000Z",
+      "snowflake": 427,
+      "meta_conversions_api": 314,
+      "ops_webhook": 4
+    },
+    {
+      "bucket": "2026-07-31T05:53:00.000Z",
+      "snowflake": 431,
+      "meta_conversions_api": 324,
+      "ops_webhook": 6
+    },
+    {
+      "bucket": "2026-07-31T05:54:00.000Z",
+      "snowflake": 466,
+      "meta_conversions_api": 356,
+      "ops_webhook": 6
+    },
+    {
+      "bucket": "2026-07-31T05:55:00.000Z",
+      "snowflake": 496,
+      "meta_conversions_api": 381,
+      "ops_webhook": 7
+    },
+    {
+      "bucket": "2026-07-31T05:56:00.000Z",
+      "snowflake": 497,
+      "meta_conversions_api": 374,
+      "ops_webhook": 7
+    },
+    {
+      "bucket": "2026-07-31T05:57:00.000Z",
+      "snowflake": 531,
+      "meta_conversions_api": 399,
+      "ops_webhook": 7
+    },
+    {
+      "bucket": "2026-07-31T05:58:00.000Z",
+      "snowflake": 498,
+      "meta_conversions_api": 406,
+      "ops_webhook": 7
+    },
+    {
+      "bucket": "2026-07-31T05:59:00.000Z",
+      "snowflake": 500,
+      "meta_conversions_api": 369,
+      "ops_webhook": 7
+    },
+    {
+      "bucket": "2026-07-31T06:00:00.000Z",
+      "snowflake": 513,
+      "meta_conversions_api": 367,
+      "ops_webhook": 7
+    }
+  ],
+  "profileRefreshSeries": [
+    {
+      "bucket": "2026-07-31T05:01:00.000Z",
+      "profiles": 152
+    },
+    {
+      "bucket": "2026-07-31T05:02:00.000Z",
+      "profiles": 160
+    },
+    {
+      "bucket": "2026-07-31T05:03:00.000Z",
+      "profiles": 169
+    },
+    {
+      "bucket": "2026-07-31T05:04:00.000Z",
+      "profiles": 186
+    },
+    {
+      "bucket": "2026-07-31T05:05:00.000Z",
+      "profiles": 195
+    },
+    {
+      "bucket": "2026-07-31T05:06:00.000Z",
+      "profiles": 191
+    },
+    {
+      "bucket": "2026-07-31T05:07:00.000Z",
+      "profiles": 199
+    },
+    {
+      "bucket": "2026-07-31T05:08:00.000Z",
+      "profiles": 196
+    },
+    {
+      "bucket": "2026-07-31T05:09:00.000Z",
+      "profiles": 191
+    },
+    {
+      "bucket": "2026-07-31T05:10:00.000Z",
+      "profiles": 197
+    },
+    {
+      "bucket": "2026-07-31T05:11:00.000Z",
+      "profiles": 185
+    },
+    {
+      "bucket": "2026-07-31T05:12:00.000Z",
+      "profiles": 162
+    },
+    {
+      "bucket": "2026-07-31T05:13:00.000Z",
+      "profiles": 160
+    },
+    {
+      "bucket": "2026-07-31T05:14:00.000Z",
+      "profiles": 153
+    },
+    {
+      "bucket": "2026-07-31T05:15:00.000Z",
+      "profiles": 125
+    },
+    {
+      "bucket": "2026-07-31T05:16:00.000Z",
+      "profiles": 111
+    },
+    {
+      "bucket": "2026-07-31T05:17:00.000Z",
+      "profiles": 108
+    },
+    {
+      "bucket": "2026-07-31T05:18:00.000Z",
+      "profiles": 107
+    },
+    {
+      "bucket": "2026-07-31T05:19:00.000Z",
+      "profiles": 87
+    },
+    {
+      "bucket": "2026-07-31T05:20:00.000Z",
+      "profiles": 100
+    },
+    {
+      "bucket": "2026-07-31T05:21:00.000Z",
+      "profiles": 89
+    },
+    {
+      "bucket": "2026-07-31T05:22:00.000Z",
+      "profiles": 112
+    },
+    {
+      "bucket": "2026-07-31T05:23:00.000Z",
+      "profiles": 118
+    },
+    {
+      "bucket": "2026-07-31T05:24:00.000Z",
+      "profiles": 131
+    },
+    {
+      "bucket": "2026-07-31T05:25:00.000Z",
+      "profiles": 137
+    },
+    {
+      "bucket": "2026-07-31T05:26:00.000Z",
+      "profiles": 146
+    },
+    {
+      "bucket": "2026-07-31T05:27:00.000Z",
+      "profiles": 154
+    },
+    {
+      "bucket": "2026-07-31T05:28:00.000Z",
+      "profiles": 172
+    },
+    {
+      "bucket": "2026-07-31T05:29:00.000Z",
+      "profiles": 188
+    },
+    {
+      "bucket": "2026-07-31T05:30:00.000Z",
+      "profiles": 203
+    },
+    {
+      "bucket": "2026-07-31T05:31:00.000Z",
+      "profiles": 208
+    },
+    {
+      "bucket": "2026-07-31T05:32:00.000Z",
+      "profiles": 211
+    },
+    {
+      "bucket": "2026-07-31T05:33:00.000Z",
+      "profiles": 207
+    },
+    {
+      "bucket": "2026-07-31T05:34:00.000Z",
+      "profiles": 197
+    },
+    {
+      "bucket": "2026-07-31T05:35:00.000Z",
+      "profiles": 196
+    },
+    {
+      "bucket": "2026-07-31T05:36:00.000Z",
+      "profiles": 189
+    },
+    {
+      "bucket": "2026-07-31T05:37:00.000Z",
+      "profiles": 162
+    },
+    {
+      "bucket": "2026-07-31T05:38:00.000Z",
+      "profiles": 156
+    },
+    {
+      "bucket": "2026-07-31T05:39:00.000Z",
+      "profiles": 148
+    },
+    {
+      "bucket": "2026-07-31T05:40:00.000Z",
+      "profiles": 137
+    },
+    {
+      "bucket": "2026-07-31T05:41:00.000Z",
+      "profiles": 125
+    },
+    {
+      "bucket": "2026-07-31T05:42:00.000Z",
+      "profiles": 109
+    },
+    {
+      "bucket": "2026-07-31T05:43:00.000Z",
+      "profiles": 99
+    },
+    {
+      "bucket": "2026-07-31T05:44:00.000Z",
+      "profiles": 96
+    },
+    {
+      "bucket": "2026-07-31T05:45:00.000Z",
+      "profiles": 88
+    },
+    {
+      "bucket": "2026-07-31T05:46:00.000Z",
+      "profiles": 98
+    },
+    {
+      "bucket": "2026-07-31T05:47:00.000Z",
+      "profiles": 104
+    },
+    {
+      "bucket": "2026-07-31T05:48:00.000Z",
+      "profiles": 112
+    },
+    {
+      "bucket": "2026-07-31T05:49:00.000Z",
+      "profiles": 110
+    },
+    {
+      "bucket": "2026-07-31T05:50:00.000Z",
+      "profiles": 140
+    },
+    {
+      "bucket": "2026-07-31T05:51:00.000Z",
+      "profiles": 138
+    },
+    {
+      "bucket": "2026-07-31T05:52:00.000Z",
+      "profiles": 164
+    },
+    {
+      "bucket": "2026-07-31T05:53:00.000Z",
+      "profiles": 173
+    },
+    {
+      "bucket": "2026-07-31T05:54:00.000Z",
+      "profiles": 176
+    },
+    {
+      "bucket": "2026-07-31T05:55:00.000Z",
+      "profiles": 203
+    },
+    {
+      "bucket": "2026-07-31T05:56:00.000Z",
+      "profiles": 210
+    },
+    {
+      "bucket": "2026-07-31T05:57:00.000Z",
+      "profiles": 212
+    },
+    {
+      "bucket": "2026-07-31T05:58:00.000Z",
+      "profiles": 211
+    },
+    {
+      "bucket": "2026-07-31T05:59:00.000Z",
+      "profiles": 191
+    },
+    {
+      "bucket": "2026-07-31T06:00:00.000Z",
+      "profiles": 201
+    }
+  ],
+  "profileDeliverySeries": [
+    {
+      "bucket": "2026-07-31T05:01:00.000Z",
+      "meta_custom_audiences": 15,
+      "google_ads_customer_match": 3,
+      "crm_webhook": 1
+    },
+    {
+      "bucket": "2026-07-31T05:02:00.000Z",
+      "meta_custom_audiences": 15,
+      "google_ads_customer_match": 4,
+      "crm_webhook": 1
+    },
+    {
+      "bucket": "2026-07-31T05:03:00.000Z",
+      "meta_custom_audiences": 17,
+      "google_ads_customer_match": 4,
+      "crm_webhook": 2
+    },
+    {
+      "bucket": "2026-07-31T05:04:00.000Z",
+      "meta_custom_audiences": 17,
+      "google_ads_customer_match": 4,
+      "crm_webhook": 2
+    },
+    {
+      "bucket": "2026-07-31T05:05:00.000Z",
+      "meta_custom_audiences": 20,
+      "google_ads_customer_match": 5,
+      "crm_webhook": 2
+    },
+    {
+      "bucket": "2026-07-31T05:06:00.000Z",
+      "meta_custom_audiences": 19,
+      "google_ads_customer_match": 5,
+      "crm_webhook": 2
+    },
+    {
+      "bucket": "2026-07-31T05:07:00.000Z",
+      "meta_custom_audiences": 20,
+      "google_ads_customer_match": 5,
+      "crm_webhook": 2
+    },
+    {
+      "bucket": "2026-07-31T05:08:00.000Z",
+      "meta_custom_audiences": 20,
+      "google_ads_customer_match": 5,
+      "crm_webhook": 2
+    },
+    {
+      "bucket": "2026-07-31T05:09:00.000Z",
+      "meta_custom_audiences": 19,
+      "google_ads_customer_match": 5,
+      "crm_webhook": 2
+    },
+    {
+      "bucket": "2026-07-31T05:10:00.000Z",
+      "meta_custom_audiences": 18,
+      "google_ads_customer_match": 5,
+      "crm_webhook": 2
+    },
+    {
+      "bucket": "2026-07-31T05:11:00.000Z",
+      "meta_custom_audiences": 17,
+      "google_ads_customer_match": 5,
+      "crm_webhook": 2
+    },
+    {
+      "bucket": "2026-07-31T05:12:00.000Z",
+      "meta_custom_audiences": 17,
+      "google_ads_customer_match": 4,
+      "crm_webhook": 1
+    },
+    {
+      "bucket": "2026-07-31T05:13:00.000Z",
+      "meta_custom_audiences": 15,
+      "google_ads_customer_match": 3,
+      "crm_webhook": 1
+    },
+    {
+      "bucket": "2026-07-31T05:14:00.000Z",
+      "meta_custom_audiences": 14,
+      "google_ads_customer_match": 3,
+      "crm_webhook": 1
+    },
+    {
+      "bucket": "2026-07-31T05:15:00.000Z",
+      "meta_custom_audiences": 11,
+      "google_ads_customer_match": 2,
+      "crm_webhook": 1
+    },
+    {
+      "bucket": "2026-07-31T05:16:00.000Z",
+      "meta_custom_audiences": 11,
+      "google_ads_customer_match": 2,
+      "crm_webhook": 0
+    },
+    {
+      "bucket": "2026-07-31T05:17:00.000Z",
+      "meta_custom_audiences": 10,
+      "google_ads_customer_match": 1,
+      "crm_webhook": 0
+    },
+    {
+      "bucket": "2026-07-31T05:18:00.000Z",
+      "meta_custom_audiences": 10,
+      "google_ads_customer_match": 1,
+      "crm_webhook": 0
+    },
+    {
+      "bucket": "2026-07-31T05:19:00.000Z",
+      "meta_custom_audiences": 7,
+      "google_ads_customer_match": 1,
+      "crm_webhook": 0
+    },
+    {
+      "bucket": "2026-07-31T05:20:00.000Z",
+      "meta_custom_audiences": 8,
+      "google_ads_customer_match": 1,
+      "crm_webhook": 0
+    },
+    {
+      "bucket": "2026-07-31T05:21:00.000Z",
+      "meta_custom_audiences": 8,
+      "google_ads_customer_match": 1,
+      "crm_webhook": 0
+    },
+    {
+      "bucket": "2026-07-31T05:22:00.000Z",
+      "meta_custom_audiences": 9,
+      "google_ads_customer_match": 1,
+      "crm_webhook": 0
+    },
+    {
+      "bucket": "2026-07-31T05:23:00.000Z",
+      "meta_custom_audiences": 10,
+      "google_ads_customer_match": 2,
+      "crm_webhook": 0
+    },
+    {
+      "bucket": "2026-07-31T05:24:00.000Z",
+      "meta_custom_audiences": 11,
+      "google_ads_customer_match": 2,
+      "crm_webhook": 1
+    },
+    {
+      "bucket": "2026-07-31T05:25:00.000Z",
+      "meta_custom_audiences": 12,
+      "google_ads_customer_match": 3,
+      "crm_webhook": 1
+    },
+    {
+      "bucket": "2026-07-31T05:26:00.000Z",
+      "meta_custom_audiences": 14,
+      "google_ads_customer_match": 3,
+      "crm_webhook": 1
+    },
+    {
+      "bucket": "2026-07-31T05:27:00.000Z",
+      "meta_custom_audiences": 16,
+      "google_ads_customer_match": 4,
+      "crm_webhook": 1
+    },
+    {
+      "bucket": "2026-07-31T05:28:00.000Z",
+      "meta_custom_audiences": 17,
+      "google_ads_customer_match": 4,
+      "crm_webhook": 1
+    },
+    {
+      "bucket": "2026-07-31T05:29:00.000Z",
+      "meta_custom_audiences": 18,
+      "google_ads_customer_match": 4,
+      "crm_webhook": 2
+    },
+    {
+      "bucket": "2026-07-31T05:30:00.000Z",
+      "meta_custom_audiences": 18,
+      "google_ads_customer_match": 5,
+      "crm_webhook": 2
+    },
+    {
+      "bucket": "2026-07-31T05:31:00.000Z",
+      "meta_custom_audiences": 21,
+      "google_ads_customer_match": 5,
+      "crm_webhook": 2
+    },
+    {
+      "bucket": "2026-07-31T05:32:00.000Z",
+      "meta_custom_audiences": 20,
+      "google_ads_customer_match": 5,
+      "crm_webhook": 2
+    },
+    {
+      "bucket": "2026-07-31T05:33:00.000Z",
+      "meta_custom_audiences": 20,
+      "google_ads_customer_match": 5,
+      "crm_webhook": 2
+    },
+    {
+      "bucket": "2026-07-31T05:34:00.000Z",
+      "meta_custom_audiences": 19,
+      "google_ads_customer_match": 5,
+      "crm_webhook": 2
+    },
+    {
+      "bucket": "2026-07-31T05:35:00.000Z",
+      "meta_custom_audiences": 18,
+      "google_ads_customer_match": 5,
+      "crm_webhook": 2
+    },
+    {
+      "bucket": "2026-07-31T05:36:00.000Z",
+      "meta_custom_audiences": 19,
+      "google_ads_customer_match": 5,
+      "crm_webhook": 1
+    },
+    {
+      "bucket": "2026-07-31T05:37:00.000Z",
+      "meta_custom_audiences": 17,
+      "google_ads_customer_match": 4,
+      "crm_webhook": 2
+    },
+    {
+      "bucket": "2026-07-31T05:38:00.000Z",
+      "meta_custom_audiences": 16,
+      "google_ads_customer_match": 4,
+      "crm_webhook": 1
+    },
+    {
+      "bucket": "2026-07-31T05:39:00.000Z",
+      "meta_custom_audiences": 15,
+      "google_ads_customer_match": 3,
+      "crm_webhook": 1
+    },
+    {
+      "bucket": "2026-07-31T05:40:00.000Z",
+      "meta_custom_audiences": 12,
+      "google_ads_customer_match": 2,
+      "crm_webhook": 1
+    },
+    {
+      "bucket": "2026-07-31T05:41:00.000Z",
+      "meta_custom_audiences": 10,
+      "google_ads_customer_match": 2,
+      "crm_webhook": 0
+    },
+    {
+      "bucket": "2026-07-31T05:42:00.000Z",
+      "meta_custom_audiences": 10,
+      "google_ads_customer_match": 2,
+      "crm_webhook": 0
+    },
+    {
+      "bucket": "2026-07-31T05:43:00.000Z",
+      "meta_custom_audiences": 9,
+      "google_ads_customer_match": 1,
+      "crm_webhook": 0
+    },
+    {
+      "bucket": "2026-07-31T05:44:00.000Z",
+      "meta_custom_audiences": 9,
+      "google_ads_customer_match": 1,
+      "crm_webhook": 0
+    },
+    {
+      "bucket": "2026-07-31T05:45:00.000Z",
+      "meta_custom_audiences": 7,
+      "google_ads_customer_match": 1,
+      "crm_webhook": 0
+    },
+    {
+      "bucket": "2026-07-31T05:46:00.000Z",
+      "meta_custom_audiences": 8,
+      "google_ads_customer_match": 1,
+      "crm_webhook": 0
+    },
+    {
+      "bucket": "2026-07-31T05:47:00.000Z",
+      "meta_custom_audiences": 8,
+      "google_ads_customer_match": 1,
+      "crm_webhook": 0
+    },
+    {
+      "bucket": "2026-07-31T05:48:00.000Z",
+      "meta_custom_audiences": 10,
+      "google_ads_customer_match": 2,
+      "crm_webhook": 0
+    },
+    {
+      "bucket": "2026-07-31T05:49:00.000Z",
+      "meta_custom_audiences": 11,
+      "google_ads_customer_match": 2,
+      "crm_webhook": 0
+    },
+    {
+      "bucket": "2026-07-31T05:50:00.000Z",
+      "meta_custom_audiences": 13,
+      "google_ads_customer_match": 2,
+      "crm_webhook": 1
+    },
+    {
+      "bucket": "2026-07-31T05:51:00.000Z",
+      "meta_custom_audiences": 13,
+      "google_ads_customer_match": 3,
+      "crm_webhook": 1
+    },
+    {
+      "bucket": "2026-07-31T05:52:00.000Z",
+      "meta_custom_audiences": 15,
+      "google_ads_customer_match": 3,
+      "crm_webhook": 1
+    },
+    {
+      "bucket": "2026-07-31T05:53:00.000Z",
+      "meta_custom_audiences": 16,
+      "google_ads_customer_match": 4,
+      "crm_webhook": 2
+    },
+    {
+      "bucket": "2026-07-31T05:54:00.000Z",
+      "meta_custom_audiences": 17,
+      "google_ads_customer_match": 4,
+      "crm_webhook": 2
+    },
+    {
+      "bucket": "2026-07-31T05:55:00.000Z",
+      "meta_custom_audiences": 18,
+      "google_ads_customer_match": 4,
+      "crm_webhook": 2
+    },
+    {
+      "bucket": "2026-07-31T05:56:00.000Z",
+      "meta_custom_audiences": 20,
+      "google_ads_customer_match": 5,
+      "crm_webhook": 2
+    },
+    {
+      "bucket": "2026-07-31T05:57:00.000Z",
+      "meta_custom_audiences": 20,
+      "google_ads_customer_match": 5,
+      "crm_webhook": 2
+    },
+    {
+      "bucket": "2026-07-31T05:58:00.000Z",
+      "meta_custom_audiences": 21,
+      "google_ads_customer_match": 5,
+      "crm_webhook": 2
+    },
+    {
+      "bucket": "2026-07-31T05:59:00.000Z",
+      "meta_custom_audiences": 20,
+      "google_ads_customer_match": 5,
+      "crm_webhook": 2
+    },
+    {
+      "bucket": "2026-07-31T06:00:00.000Z",
+      "meta_custom_audiences": 19,
+      "google_ads_customer_match": 4,
+      "crm_webhook": 2
+    }
+  ],
+  "sourceConfig": [
+    {
+      "key": "web_sdk",
+      "label": "Web SDK",
+      "color": "var(--color-chart-1)"
+    },
+    {
+      "key": "ios_sdk",
+      "label": "iOS SDK",
+      "color": "var(--color-chart-2)"
+    },
+    {
+      "key": "shopify_store",
+      "label": "Shopify Store",
+      "color": "var(--color-chart-3)"
+    },
+    {
+      "key": "stadium_wifi_portal",
+      "label": "Stadium Wi-Fi Portal",
+      "color": "var(--color-chart-4)"
+    }
+  ],
+  "eventTypeConfig": [
+    {
+      "key": "page_view",
+      "label": "page_view",
+      "color": "var(--color-chart-1)"
+    },
+    {
+      "key": "identify",
+      "label": "identify",
+      "color": "var(--color-chart-2)"
+    },
+    {
+      "key": "add_to_cart",
+      "label": "add_to_cart",
+      "color": "var(--color-chart-3)"
+    },
+    {
+      "key": "ticket_scan",
+      "label": "ticket_scan",
+      "color": "var(--color-chart-4)"
+    },
+    {
+      "key": "wifi_signin",
+      "label": "wifi_signin",
+      "color": "var(--color-chart-5)"
+    }
+  ],
+  "routedConfig": [
+    {
+      "key": "snowflake",
+      "label": "Snowflake",
+      "color": "var(--color-chart-1)"
+    },
+    {
+      "key": "meta_conversions_api",
+      "label": "Meta Conversions API",
+      "color": "var(--color-chart-2)"
+    },
+    {
+      "key": "ops_webhook",
+      "label": "Ops Webhook",
+      "color": "var(--color-chart-3)"
+    }
+  ],
+  "profileRefreshConfig": [
+    {
+      "key": "profiles",
+      "label": "Profiles",
+      "color": "var(--color-chart-1)"
+    }
+  ],
+  "profileDeliveryConfig": [
+    {
+      "key": "meta_custom_audiences",
+      "label": "Meta Custom Audiences",
+      "color": "var(--color-chart-1)"
+    },
+    {
+      "key": "google_ads_customer_match",
+      "label": "Google Ads Customer Match",
+      "color": "var(--color-chart-2)"
+    },
+    {
+      "key": "crm_webhook",
+      "label": "CRM Webhook",
+      "color": "var(--color-chart-3)"
+    }
+  ],
+  "lastEvents": [
+    {
+      "id": "ev_9a12f0",
+      "eventName": "page_view",
+      "sourceId": "src_web_sdk",
+      "sourceName": "Web SDK",
+      "profileId": "prof_4e9f60",
+      "occurredAt": "2026-07-31T05:58:44.000Z"
+    },
+    {
+      "id": "ev_9a12ef",
+      "eventName": "add_to_cart",
+      "sourceId": "src_shopify",
+      "sourceName": "Shopify Store",
+      "profileId": "prof_0a41c9",
+      "occurredAt": "2026-07-31T05:57:12.000Z"
+    },
+    {
+      "id": "ev_9a12ee",
+      "eventName": "wifi_signin",
+      "sourceId": "src_stadium_wifi",
+      "sourceName": "Stadium Wi-Fi Portal",
+      "profileId": "prof_5f2d31",
+      "occurredAt": "2026-07-31T05:55:03.000Z"
+    },
+    {
+      "id": "ev_9a12ed",
+      "eventName": "identify",
+      "sourceId": "src_web_sdk",
+      "sourceName": "Web SDK",
+      "profileId": "prof_2c03aa",
+      "occurredAt": "2026-07-31T05:52:40.000Z"
+    },
+    {
+      "id": "ev_9a12ec",
+      "eventName": "app_open",
+      "sourceId": "src_ios_sdk",
+      "sourceName": "iOS SDK",
+      "profileId": "prof_0a41c9",
+      "occurredAt": "2026-07-31T05:50:19.000Z"
+    }
+  ],
+  "lastProfiles": [
+    {
+      "id": "prof_4e9f60",
+      "displayName": "Anonymous browser b_31aa7f",
+      "updatedAt": "2026-07-31T05:58:44.000Z"
+    },
+    {
+      "id": "prof_0a41c9",
+      "displayName": "Layla Al-Harbi",
+      "updatedAt": "2026-07-31T05:41:09.220Z"
+    },
+    {
+      "id": "prof_5f2d31",
+      "displayName": "Noura Al-Otaibi",
+      "updatedAt": "2026-07-31T05:20:00.000Z"
+    },
+    {
+      "id": "prof_2c03aa",
+      "displayName": "Sara Kim",
+      "updatedAt": "2026-07-31T03:02:00.000Z"
+    },
+    {
+      "id": "prof_1b77e2",
+      "displayName": "Omar Nasser",
+      "updatedAt": "2026-07-30T21:15:33.000Z"
+    }
+  ]
+}
