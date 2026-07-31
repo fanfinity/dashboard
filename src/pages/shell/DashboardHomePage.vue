@@ -1,300 +1,310 @@
 <template>
   <q-page class="p-6">
-    <!-- Header -->
-    <div class="mb-5 flex flex-wrap items-start justify-between gap-4">
-      <div>
-        <h1 class="text-2xl! font-semibold! tracking-[-0.5px]! text-ink"
-          >Overview</h1
-        >
-        <p class="mt-1 text-sm text-muted"
-          >Koora Break – Saudi Pro League – 2026</p
-        >
-      </div>
-
-      <div class="flex flex-wrap items-center gap-2">
+    <PageHeader title="Dashboard" :subtitle="subtitle">
+      <template #actions>
         <button
-          v-for="f in filters"
-          :key="f"
-          class="flex h-9 items-center gap-1.5 rounded-lg border border-line2 bg-white px-3 text-sm text-ink shadow-sm hover:bg-fill"
+          :disabled="loading"
+          class="flex h-9 items-center gap-1.5 rounded-lg border border-line2 bg-white px-3 text-sm text-ink shadow-sm hover:bg-fill disabled:opacity-50"
+          @click="refresh"
         >
-          {{ f }}
-          <svg viewBox="0 0 16 16" class="size-3.5 text-subtle" fill="none">
+          <svg
+            viewBox="0 0 16 16"
+            class="size-4"
+            fill="none"
+            aria-hidden="true"
+          >
             <path
-              d="M4 6l4 4 4-4"
+              d="M13 8a5 5 0 1 1-1.46-3.54M13 3v3h-3"
               stroke="currentColor"
               stroke-width="1.5"
               stroke-linecap="round"
               stroke-linejoin="round"
             />
           </svg>
+          {{ loading ? 'Refreshing…' : 'Refresh' }}
         </button>
-        <button
+        <router-link
+          :to="{ name: 'sources-new' }"
           class="flex h-9 items-center gap-1.5 rounded-lg bg-brand px-3.5 text-sm font-medium text-white shadow-sm hover:opacity-90"
+          >Connect a source</router-link
         >
-          <svg viewBox="0 0 16 16" class="size-4" fill="none">
-            <path
-              d="M8 2v8m0 0L5 7m3 3l3-3M3 13h10"
-              stroke="currentColor"
-              stroke-width="1.5"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-            />
-          </svg>
-          Export
-        </button>
-      </div>
+      </template>
+    </PageHeader>
+
+    <!-- 1. Loading -->
+    <div v-if="showSkeleton" class="flex flex-col gap-4">
+      <LoadingState variant="grid" :rows="4" />
+      <LoadingState variant="table" :rows="6" />
     </div>
 
-    <!-- KPI cards -->
-    <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-      <div
-        v-for="kpi in kpis"
-        :key="kpi.label"
-        class="rounded-xl border border-line2 bg-white p-4 shadow-sm"
-      >
-        <p class="text-sm text-muted">{{ kpi.label }}</p>
-        <div class="mt-2 flex items-baseline gap-2">
-          <span class="text-2xl font-semibold tracking-[-0.5px] text-ink">{{
-            kpi.value
-          }}</span>
-          <span v-if="kpi.delta" class="text-xs font-medium text-success"
-            >↑ {{ kpi.delta }}</span
-          >
-        </div>
-      </div>
-    </div>
+    <!-- 2. Error -->
+    <ErrorState
+      v-else-if="error"
+      title="Couldn't load the pipeline overview."
+      :message="error"
+      @retry="refresh"
+    />
 
-    <!-- What this audience is worth -->
-    <div class="mt-4 rounded-xl border border-line2 bg-white p-5 shadow-sm">
-      <h2 class="text-sm! font-semibold! tracking-[-0.35px]! text-ink"
-        >What this audience is worth</h2
-      >
-      <div class="mt-4 grid grid-cols-1 gap-4 md:grid-cols-2">
-        <div class="rounded-xl border border-line bg-fill p-4">
-          <p
-            class="text-[11px] font-semibold uppercase tracking-[0.4px] text-subtle"
-            >Before Fanfinity</p
-          >
-          <p class="mt-1 text-xs text-muted"
-            >Anonymous impressions · IPSOS panel estimate</p
-          >
-          <p class="mt-3"
-            ><span class="text-3xl font-semibold text-ink">$8</span>
-            <span class="ml-1 text-sm text-muted">CPM</span></p
-          >
-        </div>
-        <div class="relative rounded-xl border border-brand/30 bg-brand/5 p-4">
-          <span
-            class="absolute right-4 top-4 rounded-md bg-brand/10 px-2 py-0.5 text-[11px] font-medium text-brand"
-            >4x uplift</span
-          >
-          <p
-            class="text-[11px] font-semibold uppercase tracking-[0.4px] text-brand"
-            >With Fanfinity</p
-          >
-          <p class="mt-1 text-xs text-muted">Verified, deduplicated fans</p>
-          <p class="mt-3"
-            ><span class="text-3xl font-semibold text-brand">$32</span>
-            <span class="ml-1 text-sm text-muted">CPM</span></p
-          >
-        </div>
-      </div>
-      <p class="mt-3 text-xs italic text-subtle"
-        >Illustrative figures for demo purposes.</p
-      >
-    </div>
-
-    <!-- Charts row -->
-    <div class="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-3">
-      <!-- Reach over time -->
-      <div class="rounded-xl border border-line2 bg-white p-5 shadow-sm">
-        <h3 class="text-sm! font-semibold! tracking-[-0.35px]! text-ink"
-          >Reach over time</h3
-        >
-        <p class="mt-0.5 text-xs text-muted">Last 30 days · Illustrative</p>
-        <svg viewBox="0 0 320 120" class="mt-4 h-28 w-full" fill="none">
-          <polyline
-            :points="reachPoints"
-            stroke="var(--color-brand)"
-            stroke-width="2"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-          />
-        </svg>
-        <div class="mt-2 flex justify-between text-[11px] text-subtle">
-          <span>12 May</span><span>26 May</span><span>11 Jun</span>
-        </div>
-      </div>
-
-      <!-- Demographics -->
-      <div class="rounded-xl border border-line2 bg-white p-5 shadow-sm">
-        <h3 class="text-sm! font-semibold! tracking-[-0.35px]! text-ink"
-          >Demographics</h3
-        >
-        <p class="mt-0.5 text-xs text-muted"
-          >Age · gender · cities · Illustrative</p
-        >
-        <div class="mt-4 space-y-2">
-          <div
-            v-for="row in ageBands"
-            :key="row.label"
-            class="flex items-center gap-3"
-          >
-            <span class="w-12 text-xs text-muted">{{ row.label }}</span>
-            <div class="h-2 flex-1 rounded-full bg-fill">
-              <div
-                class="h-2 rounded-full bg-brand"
-                :style="{ width: row.pct + '%' }"
-              />
-            </div>
-            <span class="w-8 text-right text-xs font-medium text-ink"
-              >{{ row.pct }}%</span
-            >
-          </div>
-        </div>
-        <div class="mt-4 border-t border-line pt-3 text-xs text-muted">
-          <p
-            >M <span class="font-medium text-ink">69%</span> · F
-            <span class="font-medium text-ink">31%</span></p
-          >
-          <p class="mt-1"
-            >Riyadh <span class="font-medium text-ink">52%</span> · Jeddah
-            <span class="font-medium text-ink">29%</span> · Dammam
-            <span class="font-medium text-ink">19%</span></p
-          >
-        </div>
-      </div>
-
-      <!-- Top segments by value -->
-      <div class="rounded-xl border border-line2 bg-white p-5 shadow-sm">
-        <h3 class="text-sm! font-semibold! tracking-[-0.35px]! text-ink"
-          >Top segments by value</h3
-        >
-        <p class="mt-0.5 text-xs text-muted">Indexed · Illustrative</p>
-        <div class="mt-4 space-y-3">
-          <div v-for="row in topSegments" :key="row.label">
-            <div class="mb-1 flex items-center justify-between text-xs">
-              <span class="text-muted">{{ row.label }}</span>
-              <span class="font-medium text-ink">{{ row.value }}</span>
-            </div>
-            <div class="h-2 rounded-full bg-fill">
-              <div
-                class="h-2 rounded-full bg-brand"
-                :style="{ width: row.value + '%' }"
-              />
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Campaign table -->
-    <div
-      class="mt-4 overflow-hidden rounded-xl border border-line2 bg-white shadow-sm"
+    <!-- 3. Empty — nothing configured yet. This is a first run, not a fault. -->
+    <EmptyState
+      v-else-if="isEmpty"
+      title="No data is flowing yet"
+      description="Fanfinity collects fan signals from a source, routes them through a pipe, and delivers them to a destination. Set up the three and this screen fills in."
     >
-      <table class="w-full text-sm">
-        <thead>
-          <tr class="border-b border-line text-left">
-            <th
-              class="px-5 py-3 text-[11px] font-semibold uppercase tracking-[0.4px] text-subtle"
-              >Campaign</th
-            >
-            <th
-              class="px-5 py-3 text-right text-[11px] font-semibold uppercase tracking-[0.4px] text-subtle"
-              >Reach</th
-            >
-            <th
-              class="px-5 py-3 text-right text-[11px] font-semibold uppercase tracking-[0.4px] text-subtle"
-              >Engagements</th
-            >
-            <th
-              class="px-5 py-3 text-right text-[11px] font-semibold uppercase tracking-[0.4px] text-subtle"
-              >CPM</th
-            >
-            <th
-              class="px-5 py-3 text-right text-[11px] font-semibold uppercase tracking-[0.4px] text-subtle"
-              >Status</th
-            >
-          </tr>
-        </thead>
-        <tbody>
-          <tr
-            v-for="row in campaigns"
-            :key="row.name"
-            class="border-b border-line last:border-0"
+      <template #cta>
+        <div class="flex flex-wrap items-center justify-center gap-2">
+          <router-link
+            :to="{ name: 'sources-new' }"
+            class="flex h-9 items-center gap-1.5 rounded-lg bg-brand px-3.5 text-sm font-medium text-white shadow-sm hover:opacity-90"
+            >1. Connect a source</router-link
           >
-            <td class="px-5 py-4 font-medium text-ink">{{ row.name }}</td>
-            <td class="px-5 py-4 text-right text-muted">{{ row.reach }}</td>
-            <td class="px-5 py-4 text-right text-muted">{{
-              row.engagements
-            }}</td>
-            <td class="px-5 py-4 text-right text-muted">{{ row.cpm }}</td>
-            <td class="px-5 py-4 text-right">
-              <span
-                :class="
-                  row.status === 'Live'
-                    ? 'border-success-line bg-success-bg text-success'
-                    : 'border-line2 bg-fill text-subtle'
-                "
-                class="inline-flex items-center rounded-md border px-2 py-0.5 text-[11px] font-medium"
-                >{{ row.status }}</span
+          <router-link
+            :to="{ name: 'destinations-new' }"
+            class="flex h-9 items-center gap-1.5 rounded-lg border border-line2 bg-white px-3 text-sm text-ink shadow-sm hover:bg-fill"
+            >2. Add a destination</router-link
+          >
+          <router-link
+            :to="{ name: 'pipes-new' }"
+            class="flex h-9 items-center gap-1.5 rounded-lg border border-line2 bg-white px-3 text-sm text-ink shadow-sm hover:bg-fill"
+            >3. Create a pipe</router-link
+          >
+        </div>
+      </template>
+    </EmptyState>
+
+    <!-- 4. Populated -->
+    <div v-else class="flex flex-col gap-4">
+      <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <StatCard
+          v-for="stat in stats"
+          :key="stat.label"
+          :label="stat.label"
+          :value="stat.value"
+          :delta="stat.delta"
+          :delta-direction="stat.deltaDirection"
+        />
+      </div>
+
+      <!-- Enabled but not moving: the only thing on this page worth acting on
+           immediately, so it sits directly under the headline numbers. -->
+      <CardPanel v-if="attention.length">
+        <div class="flex items-start gap-3">
+          <span
+            class="mt-1 size-2 shrink-0 rounded-full bg-amber-500"
+            aria-hidden="true"
+          />
+          <div class="min-w-0 flex-1">
+            <h2 class="text-sm! font-semibold! tracking-[-0.35px]! text-ink"
+              >Needs attention</h2
+            >
+            <ul class="mt-2 flex flex-col gap-1">
+              <li
+                v-for="item in attention"
+                :key="item.id"
+                class="text-sm text-muted"
               >
-            </td>
-          </tr>
-        </tbody>
-      </table>
+                <span class="font-medium text-ink">{{ item.title }}</span>
+                — {{ item.detail }}
+              </li>
+            </ul>
+          </div>
+        </div>
+      </CardPanel>
+
+      <CardPanel>
+        <div class="mb-2 flex flex-wrap items-start justify-between gap-2">
+          <div>
+            <h2 class="text-sm! font-semibold! tracking-[-0.35px]! text-ink"
+              >Events in and out</h2
+            >
+            <p class="mt-0.5 text-xs text-muted"
+              >Received from sources vs. delivered to destinations, per minute
+              for the last hour.</p
+            >
+          </div>
+          <p class="text-xs text-subtle"
+            >Fan-out
+            <span class="font-medium text-ink">{{ routingRate }}×</span></p
+          >
+        </div>
+        <ThroughputChart
+          :labels="throughput.labels"
+          :received="throughput.received"
+          :delivered="throughput.delivered"
+        />
+      </CardPanel>
+
+      <PipelineFlowPanel :columns="columns" />
+
+      <div class="grid grid-cols-1 gap-4 lg:grid-cols-2">
+        <CardPanel>
+          <div class="mb-3 flex items-baseline justify-between gap-2">
+            <h2 class="text-sm! font-semibold! tracking-[-0.35px]! text-ink"
+              >Recent errors</h2
+            >
+            <router-link
+              :to="{ name: 'errors' }"
+              class="text-xs font-medium text-brand hover:underline"
+              >View all</router-link
+            >
+          </div>
+          <ActivityList
+            :items="errorItems"
+            empty-text="No failures logged in the last hour."
+          />
+        </CardPanel>
+
+        <CardPanel>
+          <div class="mb-3 flex items-baseline justify-between gap-2">
+            <h2 class="text-sm! font-semibold! tracking-[-0.35px]! text-ink"
+              >Latest events</h2
+            >
+            <router-link
+              :to="{ name: 'sources' }"
+              class="text-xs font-medium text-brand hover:underline"
+              >View sources</router-link
+            >
+          </div>
+          <ActivityList
+            :items="eventItems"
+            empty-text="No events received yet."
+          />
+        </CardPanel>
+      </div>
+
+      <div class="grid grid-cols-1 gap-4 lg:grid-cols-2">
+        <CardPanel>
+          <div class="mb-3 flex items-baseline justify-between gap-2">
+            <div>
+              <h2 class="text-sm! font-semibold! tracking-[-0.35px]! text-ink"
+                >Fan profiles</h2
+              >
+              <p class="mt-0.5 text-xs text-muted"
+                >Resolved fans built from the events above.</p
+              >
+            </div>
+            <router-link
+              :to="{ name: 'profiles-search' }"
+              class="shrink-0 text-xs font-medium text-brand hover:underline"
+              >Search profiles</router-link
+            >
+          </div>
+
+          <dl class="mb-4 grid grid-cols-3 gap-3">
+            <div v-for="tile in profileTiles" :key="tile.label">
+              <dt class="text-xs text-subtle">{{ tile.label }}</dt>
+              <dd class="mt-0.5 text-lg font-semibold text-ink">{{
+                tile.value
+              }}</dd>
+            </div>
+          </dl>
+
+          <p
+            class="mb-2 text-[11px] font-semibold uppercase tracking-[0.4px] text-subtle"
+            >Recently updated</p
+          >
+          <ActivityList
+            :items="profileItems"
+            empty-text="No profiles resolved yet."
+          />
+        </CardPanel>
+
+        <AudienceValuePanel />
+      </div>
     </div>
   </q-page>
 </template>
 
 <script setup>
-const filters = ['Last 30 days', 'Property: All', 'Campaign: All']
+import { computed, onMounted, ref } from 'vue'
+import CardPanel from '@/components/ui/CardPanel.vue'
+import EmptyState from '@/components/ui/EmptyState.vue'
+import ErrorState from '@/components/ui/ErrorState.vue'
+import LoadingState from '@/components/ui/LoadingState.vue'
+import PageHeader from '@/components/ui/PageHeader.vue'
+import StatCard from '@/components/ui/StatCard.vue'
+import ActivityList from '@/components/shell/ActivityList.vue'
+import AudienceValuePanel from '@/components/shell/AudienceValuePanel.vue'
+import PipelineFlowPanel from '@/components/shell/PipelineFlowPanel.vue'
+import ThroughputChart from '@/components/shell/ThroughputChart.vue'
+import {
+  formatAgo,
+  formatClock,
+  formatNumber,
+  useDashboardHome
+} from '@/composables/useDashboardHome'
 
-const kpis = [
-  { label: 'Verified unique reach', value: '1.24M' },
-  { label: 'Verified fans', value: '842K' },
-  { label: 'Engagements', value: '3.1M' },
-  { label: 'Avg. CPM', value: '$32', delta: '4%' }
-]
+const {
+  loading,
+  error,
+  load,
+  stats,
+  throughput,
+  columns,
+  attention,
+  recentEvents,
+  recentProfiles,
+  topErrors,
+  profileStats,
+  routingRate,
+  updatedAt,
+  isEmpty
+} = useDashboardHome()
 
-// Illustrative upward trend, plotted into a 320×120 viewBox.
-const reachSeries = [22, 30, 26, 38, 34, 48, 44, 60, 56, 72, 80, 96]
-const reachPoints = reachSeries
-  .map((v, i) => {
-    const x = (i / (reachSeries.length - 1)) * 320
-    const y = 120 - (v / 100) * 110 - 5
-    return `${x.toFixed(1)},${y.toFixed(1)}`
-  })
-  .join(' ')
+// The skeleton is for the first paint only — a manual refresh keeps the
+// populated screen on-screen rather than collapsing it back to grey bars.
+const loaded = ref(false)
 
-const ageBands = [
-  { label: '18–24', pct: 34 },
-  { label: '25–34', pct: 41 },
-  { label: '35–44', pct: 17 },
-  { label: '45+', pct: 8 }
-]
+const showSkeleton = computed(() => loading.value && !loaded.value)
 
-const topSegments = [
-  { label: 'Super Fans', value: 100 },
-  { label: 'Hot Al-Hilal', value: 76 },
-  { label: 'La Liga readers', value: 58 },
-  { label: 'Match-day buyers', value: 41 }
-]
+async function refresh() {
+  await load()
+  loaded.value = true
+}
 
-const campaigns = [
-  {
-    name: 'Ramadan 2026',
-    reach: '612K',
-    engagements: '1.4M',
-    cpm: '$34',
-    status: 'Live'
-  },
-  {
-    name: 'SPL Matchweek 22',
-    reach: '410K',
-    engagements: '920K',
-    cpm: '$30',
-    status: 'Ended'
-  }
-]
+const subtitle = computed(() => {
+  const at = formatClock(updatedAt.value)
+  return at
+    ? `Fan data pipeline · last hour · updated ${at}`
+    : 'Fan data pipeline · last hour'
+})
+
+const errorItems = computed(() =>
+  topErrors.value.map(e => ({
+    id: e.id,
+    title: e.entityName || e.code,
+    meta: e.message,
+    right: formatAgo(e.occurredAt),
+    badge: {
+      variant: e.severity === 'error' ? 'danger' : 'warn',
+      label: e.severity === 'error' ? 'Error' : 'Warning'
+    }
+  }))
+)
+
+const eventItems = computed(() =>
+  recentEvents.value.map(e => ({
+    id: e.id,
+    title: e.eventName,
+    meta: e.sourceName,
+    right: formatAgo(e.occurredAt)
+  }))
+)
+
+const profileItems = computed(() =>
+  recentProfiles.value.map(p => ({
+    id: p.id,
+    title: p.displayName,
+    meta: p.id,
+    right: formatAgo(p.updatedAt)
+  }))
+)
+
+const profileTiles = computed(() => [
+  { label: 'Refreshed', value: formatNumber(profileStats.value.refreshed) },
+  { label: 'Routed', value: formatNumber(profileStats.value.routed) },
+  { label: 'Live syncs', value: formatNumber(profileStats.value.liveSyncs) }
+])
+
+onMounted(refresh)
 </script>
