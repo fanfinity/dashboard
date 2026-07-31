@@ -457,67 +457,14 @@ export const screens = [
   }
 ]
 
-// Pre-existing pages, kept working while the new product is built out.
+// The pre-existing pages that survived the legacy consolidation: the only three
+// with no equivalent among the screens above. The other eight were duplicates of
+// a product screen — a second, bespoke surface for the same concept, and none of
+// them backed by real data — so they were deleted rather than ported. Dead URLs:
+// /fan-overview, /contacts, /contacts/:email, /identity-resolution, /segments,
+// /activation, /communications, /integrations. The catch-all in routes.js 404s
+// them; there are deliberately no redirects.
 export const legacyScreens = [
-  {
-    // The original demo overview. `/` is now the operational pipeline dashboard,
-    // so this keeps the audience/campaign demo surface reachable. Its figures are
-    // hardcoded illustrations, not measured — see the note in the component.
-    path: '/fan-overview',
-    name: 'fan-overview',
-    component: 'legacy/FanOverviewPage.vue',
-    title: 'Fan Overview',
-    group: 'legacy'
-  },
-  {
-    path: '/contacts',
-    name: 'contacts',
-    component: 'ContactsPage.vue',
-    title: 'Contacts',
-    group: 'legacy'
-  },
-  {
-    path: '/contacts/:email',
-    name: 'contact-detail',
-    component: 'ContactDetailPage.vue',
-    title: 'Contact',
-    group: 'legacy'
-  },
-  {
-    path: '/identity-resolution',
-    name: 'identity-resolution',
-    component: 'IdentityResolutionPage.vue',
-    title: 'Identity Resolution (legacy)',
-    group: 'legacy'
-  },
-  {
-    path: '/segments',
-    name: 'segments',
-    component: 'SegmentsPage.vue',
-    title: 'Segments',
-    group: 'legacy'
-  },
-  {
-    path: '/activation',
-    name: 'activation',
-    component: 'ActivationPage.vue',
-    title: 'Activation',
-    group: 'legacy'
-  },
-  {
-    path: '/communications',
-    name: 'communications',
-    component: 'CommunicationsPage.vue',
-    title: 'Communications',
-    group: 'legacy'
-  },
-  {
-    path: '/integrations',
-    name: 'integrations',
-    component: 'IntegrationsPage.vue',
-    title: 'Integrations',
-    group: 'legacy'
-  },
   {
     path: '/connectors',
     name: 'connectors',

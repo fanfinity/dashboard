@@ -314,9 +314,15 @@ const { currentAccount, currentRole } = useMe()
 // dashboard tells the same story with the same honesty: `live` = backed by real
 // network data today, `demo` = illustrative fixture, `preview` = module designed
 // but not built. Unbadged rows are ordinary product surface — badging all ~30
-// mock screens would be noise, so only the exceptions that matter in a demo, and
-// the unbuilt module, carry a pill. Palettes are StatusBadge's success/neutral/
-// brand strings, so a nav pill and a table pill read as the same object.
+// mock screens would be noise, so only the exceptions carry a pill. Palettes are
+// StatusBadge's success/neutral/brand strings, so a nav pill and a table pill
+// read as the same object.
+//
+// Today the only pill in the tree is `preview` on Engage. Nothing renders real
+// data — the events read path 401s and those pages fall back to mock JSON — so a
+// `live` pill would overclaim, and the demo-only legacy pages that carried `demo`
+// are gone. Both keys stay: re-badge `live` the day the events key works again
+// rather than reinventing the mechanism.
 const BADGES = {
   live: {
     label: 'Live',
@@ -343,12 +349,19 @@ function railLabel(item) {
 // their screens is active.
 //
 // The order is the product story, so the sidebar reads top-to-bottom the way the
-// data flows: collect → resolve → activate → engage → measure, with operational
-// rooms last. `caption` marks the first group of a section and renders as a small
-// uppercase label (a plain rule in rail mode, where there is no room for text);
-// keeping it on the group rather than in a wrapper array means an
-// entitlement-gated section takes its own caption with it when it disappears.
-// `badge` is a key into BADGES above.
+// data flows: collect → fans → activate → engage → measure, with the demo lab
+// last. Monitoring sits inside COLLECT because errors and health are read by the
+// same engineer who is watching the pipeline, not by a separate ops persona.
+// `caption` marks the first group of a section and renders as a small uppercase
+// label (a plain rule in rail mode, where there is no room for text); keeping it
+// on the group rather than in a wrapper array means an entitlement-gated section
+// takes its own caption with it when it disappears. `badge` is a key into BADGES
+// above.
+//
+// One surface per concept: the legacy duplicate pages (Contacts, the live
+// identity graph, Segments, Activation, Communications, Integrations, Fan
+// overview) were deleted, so FANS is Profiles alone and every row below points at
+// a product screen.
 const navGroups = [
   { key: 'dashboard', label: 'Dashboard', icon: icOverview, to: '/' },
   {
@@ -358,8 +371,8 @@ const navGroups = [
     icon: icSources,
     children: [
       { label: 'Event streams', to: '/sources' },
-      { label: 'Live events', to: '/live-events', badge: 'live' },
-      { label: 'Connectors', to: '/connectors', badge: 'live' }
+      { label: 'Live events', to: '/live-events' },
+      { label: 'Connectors', to: '/connectors' }
     ]
   },
   { key: 'pipes', label: 'Pipes', icon: icIntegrations, to: '/pipes' },
@@ -380,8 +393,17 @@ const navGroups = [
     ]
   },
   {
+    key: 'monitoring',
+    label: 'Monitoring',
+    icon: icBell,
+    children: [
+      { label: 'Errors', to: '/errors' },
+      { label: 'Health', to: '/health' }
+    ]
+  },
+  {
     key: 'profiles',
-    caption: 'RESOLVE',
+    caption: 'FANS',
     label: 'Profiles',
     icon: icContacts,
     children: [
@@ -394,29 +416,11 @@ const navGroups = [
     ]
   },
   {
-    key: 'fans',
-    label: 'Fans',
-    icon: icSegments,
-    children: [
-      { label: 'Contacts', to: '/contacts', badge: 'live' },
-      {
-        label: 'Live identity graph',
-        to: '/identity-resolution',
-        badge: 'live'
-      }
-    ]
-  },
-  {
     key: 'audiences',
     caption: 'ACTIVATE',
     label: 'Audiences',
     icon: icSegments,
-    children: [
-      { label: 'Audiences', to: '/audiences' },
-      { label: 'Segments', to: '/segments', badge: 'live' },
-      { label: 'Goals', to: '/goals' },
-      { label: 'Activation', to: '/activation', badge: 'demo' }
-    ]
+    to: '/audiences'
   },
   {
     key: 'campaigns',
@@ -424,8 +428,10 @@ const navGroups = [
     icon: icComm,
     children: [
       { label: 'Journeys', to: '/journeys' },
+      // Goals belong to journeys — a goal is what a journey is measured
+      // against — so they sit together rather than under Audiences.
+      { label: 'Goals', to: '/goals' },
       { label: 'Email campaigns', to: '/channels/email' },
-      { label: 'Communications', to: '/communications', badge: 'demo' },
       { label: 'Assets', to: '/assets' },
       { label: 'Catalogs', to: '/catalogs' },
       { label: 'Channel settings', to: '/channels/settings' }
@@ -445,34 +451,21 @@ const navGroups = [
     ]
   },
   {
-    key: 'measure',
+    key: 'reporting',
     caption: 'MEASURE',
-    label: 'Measure',
+    label: 'Reporting',
     icon: icOverview,
-    children: [
-      { label: 'Reporting', to: '/reporting' },
-      { label: 'Fan overview', to: '/fan-overview', badge: 'demo' }
-    ]
-  },
-  {
-    key: 'monitoring',
-    caption: 'SYSTEM',
-    label: 'Monitoring',
-    icon: icBell,
-    children: [
-      { label: 'Errors', to: '/errors' },
-      { label: 'Health', to: '/health' }
-    ]
+    to: '/reporting'
   },
   {
     key: 'demo',
+    caption: 'SYSTEM',
     label: 'Demo lab',
     icon: icSetup,
     children: [
       { label: 'Demo store', to: '/demo-store' },
       { label: 'Event inspector', to: '/demo-event-inspector' },
-      { label: 'Events demo', to: '/events-demo', badge: 'live' },
-      { label: 'Integrations', to: '/integrations', badge: 'demo' }
+      { label: 'Events demo', to: '/events-demo' }
     ]
   }
 ]
