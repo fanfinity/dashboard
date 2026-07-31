@@ -90,72 +90,35 @@
           />
         </template>
 
-        <dl class="flex flex-col divide-y divide-line">
-          <div
-            class="flex flex-wrap items-baseline justify-between gap-2 py-2.5 first:pt-0"
-          >
-            <dt class="text-xs font-medium text-subtle">Pipe ID</dt>
-            <dd class="break-all text-sm text-ink">{{ pipe.id }}</dd>
-          </div>
-          <div
-            class="flex flex-wrap items-baseline justify-between gap-2 py-2.5"
-          >
-            <dt class="text-xs font-medium text-subtle">Source</dt>
-            <dd class="text-sm">
-              <button
-                class="font-medium text-brand hover:underline"
-                @click="
-                  router.push({
-                    name: 'sources-detail',
-                    params: { id: pipe.sourceId }
-                  })
-                "
-              >
-                {{ pipe.sourceName }}
-              </button>
-            </dd>
-          </div>
-          <div
-            class="flex flex-wrap items-baseline justify-between gap-2 py-2.5"
-          >
-            <dt class="text-xs font-medium text-subtle">Source type</dt>
-            <dd class="text-sm text-ink">{{ sourceTypeLabel }}</dd>
-          </div>
-          <div
-            class="flex flex-wrap items-baseline justify-between gap-2 py-2.5"
-          >
-            <dt class="text-xs font-medium text-subtle">Destination</dt>
-            <dd class="text-sm">
-              <button
-                class="font-medium text-brand hover:underline"
-                @click="
-                  router.push({
-                    name: 'destinations-detail',
-                    params: { id: pipe.eventDestinationId }
-                  })
-                "
-              >
-                {{ pipe.eventDestinationName }}
-              </button>
-            </dd>
-          </div>
-          <div
-            class="flex flex-wrap items-baseline justify-between gap-2 py-2.5"
-          >
-            <dt class="text-xs font-medium text-subtle">Created</dt>
-            <dd class="text-sm text-ink">{{
-              formatDateTime(pipe.createdAt)
-            }}</dd>
-          </div>
-          <div
-            class="flex flex-wrap items-baseline justify-between gap-2 py-2.5 last:pb-0"
-          >
-            <dt class="text-xs font-medium text-subtle">Last updated</dt>
-            <dd class="text-sm text-ink">{{
-              formatDateTime(pipe.updatedAt)
-            }}</dd>
-          </div>
-        </dl>
+        <DefinitionList :items="details" :columns="1">
+          <template #value-source>
+            <button
+              class="font-medium text-brand hover:underline"
+              @click="
+                router.push({
+                  name: 'sources-detail',
+                  params: { id: pipe.sourceId }
+                })
+              "
+            >
+              {{ pipe.sourceName }}
+            </button>
+          </template>
+
+          <template #value-destination>
+            <button
+              class="font-medium text-brand hover:underline"
+              @click="
+                router.push({
+                  name: 'destinations-detail',
+                  params: { id: pipe.eventDestinationId }
+                })
+              "
+            >
+              {{ pipe.eventDestinationName }}
+            </button>
+          </template>
+        </DefinitionList>
       </CardPanel>
 
       <template v-else-if="tab === 'configuration'">
@@ -245,6 +208,7 @@ import { useQuasar } from 'quasar'
 import PageHeader from '@/components/ui/PageHeader.vue'
 import CardPanel from '@/components/ui/CardPanel.vue'
 import ConfirmDialog from '@/components/ui/ConfirmDialog.vue'
+import DefinitionList from '@/components/ui/DefinitionList.vue'
 import EmptyState from '@/components/ui/EmptyState.vue'
 import ErrorState from '@/components/ui/ErrorState.vue'
 import LoadingState from '@/components/ui/LoadingState.vue'
@@ -317,6 +281,21 @@ const sourceTypeLabel = computed(
 const sourceHint = computed(
   () => `${pipe.value?.sourceSlug} · ${sourceTypeLabel.value.toLowerCase()}`
 )
+
+// `Source` and `Destination` are re-rendered as links by the matching
+// `#value-…` slots; every other row falls through to its formatted `value`.
+const details = computed(() => {
+  const p = pipe.value
+  if (!p) return []
+  return [
+    { label: 'Pipe ID', value: p.id },
+    { label: 'Source', value: p.sourceName },
+    { label: 'Source type', value: sourceTypeLabel.value },
+    { label: 'Destination', value: p.eventDestinationName },
+    { label: 'Created', value: formatDateTime(p.createdAt) },
+    { label: 'Last updated', value: formatDateTime(p.updatedAt) }
+  ]
+})
 
 const transformCopy = computed(() =>
   pipe.value?.hasFunctionCode

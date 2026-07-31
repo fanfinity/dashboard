@@ -21,21 +21,30 @@
       </template>
     </PageHeader>
 
+    <!-- A whole sentence does not fit a StatusBadge, which is a pill sized for
+         a word or two. It is a full-width block above the table rather than a
+         DataTable #toolbar item, because the toolbar is a centred flex row and
+         a banner in it would shrink to its text and read as a giant chip. -->
+    <NoticeBanner
+      v-if="cascadeCount"
+      variant="warn"
+      class="mb-4"
+      title="Some of these cannot be restored on their own"
+      :message="`${cascadeCount} of these reference a source or destination that was deleted too.`"
+    />
+
     <DataTable
       :columns="columns"
       :rows="items"
       :loading="loading"
       :error="error"
       row-key="id"
+      empty-title="Nothing in the trash"
+      empty-description="No pipe has been deleted. Anything you delete lands here first, so it can be put back."
+      empty-cta-label="Back to pipes"
+      :empty-cta-to="{ name: 'pipes' }"
       @retry="load"
     >
-      <template v-if="cascadeCount" #toolbar>
-        <StatusBadge
-          variant="warn"
-          :label="`${cascadeCount} of these reference a record that was deleted too`"
-        />
-      </template>
-
       <template #cell-name="{ row }">
         <div class="flex items-center gap-2">
           <p class="font-medium text-ink">{{ row.name }}</p>
@@ -102,22 +111,6 @@
           </button>
         </div>
       </template>
-
-      <template #empty>
-        <EmptyState
-          title="Nothing in the trash"
-          description="No pipe has been deleted. Anything you delete lands here first, so it can be put back."
-        >
-          <template #cta>
-            <button
-              class="rounded-lg border border-line2 bg-white px-3 py-1.5 text-sm font-medium text-brand hover:bg-fill"
-              @click="router.push({ name: 'pipes' })"
-            >
-              Back to pipes
-            </button>
-          </template>
-        </EmptyState>
-      </template>
     </DataTable>
 
     <!-- A pipe whose source or destination is also deleted cannot come back
@@ -168,7 +161,7 @@ import { useQuasar } from 'quasar'
 import PageHeader from '@/components/ui/PageHeader.vue'
 import ConfirmDialog from '@/components/ui/ConfirmDialog.vue'
 import DataTable from '@/components/ui/DataTable.vue'
-import EmptyState from '@/components/ui/EmptyState.vue'
+import NoticeBanner from '@/components/ui/NoticeBanner.vue'
 import StatusBadge from '@/components/ui/StatusBadge.vue'
 import { formatDate } from '@/composables/usePipes'
 import { usePipesTrash } from '@/composables/usePipesTrash'

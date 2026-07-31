@@ -247,11 +247,14 @@ export function useDashboardHome() {
         delta: '',
         deltaDirection: 'flat'
       },
+      // The error count is a caption, not a trend: `delta` would draw a red
+      // down-arrow in front of it, claiming a movement nothing here measures.
       {
         label: 'Error rate (last hour)',
         value: `${errorRate.toFixed(2)}%`,
-        delta: errors ? `${formatNumber(errors)} errors` : '',
-        deltaDirection: 'down'
+        delta: '',
+        deltaDirection: 'flat',
+        hint: errors ? `${formatNumber(errors)} errors` : ''
       }
     ]
   })

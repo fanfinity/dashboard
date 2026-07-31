@@ -82,6 +82,7 @@
           :value="stat.value"
           :delta="stat.delta"
           :delta-direction="stat.deltaDirection"
+          :hint="stat.hint ?? ''"
         />
       </div>
 

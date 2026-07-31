@@ -117,6 +117,10 @@
             :error="pipesError"
             row-key="id"
             clickable-rows
+            empty-title="No pipes deliver here yet"
+            empty-description="A pipe connects a source to this destination and decides which events reach it."
+            empty-cta-label="New pipe"
+            :empty-cta-to="{ name: 'pipes-new' }"
             @retry="loadPipes"
             @row-click="openPipe"
           >
@@ -139,22 +143,6 @@
             <template #cell-updatedAt="{ value }">{{
               formatDate(value)
             }}</template>
-
-            <template #empty>
-              <EmptyState
-                title="No pipes deliver here yet"
-                description="A pipe connects a source to this destination and decides which events reach it."
-              >
-                <template #cta>
-                  <button
-                    class="flex h-9 items-center gap-1.5 rounded-lg bg-brand px-3.5 text-sm font-medium text-white shadow-sm hover:opacity-90"
-                    @click="router.push({ name: 'pipes-new' })"
-                  >
-                    New pipe
-                  </button>
-                </template>
-              </EmptyState>
-            </template>
           </DataTable>
         </section>
 
@@ -165,28 +153,21 @@
           >
 
           <CardPanel>
-            <dl class="flex flex-col gap-3 text-sm">
-              <div
-                v-for="row in details"
-                :key="row.label"
-                class="flex items-start justify-between gap-4"
-              >
-                <dt class="shrink-0 text-subtle">{{ row.label }}</dt>
-                <dd class="min-w-0 break-words text-right text-muted">
-                  <StatusBadge
-                    v-if="row.label === 'Status'"
-                    :enabled="destination.isEnabled"
-                    :label="destination.isEnabled ? 'Enabled' : 'Paused'"
-                  />
-                  <DestinationTemplateBadge
-                    v-else-if="row.label === 'Template'"
-                    :record="destination"
-                    class="justify-end"
-                  />
-                  <span v-else>{{ row.value }}</span>
-                </dd>
-              </div>
-            </dl>
+            <DefinitionList :items="details" :columns="1">
+              <template #value-status>
+                <StatusBadge
+                  :enabled="destination.isEnabled"
+                  :label="destination.isEnabled ? 'Enabled' : 'Paused'"
+                />
+              </template>
+
+              <template #value-template>
+                <DestinationTemplateBadge
+                  :record="destination"
+                  class="justify-end"
+                />
+              </template>
+            </DefinitionList>
           </CardPanel>
 
           <CardPanel>
@@ -225,6 +206,7 @@ import { useRoute, useRouter } from 'vue-router'
 import PageHeader from '@/components/ui/PageHeader.vue'
 import CardPanel from '@/components/ui/CardPanel.vue'
 import DataTable from '@/components/ui/DataTable.vue'
+import DefinitionList from '@/components/ui/DefinitionList.vue'
 import StatCard from '@/components/ui/StatCard.vue'
 import StatusBadge from '@/components/ui/StatusBadge.vue'
 import LoadingState from '@/components/ui/LoadingState.vue'
@@ -290,8 +272,8 @@ const pipeColumns = [
   { key: 'updatedAt', label: 'Updated', sortable: true, align: 'right' }
 ]
 
-// `Status` and `Template` are rendered as badges by the template; the rest fall
-// through to their `value`.
+// `Status` and `Template` are rendered as badges through DefinitionList's
+// `#value-status` / `#value-template` slots; the rest fall through to `value`.
 const details = computed(() => {
   const d = destination.value
   if (!d) return []

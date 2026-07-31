@@ -28,12 +28,15 @@
     </li>
   </ul>
 
-  <!-- A quiet sub-list, not a whole screen: EmptyState's bordered card would
-       nest inside the CardPanel that wraps every use of this component. -->
-  <p v-else class="py-2 text-sm text-subtle">{{ emptyText }}</p>
+  <!-- A quiet sub-list, not a whole screen: EmptyState's default bordered card
+       would nest inside the CardPanel that wraps every use of this component,
+       so this is `inline`. It still carries data-smoke="empty", which the
+       hand-rolled <p> it replaced did not. -->
+  <EmptyState v-else variant="inline" :title="emptyText" />
 </template>
 
 <script setup>
+import EmptyState from '@/components/ui/EmptyState.vue'
 import StatusBadge from '@/components/ui/StatusBadge.vue'
 
 // Shared row shape for the three short lists on the dashboard home: recent

@@ -97,12 +97,15 @@
           </li>
         </ul>
 
-        <!-- EmptyState is a full bordered card; nesting one inside a column of
-             an already-bordered CardPanel reads as a card-in-a-card, so the
-             per-column empty case is an inline hint instead. -->
-        <p v-if="!column.items.length" class="py-2 text-sm text-subtle">{{
-          EMPTY_HINT[column.routeName]
-        }}</p>
+        <!-- EmptyState's default `card` variant is a full bordered surface, and
+             nesting one inside a column of an already-bordered CardPanel reads
+             as a card-in-a-card — hence `inline`, which is the same compact
+             hint but keeps data-smoke="empty". -->
+        <EmptyState
+          v-if="!column.items.length"
+          variant="inline"
+          :title="EMPTY_HINT[column.routeName]"
+        />
       </section>
     </div>
   </CardPanel>
@@ -110,6 +113,7 @@
 
 <script setup>
 import CardPanel from '@/components/ui/CardPanel.vue'
+import EmptyState from '@/components/ui/EmptyState.vue'
 import { formatNumber } from '@/composables/useDashboardHome'
 
 // Three tones, deliberately: green is the only "good", amber is the case worth

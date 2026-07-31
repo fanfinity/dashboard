@@ -86,12 +86,7 @@
           />
         </template>
 
-        <dl class="grid grid-cols-1 gap-x-8 gap-y-4 sm:grid-cols-2">
-          <div v-for="f in facts" :key="f.label" class="min-w-0">
-            <dt class="text-xs font-medium text-subtle">{{ f.label }}</dt>
-            <dd class="mt-0.5 truncate text-sm text-ink">{{ f.value }}</dd>
-          </div>
-        </dl>
+        <DefinitionList :items="facts" :columns="2" />
       </CardPanel>
 
       <SourceIngestPanel
@@ -138,34 +133,7 @@
             />
           </div>
 
-          <dl class="mt-5 grid grid-cols-1 gap-x-8 gap-y-4 sm:grid-cols-2">
-            <div>
-              <dt class="text-xs font-medium text-subtle">Running version</dt>
-              <dd class="mt-0.5 text-sm text-ink">{{
-                source.templateVersion
-              }}</dd>
-            </div>
-            <div>
-              <dt class="text-xs font-medium text-subtle">Latest version</dt>
-              <dd class="mt-0.5 text-sm text-ink">{{
-                source.latestTemplateVersion
-              }}</dd>
-            </div>
-            <div>
-              <dt class="text-xs font-medium text-subtle">Event types</dt>
-              <dd class="mt-0.5 text-sm text-ink">{{
-                formatCount(template.eventTypeCount)
-              }}</dd>
-            </div>
-            <div>
-              <dt class="text-xs font-medium text-subtle"
-                >Real-time attributes</dt
-              >
-              <dd class="mt-0.5 text-sm text-ink">{{
-                formatCount(template.realtimeAttributeCount)
-              }}</dd>
-            </div>
-          </dl>
+          <DefinitionList :items="templateFacts" :columns="2" class="mt-5" />
         </CardPanel>
       </template>
     </div>
@@ -188,6 +156,7 @@ import { useQuasar } from 'quasar'
 import PageHeader from '@/components/ui/PageHeader.vue'
 import TabNav from '@/components/ui/TabNav.vue'
 import CardPanel from '@/components/ui/CardPanel.vue'
+import DefinitionList from '@/components/ui/DefinitionList.vue'
 import StatCard from '@/components/ui/StatCard.vue'
 import StatusBadge from '@/components/ui/StatusBadge.vue'
 import LoadingState from '@/components/ui/LoadingState.vue'
@@ -269,10 +238,27 @@ const facts = computed(() => {
     { label: 'Source id', value: s.id },
     { label: 'Type', value: sourceTypeLabel(s.sourceType) },
     { label: 'Template', value: s.templateId ?? 'Hand-configured' },
-    { label: 'Template version', value: s.templateVersion ?? '—' },
+    // A blank value is DefinitionList's own em dash, so nothing is pre-filled
+    // here any more.
+    { label: 'Template version', value: s.templateVersion },
     { label: 'Created', value: formatDateTime(s.createdAt) },
     { label: 'Last updated', value: formatDateTime(s.updatedAt) },
-    { label: 'Description', value: s.description || '—' }
+    { label: 'Description', value: s.description }
+  ]
+})
+
+const templateFacts = computed(() => {
+  const s = source.value
+  const t = template.value
+  if (!s || !t) return []
+  return [
+    { label: 'Running version', value: s.templateVersion },
+    { label: 'Latest version', value: s.latestTemplateVersion },
+    { label: 'Event types', value: formatCount(t.eventTypeCount) },
+    {
+      label: 'Real-time attributes',
+      value: formatCount(t.realtimeAttributeCount)
+    }
   ]
 })
 
