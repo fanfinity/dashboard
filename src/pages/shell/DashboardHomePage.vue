@@ -87,30 +87,25 @@
       </div>
 
       <!-- Enabled but not moving: the only thing on this page worth acting on
-           immediately, so it sits directly under the headline numbers. -->
-      <CardPanel v-if="attention.length">
-        <div class="flex items-start gap-3">
-          <span
-            class="mt-1 size-2 shrink-0 rounded-full bg-amber-500"
-            aria-hidden="true"
-          />
-          <div class="min-w-0 flex-1">
-            <h2 class="text-sm! font-semibold! tracking-[-0.35px]! text-ink"
-              >Needs attention</h2
-            >
-            <ul class="mt-2 flex flex-col gap-1">
-              <li
-                v-for="item in attention"
-                :key="item.id"
-                class="text-sm text-muted"
-              >
-                <span class="font-medium text-ink">{{ item.title }}</span>
-                — {{ item.detail }}
-              </li>
-            </ul>
-          </div>
-        </div>
-      </CardPanel>
+           immediately, so it sits directly under the headline numbers.
+           NoticeBanner's layout was lifted from this block — use it, don't
+           re-hand-roll it. -->
+      <NoticeBanner
+        v-if="attention.length"
+        variant="warn"
+        title="Needs attention"
+      >
+        <ul class="flex flex-col gap-1">
+          <li
+            v-for="item in attention"
+            :key="item.id"
+            class="text-sm text-muted"
+          >
+            <span class="font-medium text-ink">{{ item.title }}</span>
+            — {{ item.detail }}
+          </li>
+        </ul>
+      </NoticeBanner>
 
       <CardPanel>
         <div class="mb-2 flex flex-wrap items-start justify-between gap-2">
@@ -215,6 +210,7 @@
 <script setup>
 import { computed, onMounted, ref } from 'vue'
 import CardPanel from '@/components/ui/CardPanel.vue'
+import NoticeBanner from '@/components/ui/NoticeBanner.vue'
 import EmptyState from '@/components/ui/EmptyState.vue'
 import ErrorState from '@/components/ui/ErrorState.vue'
 import LoadingState from '@/components/ui/LoadingState.vue'

@@ -182,10 +182,11 @@
           </button>
         </div>
 
-        <p v-else class="p-4 text-sm text-muted"
-          >Nothing else reads from {{ pipe.sourceName }} or writes to
-          {{ pipe.eventDestinationName }}.</p
-        >
+        <EmptyState
+          v-else
+          variant="inline"
+          :title="`Nothing else reads from ${pipe.sourceName} or writes to ${pipe.eventDestinationName}.`"
+        />
       </CardPanel>
     </div>
 

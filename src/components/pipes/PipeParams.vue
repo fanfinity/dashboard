@@ -1,11 +1,14 @@
 <template>
   <DefinitionList v-if="entries.length" :items="entries" :columns="1" />
-  <p v-else class="text-sm text-muted">{{ emptyText }}</p>
+  <!-- EmptyState rather than a bare <p>: it carries data-smoke="empty", which is
+       how the smoke gate tells a legitimately empty surface from a broken one. -->
+  <EmptyState v-else variant="inline" :title="emptyText" />
 </template>
 
 <script setup>
 import { computed } from 'vue'
 import DefinitionList from '@/components/ui/DefinitionList.vue'
+import EmptyState from '@/components/ui/EmptyState.vue'
 
 // Key/value read-out for a pipe's `destinationParams` — the per-pipe options
 // handed to the destination (`table`, `batchSize`, `pixel_id`, …). The shape is
