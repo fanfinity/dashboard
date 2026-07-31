@@ -9,8 +9,16 @@
     "profileCountChange7d": 0.042,
     "lastEvaluatedAt": "2026-07-31T05:55:00.000Z",
     "conditions": [
-      { "attributeId": "lifetime_merch_spend", "operator": "gte", "value": 1000 },
-      { "attributeId": "matchday_attendance_count", "operator": "gte", "value": 10 }
+      {
+        "attributeId": "lifetime_merch_spend",
+        "operator": "gte",
+        "value": 1000
+      },
+      {
+        "attributeId": "matchday_attendance_count",
+        "operator": "gte",
+        "value": 10
+      }
     ],
     "destinationCount": 1,
     "goalCount": 1,
@@ -28,8 +36,16 @@
     "profileCountChange7d": -0.018,
     "lastEvaluatedAt": "2026-07-31T04:20:00.000Z",
     "conditions": [
-      { "attributeId": "season_ticket_tier", "operator": "is_not_null", "value": null },
-      { "attributeId": "matchday_attendance_count", "operator": "lte", "value": 1 }
+      {
+        "attributeId": "season_ticket_tier",
+        "operator": "is_not_null",
+        "value": null
+      },
+      {
+        "attributeId": "matchday_attendance_count",
+        "operator": "lte",
+        "value": 1
+      }
     ],
     "destinationCount": 1,
     "goalCount": 1,
@@ -46,7 +62,13 @@
     "profileCount": 54210,
     "profileCountChange7d": 0.121,
     "lastEvaluatedAt": "2026-07-31T05:55:00.000Z",
-    "conditions": [{ "attributeId": "matchday_attendance_count", "operator": "gte", "value": 1 }],
+    "conditions": [
+      {
+        "attributeId": "matchday_attendance_count",
+        "operator": "gte",
+        "value": 1
+      }
+    ],
     "destinationCount": 1,
     "goalCount": 0,
     "version": 2,
@@ -63,8 +85,16 @@
     "profileCountChange7d": 0.008,
     "lastEvaluatedAt": "2026-07-31T05:55:00.000Z",
     "conditions": [
-      { "attributeId": "crm_marketing_consent", "operator": "eq", "value": true },
-      { "attributeId": "system_email_unsubscribed", "operator": "is_null", "value": null }
+      {
+        "attributeId": "crm_marketing_consent",
+        "operator": "eq",
+        "value": true
+      },
+      {
+        "attributeId": "system_email_unsubscribed",
+        "operator": "is_null",
+        "value": null
+      }
     ],
     "destinationCount": 1,
     "goalCount": 1,
@@ -81,7 +111,13 @@
     "profileCount": 3120,
     "profileCountChange7d": 0,
     "lastEvaluatedAt": "2026-07-14T09:00:00.000Z",
-    "conditions": [{ "attributeId": "last_page_viewed", "operator": "contains", "value": "/store/" }],
+    "conditions": [
+      {
+        "attributeId": "last_page_viewed",
+        "operator": "contains",
+        "value": "/store/"
+      }
+    ],
     "destinationCount": 0,
     "goalCount": 0,
     "version": 1,
@@ -97,7 +133,13 @@
     "profileCount": 412,
     "profileCountChange7d": 0.31,
     "lastEvaluatedAt": "2026-07-31T04:20:00.000Z",
-    "conditions": [{ "attributeId": "season_ticket_tier", "operator": "eq", "value": "Platinum" }],
+    "conditions": [
+      {
+        "attributeId": "season_ticket_tier",
+        "operator": "eq",
+        "value": "Platinum"
+      }
+    ],
     "destinationCount": 0,
     "goalCount": 1,
     "version": 1,

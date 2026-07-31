@@ -7,10 +7,30 @@
     "updatedAt": "2026-07-31T05:41:09.220Z",
     "lastSeenAt": "2026-07-31T05:41:09.220Z",
     "identifiers": [
-      { "typeId": "idt_email", "type": "email", "value": "layla.alharbi@example.com", "firstSeenAt": "2026-02-14T18:22:41.000Z" },
-      { "typeId": "idt_user_id", "type": "user_id", "value": "u_884120", "firstSeenAt": "2026-02-14T18:24:02.000Z" },
-      { "typeId": "idt_browser", "type": "browser", "value": "b_5f2c1a90", "firstSeenAt": "2026-02-14T18:22:41.000Z" },
-      { "typeId": "idt_mobile_user_id", "type": "mobile_user_id", "value": "m_ios_71ac", "firstSeenAt": "2026-03-06T08:10:00.000Z" }
+      {
+        "typeId": "idt_email",
+        "type": "email",
+        "value": "layla.alharbi@example.com",
+        "firstSeenAt": "2026-02-14T18:22:41.000Z"
+      },
+      {
+        "typeId": "idt_user_id",
+        "type": "user_id",
+        "value": "u_884120",
+        "firstSeenAt": "2026-02-14T18:24:02.000Z"
+      },
+      {
+        "typeId": "idt_browser",
+        "type": "browser",
+        "value": "b_5f2c1a90",
+        "firstSeenAt": "2026-02-14T18:22:41.000Z"
+      },
+      {
+        "typeId": "idt_mobile_user_id",
+        "type": "mobile_user_id",
+        "value": "m_ios_71ac",
+        "firstSeenAt": "2026-03-06T08:10:00.000Z"
+      }
     ],
     "attributes": {
       "lifetime_merch_spend": 1420.5,
@@ -19,7 +39,11 @@
       "last_page_viewed": "/store/home-kit",
       "crm_marketing_consent": true
     },
-    "audiences": ["aud_high_value_fans", "aud_matchday_attendees", "aud_newsletter_optin"],
+    "audiences": [
+      "aud_high_value_fans",
+      "aud_matchday_attendees",
+      "aud_newsletter_optin"
+    ],
     "eventCountLast30Days": 412,
     "sourceIds": ["src_web_sdk", "src_ios_sdk", "src_shopify"]
   },
@@ -31,9 +55,24 @@
     "updatedAt": "2026-07-30T21:15:33.000Z",
     "lastSeenAt": "2026-07-30T21:15:33.000Z",
     "identifiers": [
-      { "typeId": "idt_email", "type": "email", "value": "omar.nasser@example.com", "firstSeenAt": "2026-03-01T12:04:00.000Z" },
-      { "typeId": "idt_phone", "type": "phone", "value": "+966500112233", "firstSeenAt": "2026-04-12T19:30:00.000Z" },
-      { "typeId": "idt_ticket_ref", "type": "ticket_ref", "value": "TIX-99120", "firstSeenAt": "2026-04-12T19:30:00.000Z" }
+      {
+        "typeId": "idt_email",
+        "type": "email",
+        "value": "omar.nasser@example.com",
+        "firstSeenAt": "2026-03-01T12:04:00.000Z"
+      },
+      {
+        "typeId": "idt_phone",
+        "type": "phone",
+        "value": "+966500112233",
+        "firstSeenAt": "2026-04-12T19:30:00.000Z"
+      },
+      {
+        "typeId": "idt_ticket_ref",
+        "type": "ticket_ref",
+        "value": "TIX-99120",
+        "firstSeenAt": "2026-04-12T19:30:00.000Z"
+      }
     ],
     "attributes": {
       "lifetime_merch_spend": 0,
@@ -54,9 +93,24 @@
     "updatedAt": "2026-07-31T03:02:00.000Z",
     "lastSeenAt": "2026-07-31T03:02:00.000Z",
     "identifiers": [
-      { "typeId": "idt_email", "type": "email", "value": "sara.kim@example.com", "firstSeenAt": "2026-04-22T09:41:12.000Z" },
-      { "typeId": "idt_browser", "type": "browser", "value": "b_9910dd4c", "firstSeenAt": "2026-04-22T09:41:12.000Z" },
-      { "typeId": "idt_user_id", "type": "user_id", "value": "u_902341", "firstSeenAt": "2026-04-22T09:43:50.000Z" }
+      {
+        "typeId": "idt_email",
+        "type": "email",
+        "value": "sara.kim@example.com",
+        "firstSeenAt": "2026-04-22T09:41:12.000Z"
+      },
+      {
+        "typeId": "idt_browser",
+        "type": "browser",
+        "value": "b_9910dd4c",
+        "firstSeenAt": "2026-04-22T09:41:12.000Z"
+      },
+      {
+        "typeId": "idt_user_id",
+        "type": "user_id",
+        "value": "u_902341",
+        "firstSeenAt": "2026-04-22T09:43:50.000Z"
+      }
     ],
     "attributes": {
       "lifetime_merch_spend": 289.99,
@@ -77,8 +131,18 @@
     "updatedAt": "2026-06-30T14:00:00.000Z",
     "lastSeenAt": "2026-06-30T14:00:00.000Z",
     "identifiers": [
-      { "typeId": "idt_email", "type": "email", "value": "yusuf.rahman@example.com", "firstSeenAt": "2026-02-19T07:55:00.000Z" },
-      { "typeId": "idt_user_id", "type": "user_id", "value": "u_771002", "firstSeenAt": "2026-02-19T07:55:00.000Z" }
+      {
+        "typeId": "idt_email",
+        "type": "email",
+        "value": "yusuf.rahman@example.com",
+        "firstSeenAt": "2026-02-19T07:55:00.000Z"
+      },
+      {
+        "typeId": "idt_user_id",
+        "type": "user_id",
+        "value": "u_771002",
+        "firstSeenAt": "2026-02-19T07:55:00.000Z"
+      }
     ],
     "attributes": {
       "lifetime_merch_spend": 3120,
@@ -99,7 +163,12 @@
     "updatedAt": "2026-07-31T05:58:44.000Z",
     "lastSeenAt": "2026-07-31T05:58:44.000Z",
     "identifiers": [
-      { "typeId": "idt_browser", "type": "browser", "value": "b_31aa7f", "firstSeenAt": "2026-07-30T20:11:04.000Z" }
+      {
+        "typeId": "idt_browser",
+        "type": "browser",
+        "value": "b_31aa7f",
+        "firstSeenAt": "2026-07-30T20:11:04.000Z"
+      }
     ],
     "attributes": {
       "lifetime_merch_spend": 0,
@@ -120,9 +189,24 @@
     "updatedAt": "2026-07-31T05:20:00.000Z",
     "lastSeenAt": "2026-07-31T05:20:00.000Z",
     "identifiers": [
-      { "typeId": "idt_email", "type": "email", "value": "noura.alotaibi@example.com", "firstSeenAt": "2026-06-28T19:04:22.000Z" },
-      { "typeId": "idt_phone", "type": "phone", "value": "+966555998877", "firstSeenAt": "2026-06-28T19:04:22.000Z" },
-      { "typeId": "idt_browser", "type": "browser", "value": "b_c40021ab", "firstSeenAt": "2026-06-28T19:04:22.000Z" }
+      {
+        "typeId": "idt_email",
+        "type": "email",
+        "value": "noura.alotaibi@example.com",
+        "firstSeenAt": "2026-06-28T19:04:22.000Z"
+      },
+      {
+        "typeId": "idt_phone",
+        "type": "phone",
+        "value": "+966555998877",
+        "firstSeenAt": "2026-06-28T19:04:22.000Z"
+      },
+      {
+        "typeId": "idt_browser",
+        "type": "browser",
+        "value": "b_c40021ab",
+        "firstSeenAt": "2026-06-28T19:04:22.000Z"
+      }
     ],
     "attributes": {
       "lifetime_merch_spend": 65,

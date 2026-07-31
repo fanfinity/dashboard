@@ -93,13 +93,17 @@ values — the manifest's `smokeParams` point at them, and a broken lookup rende
 There is no test runner. Three gates, cheapest first:
 
 ```bash
-./node_modules/.bin/oxfmt --check src/ && ./node_modules/.bin/oxlint
+./node_modules/.bin/oxfmt --check && ./node_modules/.bin/oxlint
 ./node_modules/.bin/quasar build
 SMOKE_ROUTES=/your,/routes pnpm smoke:dist
 ```
 
 `pnpm lint:check` also works but triggers a dependency re-check that can prompt
 interactively in some environments; the direct binaries are safer in an agent.
+
+**Pass no path.** `oxfmt --check src/` only covers `src/`, but CI runs `oxfmt --check`
+over the whole repo — including `CLAUDE.md`, `public/data/*.json` and `scripts/`. Linting
+only `src/` is how a green local run turns into a red PR.
 
 `smoke:dist` builds, serves `dist/spa`, signs in for real (Firebase persists to
 IndexedDB, so a stored session cannot be injected), visits each route and fails

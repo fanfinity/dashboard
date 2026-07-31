@@ -102,7 +102,10 @@
       "entityId": "dsync_legacy_backfill",
       "entityName": "Legacy Redshift backfill",
       "count": 1,
-      "context": { "dwhConnectionId": "dwh_redshift_legacy", "timeoutMs": 30000 }
+      "context": {
+        "dwhConnectionId": "dwh_redshift_legacy",
+        "timeoutMs": 30000
+      }
     }
   ],
   "hasMore": true,

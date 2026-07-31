@@ -25,7 +25,13 @@
         "sourceType": "event_stream"
       }
     ],
-    "dataModels": [{ "dataModelId": "model_crm_contacts", "dataModelName": "CRM contacts", "column": "email" }]
+    "dataModels": [
+      {
+        "dataModelId": "model_crm_contacts",
+        "dataModelName": "CRM contacts",
+        "column": "email"
+      }
+    ]
   },
   {
     "id": "idt_phone",
@@ -46,7 +52,13 @@
         "sourceType": "event_stream"
       }
     ],
-    "dataModels": [{ "dataModelId": "model_crm_contacts", "dataModelName": "CRM contacts", "column": "phone" }]
+    "dataModels": [
+      {
+        "dataModelId": "model_crm_contacts",
+        "dataModelName": "CRM contacts",
+        "column": "phone"
+      }
+    ]
   },
   {
     "id": "idt_browser",
@@ -95,7 +107,13 @@
         "sourceType": "event_stream"
       }
     ],
-    "dataModels": [{ "dataModelId": "model_fan_orders", "dataModelName": "Fan orders", "column": "profile_id" }]
+    "dataModels": [
+      {
+        "dataModelId": "model_fan_orders",
+        "dataModelName": "Fan orders",
+        "column": "profile_id"
+      }
+    ]
   },
   {
     "id": "idt_mobile_user_id",
@@ -145,7 +163,11 @@
       }
     ],
     "dataModels": [
-      { "dataModelId": "model_ticketing_raw", "dataModelName": "Ticketing raw archive", "column": "fan_ref" }
+      {
+        "dataModelId": "model_ticketing_raw",
+        "dataModelName": "Ticketing raw archive",
+        "column": "fan_ref"
+      }
     ]
   }
 ]

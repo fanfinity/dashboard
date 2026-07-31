@@ -4,7 +4,9 @@
     "name": "Matchday attendance count",
     "type": "warehouse",
     "query": "select profile_id, count(*) as value from FAN_PROD.PUBLIC.TURNSTILE_SCANS group by 1",
-    "dimensions": [{ "name": "value", "type": "number", "isSingleValue": true }],
+    "dimensions": [
+      { "name": "value", "type": "number", "isSingleValue": true }
+    ],
     "dataModelId": "model_matchday_attendance",
     "dataModelName": "Matchday attendance",
     "dataColumn": "scan_id",
@@ -146,7 +148,9 @@
     "name": "CRM marketing consent",
     "type": "warehouse",
     "query": "select email, consent_marketing from public.contacts",
-    "dimensions": [{ "name": "consent_marketing", "type": "boolean", "isSingleValue": true }],
+    "dimensions": [
+      { "name": "consent_marketing", "type": "boolean", "isSingleValue": true }
+    ],
     "dataModelId": "model_crm_contacts",
     "dataModelName": "CRM contacts",
     "dataColumn": "consent_marketing",

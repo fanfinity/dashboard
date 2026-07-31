@@ -66,7 +66,7 @@ would leave the only behavioural gate in the repo with nothing to assert on.
 
 ## Mock data supersedes the issue acceptance criteria
 
-Every backlog issue says *"fetch through the generated orval client in `src/api/`"*. **That is
+Every backlog issue says _"fetch through the generated orval client in `src/api/`"_. **That is
 wrong for these screens** — there is no backend behind any of them. Data comes from mock JSON in
 `public/data/`, loaded through `useMockResource()`, which follows the same
 `{ data, loading, error, load() }` contract as everything else. `src/api/` remains reserved for
@@ -99,7 +99,7 @@ all follow the same `{ data, loading, error, load() }` contract (`src/composable
      needs an equivalent reverse proxy in front of it.
    - **Write** events (`useJitsu.js`) via the bundled `@jitsu/js` browser SDK (POSTs directly to
      the console origin, allowed by CSP).
-   - The public connector catalog (`useSourcesCatalog.js`) hits `/api/sources` directly — that
+   - The public connector catalog (`useConnectorCatalog.js`) hits `/api/sources` directly — that
      endpoint is public/CORS-open, no key.
 
 3. **The Fanfinity backend** (accounts/RBAC API; `https://api-staging.fanfinity.io`

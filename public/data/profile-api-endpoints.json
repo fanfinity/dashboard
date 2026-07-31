@@ -50,7 +50,11 @@
     "method": "GET",
     "identifierTypeId": "idt_email",
     "identifierTypeName": "email",
-    "attributes": ["lifetime_merch_spend", "crm_marketing_consent", "matchday_attendance_count"],
+    "attributes": [
+      "lifetime_merch_spend",
+      "crm_marketing_consent",
+      "matchday_attendance_count"
+    ],
     "isEnabled": true,
     "rateLimitPerMinute": 600,
     "cacheTtlSeconds": 300,

@@ -49,9 +49,8 @@ const only = (process.env.SMOKE_ROUTES || '')
   .map(s => s.trim())
   .filter(Boolean)
 
-const targets = (only.length
-  ? screens.filter(s => only.includes(s.path))
-  : screens
+const targets = (
+  only.length ? screens.filter(s => only.includes(s.path)) : screens
 ).map(s => ({
   ...s,
   // Substitute :id etc. from the manifest's smokeParams.
@@ -94,13 +93,16 @@ process.on('SIGINT', () => {
 })
 
 const browser = await chromium.launch()
-const context = await browser.newContext({ viewport: { width: 1440, height: 900 } })
+const context = await browser.newContext({
+  viewport: { width: 1440, height: 900 }
+})
 const page = await context.newPage()
 
 let bucket = []
 page.on('pageerror', e => bucket.push(`pageerror: ${e.message}`))
 page.on('console', m => {
-  if (m.type() === 'error') bucket.push(`console.error: ${m.text().slice(0, 200)}`)
+  if (m.type() === 'error')
+    bucket.push(`console.error: ${m.text().slice(0, 200)}`)
 })
 
 // Firebase persists its session to IndexedDB, which Playwright's storageState
@@ -144,7 +146,9 @@ for (const t of targets) {
       .first()
       .innerText()
       .catch(() => '')
-    problems.push(`ErrorState rendered: ${msg.replace(/\s+/g, ' ').slice(0, 120)}`)
+    problems.push(
+      `ErrorState rendered: ${msg.replace(/\s+/g, ' ').slice(0, 120)}`
+    )
   }
   const heading = await page
     .locator('h1')

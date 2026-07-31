@@ -5,7 +5,11 @@
     "dwhConnectionId": "dwh_snowflake_prod",
     "dwhConnectionName": "Snowflake Production",
     "targetTable": "FAN_PROD.PUBLIC.PROFILES",
-    "attributes": ["lifetime_merch_spend", "season_ticket_tier", "matchday_attendance_count"],
+    "attributes": [
+      "lifetime_merch_spend",
+      "season_ticket_tier",
+      "matchday_attendance_count"
+    ],
     "identifierTypes": ["idt_email", "idt_user_id"],
     "schedule": "0 */4 * * *",
     "scheduleLabel": "Every 4 hours",
@@ -26,7 +30,11 @@
     "dwhConnectionId": "dwh_postgres_crm",
     "dwhConnectionName": "CRM Postgres",
     "targetTable": "public.fanfinity_consent",
-    "attributes": ["system_email_unsubscribed", "system_whatsapp_unsubscribed", "crm_marketing_consent"],
+    "attributes": [
+      "system_email_unsubscribed",
+      "system_whatsapp_unsubscribed",
+      "crm_marketing_consent"
+    ],
     "identifierTypes": ["idt_email"],
     "schedule": "*/15 * * * *",
     "scheduleLabel": "Every 15 minutes",
