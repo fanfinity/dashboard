@@ -9,433 +9,433 @@
   "activeEventStreamSourcesLastHour": 3,
   "activeCloudAppSourcesLastHour": 1,
   "activeEventDestinationsLastHour": 3,
-  "routedEventsLastHour": 42852,
+  "routedEventsLastHour": 44372,
   "failedProfileDeliveriesLastHour": 2,
   "activeLiveProfileSyncsLastHour": 3,
   "profilesRefreshedLastHour": 9042,
   "profilesRoutedLastHour": 1002,
   "errorsLastHour": 37,
-  "routingRate": 1.65,
+  "routingRate": 1.71,
   "sourceSeries": [
     {
       "bucket": "2026-07-31T05:01:00.000Z",
-      "web_sdk": 316,
-      "ios_sdk": 110,
+      "web_sdk": 310,
+      "ios_sdk": 108,
       "shopify_store": 4,
       "stadium_wifi_portal": 19
     },
     {
       "bucket": "2026-07-31T05:02:00.000Z",
-      "web_sdk": 310,
-      "ios_sdk": 109,
+      "web_sdk": 304,
+      "ios_sdk": 107,
       "shopify_store": 5,
       "stadium_wifi_portal": 21
     },
     {
       "bucket": "2026-07-31T05:03:00.000Z",
-      "web_sdk": 358,
-      "ios_sdk": 118,
+      "web_sdk": 351,
+      "ios_sdk": 116,
       "shopify_store": 6,
       "stadium_wifi_portal": 21
     },
     {
       "bucket": "2026-07-31T05:04:00.000Z",
-      "web_sdk": 370,
-      "ios_sdk": 124,
+      "web_sdk": 363,
+      "ios_sdk": 122,
       "shopify_store": 6,
-      "stadium_wifi_portal": 25
+      "stadium_wifi_portal": 24
     },
     {
       "bucket": "2026-07-31T05:05:00.000Z",
-      "web_sdk": 358,
-      "ios_sdk": 128,
+      "web_sdk": 351,
+      "ios_sdk": 126,
       "shopify_store": 7,
-      "stadium_wifi_portal": 26
+      "stadium_wifi_portal": 25
     },
     {
       "bucket": "2026-07-31T05:06:00.000Z",
-      "web_sdk": 395,
-      "ios_sdk": 132,
+      "web_sdk": 387,
+      "ios_sdk": 129,
       "shopify_store": 7,
-      "stadium_wifi_portal": 25
+      "stadium_wifi_portal": 24
     },
     {
       "bucket": "2026-07-31T05:07:00.000Z",
-      "web_sdk": 393,
-      "ios_sdk": 140,
+      "web_sdk": 385,
+      "ios_sdk": 137,
       "shopify_store": 7,
-      "stadium_wifi_portal": 28
+      "stadium_wifi_portal": 27
     },
     {
       "bucket": "2026-07-31T05:08:00.000Z",
-      "web_sdk": 402,
-      "ios_sdk": 138,
+      "web_sdk": 394,
+      "ios_sdk": 135,
       "shopify_store": 7,
-      "stadium_wifi_portal": 28
+      "stadium_wifi_portal": 27
     },
     {
       "bucket": "2026-07-31T05:09:00.000Z",
-      "web_sdk": 365,
-      "ios_sdk": 128,
+      "web_sdk": 358,
+      "ios_sdk": 126,
+      "shopify_store": 7,
+      "stadium_wifi_portal": 24
+    },
+    {
+      "bucket": "2026-07-31T05:10:00.000Z",
+      "web_sdk": 357,
+      "ios_sdk": 125,
       "shopify_store": 7,
       "stadium_wifi_portal": 25
     },
     {
-      "bucket": "2026-07-31T05:10:00.000Z",
-      "web_sdk": 364,
-      "ios_sdk": 128,
-      "shopify_store": 7,
-      "stadium_wifi_portal": 26
-    },
-    {
       "bucket": "2026-07-31T05:11:00.000Z",
-      "web_sdk": 344,
-      "ios_sdk": 122,
+      "web_sdk": 337,
+      "ios_sdk": 120,
       "shopify_store": 6,
       "stadium_wifi_portal": 22
     },
     {
       "bucket": "2026-07-31T05:12:00.000Z",
-      "web_sdk": 351,
-      "ios_sdk": 116,
+      "web_sdk": 344,
+      "ios_sdk": 114,
       "shopify_store": 5,
       "stadium_wifi_portal": 22
     },
     {
       "bucket": "2026-07-31T05:13:00.000Z",
-      "web_sdk": 330,
-      "ios_sdk": 113,
+      "web_sdk": 324,
+      "ios_sdk": 111,
       "shopify_store": 5,
       "stadium_wifi_portal": 19
     },
     {
       "bucket": "2026-07-31T05:14:00.000Z",
-      "web_sdk": 280,
-      "ios_sdk": 97,
+      "web_sdk": 275,
+      "ios_sdk": 95,
       "shopify_store": 4,
       "stadium_wifi_portal": 17
     },
     {
       "bucket": "2026-07-31T05:15:00.000Z",
-      "web_sdk": 286,
-      "ios_sdk": 92,
+      "web_sdk": 280,
+      "ios_sdk": 90,
       "shopify_store": 3,
       "stadium_wifi_portal": 17
     },
     {
       "bucket": "2026-07-31T05:16:00.000Z",
-      "web_sdk": 236,
-      "ios_sdk": 83,
+      "web_sdk": 231,
+      "ios_sdk": 81,
       "shopify_store": 3,
       "stadium_wifi_portal": 12
     },
     {
       "bucket": "2026-07-31T05:17:00.000Z",
-      "web_sdk": 225,
-      "ios_sdk": 81,
+      "web_sdk": 221,
+      "ios_sdk": 79,
       "shopify_store": 2,
       "stadium_wifi_portal": 11
     },
     {
       "bucket": "2026-07-31T05:18:00.000Z",
-      "web_sdk": 235,
-      "ios_sdk": 73,
+      "web_sdk": 230,
+      "ios_sdk": 72,
       "shopify_store": 1,
       "stadium_wifi_portal": 9
     },
     {
       "bucket": "2026-07-31T05:19:00.000Z",
-      "web_sdk": 226,
-      "ios_sdk": 75,
+      "web_sdk": 222,
+      "ios_sdk": 74,
       "shopify_store": 1,
       "stadium_wifi_portal": 9
     },
     {
       "bucket": "2026-07-31T05:20:00.000Z",
-      "web_sdk": 228,
-      "ios_sdk": 68,
+      "web_sdk": 224,
+      "ios_sdk": 67,
       "shopify_store": 1,
       "stadium_wifi_portal": 10
     },
     {
       "bucket": "2026-07-31T05:21:00.000Z",
-      "web_sdk": 224,
-      "ios_sdk": 74,
+      "web_sdk": 220,
+      "ios_sdk": 73,
       "shopify_store": 2,
       "stadium_wifi_portal": 10
     },
     {
       "bucket": "2026-07-31T05:22:00.000Z",
-      "web_sdk": 220,
-      "ios_sdk": 81,
+      "web_sdk": 216,
+      "ios_sdk": 79,
       "shopify_store": 2,
       "stadium_wifi_portal": 10
     },
     {
       "bucket": "2026-07-31T05:23:00.000Z",
-      "web_sdk": 230,
-      "ios_sdk": 77,
+      "web_sdk": 226,
+      "ios_sdk": 75,
       "shopify_store": 2,
       "stadium_wifi_portal": 11
     },
     {
       "bucket": "2026-07-31T05:24:00.000Z",
-      "web_sdk": 240,
-      "ios_sdk": 89,
+      "web_sdk": 235,
+      "ios_sdk": 87,
       "shopify_store": 3,
       "stadium_wifi_portal": 13
     },
     {
       "bucket": "2026-07-31T05:25:00.000Z",
-      "web_sdk": 283,
-      "ios_sdk": 91,
+      "web_sdk": 278,
+      "ios_sdk": 89,
       "shopify_store": 3,
       "stadium_wifi_portal": 16
     },
     {
       "bucket": "2026-07-31T05:26:00.000Z",
-      "web_sdk": 281,
-      "ios_sdk": 99,
+      "web_sdk": 276,
+      "ios_sdk": 97,
       "shopify_store": 4,
       "stadium_wifi_portal": 18
     },
     {
       "bucket": "2026-07-31T05:27:00.000Z",
-      "web_sdk": 319,
-      "ios_sdk": 113,
+      "web_sdk": 313,
+      "ios_sdk": 111,
       "shopify_store": 5,
       "stadium_wifi_portal": 20
     },
     {
       "bucket": "2026-07-31T05:28:00.000Z",
-      "web_sdk": 344,
-      "ios_sdk": 117,
+      "web_sdk": 337,
+      "ios_sdk": 115,
       "shopify_store": 5,
-      "stadium_wifi_portal": 24
+      "stadium_wifi_portal": 23
     },
     {
       "bucket": "2026-07-31T05:29:00.000Z",
-      "web_sdk": 351,
-      "ios_sdk": 120,
+      "web_sdk": 344,
+      "ios_sdk": 118,
       "shopify_store": 6,
       "stadium_wifi_portal": 23
     },
     {
       "bucket": "2026-07-31T05:30:00.000Z",
-      "web_sdk": 374,
-      "ios_sdk": 132,
+      "web_sdk": 367,
+      "ios_sdk": 129,
       "shopify_store": 6,
-      "stadium_wifi_portal": 26
-    },
-    {
-      "bucket": "2026-07-31T05:31:00.000Z",
-      "web_sdk": 386,
-      "ios_sdk": 130,
-      "shopify_store": 7,
       "stadium_wifi_portal": 25
     },
     {
+      "bucket": "2026-07-31T05:31:00.000Z",
+      "web_sdk": 379,
+      "ios_sdk": 127,
+      "shopify_store": 7,
+      "stadium_wifi_portal": 24
+    },
+    {
       "bucket": "2026-07-31T05:32:00.000Z",
-      "web_sdk": 397,
-      "ios_sdk": 131,
+      "web_sdk": 389,
+      "ios_sdk": 128,
+      "shopify_store": 7,
+      "stadium_wifi_portal": 26
+    },
+    {
+      "bucket": "2026-07-31T05:33:00.000Z",
+      "web_sdk": 382,
+      "ios_sdk": 136,
       "shopify_store": 7,
       "stadium_wifi_portal": 27
     },
     {
-      "bucket": "2026-07-31T05:33:00.000Z",
-      "web_sdk": 390,
-      "ios_sdk": 139,
-      "shopify_store": 7,
-      "stadium_wifi_portal": 28
-    },
-    {
       "bucket": "2026-07-31T05:34:00.000Z",
-      "web_sdk": 378,
-      "ios_sdk": 137,
+      "web_sdk": 371,
+      "ios_sdk": 134,
       "shopify_store": 7,
-      "stadium_wifi_portal": 26
+      "stadium_wifi_portal": 25
     },
     {
       "bucket": "2026-07-31T05:35:00.000Z",
-      "web_sdk": 384,
-      "ios_sdk": 128,
+      "web_sdk": 377,
+      "ios_sdk": 125,
       "shopify_store": 6,
-      "stadium_wifi_portal": 24
+      "stadium_wifi_portal": 23
     },
     {
       "bucket": "2026-07-31T05:36:00.000Z",
-      "web_sdk": 350,
-      "ios_sdk": 120,
+      "web_sdk": 343,
+      "ios_sdk": 118,
       "shopify_store": 6,
-      "stadium_wifi_portal": 24
+      "stadium_wifi_portal": 23
     },
     {
       "bucket": "2026-07-31T05:37:00.000Z",
-      "web_sdk": 348,
-      "ios_sdk": 121,
+      "web_sdk": 341,
+      "ios_sdk": 119,
       "shopify_store": 5,
       "stadium_wifi_portal": 22
     },
     {
       "bucket": "2026-07-31T05:38:00.000Z",
-      "web_sdk": 321,
-      "ios_sdk": 114,
+      "web_sdk": 315,
+      "ios_sdk": 112,
       "shopify_store": 5,
       "stadium_wifi_portal": 21
     },
     {
       "bucket": "2026-07-31T05:39:00.000Z",
-      "web_sdk": 275,
-      "ios_sdk": 107,
+      "web_sdk": 270,
+      "ios_sdk": 105,
       "shopify_store": 4,
       "stadium_wifi_portal": 17
     },
     {
       "bucket": "2026-07-31T05:40:00.000Z",
-      "web_sdk": 264,
-      "ios_sdk": 91,
+      "web_sdk": 259,
+      "ios_sdk": 89,
       "shopify_store": 3,
       "stadium_wifi_portal": 14
     },
     {
       "bucket": "2026-07-31T05:41:00.000Z",
-      "web_sdk": 235,
-      "ios_sdk": 82,
+      "web_sdk": 230,
+      "ios_sdk": 80,
       "shopify_store": 3,
       "stadium_wifi_portal": 15
     },
     {
       "bucket": "2026-07-31T05:42:00.000Z",
-      "web_sdk": 241,
-      "ios_sdk": 83,
+      "web_sdk": 236,
+      "ios_sdk": 81,
       "shopify_store": 2,
       "stadium_wifi_portal": 11
     },
     {
       "bucket": "2026-07-31T05:43:00.000Z",
-      "web_sdk": 228,
-      "ios_sdk": 77,
-      "shopify_store": 2,
-      "stadium_wifi_portal": 9
-    },
-    {
-      "bucket": "2026-07-31T05:44:00.000Z",
-      "web_sdk": 217,
-      "ios_sdk": 72,
-      "shopify_store": 1,
-      "stadium_wifi_portal": 10
-    },
-    {
-      "bucket": "2026-07-31T05:45:00.000Z",
-      "web_sdk": 226,
-      "ios_sdk": 71,
-      "shopify_store": 1,
-      "stadium_wifi_portal": 8
-    },
-    {
-      "bucket": "2026-07-31T05:46:00.000Z",
-      "web_sdk": 218,
-      "ios_sdk": 80,
-      "shopify_store": 1,
-      "stadium_wifi_portal": 10
-    },
-    {
-      "bucket": "2026-07-31T05:47:00.000Z",
-      "web_sdk": 212,
+      "web_sdk": 224,
       "ios_sdk": 75,
       "shopify_store": 2,
       "stadium_wifi_portal": 9
     },
     {
+      "bucket": "2026-07-31T05:44:00.000Z",
+      "web_sdk": 213,
+      "ios_sdk": 71,
+      "shopify_store": 1,
+      "stadium_wifi_portal": 10
+    },
+    {
+      "bucket": "2026-07-31T05:45:00.000Z",
+      "web_sdk": 222,
+      "ios_sdk": 70,
+      "shopify_store": 1,
+      "stadium_wifi_portal": 8
+    },
+    {
+      "bucket": "2026-07-31T05:46:00.000Z",
+      "web_sdk": 214,
+      "ios_sdk": 78,
+      "shopify_store": 1,
+      "stadium_wifi_portal": 10
+    },
+    {
+      "bucket": "2026-07-31T05:47:00.000Z",
+      "web_sdk": 208,
+      "ios_sdk": 74,
+      "shopify_store": 2,
+      "stadium_wifi_portal": 9
+    },
+    {
       "bucket": "2026-07-31T05:48:00.000Z",
-      "web_sdk": 241,
-      "ios_sdk": 82,
+      "web_sdk": 236,
+      "ios_sdk": 80,
       "shopify_store": 2,
       "stadium_wifi_portal": 10
     },
     {
       "bucket": "2026-07-31T05:49:00.000Z",
-      "web_sdk": 254,
-      "ios_sdk": 87,
+      "web_sdk": 249,
+      "ios_sdk": 85,
       "shopify_store": 2,
       "stadium_wifi_portal": 12
     },
     {
       "bucket": "2026-07-31T05:50:00.000Z",
-      "web_sdk": 257,
-      "ios_sdk": 99,
+      "web_sdk": 252,
+      "ios_sdk": 97,
       "shopify_store": 3,
       "stadium_wifi_portal": 15
     },
     {
       "bucket": "2026-07-31T05:51:00.000Z",
-      "web_sdk": 292,
-      "ios_sdk": 99,
+      "web_sdk": 286,
+      "ios_sdk": 97,
       "shopify_store": 3,
       "stadium_wifi_portal": 16
     },
     {
       "bucket": "2026-07-31T05:52:00.000Z",
-      "web_sdk": 327,
-      "ios_sdk": 107,
+      "web_sdk": 321,
+      "ios_sdk": 105,
       "shopify_store": 5,
       "stadium_wifi_portal": 19
     },
     {
       "bucket": "2026-07-31T05:53:00.000Z",
-      "web_sdk": 341,
-      "ios_sdk": 119,
+      "web_sdk": 334,
+      "ios_sdk": 117,
       "shopify_store": 6,
       "stadium_wifi_portal": 21
     },
     {
       "bucket": "2026-07-31T05:54:00.000Z",
-      "web_sdk": 347,
-      "ios_sdk": 126,
+      "web_sdk": 340,
+      "ios_sdk": 124,
       "shopify_store": 6,
-      "stadium_wifi_portal": 25
+      "stadium_wifi_portal": 24
     },
     {
       "bucket": "2026-07-31T05:55:00.000Z",
-      "web_sdk": 375,
-      "ios_sdk": 124,
+      "web_sdk": 368,
+      "ios_sdk": 122,
       "shopify_store": 7,
-      "stadium_wifi_portal": 25
+      "stadium_wifi_portal": 24
     },
     {
       "bucket": "2026-07-31T05:56:00.000Z",
-      "web_sdk": 378,
-      "ios_sdk": 127,
+      "web_sdk": 371,
+      "ios_sdk": 125,
       "shopify_store": 7,
-      "stadium_wifi_portal": 28
+      "stadium_wifi_portal": 27
     },
     {
       "bucket": "2026-07-31T05:57:00.000Z",
-      "web_sdk": 383,
-      "ios_sdk": 138,
-      "shopify_store": 7,
-      "stadium_wifi_portal": 26
-    },
-    {
-      "bucket": "2026-07-31T05:58:00.000Z",
-      "web_sdk": 377,
-      "ios_sdk": 133,
+      "web_sdk": 376,
+      "ios_sdk": 135,
       "shopify_store": 7,
       "stadium_wifi_portal": 25
     },
     {
+      "bucket": "2026-07-31T05:58:00.000Z",
+      "web_sdk": 370,
+      "ios_sdk": 130,
+      "shopify_store": 7,
+      "stadium_wifi_portal": 24
+    },
+    {
       "bucket": "2026-07-31T05:59:00.000Z",
-      "web_sdk": 375,
-      "ios_sdk": 128,
+      "web_sdk": 368,
+      "ios_sdk": 125,
       "shopify_store": 6,
-      "stadium_wifi_portal": 27
+      "stadium_wifi_portal": 26
     },
     {
       "bucket": "2026-07-31T06:00:00.000Z",
-      "web_sdk": 377,
-      "ios_sdk": 123,
+      "web_sdk": 370,
+      "ios_sdk": 121,
       "shopify_store": 7,
-      "stadium_wifi_portal": 27
+      "stadium_wifi_portal": 26
     }
   ],
   "eventTypeSeries": [
@@ -923,362 +923,362 @@
   "routedSeries": [
     {
       "bucket": "2026-07-31T05:01:00.000Z",
-      "snowflake": 385,
-      "meta_conversions_api": 317,
+      "snowflake": 388,
+      "meta_conversions_api": 320,
       "ops_webhook": 4
     },
     {
       "bucket": "2026-07-31T05:02:00.000Z",
-      "snowflake": 433,
-      "meta_conversions_api": 336,
+      "snowflake": 437,
+      "meta_conversions_api": 339,
       "ops_webhook": 5
     },
     {
       "bucket": "2026-07-31T05:03:00.000Z",
-      "snowflake": 451,
-      "meta_conversions_api": 346,
+      "snowflake": 455,
+      "meta_conversions_api": 349,
       "ops_webhook": 5
     },
     {
       "bucket": "2026-07-31T05:04:00.000Z",
-      "snowflake": 488,
-      "meta_conversions_api": 364,
+      "snowflake": 492,
+      "meta_conversions_api": 367,
       "ops_webhook": 6
     },
     {
       "bucket": "2026-07-31T05:05:00.000Z",
-      "snowflake": 492,
-      "meta_conversions_api": 391,
+      "snowflake": 496,
+      "meta_conversions_api": 394,
       "ops_webhook": 7
     },
     {
       "bucket": "2026-07-31T05:06:00.000Z",
-      "snowflake": 516,
-      "meta_conversions_api": 389,
+      "snowflake": 520,
+      "meta_conversions_api": 392,
       "ops_webhook": 7
     },
     {
       "bucket": "2026-07-31T05:07:00.000Z",
-      "snowflake": 530,
-      "meta_conversions_api": 374,
+      "snowflake": 534,
+      "meta_conversions_api": 377,
       "ops_webhook": 6
     },
     {
       "bucket": "2026-07-31T05:08:00.000Z",
-      "snowflake": 528,
-      "meta_conversions_api": 396,
-      "ops_webhook": 7
-    },
-    {
-      "bucket": "2026-07-31T05:09:00.000Z",
-      "snowflake": 522,
-      "meta_conversions_api": 400,
-      "ops_webhook": 7
-    },
-    {
-      "bucket": "2026-07-31T05:10:00.000Z",
-      "snowflake": 500,
-      "meta_conversions_api": 353,
-      "ops_webhook": 7
-    },
-    {
-      "bucket": "2026-07-31T05:11:00.000Z",
-      "snowflake": 455,
-      "meta_conversions_api": 359,
-      "ops_webhook": 6
-    },
-    {
-      "bucket": "2026-07-31T05:12:00.000Z",
-      "snowflake": 449,
-      "meta_conversions_api": 351,
-      "ops_webhook": 5
-    },
-    {
-      "bucket": "2026-07-31T05:13:00.000Z",
-      "snowflake": 423,
-      "meta_conversions_api": 322,
-      "ops_webhook": 5
-    },
-    {
-      "bucket": "2026-07-31T05:14:00.000Z",
-      "snowflake": 402,
-      "meta_conversions_api": 294,
-      "ops_webhook": 4
-    },
-    {
-      "bucket": "2026-07-31T05:15:00.000Z",
-      "snowflake": 345,
-      "meta_conversions_api": 283,
-      "ops_webhook": 3
-    },
-    {
-      "bucket": "2026-07-31T05:16:00.000Z",
-      "snowflake": 331,
-      "meta_conversions_api": 250,
-      "ops_webhook": 2
-    },
-    {
-      "bucket": "2026-07-31T05:17:00.000Z",
-      "snowflake": 318,
-      "meta_conversions_api": 215,
-      "ops_webhook": 2
-    },
-    {
-      "bucket": "2026-07-31T05:18:00.000Z",
-      "snowflake": 315,
-      "meta_conversions_api": 220,
-      "ops_webhook": 1
-    },
-    {
-      "bucket": "2026-07-31T05:19:00.000Z",
-      "snowflake": 311,
-      "meta_conversions_api": 229,
-      "ops_webhook": 1
-    },
-    {
-      "bucket": "2026-07-31T05:20:00.000Z",
-      "snowflake": 294,
-      "meta_conversions_api": 211,
-      "ops_webhook": 1
-    },
-    {
-      "bucket": "2026-07-31T05:21:00.000Z",
-      "snowflake": 320,
-      "meta_conversions_api": 206,
-      "ops_webhook": 1
-    },
-    {
-      "bucket": "2026-07-31T05:22:00.000Z",
-      "snowflake": 303,
-      "meta_conversions_api": 230,
-      "ops_webhook": 1
-    },
-    {
-      "bucket": "2026-07-31T05:23:00.000Z",
-      "snowflake": 336,
-      "meta_conversions_api": 230,
-      "ops_webhook": 2
-    },
-    {
-      "bucket": "2026-07-31T05:24:00.000Z",
-      "snowflake": 347,
-      "meta_conversions_api": 263,
-      "ops_webhook": 3
-    },
-    {
-      "bucket": "2026-07-31T05:25:00.000Z",
-      "snowflake": 386,
-      "meta_conversions_api": 269,
-      "ops_webhook": 3
-    },
-    {
-      "bucket": "2026-07-31T05:26:00.000Z",
-      "snowflake": 389,
-      "meta_conversions_api": 291,
-      "ops_webhook": 4
-    },
-    {
-      "bucket": "2026-07-31T05:27:00.000Z",
-      "snowflake": 417,
-      "meta_conversions_api": 306,
-      "ops_webhook": 4
-    },
-    {
-      "bucket": "2026-07-31T05:28:00.000Z",
-      "snowflake": 458,
-      "meta_conversions_api": 341,
-      "ops_webhook": 6
-    },
-    {
-      "bucket": "2026-07-31T05:29:00.000Z",
-      "snowflake": 475,
-      "meta_conversions_api": 366,
-      "ops_webhook": 6
-    },
-    {
-      "bucket": "2026-07-31T05:30:00.000Z",
-      "snowflake": 512,
-      "meta_conversions_api": 378,
-      "ops_webhook": 6
-    },
-    {
-      "bucket": "2026-07-31T05:31:00.000Z",
-      "snowflake": 522,
-      "meta_conversions_api": 386,
-      "ops_webhook": 7
-    },
-    {
-      "bucket": "2026-07-31T05:32:00.000Z",
-      "snowflake": 499,
-      "meta_conversions_api": 383,
-      "ops_webhook": 7
-    },
-    {
-      "bucket": "2026-07-31T05:33:00.000Z",
-      "snowflake": 530,
-      "meta_conversions_api": 393,
-      "ops_webhook": 7
-    },
-    {
-      "bucket": "2026-07-31T05:34:00.000Z",
-      "snowflake": 524,
-      "meta_conversions_api": 368,
-      "ops_webhook": 7
-    },
-    {
-      "bucket": "2026-07-31T05:35:00.000Z",
-      "snowflake": 499,
-      "meta_conversions_api": 386,
-      "ops_webhook": 7
-    },
-    {
-      "bucket": "2026-07-31T05:36:00.000Z",
-      "snowflake": 494,
-      "meta_conversions_api": 338,
-      "ops_webhook": 6
-    },
-    {
-      "bucket": "2026-07-31T05:37:00.000Z",
-      "snowflake": 456,
-      "meta_conversions_api": 333,
-      "ops_webhook": 5
-    },
-    {
-      "bucket": "2026-07-31T05:38:00.000Z",
-      "snowflake": 412,
-      "meta_conversions_api": 321,
-      "ops_webhook": 4
-    },
-    {
-      "bucket": "2026-07-31T05:39:00.000Z",
-      "snowflake": 376,
-      "meta_conversions_api": 277,
-      "ops_webhook": 4
-    },
-    {
-      "bucket": "2026-07-31T05:40:00.000Z",
-      "snowflake": 388,
-      "meta_conversions_api": 279,
-      "ops_webhook": 3
-    },
-    {
-      "bucket": "2026-07-31T05:41:00.000Z",
-      "snowflake": 358,
-      "meta_conversions_api": 242,
-      "ops_webhook": 3
-    },
-    {
-      "bucket": "2026-07-31T05:42:00.000Z",
-      "snowflake": 323,
-      "meta_conversions_api": 245,
-      "ops_webhook": 1
-    },
-    {
-      "bucket": "2026-07-31T05:43:00.000Z",
-      "snowflake": 313,
-      "meta_conversions_api": 212,
-      "ops_webhook": 1
-    },
-    {
-      "bucket": "2026-07-31T05:44:00.000Z",
-      "snowflake": 304,
-      "meta_conversions_api": 229,
-      "ops_webhook": 1
-    },
-    {
-      "bucket": "2026-07-31T05:45:00.000Z",
-      "snowflake": 305,
-      "meta_conversions_api": 205,
-      "ops_webhook": 1
-    },
-    {
-      "bucket": "2026-07-31T05:46:00.000Z",
-      "snowflake": 316,
-      "meta_conversions_api": 222,
-      "ops_webhook": 1
-    },
-    {
-      "bucket": "2026-07-31T05:47:00.000Z",
-      "snowflake": 296,
-      "meta_conversions_api": 212,
-      "ops_webhook": 2
-    },
-    {
-      "bucket": "2026-07-31T05:48:00.000Z",
-      "snowflake": 309,
-      "meta_conversions_api": 241,
-      "ops_webhook": 2
-    },
-    {
-      "bucket": "2026-07-31T05:49:00.000Z",
-      "snowflake": 337,
-      "meta_conversions_api": 241,
-      "ops_webhook": 2
-    },
-    {
-      "bucket": "2026-07-31T05:50:00.000Z",
-      "snowflake": 366,
-      "meta_conversions_api": 270,
-      "ops_webhook": 3
-    },
-    {
-      "bucket": "2026-07-31T05:51:00.000Z",
-      "snowflake": 379,
-      "meta_conversions_api": 306,
-      "ops_webhook": 3
-    },
-    {
-      "bucket": "2026-07-31T05:52:00.000Z",
-      "snowflake": 427,
-      "meta_conversions_api": 314,
-      "ops_webhook": 4
-    },
-    {
-      "bucket": "2026-07-31T05:53:00.000Z",
-      "snowflake": 431,
-      "meta_conversions_api": 324,
-      "ops_webhook": 6
-    },
-    {
-      "bucket": "2026-07-31T05:54:00.000Z",
-      "snowflake": 466,
-      "meta_conversions_api": 356,
-      "ops_webhook": 6
-    },
-    {
-      "bucket": "2026-07-31T05:55:00.000Z",
-      "snowflake": 496,
-      "meta_conversions_api": 381,
-      "ops_webhook": 7
-    },
-    {
-      "bucket": "2026-07-31T05:56:00.000Z",
-      "snowflake": 497,
-      "meta_conversions_api": 374,
-      "ops_webhook": 7
-    },
-    {
-      "bucket": "2026-07-31T05:57:00.000Z",
-      "snowflake": 531,
+      "snowflake": 532,
       "meta_conversions_api": 399,
       "ops_webhook": 7
     },
     {
-      "bucket": "2026-07-31T05:58:00.000Z",
+      "bucket": "2026-07-31T05:09:00.000Z",
+      "snowflake": 526,
+      "meta_conversions_api": 403,
+      "ops_webhook": 7
+    },
+    {
+      "bucket": "2026-07-31T05:10:00.000Z",
+      "snowflake": 504,
+      "meta_conversions_api": 356,
+      "ops_webhook": 7
+    },
+    {
+      "bucket": "2026-07-31T05:11:00.000Z",
+      "snowflake": 459,
+      "meta_conversions_api": 362,
+      "ops_webhook": 6
+    },
+    {
+      "bucket": "2026-07-31T05:12:00.000Z",
+      "snowflake": 453,
+      "meta_conversions_api": 354,
+      "ops_webhook": 5
+    },
+    {
+      "bucket": "2026-07-31T05:13:00.000Z",
+      "snowflake": 426,
+      "meta_conversions_api": 325,
+      "ops_webhook": 5
+    },
+    {
+      "bucket": "2026-07-31T05:14:00.000Z",
+      "snowflake": 405,
+      "meta_conversions_api": 296,
+      "ops_webhook": 4
+    },
+    {
+      "bucket": "2026-07-31T05:15:00.000Z",
+      "snowflake": 348,
+      "meta_conversions_api": 285,
+      "ops_webhook": 3
+    },
+    {
+      "bucket": "2026-07-31T05:16:00.000Z",
+      "snowflake": 334,
+      "meta_conversions_api": 252,
+      "ops_webhook": 2
+    },
+    {
+      "bucket": "2026-07-31T05:17:00.000Z",
+      "snowflake": 321,
+      "meta_conversions_api": 217,
+      "ops_webhook": 2
+    },
+    {
+      "bucket": "2026-07-31T05:18:00.000Z",
+      "snowflake": 318,
+      "meta_conversions_api": 222,
+      "ops_webhook": 1
+    },
+    {
+      "bucket": "2026-07-31T05:19:00.000Z",
+      "snowflake": 314,
+      "meta_conversions_api": 231,
+      "ops_webhook": 1
+    },
+    {
+      "bucket": "2026-07-31T05:20:00.000Z",
+      "snowflake": 296,
+      "meta_conversions_api": 213,
+      "ops_webhook": 1
+    },
+    {
+      "bucket": "2026-07-31T05:21:00.000Z",
+      "snowflake": 323,
+      "meta_conversions_api": 208,
+      "ops_webhook": 1
+    },
+    {
+      "bucket": "2026-07-31T05:22:00.000Z",
+      "snowflake": 305,
+      "meta_conversions_api": 232,
+      "ops_webhook": 1
+    },
+    {
+      "bucket": "2026-07-31T05:23:00.000Z",
+      "snowflake": 339,
+      "meta_conversions_api": 232,
+      "ops_webhook": 2
+    },
+    {
+      "bucket": "2026-07-31T05:24:00.000Z",
+      "snowflake": 350,
+      "meta_conversions_api": 265,
+      "ops_webhook": 3
+    },
+    {
+      "bucket": "2026-07-31T05:25:00.000Z",
+      "snowflake": 389,
+      "meta_conversions_api": 271,
+      "ops_webhook": 3
+    },
+    {
+      "bucket": "2026-07-31T05:26:00.000Z",
+      "snowflake": 392,
+      "meta_conversions_api": 293,
+      "ops_webhook": 4
+    },
+    {
+      "bucket": "2026-07-31T05:27:00.000Z",
+      "snowflake": 420,
+      "meta_conversions_api": 308,
+      "ops_webhook": 4
+    },
+    {
+      "bucket": "2026-07-31T05:28:00.000Z",
+      "snowflake": 462,
+      "meta_conversions_api": 344,
+      "ops_webhook": 6
+    },
+    {
+      "bucket": "2026-07-31T05:29:00.000Z",
+      "snowflake": 479,
+      "meta_conversions_api": 369,
+      "ops_webhook": 6
+    },
+    {
+      "bucket": "2026-07-31T05:30:00.000Z",
+      "snowflake": 516,
+      "meta_conversions_api": 381,
+      "ops_webhook": 6
+    },
+    {
+      "bucket": "2026-07-31T05:31:00.000Z",
+      "snowflake": 526,
+      "meta_conversions_api": 389,
+      "ops_webhook": 7
+    },
+    {
+      "bucket": "2026-07-31T05:32:00.000Z",
+      "snowflake": 503,
+      "meta_conversions_api": 386,
+      "ops_webhook": 7
+    },
+    {
+      "bucket": "2026-07-31T05:33:00.000Z",
+      "snowflake": 534,
+      "meta_conversions_api": 396,
+      "ops_webhook": 7
+    },
+    {
+      "bucket": "2026-07-31T05:34:00.000Z",
+      "snowflake": 528,
+      "meta_conversions_api": 371,
+      "ops_webhook": 7
+    },
+    {
+      "bucket": "2026-07-31T05:35:00.000Z",
+      "snowflake": 503,
+      "meta_conversions_api": 389,
+      "ops_webhook": 7
+    },
+    {
+      "bucket": "2026-07-31T05:36:00.000Z",
       "snowflake": 498,
-      "meta_conversions_api": 406,
+      "meta_conversions_api": 341,
+      "ops_webhook": 6
+    },
+    {
+      "bucket": "2026-07-31T05:37:00.000Z",
+      "snowflake": 460,
+      "meta_conversions_api": 336,
+      "ops_webhook": 5
+    },
+    {
+      "bucket": "2026-07-31T05:38:00.000Z",
+      "snowflake": 415,
+      "meta_conversions_api": 324,
+      "ops_webhook": 4
+    },
+    {
+      "bucket": "2026-07-31T05:39:00.000Z",
+      "snowflake": 379,
+      "meta_conversions_api": 279,
+      "ops_webhook": 4
+    },
+    {
+      "bucket": "2026-07-31T05:40:00.000Z",
+      "snowflake": 391,
+      "meta_conversions_api": 281,
+      "ops_webhook": 3
+    },
+    {
+      "bucket": "2026-07-31T05:41:00.000Z",
+      "snowflake": 361,
+      "meta_conversions_api": 244,
+      "ops_webhook": 3
+    },
+    {
+      "bucket": "2026-07-31T05:42:00.000Z",
+      "snowflake": 326,
+      "meta_conversions_api": 247,
+      "ops_webhook": 1
+    },
+    {
+      "bucket": "2026-07-31T05:43:00.000Z",
+      "snowflake": 316,
+      "meta_conversions_api": 214,
+      "ops_webhook": 1
+    },
+    {
+      "bucket": "2026-07-31T05:44:00.000Z",
+      "snowflake": 306,
+      "meta_conversions_api": 231,
+      "ops_webhook": 1
+    },
+    {
+      "bucket": "2026-07-31T05:45:00.000Z",
+      "snowflake": 307,
+      "meta_conversions_api": 207,
+      "ops_webhook": 1
+    },
+    {
+      "bucket": "2026-07-31T05:46:00.000Z",
+      "snowflake": 319,
+      "meta_conversions_api": 224,
+      "ops_webhook": 1
+    },
+    {
+      "bucket": "2026-07-31T05:47:00.000Z",
+      "snowflake": 298,
+      "meta_conversions_api": 214,
+      "ops_webhook": 2
+    },
+    {
+      "bucket": "2026-07-31T05:48:00.000Z",
+      "snowflake": 311,
+      "meta_conversions_api": 243,
+      "ops_webhook": 2
+    },
+    {
+      "bucket": "2026-07-31T05:49:00.000Z",
+      "snowflake": 340,
+      "meta_conversions_api": 243,
+      "ops_webhook": 2
+    },
+    {
+      "bucket": "2026-07-31T05:50:00.000Z",
+      "snowflake": 369,
+      "meta_conversions_api": 272,
+      "ops_webhook": 3
+    },
+    {
+      "bucket": "2026-07-31T05:51:00.000Z",
+      "snowflake": 382,
+      "meta_conversions_api": 308,
+      "ops_webhook": 3
+    },
+    {
+      "bucket": "2026-07-31T05:52:00.000Z",
+      "snowflake": 430,
+      "meta_conversions_api": 317,
+      "ops_webhook": 4
+    },
+    {
+      "bucket": "2026-07-31T05:53:00.000Z",
+      "snowflake": 434,
+      "meta_conversions_api": 327,
+      "ops_webhook": 6
+    },
+    {
+      "bucket": "2026-07-31T05:54:00.000Z",
+      "snowflake": 470,
+      "meta_conversions_api": 359,
+      "ops_webhook": 6
+    },
+    {
+      "bucket": "2026-07-31T05:55:00.000Z",
+      "snowflake": 500,
+      "meta_conversions_api": 384,
+      "ops_webhook": 7
+    },
+    {
+      "bucket": "2026-07-31T05:56:00.000Z",
+      "snowflake": 501,
+      "meta_conversions_api": 377,
+      "ops_webhook": 7
+    },
+    {
+      "bucket": "2026-07-31T05:57:00.000Z",
+      "snowflake": 535,
+      "meta_conversions_api": 402,
+      "ops_webhook": 7
+    },
+    {
+      "bucket": "2026-07-31T05:58:00.000Z",
+      "snowflake": 502,
+      "meta_conversions_api": 409,
       "ops_webhook": 7
     },
     {
       "bucket": "2026-07-31T05:59:00.000Z",
-      "snowflake": 500,
-      "meta_conversions_api": 369,
+      "snowflake": 504,
+      "meta_conversions_api": 372,
       "ops_webhook": 7
     },
     {
       "bucket": "2026-07-31T06:00:00.000Z",
-      "snowflake": 513,
-      "meta_conversions_api": 367,
+      "snowflake": 517,
+      "meta_conversions_api": 370,
       "ops_webhook": 7
     }
   ],

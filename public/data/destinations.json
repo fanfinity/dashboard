@@ -10,7 +10,7 @@
     "createdAt": "2026-02-11T09:31:48.400Z",
     "updatedAt": "2026-07-30T22:33:35.400Z",
     "pipeCount": 3,
-    "deliveryCountLastHour": 24218,
+    "deliveryCountLastHour": 25738,
     "warehouseConnections": ["dwh_snowflake_prod"],
     "templateId": null,
     "templateVersion": null,

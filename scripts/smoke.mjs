@@ -98,11 +98,27 @@ const context = await browser.newContext({
 })
 const page = await context.newPage()
 
+// Environmental noise, not page defects. Keep this list SHORT and specific —
+// every entry is a class of real bug the gate can no longer see.
+//
+// The accounts backend's CORS_ALLOW_ORIGINS does not include localhost (see
+// CLAUDE.md), so useMe()'s GET /v1/me always fails from a smoke run. It fires
+// asynchronously on auth-state-change, so it lands at sign-in on some runs and
+// during the first route on others — which made the whole suite flaky, passing
+// or failing on timing rather than on code.
+const IGNORED_CONSOLE = [
+  /Access to fetch at '[^']*\/v1\/me'.*blocked by CORS/i,
+  /Failed to load resource.*ERR_FAILED/i
+]
+const ignored = text => IGNORED_CONSOLE.some(re => re.test(text))
+
 let bucket = []
 page.on('pageerror', e => bucket.push(`pageerror: ${e.message}`))
 page.on('console', m => {
-  if (m.type() === 'error')
-    bucket.push(`console.error: ${m.text().slice(0, 200)}`)
+  if (m.type() !== 'error') return
+  const text = m.text()
+  if (ignored(text)) return
+  bucket.push(`console.error: ${text.slice(0, 200)}`)
 })
 
 // Firebase persists its session to IndexedDB, which Playwright's storageState
