@@ -1,17 +1,505 @@
 <template>
   <q-page class="p-6">
-    <PageHeader title="Audiences" subtitle="/audiences" />
-    <EmptyState title="Not built yet" :description="description" />
+    <PageHeader
+      title="Audiences"
+      subtitle="Saved segments of resolved fans. Journeys enter from one, goals are measured over one, and live syncs push one to a destination."
+    >
+      <template #actions>
+        <ToolbarSearch v-model="query" placeholder="Search audiences..." />
+      </template>
+    </PageHeader>
+
+    <div
+      v-if="!loading && !error && audiences.length"
+      class="mb-5 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4"
+    >
+      <StatCard
+        label="Audiences"
+        :value="formatCount(audiences.length)"
+        :hint="typeHint"
+      />
+      <StatCard
+        label="Fans in an audience"
+        :value="formatCount(totalProfiles)"
+        :delta="formatChange(totalChange)"
+        :delta-direction="trendDirection(totalChange)"
+        hint="Counted once per audience — a fan can be in several."
+      />
+      <StatCard
+        label="Feeding a destination"
+        :value="`${activatedCount} of ${audiences.length}`"
+        :hint="activationHint"
+      />
+      <StatCard
+        label="Paused"
+        :value="formatCount(pausedCount)"
+        :hint="pausedHint"
+      />
+    </div>
+
+    <!-- Secondary catalogs. Their failure degrades the detail dialog, so it is a
+         notice with its own retry rather than a page-level ErrorState. -->
+    <NoticeBanner
+      v-if="secondaryError"
+      variant="warn"
+      class="mb-4"
+      title="Some audience details are unavailable"
+      :message="secondaryError"
+    >
+      <button
+        class="rounded-lg border border-line2 bg-white px-3 py-1.5 text-sm font-medium text-brand hover:bg-fill"
+        @click="loadSecondary"
+      >
+        Retry
+      </button>
+    </NoticeBanner>
+
+    <TabNav v-model="tab" :tabs="tabs" />
+
+    <DataTable
+      :columns="columns"
+      :rows="visible"
+      :loading="isTrashTab ? trashLoading : loading"
+      :error="isTrashTab ? trashError : error"
+      row-key="id"
+      :clickable-rows="!isTrashTab"
+      @retry="retry"
+      @row-click="inspect"
+    >
+      <template #cell-name="{ row }">
+        <p class="font-medium text-ink">{{ row.name }}</p>
+        <p class="font-mono text-xs text-subtle">{{ row.id }}</p>
+      </template>
+
+      <template #cell-type="{ value }">
+        <StatusBadge variant="neutral" :label="audienceTypeLabel(value)" />
+      </template>
+
+      <template #cell-isEnabled="{ value }">
+        <StatusBadge :enabled="value" :label="value ? 'Active' : 'Paused'" />
+      </template>
+
+      <template #cell-profileCount="{ row }">
+        <p>{{ formatCount(row.profileCount) }}</p>
+        <p
+          v-if="formatChange(row.profileCountChange7d)"
+          class="text-xs"
+          :class="changeClass(row.profileCountChange7d)"
+          >{{ changeArrow(row.profileCountChange7d) }}
+          {{ formatChange(row.profileCountChange7d) }} / 7d</p
+        >
+      </template>
+
+      <template #cell-destinationCount="{ value }">
+        <span :class="value ? '' : 'text-subtle'">{{
+          formatCount(value)
+        }}</span>
+      </template>
+
+      <template #cell-lastEvaluatedAt="{ value }">
+        {{ formatDateTime(value) }}
+      </template>
+
+      <template #cell-deletedAt="{ row }">
+        <p>{{ formatDateTime(row.deletedAt) }}</p>
+        <p class="text-xs text-subtle">by {{ row.deletedByName ?? '—' }}</p>
+      </template>
+
+      <template #cell-actions="{ row }">
+        <div class="flex items-center justify-end gap-2">
+          <button
+            v-if="isTrashTab"
+            class="rounded-lg border border-line2 bg-white px-3 py-1.5 text-sm font-medium text-brand hover:bg-fill"
+            @click.stop="restore(row)"
+          >
+            Restore
+          </button>
+          <template v-else>
+            <button
+              class="rounded-lg border border-line2 bg-white px-3 py-1.5 text-sm font-medium text-brand hover:bg-fill"
+              @click.stop="toggle(row)"
+            >
+              {{ row.isEnabled ? 'Pause' : 'Enable' }}
+            </button>
+            <button
+              class="rounded-lg border border-line2 bg-white px-3 py-1.5 text-sm font-medium text-rose-600 hover:bg-fill"
+              @click.stop="ask(row)"
+            >
+              Delete
+            </button>
+          </template>
+        </div>
+      </template>
+
+      <!-- Three "no rows" cases: the filters emptied the tab (offer a way
+           back), the trash is empty (the good outcome), or there are no
+           audiences at all. The manifest has no create route for an audience,
+           so the last one points at the attributes they are built from. -->
+      <template #empty>
+        <EmptyState
+          v-if="tabHasRecords"
+          :title="`No ${emptyNoun} match your filters`"
+          description="Try a different search term, or switch back to the All tab."
+        >
+          <template #cta>
+            <button
+              class="rounded-lg border border-line2 bg-white px-3 py-1.5 text-sm font-medium text-brand hover:bg-fill"
+              @click="clearFilters"
+            >
+              Clear filters
+            </button>
+          </template>
+        </EmptyState>
+
+        <EmptyState
+          v-else-if="isTrashTab"
+          title="Nothing in the trash"
+          description="Deleted audiences are kept here for 30 days before they are purged."
+        >
+          <template #cta>
+            <button
+              class="rounded-lg border border-line2 bg-white px-3 py-1.5 text-sm font-medium text-brand hover:bg-fill"
+              @click="clearFilters"
+            >
+              Back to all audiences
+            </button>
+          </template>
+        </EmptyState>
+
+        <EmptyState
+          v-else
+          title="No audiences yet"
+          description="An audience is a set of conditions over fan attributes — everyone who matches is a member, and stays one only while they match."
+        >
+          <template #cta>
+            <button
+              class="flex h-9 items-center gap-1.5 rounded-lg bg-brand px-3.5 text-sm font-medium text-white shadow-sm hover:opacity-90"
+              @click="router.push({ name: 'attributes' })"
+            >
+              Browse attributes
+            </button>
+          </template>
+        </EmptyState>
+      </template>
+    </DataTable>
+
+    <AudienceDetailDialog
+      v-model="showDetail"
+      :audience="detailTarget"
+      :attributes-by-id="attributesById"
+      :live-syncs="liveSyncs"
+    />
+
+    <ConfirmDialog
+      v-model="confirmDelete"
+      title="Move audience to trash?"
+      :message="deleteMessage"
+      confirm-label="Move to trash"
+      destructive
+      @confirm="remove"
+    />
   </q-page>
 </template>
 
 <script setup>
-// STUB — implemented by issue #21.
-// The route and this file already exist so the story agent rewrites in place and
-// never has to touch src/router/. Replace this whole file; keep the path.
+import { computed, onMounted, ref } from 'vue'
+import { useRouter } from 'vue-router'
 import PageHeader from '@/components/ui/PageHeader.vue'
+import TabNav from '@/components/ui/TabNav.vue'
+import DataTable from '@/components/ui/DataTable.vue'
+import StatCard from '@/components/ui/StatCard.vue'
+import StatusBadge from '@/components/ui/StatusBadge.vue'
 import EmptyState from '@/components/ui/EmptyState.vue'
+import NoticeBanner from '@/components/ui/NoticeBanner.vue'
+import ToolbarSearch from '@/components/ui/ToolbarSearch.vue'
+import ConfirmDialog from '@/components/ui/ConfirmDialog.vue'
+import AudienceDetailDialog from '@/components/engage/audience/AudienceDetailDialog.vue'
+import {
+  audienceTypeLabel,
+  useEngageAudienceAttributes,
+  useEngageAudienceLiveSyncs,
+  useEngageAudiences,
+  useEngageAudienceTrash
+} from '@/composables/useEngageAudiences'
+import {
+  formatChange,
+  formatCount,
+  formatDateTime,
+  pluralize,
+  trendDirection,
+  useEngageAudienceToasts
+} from '@/composables/useEngageAudienceFormat'
 
-const description =
-  'This screen is tracked by issue #21 and has not been implemented yet.'
+const router = useRouter()
+const { toast } = useEngageAudienceToasts()
+
+const {
+  audiences,
+  loading,
+  error,
+  load,
+  setEnabled,
+  remove: removeAudience,
+  restore: restoreAudience
+} = useEngageAudiences()
+
+// Secondary: the dialog reads condition names out of the attribute catalog and
+// destination names out of the live syncs. Neither blocks the list.
+const {
+  attributes,
+  error: attributesError,
+  load: loadAttributes
+} = useEngageAudienceAttributes()
+
+const {
+  liveSyncs,
+  error: liveSyncsError,
+  load: loadLiveSyncs
+} = useEngageAudienceLiveSyncs()
+
+// Also secondary, except on the Trash tab where it is the primary — /audiences
+// has no trash route of its own, so deleted audiences live on this screen.
+const {
+  deleted,
+  loading: trashLoading,
+  error: trashError,
+  load: loadTrash,
+  trash,
+  restore: restoreFromTrash
+} = useEngageAudienceTrash()
+
+const query = ref('')
+const tab = ref('all')
+const showDetail = ref(false)
+const detailTarget = ref(null)
+const confirmDelete = ref(false)
+const target = ref(null)
+
+const isTrashTab = computed(() => tab.value === 'deleted')
+
+// Six columns plus actions for a live audience. The trash shows who deleted it
+// and when instead of the activation and evaluation columns, which no longer
+// say anything true about a record nobody is reading.
+const LIVE_COLUMNS = [
+  { key: 'name', label: 'Audience', sortable: true },
+  { key: 'type', label: 'Evaluation', sortable: true },
+  { key: 'isEnabled', label: 'Status', sortable: true },
+  { key: 'profileCount', label: 'Fans', sortable: true, align: 'right' },
+  {
+    key: 'destinationCount',
+    label: 'Destinations',
+    sortable: true,
+    align: 'right'
+  },
+  {
+    key: 'lastEvaluatedAt',
+    label: 'Last evaluated',
+    sortable: true,
+    align: 'right'
+  },
+  // 220px, not the 190px the wave-2 lists use: "Enable" is wider than "Pause",
+  // and at 190 the paused row wrapped its two buttons onto separate lines.
+  { key: 'actions', label: '', align: 'right', width: '220px' }
+]
+
+const TRASH_COLUMNS = [
+  { key: 'name', label: 'Audience', sortable: true },
+  { key: 'type', label: 'Evaluation', sortable: true },
+  {
+    key: 'profileCount',
+    label: 'Fans at deletion',
+    sortable: true,
+    align: 'right'
+  },
+  { key: 'deletedAt', label: 'Deleted', sortable: true, align: 'right' },
+  { key: 'actions', label: '', align: 'right', width: '120px' }
+]
+
+const columns = computed(() =>
+  isTrashTab.value ? TRASH_COLUMNS : LIVE_COLUMNS
+)
+
+// Each tab is a predicate over an audience; 'all' has none, and 'deleted' swaps
+// the row source rather than filtering it.
+const TAB_PREDICATES = {
+  realtime: a => a.type === 'realtime',
+  warehouse: a => a.type === 'warehouse',
+  paused: a => !a.isEnabled
+}
+
+const tabs = computed(() => [
+  { key: 'all', label: 'All', count: audiences.value.length },
+  {
+    key: 'realtime',
+    label: 'Real-time',
+    count: audiences.value.filter(TAB_PREDICATES.realtime).length
+  },
+  {
+    key: 'warehouse',
+    label: 'Warehouse',
+    count: audiences.value.filter(TAB_PREDICATES.warehouse).length
+  },
+  {
+    key: 'paused',
+    label: 'Paused',
+    count: audiences.value.filter(TAB_PREDICATES.paused).length
+  },
+  { key: 'deleted', label: 'Trash', count: deleted.value.length }
+])
+
+const SEARCH_FIELDS = ['id', 'name', 'description']
+
+const rows = computed(() =>
+  isTrashTab.value ? deleted.value : audiences.value
+)
+
+const visible = computed(() => {
+  const q = query.value.trim().toLowerCase()
+  const predicate = isTrashTab.value ? null : TAB_PREDICATES[tab.value]
+  return rows.value.filter(a => {
+    if (predicate && !predicate(a)) return false
+    if (!q) return true
+    return SEARCH_FIELDS.some(f =>
+      String(a[f] ?? '')
+        .toLowerCase()
+        .includes(q)
+    )
+  })
+})
+
+// Which empty state applies: the tab's source has records (so the filters are
+// what emptied it) or it genuinely has none.
+const tabHasRecords = computed(() => rows.value.length > 0)
+
+const emptyNoun = computed(() =>
+  isTrashTab.value ? 'deleted audiences' : 'audiences'
+)
+
+const attributesById = computed(() =>
+  Object.fromEntries(attributes.value.map(a => [a.id, a]))
+)
+
+const secondaryError = computed(() => {
+  const failed = []
+  if (attributesError.value) failed.push('the attribute catalog')
+  if (liveSyncsError.value) failed.push('the live profile syncs')
+  if (!failed.length) return ''
+  return `Conditions and destinations may be incomplete — ${failed.join(' and ')} could not be loaded.`
+})
+
+function loadSecondary() {
+  loadAttributes()
+  loadLiveSyncs()
+}
+
+function retry() {
+  if (isTrashTab.value) loadTrash()
+  else load()
+}
+
+const typeHint = computed(() => {
+  const realtime = audiences.value.filter(TAB_PREDICATES.realtime).length
+  const warehouse = audiences.value.filter(TAB_PREDICATES.warehouse).length
+  return `${realtime} real-time · ${warehouse} warehouse`
+})
+
+const totalProfiles = computed(() =>
+  audiences.value.reduce((sum, a) => sum + (Number(a.profileCount) || 0), 0)
+)
+
+// The membership figures are absolute and their movements are ratios, so the
+// headline trend is re-derived from last week's implied totals rather than
+// averaged: a 31% swing on 412 fans must not outweigh 0.8% on 128,440.
+const totalChange = computed(() => {
+  const previous = audiences.value.reduce((sum, a) => {
+    const count = Number(a.profileCount) || 0
+    const change = Number(a.profileCountChange7d) || 0
+    return sum + count / (1 + change)
+  }, 0)
+  if (!previous) return 0
+  return (totalProfiles.value - previous) / previous
+})
+
+const activatedCount = computed(
+  () => audiences.value.filter(a => Number(a.destinationCount) > 0).length
+)
+
+const activationHint = computed(() => {
+  if (liveSyncsError.value) return 'Live sync count unavailable.'
+  if (!liveSyncs.value.length) return 'No live profile syncs configured yet.'
+  return `${pluralize(liveSyncs.value.length, 'live profile sync')} configured`
+})
+
+const pausedCount = computed(
+  () => audiences.value.filter(TAB_PREDICATES.paused).length
+)
+
+const pausedHint = computed(() =>
+  pausedCount.value
+    ? 'A paused audience stops re-evaluating; its membership freezes.'
+    : 'Every audience is re-evaluating.'
+)
+
+const CHANGE = {
+  up: { arrow: '↑', cls: 'text-success' },
+  down: { arrow: '↓', cls: 'text-rose-600' },
+  flat: { arrow: '→', cls: 'text-muted' }
+}
+
+function changeArrow(ratio) {
+  return CHANGE[trendDirection(ratio)].arrow
+}
+
+function changeClass(ratio) {
+  return CHANGE[trendDirection(ratio)].cls
+}
+
+function clearFilters() {
+  query.value = ''
+  tab.value = 'all'
+}
+
+function inspect(row) {
+  detailTarget.value = row
+  showDetail.value = true
+}
+
+function toggle(row) {
+  setEnabled(row.id, !row.isEnabled)
+  toast(`${row.name} ${row.isEnabled ? 'paused' : 'activated'}`)
+}
+
+function ask(row) {
+  target.value = row
+  confirmDelete.value = true
+}
+
+const deleteMessage = computed(() => {
+  const a = target.value
+  if (!a) return ''
+  const readers = `${pluralize(a.destinationCount ?? 0, 'destination')} and ${pluralize(a.goalCount ?? 0, 'goal')}`
+  return `“${a.name}” stops being evaluated and moves to the trash, where it can be restored for 30 days. ${readers} read it today.`
+})
+
+function remove() {
+  const row = target.value
+  if (!row) return
+  const record = removeAudience(row.id)
+  if (record) trash(record)
+  toast(`${row.name} moved to trash`)
+  target.value = null
+}
+
+function restore(row) {
+  const record = restoreFromTrash(row.id)
+  if (!record) return
+  restoreAudience(record)
+  toast(`${row.name} restored`)
+}
+
+onMounted(() => {
+  load()
+  loadTrash()
+  loadSecondary()
+})
 </script>
