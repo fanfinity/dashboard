@@ -20,7 +20,11 @@
     "postinstall": "quasar prepare --silent",
     "openapi:pull": "curl -fsS https://api-staging.fanfinity.io/openapi.json -o openapi/fanfinity-api.json",
     "openapi:generate": "orval --config orval.config.js",
-    "openapi": "pnpm openapi:pull && pnpm openapi:generate"
+    "openapi": "pnpm openapi:pull && pnpm openapi:generate",
+    "smoke": "node scripts/smoke.mjs",
+    "smoke:dist": "quasar build && node scripts/smoke.mjs --serve",
+    "serve:dist": "node scripts/serve-dist.mjs",
+    "worktree": "bash scripts/new-worktree.sh"
   },
   "dependencies": {
     "@fontsource/inter": "^5.2.8",
