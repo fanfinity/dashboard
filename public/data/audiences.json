@@ -1,0 +1,149 @@
+[
+  {
+    "id": "aud_high_value_fans",
+    "name": "High-value fans",
+    "description": "Lifetime merch spend over SAR 1,000 and at least 10 matchdays attended.",
+    "type": "realtime",
+    "isEnabled": true,
+    "profileCount": 8412,
+    "profileCountChange7d": 0.042,
+    "lastEvaluatedAt": "2026-07-31T05:55:00.000Z",
+    "conditions": [
+      {
+        "attributeId": "lifetime_merch_spend",
+        "operator": "gte",
+        "value": 1000
+      },
+      {
+        "attributeId": "matchday_attendance_count",
+        "operator": "gte",
+        "value": 10
+      }
+    ],
+    "destinationCount": 1,
+    "goalCount": 1,
+    "version": 6,
+    "createdAt": "2026-03-24T09:00:00.000Z",
+    "updatedAt": "2026-07-20T15:10:00.000Z"
+  },
+  {
+    "id": "aud_lapsed_season_tickets",
+    "name": "Lapsed season-ticket holders",
+    "description": "Held a season ticket last campaign, no event in 30 days.",
+    "type": "warehouse",
+    "isEnabled": true,
+    "profileCount": 1904,
+    "profileCountChange7d": -0.018,
+    "lastEvaluatedAt": "2026-07-31T04:20:00.000Z",
+    "conditions": [
+      {
+        "attributeId": "season_ticket_tier",
+        "operator": "is_not_null",
+        "value": null
+      },
+      {
+        "attributeId": "matchday_attendance_count",
+        "operator": "lte",
+        "value": 1
+      }
+    ],
+    "destinationCount": 1,
+    "goalCount": 1,
+    "version": 3,
+    "createdAt": "2026-04-19T12:40:00.000Z",
+    "updatedAt": "2026-07-02T08:00:00.000Z"
+  },
+  {
+    "id": "aud_matchday_attendees",
+    "name": "Matchday attendees",
+    "description": "Scanned into any fixture in the current season.",
+    "type": "realtime",
+    "isEnabled": true,
+    "profileCount": 54210,
+    "profileCountChange7d": 0.121,
+    "lastEvaluatedAt": "2026-07-31T05:55:00.000Z",
+    "conditions": [
+      {
+        "attributeId": "matchday_attendance_count",
+        "operator": "gte",
+        "value": 1
+      }
+    ],
+    "destinationCount": 1,
+    "goalCount": 0,
+    "version": 2,
+    "createdAt": "2026-05-02T09:00:00.000Z",
+    "updatedAt": "2026-06-18T16:40:00.000Z"
+  },
+  {
+    "id": "aud_newsletter_optin",
+    "name": "Newsletter opt-ins",
+    "description": "Marketing consent granted and not unsubscribed from email.",
+    "type": "realtime",
+    "isEnabled": true,
+    "profileCount": 128440,
+    "profileCountChange7d": 0.008,
+    "lastEvaluatedAt": "2026-07-31T05:55:00.000Z",
+    "conditions": [
+      {
+        "attributeId": "crm_marketing_consent",
+        "operator": "eq",
+        "value": true
+      },
+      {
+        "attributeId": "system_email_unsubscribed",
+        "operator": "is_null",
+        "value": null
+      }
+    ],
+    "destinationCount": 1,
+    "goalCount": 1,
+    "version": 4,
+    "createdAt": "2026-06-22T11:30:00.000Z",
+    "updatedAt": "2026-07-28T10:00:00.000Z"
+  },
+  {
+    "id": "aud_store_cart_abandoners",
+    "name": "Cart abandoners",
+    "description": "Added to cart in the last 7 days with no order.",
+    "type": "realtime",
+    "isEnabled": false,
+    "profileCount": 3120,
+    "profileCountChange7d": 0,
+    "lastEvaluatedAt": "2026-07-14T09:00:00.000Z",
+    "conditions": [
+      {
+        "attributeId": "last_page_viewed",
+        "operator": "contains",
+        "value": "/store/"
+      }
+    ],
+    "destinationCount": 0,
+    "goalCount": 0,
+    "version": 1,
+    "createdAt": "2026-05-25T14:00:00.000Z",
+    "updatedAt": "2026-07-14T09:00:00.000Z"
+  },
+  {
+    "id": "aud_platinum_renewals",
+    "name": "Platinum renewals due",
+    "description": "Platinum tier with a renewal date inside 60 days.",
+    "type": "warehouse",
+    "isEnabled": true,
+    "profileCount": 412,
+    "profileCountChange7d": 0.31,
+    "lastEvaluatedAt": "2026-07-31T04:20:00.000Z",
+    "conditions": [
+      {
+        "attributeId": "season_ticket_tier",
+        "operator": "eq",
+        "value": "Platinum"
+      }
+    ],
+    "destinationCount": 0,
+    "goalCount": 1,
+    "version": 1,
+    "createdAt": "2026-07-08T10:15:00.000Z",
+    "updatedAt": "2026-07-08T10:15:00.000Z"
+  }
+]

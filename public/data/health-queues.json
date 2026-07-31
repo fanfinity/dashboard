@@ -1,0 +1,71 @@
+{
+  "updatedAt": "2026-07-31T06:00:00.000Z",
+  "queues": {
+    "identityResolution": {
+      "count": 142,
+      "oldestAt": "2026-07-31T05:59:41.000Z",
+      "processedLastMinute": 1880
+    },
+    "eventDeliveries": {
+      "count": 4210,
+      "oldestAt": "2026-07-31T05:59:12.000Z",
+      "processedLastMinute": 41220
+    },
+    "profileRefresh": {
+      "count": 0,
+      "oldestAt": null,
+      "processedLastMinute": 150
+    },
+    "profileDeliveries": {
+      "count": 18,
+      "oldestAt": "2026-07-31T05:57:02.000Z",
+      "processedLastMinute": 22
+    }
+  },
+  "heartbeat": {
+    "page": 0,
+    "hasMore": true,
+    "runs": [
+      {
+        "id": "hb_7f0574a3",
+        "status": "success",
+        "model": "gemini-3.1-flash-lite",
+        "startedAt": "2026-07-31T05:00:14.699Z",
+        "completedAt": "2026-07-31T05:00:16.686Z",
+        "durationMs": 1987,
+        "content": "### Pipes health\n\nAll seven pipes reporting. Two are disabled by an operator (Android to TikTok, Ticketing to BigQuery) and are not an incident. Delivery backlog is 4,210 events, well inside the 30k alert threshold.",
+        "error": null
+      },
+      {
+        "id": "hb_6b1240ce",
+        "status": "success",
+        "model": "gemini-3.1-flash-lite",
+        "startedAt": "2026-07-31T04:00:14.220Z",
+        "completedAt": "2026-07-31T04:00:16.004Z",
+        "durationMs": 1784,
+        "content": "### Pipes health\n\nNominal. Profile DWH sync to Snowflake completed 412,880 profiles in 3m04s.",
+        "error": null
+      },
+      {
+        "id": "hb_5a09bb71",
+        "status": "degraded",
+        "model": "gemini-3.1-flash-lite",
+        "startedAt": "2026-07-31T03:00:14.110Z",
+        "completedAt": "2026-07-31T03:00:17.900Z",
+        "durationMs": 3790,
+        "content": "### Pipes health\n\nMeta Conversions API returned 429 on 7 batches in the last hour. Retries succeeded; no data loss. Watch if the rate persists past 03:30.",
+        "error": null
+      },
+      {
+        "id": "hb_49f8aa20",
+        "status": "failed",
+        "model": "gemini-3.1-flash-lite",
+        "startedAt": "2026-07-31T02:00:14.000Z",
+        "completedAt": "2026-07-31T02:00:44.220Z",
+        "durationMs": 30220,
+        "content": "",
+        "error": "upstream_timeout: model did not respond within 30s"
+      }
+    ]
+  }
+}

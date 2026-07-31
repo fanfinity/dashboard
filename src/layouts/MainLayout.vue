@@ -41,33 +41,91 @@
         </div>
 
         <!-- Main menu -->
-        <q-list class="flex-1 overflow-y-auto p-3">
-          <q-item
-            v-for="item in mainMenu"
-            :key="item.label"
-            clickable
-            :class="[itemClass(item), mini ? 'justify-center px-0!' : 'px-3!']"
-            class="min-h-9! rounded-lg! py-2! mb-0.5 flex items-center gap-2"
-            @click="select(item)"
-          >
-            <img :src="item.icon" :alt="item.label" class="size-4 shrink-0" />
-            <span v-if="!mini" class="flex-1 text-sm tracking-[-0.35px]">{{
-              item.label
-            }}</span>
-            <img
-              v-if="!mini && item.chevron"
-              :src="icChevron"
-              alt=""
-              class="size-[18px] opacity-70"
-            />
-            <q-tooltip
-              v-if="mini"
-              anchor="center right"
-              self="center left"
-              class="bg-ink! text-xs"
-              >{{ item.label }}</q-tooltip
+        <q-list data-smoke="nav" class="flex-1 overflow-y-auto p-3">
+          <template v-for="group in visibleGroups" :key="group.key">
+            <!-- Leaf entry: navigates directly -->
+            <q-item
+              v-if="!group.children"
+              clickable
+              :class="[
+                itemClass(group),
+                mini ? 'justify-center px-0!' : 'px-3!'
+              ]"
+              class="min-h-9! rounded-lg! py-2! mb-0.5 flex items-center gap-2"
+              @click="select(group)"
             >
-          </q-item>
+              <img
+                :src="group.icon"
+                :alt="group.label"
+                class="size-4 shrink-0"
+              />
+              <span v-if="!mini" class="flex-1 text-sm tracking-[-0.35px]">{{
+                group.label
+              }}</span>
+              <q-tooltip
+                v-if="mini"
+                anchor="center right"
+                self="center left"
+                class="bg-ink! text-xs"
+                >{{ group.label }}</q-tooltip
+              >
+            </q-item>
+
+            <!-- Group: expands to its screens. In mini mode there is no room to
+                 expand, so clicking jumps to the group's first screen instead. -->
+            <template v-else>
+              <q-item
+                clickable
+                :class="[
+                  groupClass(group),
+                  mini ? 'justify-center px-0!' : 'px-3!'
+                ]"
+                class="min-h-9! rounded-lg! py-2! mb-0.5 flex items-center gap-2"
+                @click="toggleGroup(group)"
+              >
+                <img
+                  :src="group.icon"
+                  :alt="group.label"
+                  class="size-4 shrink-0"
+                />
+                <span v-if="!mini" class="flex-1 text-sm tracking-[-0.35px]">{{
+                  group.label
+                }}</span>
+                <img
+                  v-if="!mini"
+                  :src="icChevron"
+                  alt=""
+                  class="size-[18px] opacity-70 transition-transform"
+                  :class="isExpanded(group) ? 'rotate-90' : ''"
+                />
+                <q-tooltip
+                  v-if="mini"
+                  anchor="center right"
+                  self="center left"
+                  class="bg-ink! text-xs"
+                  >{{ group.label }}</q-tooltip
+                >
+              </q-item>
+
+              <div
+                v-if="!mini && isExpanded(group)"
+                class="mb-1 ml-4 border-l border-line pl-2"
+              >
+                <q-item
+                  v-for="child in group.children"
+                  :key="child.to"
+                  clickable
+                  :class="itemClass(child)"
+                  class="min-h-8! rounded-lg! px-3! py-1.5! mb-0.5 flex items-center"
+                  @click="select(child)"
+                >
+                  <span class="flex-1 text-[13px] tracking-[-0.3px]">{{
+                    child.label
+                  }}</span>
+                </q-item>
+              </div>
+            </template>
+          </template>
         </q-list>
 
         <!-- Bottom menu -->
@@ -203,6 +261,7 @@ import { useRouter, useRoute } from 'vue-router'
 import { useQuasar } from 'quasar'
 import { useAuth } from '@/composables/useAuth'
 import { useMe } from '@/composables/useMe'
+import { useEntitlements } from '@/composables/useEntitlements'
 
 import logo from '@/assets/dashboard/logo.svg'
 import avatar from '@/assets/dashboard/avatar.jpg'
@@ -229,33 +288,141 @@ const route = useRoute()
 const { user, logOut } = useAuth()
 const { currentAccount, currentRole } = useMe()
 
-const mainMenu = [
-  { label: 'Overview', icon: icOverview, to: '/' },
-  { label: 'Contacts', icon: icContacts, to: '/contacts' },
+// FROZEN. Screens are registered in src/router/screens.js; this list decides what
+// is *reachable from the sidebar* and how it is grouped. Only list views belong
+// here — create/detail/trash screens are reached from within their list.
+//
+// A group with no `children` is a direct link. Groups auto-expand when one of
+// their screens is active.
+const navGroups = [
+  { key: 'dashboard', label: 'Dashboard', icon: icOverview, to: '/' },
   {
-    label: 'Identity Resolution',
+    key: 'sources',
+    label: 'Sources',
+    icon: icSources,
+    children: [
+      { label: 'Event streams', to: '/sources' },
+      { label: 'Demo store', to: '/demo-store' },
+      { label: 'Event inspector', to: '/demo-event-inspector' }
+    ]
+  },
+  { key: 'pipes', label: 'Pipes', icon: icIntegrations, to: '/pipes' },
+  {
+    key: 'destinations',
+    label: 'Destinations',
+    icon: icActivation,
+    to: '/destinations'
+  },
+  {
+    key: 'profiles',
+    label: 'Profiles',
     icon: icContacts,
-    to: '/identity-resolution'
+    children: [
+      { label: 'Attributes', to: '/attributes' },
+      { label: 'Identity resolution', to: '/profiles/identity-resolution' },
+      { label: 'Profile search', to: '/profiles/search' },
+      { label: 'Profile API', to: '/profile-api' },
+      { label: 'Live profile syncs', to: '/live-profile-syncs' },
+      { label: 'Profile DWH syncs', to: '/profile-dwh-syncs' }
+    ]
   },
-  { label: 'Segments', icon: icSegments, to: '/segments' },
-  { label: 'Activation', icon: icActivation, to: '/activation', chevron: true },
   {
-    label: 'Communication',
-    icon: icComm,
-    to: '/communications',
-    chevron: true
+    key: 'warehouse',
+    label: 'Connections',
+    icon: icSetup,
+    children: [
+      { label: 'Warehouse connections', to: '/dwh-connections' },
+      { label: 'DWH syncs', to: '/dwh-syncs' },
+      { label: 'Warehouse models', to: '/warehouse-models' }
+    ]
   },
-  { label: 'Integrations', icon: icIntegrations, to: '/integrations' },
-  { label: 'Live Events', icon: icOverview, to: '/live-events' },
-  { label: 'Events Demo', icon: icOverview, to: '/events-demo' }
+  {
+    key: 'monitoring',
+    label: 'Monitoring',
+    icon: icBell,
+    children: [
+      { label: 'Errors', to: '/errors' },
+      { label: 'Health', to: '/health' },
+      { label: 'Reporting', to: '/reporting' }
+    ]
+  },
+  {
+    key: 'engage',
+    label: 'Engage',
+    icon: icComm,
+    entitlement: 'engage',
+    children: [
+      { label: 'Audiences', to: '/audiences' },
+      { label: 'Journeys', to: '/journeys' },
+      { label: 'Goals', to: '/goals' },
+      { label: 'Surveys', to: '/surveys' },
+      { label: 'Assets', to: '/assets' },
+      { label: 'Catalogs', to: '/catalogs' },
+      { label: 'Email campaigns', to: '/channels/email' },
+      { label: 'Channel settings', to: '/channels/settings' },
+      { label: 'Engage settings', to: '/engage-settings' },
+      { label: 'Operator work log', to: '/engage-operator/work-log' }
+    ]
+  },
+  {
+    key: 'legacy',
+    label: 'Fan CDP',
+    icon: icSegments,
+    children: [
+      { label: 'Fan overview', to: '/fan-overview' },
+      { label: 'Contacts', to: '/contacts' },
+      { label: 'Segments', to: '/segments' },
+      { label: 'Activation', to: '/activation' },
+      { label: 'Communications', to: '/communications' },
+      { label: 'Integrations', to: '/integrations' },
+      { label: 'Live events', to: '/live-events' },
+      { label: 'Events demo', to: '/events-demo' }
+    ]
+  }
 ]
 
 const bottomMenu = [
-  { label: 'Setup', icon: icSetup },
-  { label: 'Sources', icon: icSources, to: '/sources' },
-  { label: 'Settings', icon: icSettings },
+  { label: 'Authentication', icon: icSetup, to: '/authorizations' },
+  { label: 'Secrets', icon: icSettings, to: '/secrets' },
+  { label: 'Connectors', icon: icSources, to: '/connectors' },
+  { label: 'Settings', icon: icSettings, to: '/settings' },
   { label: 'Logout', icon: icLogout, action: 'logout' }
 ]
+
+const { isEnabled } = useEntitlements()
+
+// Entitlement-gated groups disappear entirely rather than rendering dead links.
+const visibleGroups = computed(() =>
+  navGroups.filter(g => !g.entitlement || isEnabled(g.entitlement))
+)
+
+// Groups the user has explicitly toggled. A group whose screen is active is
+// always shown open regardless, so navigation never hides where you are.
+const openGroups = ref(new Set())
+
+function groupHasActiveChild(group) {
+  return (group.children || []).some(c => isActive(c))
+}
+
+function isExpanded(group) {
+  return openGroups.value.has(group.key) || groupHasActiveChild(group)
+}
+
+function toggleGroup(group) {
+  if (mini.value) {
+    // No room to expand in rail mode — jump to the group's first screen.
+    select(group.children[0])
+    return
+  }
+  const next = new Set(openGroups.value)
+  if (next.has(group.key)) next.delete(group.key)
+  else next.add(group.key)
+  openGroups.value = next
+}
+
+function groupClass(group) {
+  return groupHasActiveChild(group) ? 'text-ink font-medium' : 'text-muted'
+}
 
 const search = ref('')
 const leftDrawerOpen = ref(false)
@@ -273,8 +440,13 @@ function toggleCollapse() {
   }
 }
 
+// Prefix match, not equality: with nested routes (/sources/new, /sources/:id)
+// an exact match would leave the sidebar showing nothing as active the moment
+// you opened a detail or create screen.
 function isActive(item) {
-  return item.to ? route.path === item.to : false
+  if (!item.to) return false
+  if (item.to === '/') return route.path === '/'
+  return route.path === item.to || route.path.startsWith(item.to + '/')
 }
 
 function itemClass(item) {

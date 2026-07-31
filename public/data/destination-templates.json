@@ -1,0 +1,175 @@
+[
+  {
+    "id": "meta-conversions-api",
+    "name": "Meta Conversions API",
+    "description": "Send server-side conversions to Meta for ads attribution and retargeting.",
+    "destinationType": "event_destination",
+    "version": "2026-04-10",
+    "icon": "meta",
+    "tags": ["ads", "conversions"],
+    "defaults": {
+      "name": "Meta Conversions API",
+      "description": "Server-side conversions for Meta ads."
+    },
+    "secrets": [
+      {
+        "keyPrefix": "META_ACCESS_TOKEN",
+        "description": "System user access token with ads_management scope."
+      }
+    ],
+    "paramsSchema": {
+      "type": "object",
+      "properties": {
+        "pixel_id": {
+          "type": "string",
+          "description": "Meta pixel / dataset id."
+        },
+        "test_event_code": {
+          "type": "string",
+          "description": "Optional test event code for the Events Manager test tool."
+        },
+        "log_request": {
+          "type": "boolean",
+          "description": "Log the outbound payload for debugging."
+        }
+      },
+      "required": ["pixel_id"],
+      "additionalProperties": false
+    }
+  },
+  {
+    "id": "tiktok-events-api",
+    "name": "TikTok Events API",
+    "description": "Forward server-side events to the TikTok Events API.",
+    "destinationType": "event_destination",
+    "version": "2026-04-10",
+    "icon": "tiktok",
+    "tags": ["ads", "conversions"],
+    "defaults": {
+      "name": "TikTok Events API",
+      "description": "Server-side events for TikTok ads."
+    },
+    "secrets": [
+      {
+        "keyPrefix": "TIKTOK_ACCESS_TOKEN",
+        "description": "TikTok Business access token."
+      }
+    ],
+    "paramsSchema": {
+      "type": "object",
+      "properties": {
+        "event_source_id": {
+          "type": "string",
+          "description": "TikTok pixel or offline event set id."
+        },
+        "test_event_code": {
+          "type": "string",
+          "description": "Optional test event code."
+        }
+      },
+      "required": ["event_source_id"],
+      "additionalProperties": false
+    }
+  },
+  {
+    "id": "webhook",
+    "name": "Webhook",
+    "description": "POST every routed event as JSON to an HTTPS endpoint you control.",
+    "destinationType": "event_destination",
+    "version": "2026-05-30",
+    "icon": "webhook",
+    "tags": ["custom", "http"],
+    "defaults": { "name": "Webhook", "description": "Custom HTTPS webhook." },
+    "secrets": [
+      {
+        "keyPrefix": "WEBHOOK_SIGNING_SECRET",
+        "description": "Shared secret used for the X-Signature header."
+      }
+    ],
+    "paramsSchema": {
+      "type": "object",
+      "properties": {
+        "url": {
+          "type": "string",
+          "description": "HTTPS endpoint to POST to."
+        },
+        "method": {
+          "type": "string",
+          "description": "HTTP method. Defaults to POST."
+        }
+      },
+      "required": ["url"],
+      "additionalProperties": false
+    }
+  },
+  {
+    "id": "s3",
+    "name": "Amazon S3",
+    "description": "Batch routed events to newline-delimited JSON objects in an S3 bucket.",
+    "destinationType": "event_destination",
+    "version": "2026-05-30",
+    "icon": "s3",
+    "tags": ["storage", "archive"],
+    "defaults": {
+      "name": "Amazon S3",
+      "description": "Cold archive of routed events."
+    },
+    "secrets": [
+      { "keyPrefix": "AWS_ACCESS_KEY_ID", "description": "IAM access key id." },
+      {
+        "keyPrefix": "AWS_SECRET_ACCESS_KEY",
+        "description": "IAM secret access key."
+      }
+    ],
+    "paramsSchema": {
+      "type": "object",
+      "properties": {
+        "bucket": { "type": "string", "description": "Target bucket name." },
+        "prefix": {
+          "type": "string",
+          "description": "Key prefix for written objects."
+        },
+        "region": {
+          "type": "string",
+          "description": "AWS region of the bucket."
+        }
+      },
+      "required": ["bucket", "region"],
+      "additionalProperties": false
+    }
+  },
+  {
+    "id": "google-ads",
+    "name": "Google Ads",
+    "description": "Upload offline conversions and customer match lists to Google Ads.",
+    "destinationType": "event_destination",
+    "version": "2026-04-10",
+    "icon": "google-ads",
+    "tags": ["ads", "conversions"],
+    "defaults": {
+      "name": "Google Ads",
+      "description": "Offline conversions for Google Ads."
+    },
+    "secrets": [
+      {
+        "keyPrefix": "GOOGLE_ADS_DEVELOPER_TOKEN",
+        "description": "Google Ads API developer token."
+      }
+    ],
+    "paramsSchema": {
+      "type": "object",
+      "properties": {
+        "customer_id": {
+          "type": "string",
+          "description": "Google Ads customer id, digits only."
+        },
+        "conversion_action_id": {
+          "type": "string",
+          "description": "Conversion action to attribute to."
+        }
+      },
+      "required": ["customer_id"],
+      "additionalProperties": false
+    }
+  }
+]

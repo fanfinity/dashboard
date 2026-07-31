@@ -33,7 +33,7 @@ data comes from a _different_ system (`console.fanfinity.io`) through a dev prox
 Goal of this change: give the dashboard a small authenticated API client for the new
 backend and populate the signed-in user's accounts/role on login, so future screens can
 be built on top. We are **not** wiring existing composables (`useLiveEvents`, `useJitsu`,
-`useSourcesCatalog`) to the new backend — those keep hitting `console.fanfinity.io`.
+`useConnectorCatalog`) to the new backend — those keep hitting `console.fanfinity.io`.
 
 ## Backend prerequisite — CORS ✅ DONE
 

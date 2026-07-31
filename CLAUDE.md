@@ -18,8 +18,13 @@ Linting/formatting is **oxlint + oxfmt**, not ESLint/Prettier. oxfmt style: no s
 single quotes, printWidth 80, `arrowParens: avoid`, no trailing commas. oxlint runs only the
 `correctness` category as errors (max 10 warnings).
 
-There is **no test runner configured** — `playwright` is a devDependency but no test scripts
-or specs exist yet.
+There is **no unit-test runner**. The behavioural gate is `pnpm smoke:dist`, which builds,
+serves `dist/spa`, signs in for real, walks every route in the screen manifest, and fails on any
+console error, uncaught error, rendered `ErrorState`, unresolved route, or missing `<h1>`.
+It needs `SMOKE_EMAIL`/`SMOKE_PASSWORD` in `.env` (see `.env.example`).
+
+`pnpm build` is the other gate worth leaning on: it hard-fails on unresolved `@/` imports,
+unimported components and malformed templates.
 
 **Never run `pnpm dev` (or `quasar dev`) yourself.** The user always runs the dev server
 themselves in watch mode, in a separate terminal. It's already running with HMR — edits to
@@ -32,7 +37,49 @@ CSS v4** (via `@tailwindcss/vite` + PostCSS) used alongside Quasar's own compone
 both `app.scss` and `tailwind.css` are loaded. Charts use ApexCharts (`vue3-apexcharts`).
 
 Router uses **hash mode** (`vueRouterMode: 'hash'` in `quasar.config.js`). The `@/` alias maps
-to `src/`. All app routes are children of `src/layouts/MainLayout.vue`; see `src/router/routes.js`.
+to `src/`. All app routes are children of `src/layouts/MainLayout.vue`.
+
+## Screen manifest — routes are generated, not hand-written
+
+`src/router/screens.js` is the single source of truth for every route.
+`src/router/routes.js` builds the table from it with `import.meta.glob` (lazy loading is
+preserved) and **must not be hand-edited**. A manifest entry whose page file is missing throws
+at module load rather than 404-ing silently.
+
+`screens.js` is deliberately import-free — no Vue, no `@/` aliases — so plain Node can read it.
+`scripts/smoke.mjs` walks every route from it.
+
+The product backlog (54 screens, GitHub issues #16–#69) is scaffolded: every screen already
+exists as a stub page at its final path. Implementing one means **rewriting that file in place**,
+never creating a file and registering a route.
+
+## UI primitives
+
+`src/components/ui/` holds the shared building blocks — `PageHeader`, `DataTable`, `EmptyState`,
+`ErrorState`, `LoadingState`, `StatusBadge` and friends. **Use them; do not re-implement their
+markup and do not copy their class strings into a page.** Read `docs/ui-conventions.md` before
+writing any new screen.
+
+This is not only about consistency: `scripts/smoke.mjs` detects a broken screen by looking for
+the single `[data-smoke="error"]` selector that `ErrorState` renders. Hand-rolled error blocks
+would leave the only behavioural gate in the repo with nothing to assert on.
+
+## Mock data supersedes the issue acceptance criteria
+
+Every backlog issue says _"fetch through the generated orval client in `src/api/`"_. **That is
+wrong for these screens** — there is no backend behind any of them. Data comes from mock JSON in
+`public/data/`, loaded through `useMockResource()`, which follows the same
+`{ data, loading, error, load() }` contract as everything else. `src/api/` remains reserved for
+the real accounts/RBAC backend.
+
+## Frozen files
+
+These are owned by the foundation phase. If a task seems to require editing one, that is a
+blocker to report, not an edit to make — see `docs/agent-workflow.md`.
+
+`src/router/**` · `src/layouts/**` · `src/components/ui/**` ·
+`src/composables/{useMockResource,useEntitlements,useDiagram,useTemplates}.js` ·
+`package.json` · `quasar.config.js` · `index.html` · `.gitignore` · `scripts/**` · this file
 
 ## Data architecture
 
@@ -52,7 +99,7 @@ all follow the same `{ data, loading, error, load() }` contract (`src/composable
      needs an equivalent reverse proxy in front of it.
    - **Write** events (`useJitsu.js`) via the bundled `@jitsu/js` browser SDK (POSTs directly to
      the console origin, allowed by CSP).
-   - The public connector catalog (`useSourcesCatalog.js`) hits `/api/sources` directly — that
+   - The public connector catalog (`useConnectorCatalog.js`) hits `/api/sources` directly — that
      endpoint is public/CORS-open, no key.
 
 3. **The Fanfinity backend** (accounts/RBAC API; `https://api-staging.fanfinity.io`

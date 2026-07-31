@@ -1,0 +1,294 @@
+{
+  "updatedAt": "2026-07-31T06:00:00.000Z",
+  "range": {
+    "from": "2026-07-02T06:00:00.000Z",
+    "to": "2026-07-31T06:00:00.000Z",
+    "preset": "last_30_days"
+  },
+  "totals": {
+    "eventsIngested": 18442019,
+    "eventsRouted": 30219448,
+    "profilesResolved": 412880,
+    "profilesDelivered": 88214,
+    "deliveryFailures": 1204,
+    "deliverySuccessRate": 0.9864
+  },
+  "ingestionSeries": [
+    {
+      "bucket": "2026-07-02T06:00:00.000Z",
+      "ingested": 621442,
+      "routed": 1012146
+    },
+    {
+      "bucket": "2026-07-03T06:00:00.000Z",
+      "ingested": 661819,
+      "routed": 1037527
+    },
+    {
+      "bucket": "2026-07-04T06:00:00.000Z",
+      "ingested": 688566,
+      "routed": 1108524
+    },
+    {
+      "bucket": "2026-07-05T06:00:00.000Z",
+      "ingested": 722164,
+      "routed": 1118725
+    },
+    {
+      "bucket": "2026-07-06T06:00:00.000Z",
+      "ingested": 734654,
+      "routed": 1168729
+    },
+    {
+      "bucket": "2026-07-07T06:00:00.000Z",
+      "ingested": 747124,
+      "routed": 1225596
+    },
+    {
+      "bucket": "2026-07-08T06:00:00.000Z",
+      "ingested": 774807,
+      "routed": 1201383
+    },
+    {
+      "bucket": "2026-07-09T06:00:00.000Z",
+      "ingested": 761542,
+      "routed": 1207844
+    },
+    {
+      "bucket": "2026-07-10T06:00:00.000Z",
+      "ingested": 745598,
+      "routed": 1240448
+    },
+    {
+      "bucket": "2026-07-11T06:00:00.000Z",
+      "ingested": 733020,
+      "routed": 1184556
+    },
+    {
+      "bucket": "2026-07-12T06:00:00.000Z",
+      "ingested": 678772,
+      "routed": 1113043
+    },
+    {
+      "bucket": "2026-07-13T06:00:00.000Z",
+      "ingested": 689049,
+      "routed": 1057408
+    },
+    {
+      "bucket": "2026-07-14T06:00:00.000Z",
+      "ingested": 639830,
+      "routed": 1030857
+    },
+    {
+      "bucket": "2026-07-15T06:00:00.000Z",
+      "ingested": 584715,
+      "routed": 954577
+    },
+    {
+      "bucket": "2026-07-16T06:00:00.000Z",
+      "ingested": 564672,
+      "routed": 920254
+    },
+    {
+      "bucket": "2026-07-17T06:00:00.000Z",
+      "ingested": 526355,
+      "routed": 857462
+    },
+    {
+      "bucket": "2026-07-18T06:00:00.000Z",
+      "ingested": 480897,
+      "routed": 865774
+    },
+    {
+      "bucket": "2026-07-19T06:00:00.000Z",
+      "ingested": 470169,
+      "routed": 812670
+    },
+    {
+      "bucket": "2026-07-20T06:00:00.000Z",
+      "ingested": 469310,
+      "routed": 768036
+    },
+    {
+      "bucket": "2026-07-21T06:00:00.000Z",
+      "ingested": 446140,
+      "routed": 751301
+    },
+    {
+      "bucket": "2026-07-22T06:00:00.000Z",
+      "ingested": 491466,
+      "routed": 777607
+    },
+    {
+      "bucket": "2026-07-23T06:00:00.000Z",
+      "ingested": 489210,
+      "routed": 800527
+    },
+    {
+      "bucket": "2026-07-24T06:00:00.000Z",
+      "ingested": 516176,
+      "routed": 869293
+    },
+    {
+      "bucket": "2026-07-25T06:00:00.000Z",
+      "ingested": 558441,
+      "routed": 873837
+    },
+    {
+      "bucket": "2026-07-26T06:00:00.000Z",
+      "ingested": 555615,
+      "routed": 964139
+    },
+    {
+      "bucket": "2026-07-27T06:00:00.000Z",
+      "ingested": 628247,
+      "routed": 1019698
+    },
+    {
+      "bucket": "2026-07-28T06:00:00.000Z",
+      "ingested": 643902,
+      "routed": 1020847
+    },
+    {
+      "bucket": "2026-07-29T06:00:00.000Z",
+      "ingested": 699226,
+      "routed": 1104750
+    },
+    {
+      "bucket": "2026-07-30T06:00:00.000Z",
+      "ingested": 693471,
+      "routed": 1111420
+    },
+    {
+      "bucket": "2026-07-31T06:00:00.000Z",
+      "ingested": 730535,
+      "routed": 1223396
+    }
+  ],
+  "bySource": [
+    {
+      "id": "src_web_sdk",
+      "name": "Web SDK",
+      "events": 12880440,
+      "share": 0.698
+    },
+    {
+      "id": "src_ios_sdk",
+      "name": "iOS SDK",
+      "events": 4102188,
+      "share": 0.222
+    },
+    {
+      "id": "src_stadium_wifi",
+      "name": "Stadium Wi-Fi Portal",
+      "events": 1298440,
+      "share": 0.07
+    },
+    {
+      "id": "src_shopify",
+      "name": "Shopify Store",
+      "events": 160951,
+      "share": 0.009
+    },
+    {
+      "id": "src_ticketing_api",
+      "name": "Ticketing API",
+      "events": 0,
+      "share": 0
+    },
+    {
+      "id": "src_android_sdk",
+      "name": "Android SDK",
+      "events": 0,
+      "share": 0
+    }
+  ],
+  "byDestination": [
+    {
+      "id": "dst_snowflake",
+      "name": "Snowflake",
+      "deliveries": 18281068,
+      "failures": 402,
+      "successRate": 0.9999
+    },
+    {
+      "id": "dst_meta_capi",
+      "name": "Meta Conversions API",
+      "deliveries": 11778429,
+      "failures": 780,
+      "successRate": 0.9999
+    },
+    {
+      "id": "dst_ops_webhook",
+      "name": "Ops Webhook",
+      "deliveries": 159951,
+      "failures": 22,
+      "successRate": 0.9999
+    },
+    {
+      "id": "dst_tiktok_events",
+      "name": "TikTok Events API",
+      "deliveries": 0,
+      "failures": 0,
+      "successRate": null
+    },
+    {
+      "id": "dst_bigquery",
+      "name": "BigQuery Archive",
+      "deliveries": 0,
+      "failures": 0,
+      "successRate": null
+    },
+    {
+      "id": "dst_s3_archive",
+      "name": "S3 Cold Storage",
+      "deliveries": 0,
+      "failures": 0,
+      "successRate": null
+    }
+  ],
+  "byPipe": [
+    {
+      "id": "pipe_web_to_snowflake",
+      "name": "Web SDK to Snowflake",
+      "deliveries": 12880440,
+      "failures": 210
+    },
+    {
+      "id": "pipe_web_to_meta",
+      "name": "Web SDK to Meta CAPI",
+      "deliveries": 11778429,
+      "failures": 780
+    },
+    {
+      "id": "pipe_ios_to_snowflake",
+      "name": "iOS SDK to Snowflake",
+      "deliveries": 4102188,
+      "failures": 96
+    },
+    {
+      "id": "pipe_wifi_to_snowflake",
+      "name": "Stadium Wi-Fi to Snowflake",
+      "deliveries": 1298440,
+      "failures": 96
+    },
+    {
+      "id": "pipe_shopify_to_webhook",
+      "name": "Shopify to Ops Webhook",
+      "deliveries": 159951,
+      "failures": 22
+    },
+    {
+      "id": "pipe_android_to_tiktok",
+      "name": "Android SDK to TikTok",
+      "deliveries": 0,
+      "failures": 0
+    },
+    {
+      "id": "pipe_ticketing_to_bigquery",
+      "name": "Ticketing to BigQuery",
+      "deliveries": 0,
+      "failures": 0
+    }
+  ]
+}

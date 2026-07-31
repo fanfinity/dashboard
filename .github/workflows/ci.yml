@@ -1,0 +1,38 @@
+name: CI
+
+# Nothing gated pull requests before this: deploy-pages.yml only fires on push to
+# main, so a broken PR was only discovered after merge. With many agents opening
+# work in parallel that is not survivable.
+on:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Lint and format check
+        run: pnpm lint:check
+
+      # The real gate. Vite + vue/compiler-sfc hard-fail on unresolved @/ imports,
+      # components used but not imported, malformed templates, and any screens.js
+      # entry pointing at a page file that does not exist.
+      #
+      # No secrets needed: VITE_* are read at runtime, so their absence does not
+      # break the build. The smoke test is not run here because it needs real
+      # sign-in credentials; it runs locally and in the merge queue instead.
+      - name: Build
+        run: pnpm build

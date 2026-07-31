@@ -1,0 +1,47 @@
+{
+  "workspace": {
+    "id": "ws_fanfinity",
+    "name": "Fanfinity",
+    "slug": "fanfinity",
+    "region": "me-central-1",
+    "regionLabel": "Saudi Arabia (Riyadh)",
+    "timezone": "Asia/Riyadh",
+    "createdAt": "2026-02-11T08:00:00.000Z"
+  },
+  "errorAlerts": {
+    "slackWebhooks": [
+      {
+        "id": "alert_slack_data",
+        "label": "#data-alerts",
+        "url": "https://hooks.slack.com/services/T0000/B0000/••••••",
+        "minSeverity": "error",
+        "isEnabled": true
+      }
+    ],
+    "teamsWebhooks": []
+  },
+  "aiAssistant": {
+    "assistantMode": "system",
+    "customProvider": "google",
+    "googleApiKey": { "source": "system" },
+    "hasCustomGoogleApiKey": false,
+    "systemGoogleApiKeyAvailable": true
+  },
+  "retention": {
+    "rawEventDays": 90,
+    "errorLogDays": 30,
+    "profileInactivityDays": 730
+  },
+  "identityResolution": {
+    "strategy": "deterministic",
+    "mergeOnSharedEmail": true,
+    "mergeOnSharedPhone": false,
+    "maxIdentifiersPerProfile": 25
+  },
+  "instanceCapabilities": {
+    "signInLink": true,
+    "userManagement": true,
+    "googleLoginUrl": "/api/auth/google",
+    "microsoftLoginUrl": "/api/auth/microsoft"
+  }
+}

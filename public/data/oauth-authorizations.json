@@ -1,0 +1,68 @@
+{
+  "providers": [
+    {
+      "id": "google-ads",
+      "displayName": "Google Ads",
+      "scopes": ["https://www.googleapis.com/auth/adwords"]
+    },
+    {
+      "id": "meta-ads",
+      "displayName": "Meta Ads",
+      "scopes": ["ads_management", "business_management"]
+    },
+    {
+      "id": "tiktok-ads",
+      "displayName": "TikTok Ads",
+      "scopes": ["ads.management", "audience.management"]
+    },
+    {
+      "id": "salesforce",
+      "displayName": "Salesforce",
+      "scopes": ["api", "refresh_token"]
+    }
+  ],
+  "authorizations": [
+    {
+      "id": "oauth_google_ads_main",
+      "providerId": "google-ads",
+      "providerName": "Google Ads",
+      "accountLabel": "Fanfinity Media (472-118-9903)",
+      "scopes": ["https://www.googleapis.com/auth/adwords"],
+      "status": "expired",
+      "authorizedBy": "usr_dana",
+      "authorizedByName": "Dana Rashid",
+      "authorizedAt": "2026-04-19T13:05:00.000Z",
+      "expiresAt": "2026-07-31T05:48:00.000Z",
+      "lastUsedAt": "2026-07-31T05:48:31.900Z",
+      "usedByCount": 1
+    },
+    {
+      "id": "oauth_meta_ads_main",
+      "providerId": "meta-ads",
+      "providerName": "Meta Ads",
+      "accountLabel": "Fanfinity Business Manager",
+      "scopes": ["ads_management", "business_management"],
+      "status": "active",
+      "authorizedBy": "usr_mahmoud",
+      "authorizedByName": "Mahmoud Abu Musa",
+      "authorizedAt": "2026-03-22T14:40:00.000Z",
+      "expiresAt": "2026-09-18T00:00:00.000Z",
+      "lastUsedAt": "2026-07-31T05:52:10.400Z",
+      "usedByCount": 2
+    },
+    {
+      "id": "oauth_tiktok_ads_main",
+      "providerId": "tiktok-ads",
+      "providerName": "TikTok Ads",
+      "accountLabel": "Fanfinity Youth Campaign",
+      "scopes": ["ads.management"],
+      "status": "revoked",
+      "authorizedBy": "usr_dana",
+      "authorizedByName": "Dana Rashid",
+      "authorizedAt": "2026-04-15T11:20:00.000Z",
+      "expiresAt": null,
+      "lastUsedAt": "2026-06-02T14:12:00.000Z",
+      "usedByCount": 0
+    }
+  ]
+}

@@ -1,0 +1,10 @@
+{
+  "email-double-opt-in": false,
+  "engage-operator": true,
+  "warehouse-modeling": true,
+  "live-profile-syncs": true,
+  "profile-api": true,
+  "web-banners": false,
+  "surveys": true,
+  "ai-assistant": true
+}

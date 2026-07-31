@@ -1,0 +1,173 @@
+[
+  {
+    "id": "idt_email",
+    "name": "email",
+    "displayName": "Email",
+    "maxIdentifiers": 5,
+    "priority": 1,
+    "version": 2,
+    "deletedAt": null,
+    "createdAt": "2026-02-11T10:00:13.930Z",
+    "updatedAt": "2026-06-14T11:02:00.000Z",
+    "eventTypes": [
+      {
+        "eventTypeId": "evt_identify",
+        "eventTypeName": "identify",
+        "sourceId": "src_web_sdk",
+        "sourceName": "Web SDK",
+        "sourceType": "event_stream"
+      },
+      {
+        "eventTypeId": "evt_wifi_signin",
+        "eventTypeName": "wifi_signin",
+        "sourceId": "src_stadium_wifi",
+        "sourceName": "Stadium Wi-Fi Portal",
+        "sourceType": "event_stream"
+      }
+    ],
+    "dataModels": [
+      {
+        "dataModelId": "model_crm_contacts",
+        "dataModelName": "CRM contacts",
+        "column": "email"
+      }
+    ]
+  },
+  {
+    "id": "idt_phone",
+    "name": "phone",
+    "displayName": "Phone",
+    "maxIdentifiers": 3,
+    "priority": 2,
+    "version": 1,
+    "deletedAt": null,
+    "createdAt": "2026-02-11T10:00:13.930Z",
+    "updatedAt": "2026-02-11T10:00:13.930Z",
+    "eventTypes": [
+      {
+        "eventTypeId": "evt_wifi_signin",
+        "eventTypeName": "wifi_signin",
+        "sourceId": "src_stadium_wifi",
+        "sourceName": "Stadium Wi-Fi Portal",
+        "sourceType": "event_stream"
+      }
+    ],
+    "dataModels": [
+      {
+        "dataModelId": "model_crm_contacts",
+        "dataModelName": "CRM contacts",
+        "column": "phone"
+      }
+    ]
+  },
+  {
+    "id": "idt_browser",
+    "name": "browser",
+    "displayName": "Browser cookie",
+    "maxIdentifiers": null,
+    "priority": 5,
+    "version": 1,
+    "deletedAt": null,
+    "createdAt": "2026-02-11T10:00:13.930Z",
+    "updatedAt": "2026-02-11T10:00:13.930Z",
+    "eventTypes": [
+      {
+        "eventTypeId": "evt_page_view",
+        "eventTypeName": "page_view",
+        "sourceId": "src_web_sdk",
+        "sourceName": "Web SDK",
+        "sourceType": "event_stream"
+      }
+    ],
+    "dataModels": []
+  },
+  {
+    "id": "idt_user_id",
+    "name": "user_id",
+    "displayName": "Account user id",
+    "maxIdentifiers": 1,
+    "priority": 0,
+    "version": 3,
+    "deletedAt": null,
+    "createdAt": "2026-02-11T10:00:13.930Z",
+    "updatedAt": "2026-07-02T13:45:10.000Z",
+    "eventTypes": [
+      {
+        "eventTypeId": "evt_identify",
+        "eventTypeName": "identify",
+        "sourceId": "src_web_sdk",
+        "sourceName": "Web SDK",
+        "sourceType": "event_stream"
+      },
+      {
+        "eventTypeId": "evt_app_identify",
+        "eventTypeName": "identify",
+        "sourceId": "src_ios_sdk",
+        "sourceName": "iOS SDK",
+        "sourceType": "event_stream"
+      }
+    ],
+    "dataModels": [
+      {
+        "dataModelId": "model_fan_orders",
+        "dataModelName": "Fan orders",
+        "column": "profile_id"
+      }
+    ]
+  },
+  {
+    "id": "idt_mobile_user_id",
+    "name": "mobile_user_id",
+    "displayName": "Mobile device id",
+    "maxIdentifiers": 4,
+    "priority": 4,
+    "version": 1,
+    "deletedAt": null,
+    "createdAt": "2026-03-04T13:55:00.000Z",
+    "updatedAt": "2026-03-04T13:55:00.000Z",
+    "eventTypes": [
+      {
+        "eventTypeId": "evt_app_open",
+        "eventTypeName": "app_open",
+        "sourceId": "src_ios_sdk",
+        "sourceName": "iOS SDK",
+        "sourceType": "event_stream"
+      },
+      {
+        "eventTypeId": "evt_app_open_android",
+        "eventTypeName": "app_open",
+        "sourceId": "src_android_sdk",
+        "sourceName": "Android SDK",
+        "sourceType": "event_stream"
+      }
+    ],
+    "dataModels": []
+  },
+  {
+    "id": "idt_ticket_ref",
+    "name": "ticket_ref",
+    "displayName": "Ticket reference",
+    "maxIdentifiers": null,
+    "priority": 3,
+    "version": 1,
+    "deletedAt": null,
+    "createdAt": "2026-04-02T08:00:00.000Z",
+    "updatedAt": "2026-04-02T08:00:00.000Z",
+    "eventTypes": [
+      {
+        "eventTypeId": "evt_ticket_scan",
+        "eventTypeName": "ticket_scan",
+        "sourceId": "src_ticketing_api",
+        "sourceName": "Ticketing API",
+        "sourceType": "event_stream"
+      }
+    ],
+    "dataModels": [
+      {
+        "dataModelId": "model_ticketing_raw",
+        "dataModelName": "Ticketing raw archive",
+        "column": "fan_ref"
+      }
+    ]
+  }
+]

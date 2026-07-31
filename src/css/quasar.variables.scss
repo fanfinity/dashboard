@@ -12,14 +12,18 @@
 // to match your app's branding.
 // Tip: Use the "Theme Builder" on Quasar's documentation website.
 
-$primary: #1976d2;
-$secondary: #26a69a;
-$accent: #9c27b0;
+// Aligned with the design tokens in tailwind.css. Until this was set, Quasar's
+// stock blue leaked into every q-toggle, q-select, q-checkbox and spinner, so
+// those controls rendered off-brand beside Tailwind-styled markup — enough that
+// screens were avoiding Quasar form components entirely to work around it.
+$primary: #3800c1; // --color-brand
+$secondary: #0d9488; // teal — the chart-2 companion
+$accent: #db2777;
 
 $dark: #1d1d1d;
 $dark-page: #121212;
 
-$positive: #21ba45;
-$negative: #c10015;
-$info: #31ccec;
-$warning: #f2c037;
+$positive: #029855; // --color-success
+$negative: #e11d48;
+$info: #2563eb;
+$warning: #d97706;

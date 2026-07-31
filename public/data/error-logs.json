@@ -1,0 +1,113 @@
+{
+  "errors": [
+    {
+      "id": "err_01j9c2",
+      "occurredAt": "2026-07-31T05:48:31.900Z",
+      "category": "profile_destination",
+      "severity": "error",
+      "code": "invalid_credentials",
+      "message": "Google Ads refused the upload: OAuth token expired.",
+      "entityType": "live_profile_sync",
+      "entityId": "lps_google_customer_match",
+      "entityName": "Google customer match",
+      "count": 2,
+      "context": { "httpStatus": 401, "providerId": "google-ads" }
+    },
+    {
+      "id": "err_01j9c1",
+      "occurredAt": "2026-07-31T05:30:02.771Z",
+      "category": "dwh_sync",
+      "severity": "warning",
+      "code": "rows_skipped",
+      "message": "44 rows skipped: missing identifier column value.",
+      "entityType": "dwh_sync",
+      "entityId": "dsync_crm_contacts_in",
+      "entityName": "CRM contacts inbound",
+      "count": 44,
+      "context": { "table": "public.contacts" }
+    },
+    {
+      "id": "err_01j9c0",
+      "occurredAt": "2026-07-31T05:12:09.400Z",
+      "category": "pipe",
+      "severity": "error",
+      "code": "function_runtime_error",
+      "message": "TypeError: Cannot read properties of undefined (reading 'value') at transform:14",
+      "entityType": "pipe",
+      "entityId": "pipe_web_to_meta",
+      "entityName": "Web SDK to Meta CAPI",
+      "count": 18,
+      "context": { "line": 14, "eventName": "add_to_cart" }
+    },
+    {
+      "id": "err_01j9bz",
+      "occurredAt": "2026-07-31T04:55:41.010Z",
+      "category": "event_destination",
+      "severity": "error",
+      "code": "rate_limited",
+      "message": "Destination returned 429; batch retried with backoff.",
+      "entityType": "event_destination",
+      "entityId": "dst_meta_capi",
+      "entityName": "Meta Conversions API",
+      "count": 7,
+      "context": { "httpStatus": 429, "retryAfterSeconds": 30 }
+    },
+    {
+      "id": "err_01j9by",
+      "occurredAt": "2026-07-31T03:41:22.640Z",
+      "category": "event_stream",
+      "severity": "warning",
+      "code": "schema_mismatch",
+      "message": "Property 'order_total' arrived as string, expected number.",
+      "entityType": "source",
+      "entityId": "src_shopify",
+      "entityName": "Shopify Store",
+      "count": 61,
+      "context": { "eventName": "order_created", "property": "order_total" }
+    },
+    {
+      "id": "err_01j9bx",
+      "occurredAt": "2026-07-31T02:00:12.400Z",
+      "category": "profile_refresh",
+      "severity": "error",
+      "code": "permission_denied",
+      "message": "Writer role missing on dataset fan_raw.",
+      "entityType": "profile_dwh_sync",
+      "entityId": "pdsync_archive_snapshot",
+      "entityName": "Nightly profile snapshot to BigQuery",
+      "count": 1,
+      "context": { "dwhConnectionId": "dwh_bigquery_archive" }
+    },
+    {
+      "id": "err_01j9bw",
+      "occurredAt": "2026-07-30T23:14:55.200Z",
+      "category": "cloud_app",
+      "severity": "warning",
+      "code": "partial_sync",
+      "message": "Shopify pagination cursor expired mid-page; sync resumed from checkpoint.",
+      "entityType": "source",
+      "entityId": "src_shopify",
+      "entityName": "Shopify Store",
+      "count": 1,
+      "context": { "resource": "orders" }
+    },
+    {
+      "id": "err_01j9bv",
+      "occurredAt": "2026-07-18T03:05:52.110Z",
+      "category": "dwh_sync",
+      "severity": "error",
+      "code": "connection_failed",
+      "message": "Timed out after 30s connecting to legacy.abc123.eu-west-1.redshift.amazonaws.com.",
+      "entityType": "dwh_sync",
+      "entityId": "dsync_legacy_backfill",
+      "entityName": "Legacy Redshift backfill",
+      "count": 1,
+      "context": {
+        "dwhConnectionId": "dwh_redshift_legacy",
+        "timeoutMs": 30000
+      }
+    }
+  ],
+  "hasMore": true,
+  "nextCursor": "eyJvZmZzZXQiOjh9"
+}
