@@ -9,6 +9,9 @@
         >{{ deltaArrow }} {{ delta }}</span
       >
     </div>
+    <p v-if="hint || $slots.default" class="mt-1 text-xs text-subtle">
+      <slot>{{ hint }}</slot>
+    </p>
   </div>
 </template>
 
@@ -18,10 +21,17 @@ import { computed } from 'vue'
 // KPI tile, lifted verbatim from DashboardHomePage's `kpis` grid. That page only
 // ever renders an upward delta (`text-success` + '↑'); the down/flat cases are
 // composed from the same shape — rose for a regression, muted for no change.
+//
+// `delta` is a trend, not a caption. Anything that is not "this moved by X"
+// belongs in `hint` — the dashboard was pushing '37 errors' and '1.65× fan-out'
+// through `delta` and getting a red down-arrow in front of them.
 const props = defineProps({
   label: { type: String, required: true },
   value: { type: [String, Number], default: '' },
   delta: { type: String, default: '' },
+  // Muted caption under the value. Use the default slot instead for rich
+  // content; the slot wins when both are supplied.
+  hint: { type: String, default: '' },
   deltaDirection: {
     type: String,
     default: 'up',

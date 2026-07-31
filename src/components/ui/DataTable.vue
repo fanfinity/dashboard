@@ -9,8 +9,25 @@
 
     <ErrorState v-else-if="error" :message="error" @retry="emit('retry')" />
 
+    <!-- A page needing the two-case pattern (filtered-empty -> "Clear filters"
+         vs never-had-any -> primary CTA) still overrides `#empty` wholesale and
+         gets no help from the props below; the one-CTA common case needs no
+         slot at all. -->
     <slot v-else-if="!rows.length" name="empty">
-      <EmptyState :title="emptyTitle" :description="emptyDescription" />
+      <EmptyState :title="emptyTitle" :description="emptyDescription">
+        <template
+          v-if="$slots['empty-cta'] || (emptyCtaLabel && emptyCtaTo)"
+          #cta
+        >
+          <slot name="empty-cta">
+            <router-link
+              :to="emptyCtaTo"
+              class="flex h-9 items-center gap-1.5 rounded-lg bg-brand px-3.5 text-sm font-medium text-white shadow-sm hover:opacity-90"
+              >{{ emptyCtaLabel }}</router-link
+            >
+          </slot>
+        </template>
+      </EmptyState>
     </slot>
 
     <div
@@ -127,6 +144,13 @@ const props = defineProps({
   rowKey: { type: String, default: 'id' },
   emptyTitle: { type: String, default: 'Nothing here yet' },
   emptyDescription: { type: String, default: '' },
+  // One-CTA shortcut for the default empty state. Both must be set for the
+  // button to render; anything richer goes in the `empty-cta` slot, and the
+  // two-case pattern goes in `empty`.
+  emptyCtaLabel: { type: String, default: '' },
+  // A router location object, e.g. `{ name: 'sources-new' }`. Declarative only —
+  // this stays a dumb primitive; it never reads the router.
+  emptyCtaTo: { type: [Object, String], default: null },
   perPage: { type: Number, default: 25 },
   clickableRows: { type: Boolean, default: false }
 })
