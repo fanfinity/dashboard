@@ -2,7 +2,7 @@ import { ref } from 'vue'
 
 // The Live Events page reads incoming events from the events backend
 // (console.fanfinity.io). Unlike the public connector catalog (see
-// useSourcesCatalog.js), the events endpoint requires authentication and is NOT
+// useConnectorCatalog.js), the events endpoint requires authentication and is NOT
 // CORS-enabled, so we go through a same-origin dev proxy: the browser calls
 // /japi/... and the dev server (see devServer.proxy in the build config)
 // forwards to the backend with an API key attached.
@@ -115,7 +115,7 @@ function buildQuery({ limit = 100, start, end, level, search }) {
 }
 
 /**
- * Reactive hook for the Live Events (incoming) view. Mirrors useSourcesCatalog's
+ * Reactive hook for the Live Events (incoming) view. Mirrors useConnectorCatalog's
  * { data, loading, error, load } contract, plus site listing and pagination.
  */
 export function useLiveEvents() {

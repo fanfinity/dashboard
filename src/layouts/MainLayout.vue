@@ -252,7 +252,7 @@ const mainMenu = [
 
 const bottomMenu = [
   { label: 'Setup', icon: icSetup },
-  { label: 'Sources', icon: icSources, to: '/sources' },
+  { label: 'Connectors', icon: icSources, to: '/connectors' },
   { label: 'Settings', icon: icSettings },
   { label: 'Logout', icon: icLogout, action: 'logout' }
 ]

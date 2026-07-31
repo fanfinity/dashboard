@@ -4,7 +4,7 @@
     <div class="mb-6 flex flex-wrap items-start justify-between gap-4">
       <div>
         <h1 class="text-2xl! font-semibold! tracking-[-0.5px]! text-ink"
-          >Sources</h1
+          >Connectors</h1
         >
         <p class="mt-2 text-sm text-muted">
           Browse the connector catalog. Pick a source to start syncing data into
@@ -69,10 +69,10 @@
         <div
           class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
         >
-          <SourceCard
+          <ConnectorCard
             v-for="item in group.items"
             :key="item.id"
-            :source="item"
+            :connector="item"
             @select="onSelect"
           />
         </div>
@@ -85,12 +85,12 @@
 import { computed, onMounted, ref } from 'vue'
 import { useQuasar } from 'quasar'
 
-import SourceCard from '@/components/SourceCard.vue'
-import { useSourcesCatalog } from '@/composables/useSourcesCatalog'
+import ConnectorCard from '@/components/ConnectorCard.vue'
+import { useConnectorCatalog } from '@/composables/useConnectorCatalog'
 import icSearch from '@/assets/dashboard/ic-search.svg'
 
 const $q = useQuasar()
-const { sources, loading, error, load } = useSourcesCatalog()
+const { connectors, loading, error, load } = useConnectorCatalog()
 const query = ref('')
 
 // Order + human labels for connectorSubtype values returned by the API.
@@ -103,7 +103,7 @@ const SUBTYPES = [
 
 const filteredGroups = computed(() => {
   const q = query.value.trim().toLowerCase()
-  const matches = sources.value.filter(s => {
+  const matches = connectors.value.filter(s => {
     if (!q) return true
     const name = (s.meta?.name || '').toLowerCase()
     return name.includes(q) || s.packageId.toLowerCase().includes(q)
@@ -144,11 +144,11 @@ function titleCase(s) {
   return s.charAt(0).toUpperCase() + s.slice(1)
 }
 
-function onSelect(source) {
+function onSelect(connector) {
   // Browse-only for now. Wiring an actual sync (config form, credentials, version)
   // attaches here once the deployment's API keys are provided.
   $q.notify({
-    message: `${source.meta?.name || source.packageId} — connecting sources is coming soon`,
+    message: `${connector.meta?.name || connector.packageId} — connecting sources is coming soon`,
     color: 'dark',
     position: 'bottom',
     timeout: 2000

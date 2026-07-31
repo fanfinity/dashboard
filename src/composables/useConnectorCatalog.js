@@ -19,10 +19,14 @@ export function logoUrl(item) {
 
 /**
  * Fetches the connector catalog from {BASE}/api/sources?mode=meta.
- * Returns reactive { sources, loading, error } and a load() action.
+ * Returns reactive { connectors, loading, error } and a load() action.
+ *
+ * This is the browse-only catalog of connector *types* the upstream events
+ * backend supports — not the event streams configured for this account. Those
+ * live under /sources and are a different concept entirely.
  */
-export function useSourcesCatalog() {
-  const sources = ref([])
+export function useConnectorCatalog() {
+  const connectors = ref([])
   const loading = ref(false)
   const error = ref(null)
 
@@ -37,14 +41,14 @@ export function useSourcesCatalog() {
         throw new Error(`Catalog request failed (${res.status})`)
       }
       const data = await res.json()
-      sources.value = Array.isArray(data?.sources) ? data.sources : []
+      connectors.value = Array.isArray(data?.sources) ? data.sources : []
     } catch (e) {
       error.value = e instanceof Error ? e.message : String(e)
-      sources.value = []
+      connectors.value = []
     } finally {
       loading.value = false
     }
   }
 
-  return { sources, loading, error, load }
+  return { connectors, loading, error, load }
 }

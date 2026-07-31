@@ -2,7 +2,7 @@
   <q-item
     clickable
     class="min-h-0! rounded-xl! p-4! flex items-start gap-3 border border-line2 bg-white shadow-sm hover:shadow-md transition-shadow"
-    @click="emit('select', source)"
+    @click="emit('select', connector)"
   >
     <!-- Logo -->
     <div
@@ -11,7 +11,7 @@
       <img
         v-if="!logoFailed"
         :src="logo"
-        :alt="source.meta?.name"
+        :alt="connector.meta?.name"
         class="size-6 object-contain"
         @error="logoFailed = true"
       />
@@ -24,31 +24,33 @@
         <h3
           class="truncate text-sm! font-semibold! tracking-[-0.35px]! text-ink"
         >
-          {{ source.meta?.name || source.packageId }}
+          {{ connector.meta?.name || connector.packageId }}
         </h3>
         <span
-          v-if="source.meta?.license"
+          v-if="connector.meta?.license"
           class="shrink-0 rounded bg-fill px-1.5 py-0.5 text-[10px] font-medium text-subtle"
         >
-          {{ source.meta.license }}
+          {{ connector.meta.license }}
         </span>
       </div>
-      <p class="mt-0.5 truncate text-xs text-muted">{{ source.packageId }}</p>
+      <p class="mt-0.5 truncate text-xs text-muted">{{
+        connector.packageId
+      }}</p>
     </div>
   </q-item>
 </template>
 
 <script setup>
 import { ref } from 'vue'
-import { logoUrl } from '@/composables/useSourcesCatalog'
+import { logoUrl } from '@/composables/useConnectorCatalog'
 import icSources from '@/assets/dashboard/ic-sources.svg'
 
 const props = defineProps({
-  source: { type: Object, required: true }
+  connector: { type: Object, required: true }
 })
 
 const emit = defineEmits(['select'])
 
 const logoFailed = ref(false)
-const logo = logoUrl(props.source)
+const logo = logoUrl(props.connector)
 </script>

@@ -50,9 +50,9 @@ const routes = [
         component: () => import('@/pages/IntegrationsPage.vue')
       },
       {
-        path: 'sources',
-        name: 'sources',
-        component: () => import('@/pages/SourcesPage.vue')
+        path: 'connectors',
+        name: 'connectors',
+        component: () => import('@/pages/ConnectorsPage.vue')
       },
       {
         path: 'live-events',

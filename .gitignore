@@ -3,7 +3,10 @@
 node_modules
 
 # .env files
+# NOTE: because these are ignored, `git worktree add` does NOT carry .env into a
+# new worktree. Always create worktrees with `pnpm worktree` — it copies .env in.
 .env*
+!.env.example
 
 # Quasar core related directories
 .quasar
@@ -19,6 +22,12 @@ node_modules
 # Capacitor related directories and files
 /src-capacitor/www
 /src-capacitor/node_modules
+
+# Parallel-agent worktrees (see docs/agent-workflow.md)
+.claude/worktrees/
+
+# Smoke-test artifacts
+.playwright/
 
 # Log files
 npm-debug.log*
