@@ -48,17 +48,17 @@ public/data/<files named in its packet>
 
 Everything else is read-only. Explicitly frozen:
 
-| Path | Why |
-|---|---|
-| `src/router/screens.js` | route manifest; adding a screen is a foundation change |
-| `src/router/routes.js` | generated from the manifest |
-| `src/router/index.js` | auth guard |
-| `src/layouts/MainLayout.vue` | navigation |
-| `src/components/ui/**` | shared primitives — see below |
-| `src/composables/useMockResource.js` and the other shared composables | contract every page depends on |
-| `package.json`, `quasar.config.js`, `index.html`, `.gitignore` | build config |
-| `scripts/**`, `CLAUDE.md`, `docs/**` | tooling and conventions |
-| any `public/data/*.json` not in your packet | another packet owns it |
+| Path                                                                  | Why                                                    |
+| --------------------------------------------------------------------- | ------------------------------------------------------ |
+| `src/router/screens.js`                                               | route manifest; adding a screen is a foundation change |
+| `src/router/routes.js`                                                | generated from the manifest                            |
+| `src/router/index.js`                                                 | auth guard                                             |
+| `src/layouts/MainLayout.vue`                                          | navigation                                             |
+| `src/components/ui/**`                                                | shared primitives — see below                          |
+| `src/composables/useMockResource.js` and the other shared composables | contract every page depends on                         |
+| `package.json`, `quasar.config.js`, `index.html`, `.gitignore`        | build config                                           |
+| `scripts/**`, `CLAUDE.md`, `docs/**`                                  | tooling and conventions                                |
+| any `public/data/*.json` not in your packet                           | another packet owns it                                 |
 
 **If you cannot finish without touching a read-only file: stop and report the
 blocker.** Do not work around it, do not duplicate the file, do not inline a copy.
@@ -73,7 +73,7 @@ That command must print nothing.
 ## Primitives are frozen
 
 `src/components/ui/` is written once and consumed read-only. Importing a shared
-component from 18 branches causes zero merge conflicts; *editing* it from 18
+component from 18 branches causes zero merge conflicts; _editing_ it from 18
 branches causes 18. If a primitive is genuinely inadequate, compose raw Tailwind
 inside one of its slots and say so in your final report — do not edit it.
 
