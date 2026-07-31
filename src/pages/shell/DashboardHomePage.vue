@@ -172,45 +172,41 @@
         </CardPanel>
       </div>
 
-      <div class="grid grid-cols-1 gap-4 lg:grid-cols-2">
-        <CardPanel>
-          <div class="mb-3 flex items-baseline justify-between gap-2">
-            <div>
-              <h2 class="text-sm! font-semibold! tracking-[-0.35px]! text-ink"
-                >Fan profiles</h2
-              >
-              <p class="mt-0.5 text-xs text-muted"
-                >Resolved fans built from the events above.</p
-              >
-            </div>
-            <router-link
-              :to="{ name: 'profiles-search' }"
-              class="shrink-0 text-xs font-medium text-brand hover:underline"
-              >Search profiles</router-link
+      <CardPanel>
+        <div class="mb-3 flex items-baseline justify-between gap-2">
+          <div>
+            <h2 class="text-sm! font-semibold! tracking-[-0.35px]! text-ink"
+              >Fan profiles</h2
+            >
+            <p class="mt-0.5 text-xs text-muted"
+              >Resolved fans built from the events above.</p
             >
           </div>
-
-          <dl class="mb-4 grid grid-cols-3 gap-3">
-            <div v-for="tile in profileTiles" :key="tile.label">
-              <dt class="text-xs text-subtle">{{ tile.label }}</dt>
-              <dd class="mt-0.5 text-lg font-semibold text-ink">{{
-                tile.value
-              }}</dd>
-            </div>
-          </dl>
-
-          <p
-            class="mb-2 text-[11px] font-semibold uppercase tracking-[0.4px] text-subtle"
-            >Recently updated</p
+          <router-link
+            :to="{ name: 'profiles-search' }"
+            class="shrink-0 text-xs font-medium text-brand hover:underline"
+            >Search profiles</router-link
           >
-          <ActivityList
-            :items="profileItems"
-            empty-text="No profiles resolved yet."
-          />
-        </CardPanel>
+        </div>
 
-        <AudienceValuePanel />
-      </div>
+        <dl class="mb-4 grid grid-cols-3 gap-3">
+          <div v-for="tile in profileTiles" :key="tile.label">
+            <dt class="text-xs text-subtle">{{ tile.label }}</dt>
+            <dd class="mt-0.5 text-lg font-semibold text-ink">{{
+              tile.value
+            }}</dd>
+          </div>
+        </dl>
+
+        <p
+          class="mb-2 text-[11px] font-semibold uppercase tracking-[0.4px] text-subtle"
+          >Recently updated</p
+        >
+        <ActivityList
+          :items="profileItems"
+          empty-text="No profiles resolved yet."
+        />
+      </CardPanel>
     </div>
   </q-page>
 </template>
@@ -224,7 +220,6 @@ import LoadingState from '@/components/ui/LoadingState.vue'
 import PageHeader from '@/components/ui/PageHeader.vue'
 import StatCard from '@/components/ui/StatCard.vue'
 import ActivityList from '@/components/shell/ActivityList.vue'
-import AudienceValuePanel from '@/components/shell/AudienceValuePanel.vue'
 import PipelineFlowPanel from '@/components/shell/PipelineFlowPanel.vue'
 import ThroughputChart from '@/components/shell/ThroughputChart.vue'
 import {
