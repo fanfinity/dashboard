@@ -1,17 +1,419 @@
 <template>
   <q-page class="p-6">
-    <PageHeader title="Warehouse Models" subtitle="/warehouse-models" />
-    <EmptyState title="Not built yet" :description="description" />
+    <PageHeader
+      title="Warehouse models"
+      subtitle="Each one is a select against a warehouse connection whose result the fan graph can build on."
+    >
+      <template #actions>
+        <ToolbarSearch v-model="query" placeholder="Search models..." />
+        <button
+          class="flex h-9 items-center gap-1.5 rounded-lg border border-line2 bg-white px-3 text-sm text-ink shadow-sm hover:bg-fill"
+          @click="router.push({ name: 'warehouse-models-trash' })"
+        >
+          Trash
+        </button>
+        <button
+          class="flex h-9 items-center gap-1.5 rounded-lg bg-brand px-3.5 text-sm font-medium text-white shadow-sm hover:opacity-90"
+          @click="router.push({ name: 'warehouse-models-new' })"
+        >
+          New model
+        </button>
+      </template>
+    </PageHeader>
+
+    <div
+      v-if="!loading && !error && models.length"
+      class="mb-5 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4"
+    >
+      <StatCard
+        label="Models"
+        :value="formatCount(models.length)"
+        :hint="`${formatCount(stats.paused)} paused`"
+      />
+      <StatCard
+        label="Rows modelled"
+        :value="formatCount(stats.rows)"
+        hint="As of the last refresh of each model"
+      />
+      <StatCard
+        label="Columns exposed"
+        :value="formatCount(stats.columns)"
+        hint="What attributes and syncs can read"
+      />
+      <StatCard
+        label="Derived attributes"
+        :value="formatCount(stats.attributes)"
+        :hint="`Feeding ${formatCount(stats.audiences)} audiences`"
+      />
+    </div>
+
+    <!-- Secondary resources: connection health, and the records that depend on
+         each model. Their failure degrades this panel and nothing else — the
+         table below is driven by the models themselves and keeps working. -->
+    <div v-if="contextError" class="mb-5">
+      <ErrorState
+        title="Couldn't load connections and dependants."
+        :message="contextError"
+        @retry="loadContext"
+      />
+    </div>
+
+    <NoticeBanner
+      v-else-if="attention.length"
+      variant="warn"
+      class="mb-5"
+      :title="attentionTitle"
+      :message="attentionMessage"
+    />
+
+    <TabNav v-model="tab" :tabs="tabs" />
+
+    <DataTable
+      :columns="columns"
+      :rows="visible"
+      :loading="loading"
+      :error="error"
+      row-key="id"
+      @retry="load"
+    >
+      <template #cell-name="{ row }">
+        <div class="flex items-center gap-2">
+          <p class="font-medium text-ink">{{ row.name }}</p>
+          <StatusBadge
+            v-if="row.connectionBroken"
+            variant="danger"
+            label="Connection down"
+          />
+        </div>
+        <p class="font-mono text-xs text-subtle">{{ row.id }}</p>
+      </template>
+
+      <template #cell-dwhConnectionName="{ row }">
+        <p class="text-ink">{{ row.dwhConnectionName }}</p>
+        <p class="text-xs text-subtle">{{ row.connectionDetail }}</p>
+      </template>
+
+      <template #cell-columnCount="{ row }">
+        <p class="whitespace-nowrap text-ink">{{ row.shapeLabel }}</p>
+        <p class="whitespace-nowrap font-mono text-xs text-subtle">{{
+          row.keyLabel
+        }}</p>
+      </template>
+
+      <template #cell-lastRefreshedAt="{ row }">
+        <p class="whitespace-nowrap text-muted">{{ row.refreshedLabel }}</p>
+        <div class="mt-1">
+          <StatusBadge
+            :variant="refreshStatusVariant(row.lastRefreshStatus)"
+            :label="refreshStatusLabel(row.lastRefreshStatus)"
+          />
+        </div>
+        <!-- The detail of a warning is a sentence, so it goes under the pill
+             rather than inside it. -->
+        <p v-if="row.lastRefreshMessage" class="mt-1 text-xs text-subtle">{{
+          row.lastRefreshMessage
+        }}</p>
+      </template>
+
+      <template #cell-usedByAttributeCount="{ row }">
+        <p class="whitespace-nowrap text-ink">{{ row.usedByLabel }}</p>
+        <p class="whitespace-nowrap text-xs text-subtle">{{
+          row.audienceLabel
+        }}</p>
+      </template>
+
+      <template #cell-isEnabled="{ value }">
+        <StatusBadge :enabled="value" :label="value ? 'Active' : 'Paused'" />
+      </template>
+
+      <template #cell-actions="{ row }">
+        <div class="flex flex-nowrap items-center justify-end gap-2">
+          <button
+            class="rounded-lg border border-line2 bg-white px-3 py-1.5 text-sm font-medium text-brand hover:bg-fill"
+            @click.stop="toggle(row)"
+          >
+            {{ row.isEnabled ? 'Pause' : 'Resume' }}
+          </button>
+          <button
+            class="rounded-lg border border-line2 bg-white px-3 py-1.5 text-sm font-medium text-rose-600 hover:bg-fill"
+            @click.stop="ask(row)"
+          >
+            Delete
+          </button>
+        </div>
+      </template>
+
+      <!-- Two different "no rows" cases: nothing modelled yet (offer the primary
+           CTA) and nothing matching the filters (offer a way back). -->
+      <template #empty>
+        <EmptyState :title="emptyTitle" :description="emptyDescription">
+          <template #cta>
+            <button
+              v-if="!models.length"
+              class="flex h-9 items-center gap-1.5 rounded-lg bg-brand px-3.5 text-sm font-medium text-white shadow-sm hover:opacity-90"
+              @click="router.push({ name: 'warehouse-models-new' })"
+            >
+              Build your first model
+            </button>
+            <button
+              v-else
+              class="rounded-lg border border-line2 bg-white px-3 py-1.5 text-sm font-medium text-brand hover:bg-fill"
+              @click="clearFilters"
+            >
+              Clear filters
+            </button>
+          </template>
+        </EmptyState>
+      </template>
+    </DataTable>
+
+    <ConfirmDialog
+      v-model="confirmDelete"
+      title="Move model to trash?"
+      :message="deleteMessage"
+      confirm-label="Move to trash"
+      destructive
+      @confirm="remove"
+    />
   </q-page>
 </template>
 
 <script setup>
-// STUB — implemented by issue #67.
-// The route and this file already exist so the story agent rewrites in place and
-// never has to touch src/router/. Replace this whole file; keep the path.
+import { computed, onMounted, ref } from 'vue'
+import { useRouter } from 'vue-router'
+import { useQuasar } from 'quasar'
 import PageHeader from '@/components/ui/PageHeader.vue'
+import TabNav from '@/components/ui/TabNav.vue'
+import DataTable from '@/components/ui/DataTable.vue'
+import StatCard from '@/components/ui/StatCard.vue'
+import StatusBadge from '@/components/ui/StatusBadge.vue'
 import EmptyState from '@/components/ui/EmptyState.vue'
+import ErrorState from '@/components/ui/ErrorState.vue'
+import NoticeBanner from '@/components/ui/NoticeBanner.vue'
+import ToolbarSearch from '@/components/ui/ToolbarSearch.vue'
+import ConfirmDialog from '@/components/ui/ConfirmDialog.vue'
+import {
+  connectionTypeLabel,
+  describeDependants,
+  formatCount,
+  formatDateTime,
+  isConnectionHealthy,
+  refreshStatusLabel,
+  refreshStatusVariant,
+  useWarehouseModelContext,
+  useWarehouseModels
+} from '@/composables/useWarehouseModels'
 
-const description =
-  'This screen is tracked by issue #67 and has not been implemented yet.'
+const router = useRouter()
+const $q = useQuasar()
+const {
+  models,
+  loading,
+  error,
+  load,
+  setEnabled,
+  remove: removeModel
+} = useWarehouseModels()
+
+const {
+  error: contextError,
+  load: loadContext,
+  connectionFor,
+  dependantsFor
+} = useWarehouseModelContext()
+
+const query = ref('')
+const tab = ref('all')
+const confirmDelete = ref(false)
+const target = ref(null)
+
+const columns = [
+  { key: 'name', label: 'Model', sortable: true },
+  { key: 'dwhConnectionName', label: 'Connection', sortable: true },
+  {
+    key: 'columnCount',
+    label: 'Shape',
+    sortable: true,
+    align: 'right',
+    width: '160px'
+  },
+  { key: 'lastRefreshedAt', label: 'Last refresh', sortable: true },
+  {
+    key: 'usedByAttributeCount',
+    label: 'Used by',
+    sortable: true,
+    align: 'right',
+    width: '140px'
+  },
+  { key: 'isEnabled', label: 'Status', sortable: true },
+  { key: 'actions', label: '', align: 'right', width: '215px' }
+]
+
+// The table sorts on `row[key]`, so anything a column shows has to exist as a
+// field on the row. Derived text is computed once here, not in a cell slot.
+const rows = computed(() =>
+  models.value.map(model => {
+    const connection = connectionFor(model)
+    const attributes = model.usedByAttributeCount ?? 0
+    const audiences = model.usedByAudienceCount ?? 0
+    return {
+      ...model,
+      connectionBroken: Boolean(connection) && !isConnectionHealthy(connection),
+      connectionDetail: connection
+        ? `${connectionTypeLabel(connection.type)} · ${connection.database}.${connection.schema}`
+        : 'Connection details unavailable',
+      shapeLabel: `${formatCount(model.columnCount)} columns`,
+      keyLabel: model.identifierColumn
+        ? `keyed on ${model.identifierColumn}`
+        : 'no identifier column',
+      refreshedLabel: formatDateTime(model.lastRefreshedAt),
+      refreshStatusLabel:
+        model.lastRefreshMessage || refreshStatusLabel(model.lastRefreshStatus),
+      usedByLabel: `${formatCount(attributes)} attribute${attributes === 1 ? '' : 's'}`,
+      audienceLabel: `${formatCount(audiences)} audience${audiences === 1 ? '' : 's'}`
+    }
+  })
+)
+
+// A model needs attention when its own refresh reported something, or when the
+// warehouse under it is unreachable — either way it is serving stale columns.
+function needsAttention(row) {
+  return row.connectionBroken || row.lastRefreshStatus !== 'success'
+}
+
+const TAB_PREDICATES = {
+  active: m => m.isEnabled,
+  paused: m => !m.isEnabled,
+  attention: needsAttention
+}
+
+const tabs = computed(() => [
+  { key: 'all', label: 'All', count: rows.value.length },
+  {
+    key: 'active',
+    label: 'Active',
+    count: rows.value.filter(TAB_PREDICATES.active).length
+  },
+  {
+    key: 'paused',
+    label: 'Paused',
+    count: rows.value.filter(TAB_PREDICATES.paused).length
+  },
+  {
+    key: 'attention',
+    label: 'Needs attention',
+    count: rows.value.filter(TAB_PREDICATES.attention).length
+  }
+])
+
+const SEARCH_FIELDS = [
+  'name',
+  'id',
+  'description',
+  'dwhConnectionName',
+  'query',
+  'identifierColumn'
+]
+
+const visible = computed(() => {
+  const q = query.value.trim().toLowerCase()
+  const predicate = TAB_PREDICATES[tab.value]
+  return rows.value.filter(m => {
+    if (predicate && !predicate(m)) return false
+    if (!q) return true
+    return SEARCH_FIELDS.some(f =>
+      String(m[f] ?? '')
+        .toLowerCase()
+        .includes(q)
+    )
+  })
+})
+
+const stats = computed(() => ({
+  paused: models.value.filter(m => !m.isEnabled).length,
+  rows: models.value.reduce((total, m) => total + (m.rowCount ?? 0), 0),
+  columns: models.value.reduce((total, m) => total + (m.columnCount ?? 0), 0),
+  attributes: models.value.reduce(
+    (total, m) => total + (m.usedByAttributeCount ?? 0),
+    0
+  ),
+  audiences: models.value.reduce(
+    (total, m) => total + (m.usedByAudienceCount ?? 0),
+    0
+  )
+}))
+
+const attention = computed(() => rows.value.filter(needsAttention))
+
+const attentionTitle = computed(() => {
+  const n = attention.value.length
+  return `${n} model${n === 1 ? '' : 's'} need${n === 1 ? 's' : ''} a look`
+})
+
+const attentionMessage = computed(() =>
+  attention.value.map(m => `${m.name}: ${m.refreshStatusLabel}.`).join(' ')
+)
+
+const emptyTitle = computed(() =>
+  models.value.length ? 'No models match your filters' : 'No models yet'
+)
+
+const emptyDescription = computed(() =>
+  models.value.length
+    ? 'Try a different search term, or switch back to the All tab.'
+    : 'A model turns a warehouse table into something the fan graph can read — orders, season tickets, turnstile scans.'
+)
+
+function clearFilters() {
+  query.value = ''
+  tab.value = 'all'
+}
+
+// Nothing here persists — say so in the toast rather than implying a save.
+function notifyLocal(message) {
+  $q.notify({
+    message,
+    caption: 'Local preview only — no backend is connected yet.',
+    color: 'dark',
+    position: 'bottom',
+    timeout: 2500
+  })
+}
+
+function toggle(row) {
+  setEnabled(row.id, !row.isEnabled)
+  notifyLocal(`${row.name} ${row.isEnabled ? 'paused' : 'resumed'}`)
+}
+
+function ask(row) {
+  target.value = row
+  confirmDelete.value = true
+}
+
+// A model with attributes hanging off it is not a safe delete, so the dialog
+// names what breaks rather than asking a generic "are you sure". When the
+// dependants failed to load, the model's own counters still carry the number.
+const deleteMessage = computed(() => {
+  const row = target.value
+  if (!row) return ''
+  const named = describeDependants(dependantsFor(row))
+  const attributes = row.usedByAttributeCount ?? 0
+  const fallback = attributes
+    ? `${attributes} attribute${attributes === 1 ? '' : 's'} read it and will stop being computed.`
+    : 'Nothing reads it today.'
+  return `“${row.name}” stops refreshing and moves to the trash, where it can be restored for 30 days. ${named || fallback} The table in the warehouse is left untouched.`
+})
+
+function remove() {
+  const row = target.value
+  if (!row) return
+  removeModel(row.id)
+  notifyLocal(`${row.name} moved to trash`)
+  target.value = null
+}
+
+onMounted(() => {
+  load()
+  loadContext()
+})
 </script>
