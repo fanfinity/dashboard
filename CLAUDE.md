@@ -96,7 +96,7 @@ own controls match. **Never hardcode a hex in a screen** — that is what broke 
 changed, and the alias layer only works if nothing bypasses it.
 
 Screens still use `src/components/ui/`. Moving one onto `src/components/sfere/` is a per-screen
-rewrite, tracked in `brand-rename-todo.md`.
+rewrite, tracked in `todos/brand-rename-todo.md`.
 
 Rules for touching it:
 
@@ -129,15 +129,20 @@ blocker to report, not an edit to make — see `docs/agent-workflow.md`.
 `src/composables/{useMockResource,useEntitlements,useDiagram,useTemplates}.js` ·
 `package.json` · `quasar.config.js` · `index.html` · `.gitignore` · `scripts/**` · this file
 
-Four have been edited on purpose, all as foundation-phase changes rather than story work:
+Five have been edited on purpose, all as foundation-phase changes rather than story work:
 `routes.js` (one top-level route, three font packages), `package.json` (fonts plus the brand
-name fields), `MainLayout.vue` (the sidebar logo) and `quasar.config.js` (`appId`). Each is
-recorded in `docs/sfere-design-system.md` under "Frozen files edited for the brand". That is
-the bar: an explicit, user-directed decision written down, not a convenient workaround
-discovered mid-story.
+name fields), `MainLayout.vue` (the sidebar logo), `quasar.config.js` (`appId`) and
+`.gitignore` (`todos/`). Each is recorded in `docs/sfere-design-system.md` under "Frozen files
+edited for the brand". That is the bar: an explicit, user-directed decision written down, not a
+convenient workaround discovered mid-story.
 
 `tools/` exists because `scripts/**` is frozen — one-off maintenance scripts like
-`tools/brand-rename.mjs` go there.
+`tools/brand-rename.mjs` and `tools/make-favicons.mjs` go there.
+
+`todos/` is gitignored working notes — planning docs and handover drafts that should not enter
+shared history. `todos/brand-rename-todo.md` is the live record of what the rebrand still owes.
+Because it is outside git, it is also outside the codemod's reach: `tools/brand-rename.mjs`
+skips the whole directory.
 
 ## Data architecture
 

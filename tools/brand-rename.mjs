@@ -28,8 +28,9 @@
  *   node tools/brand-rename.mjs --verify   # list surviving occurrences + why
  *
  * Anything the codemod deliberately leaves behind is tracked in
- * brand-rename-todo.md. `--verify` output and that file must agree; a surviving
- * hit with no TODO entry is a bug in this script.
+ * todos/brand-rename-todo.md (gitignored — local working notes). `--verify`
+ * output and that file must agree; a surviving hit with no TODO entry is a bug
+ * in this script.
  *
  * Lives in tools/ rather than scripts/ because scripts/ is a frozen path
  * (see CLAUDE.md).
@@ -69,7 +70,10 @@ const SKIPPED_PATHS = [
 
   // The codemod's own paperwork.
   { path: 'tools/brand-rename.mjs', why: 'this file' },
-  { path: 'brand-rename-todo.md', why: 'the record of what is deferred' }
+  {
+    path: 'todos/',
+    why: 'local working notes — gitignored, not shared history'
+  }
 ]
 
 /* --------------------------------------------------------------------------

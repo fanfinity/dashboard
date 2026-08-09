@@ -24,7 +24,8 @@ purple so Quasar's own controls match.
 
 **The component kit is not.** Screens still use `src/components/ui/`;
 `src/components/sfere/` is the kit for new work. Moving a screen from one to the
-other is a per-screen rewrite, tracked in `brand-rename-todo.md`.
+other is a per-screen rewrite, tracked in `todos/brand-rename-todo.md`
+(gitignored working notes).
 
 So: a screen looks like Sfere today because of the tokens, not because it was
 rewritten.
@@ -64,6 +65,11 @@ All deliberate, all foundation-phase changes rather than story work (see
 - **`quasar.config.js`** — `appId` only.
 - **`CLAUDE.md`** — the design-system section, which described the token layer
   as unapplied.
+- **`.gitignore`** — one entry, `todos/`. The rebrand's tracker and the
+  infrastructure handover note are working documents, not shared history; they
+  live there and stay out of git. `tools/brand-rename.mjs` skips the directory
+  for the same reason, so `--verify` does not report the old brand names those
+  documents necessarily contain.
 
 `index.html` was **not** edited: its `<title>` comes from `productName`, and the
 only brand strings left in it are live CSP hosts.
