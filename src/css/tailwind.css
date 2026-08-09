@@ -12,6 +12,12 @@
 @import '@fontsource/plus-jakarta-sans/700.css';
 @import 'tailwindcss';
 
+/* Sfere design system — the rebrand's token layer, additive to everything below.
+   It is imported here rather than added to quasar.config.js's `css: [...]`
+   because that file is frozen. See src/css/sfere.css and
+   docs/sfere-design-system.md. */
+@import './sfere.css';
+
 /* Design tokens from the Fanfinity dashboard (Figma node 93:2869) */
 @theme {
   --color-brand: #3800c1; /* active item / accent (brand purple) */

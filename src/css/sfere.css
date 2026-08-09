@@ -1,0 +1,388 @@
+/* ============================================================================
+   SFERE DESIGN SYSTEM — token layer
+   ----------------------------------------------------------------------------
+   Fanfinity is being renamed to Sfere. This file is the machine-readable half of
+   that rebrand: every value here was measured off the live marketing site
+   (https://sfere.io, assets/css/main.css) rather than eyeballed, so the product
+   UI and the marketing site can converge on one vocabulary.
+
+   THREE RULES FOR THIS FILE
+
+   1. ADDITIVE ONLY. Every token is namespaced `sfere-*`. Nothing here redefines
+      a token in tailwind.css — in particular `--color-brand` (#3800c1, the old
+      Fanfinity purple) is left alone, so the 54 existing screens render exactly
+      as before. Rebranding the app later means repointing those tokens at these
+      values, which is a deliberate one-file change, not a side effect of this
+      one.
+
+   2. IT IS IMPORTED, NOT REGISTERED. `quasar.config.js` (`css: [...]`) is a
+      frozen file, so this stylesheet is pulled in from `src/css/tailwind.css`
+      instead. Same result, no frozen-file edit.
+
+   3. TAILWIND V4 IMPORTANT SUFFIX STILL APPLIES. Tailwind emits utilities into
+      `@layer utilities`; Quasar's base stylesheet is unlayered, and unlayered
+      CSS beats layered CSS regardless of specificity. So `h1`–`h6` need the
+      suffix form — `text-sfere-h2!`, not `!text-sfere-h2`. The type tokens
+      below bundle size + leading + tracking + weight into one utility precisely
+      so a single `!` covers all four properties Quasar sets on bare headings.
+      See docs/ui-conventions.md rules 2–3.
+
+   Source of truth for the human half: docs/sfere-design-system.md
+   ========================================================================== */
+
+/* Self-hosted so the app's `default-src 'self'` CSP allows them — the Google
+   Fonts CDN the marketing site uses is blocked here. @fontsource ships the same
+   files. Bricolage is the variable cut (200..800) because the site drives it
+   across the 500–800 range. */
+@import '@fontsource-variable/bricolage-grotesque/wght.css';
+@import '@fontsource/inter/400.css';
+@import '@fontsource/inter/500.css';
+@import '@fontsource/inter/600.css';
+@import '@fontsource/inter/700.css';
+@import '@fontsource/geist-mono/400.css';
+@import '@fontsource/geist-mono/500.css';
+@import '@fontsource/geist-mono/600.css';
+
+@theme {
+  /* ------------------------------------------------------------------
+     BRAND RAMP
+     Measured from the compiled `.bg-brand-*` / `.text-brand-*` utilities.
+     500 is the identity colour (the logo sphere). 600 fills primary
+     buttons, 700 is the hover state AND every piece of brand-coloured
+     text — that split is deliberate on the site, so it is kept here.
+     800 is the one interpolated step: the site jumps straight from 700
+     to 900 and never needs the value in between.
+     ------------------------------------------------------------------ */
+  --color-sfere-50: #f5f0ff;
+  --color-sfere-100: #ede5ff;
+  --color-sfere-200: #dccfff;
+  --color-sfere-300: #c4aaff;
+  --color-sfere-400: #aa80ff;
+  --color-sfere-500: #9969ff;
+  --color-sfere-600: #854dff;
+  --color-sfere-700: #7c4dff;
+  --color-sfere-800: #582eb7; /* derived — not present on sfere.io */
+  --color-sfere-900: #351070;
+
+  /* Semantic aliases. Reach for these in components; reach for the numeric
+     ramp only when you genuinely mean "one step lighter". */
+  --color-sfere-brand: #9969ff; /* 500 — identity, logo, focus ring   */
+  --color-sfere-brand-fill: #854dff; /* 600 — primary button background     */
+  --color-sfere-brand-text: #7c4dff; /* 700 — brand text, links, hover fill */
+  --color-sfere-plum: #351070; /* 900 — text on white-on-dark buttons */
+
+  /* ------------------------------------------------------------------
+     LIGHT SURFACES
+     The page background is the only tinted neutral: a barely-cool
+     off-white. Everything else is the plain neutral ramp, which is why
+     the brand purple reads as loud as it does.
+     ------------------------------------------------------------------ */
+  --color-sfere-bg: oklch(
+    97.53% 0.0045 254.98
+  ); /* page              ≈#f7f8fa */
+  --color-sfere-surface: #ffffff; /* cards, panels, nav      */
+  --color-sfere-fill: oklch(97% 0 0); /* hover / inset     ≈#f5f5f5 */
+  --color-sfere-line: oklch(92.2% 0 0); /* hairlines         ≈#e5e5e5 */
+  --color-sfere-fg: oklch(14.5% 0 0); /* primary text      ≈#0a0a0a */
+  --color-sfere-fg-muted: oklch(55.6% 0 0); /* secondary text    ≈#737373 */
+
+  /* ------------------------------------------------------------------
+     DARK SURFACES
+     On sfere.io dark is a *section treatment*, not a theme: the hero,
+     the deployment band and the footer sit on `--color-sfere-ink` while
+     the rest of the page stays light. The `dark-*` tokens below are the
+     site's `.dark` class values, kept for a future full dark mode.
+     ------------------------------------------------------------------ */
+  --color-sfere-ink: #0b0712; /* hero / footer canvas       */
+  --color-sfere-ink-raised: #17151d; /* cards on that canvas       */
+  --color-sfere-ink-wordmark: #1a1430; /* logotype ink on light      */
+
+  --color-sfere-dark-bg: oklch(14.05% 0.0044 285.82);
+  --color-sfere-dark-surface: oklch(18% 0.004 285.82);
+  --color-sfere-dark-line: oklch(26.9% 0 0);
+  --color-sfere-dark-fg: oklch(98.5% 0 0);
+  --color-sfere-dark-fg-muted: oklch(70.8% 0 0);
+
+  /* Hairlines and washes for content sitting ON ink. The site draws these
+     as white-alpha rather than solid greys so the plum canvas shows through. */
+  --color-sfere-hairline: rgb(255 255 255 / 0.1);
+  --color-sfere-hairline-strong: rgb(255 255 255 / 0.25);
+  --color-sfere-wash: rgb(255 255 255 / 0.06);
+
+  /* ------------------------------------------------------------------
+     STATUS
+     An extension: sfere.io is a marketing site and only ever needed one
+     status colour (the emerald "live" dot on dark). A product UI needs
+     the full set, so these are chosen to sit correctly against the
+     neutral ramp above rather than lifted from the site.
+     ------------------------------------------------------------------ */
+  --color-sfere-success: #059669;
+  --color-sfere-success-soft: #ecfdf5;
+  --color-sfere-success-on-ink: #6ee7b7; /* the live-dot green, from the site */
+  --color-sfere-warn: #d97706;
+  --color-sfere-warn-soft: #fffbeb;
+  --color-sfere-danger: #e11d48;
+  --color-sfere-danger-soft: #fff1f2;
+
+  /* ------------------------------------------------------------------
+     TYPEFACES
+     Three faces, three jobs, no overlap:
+       display — headings only. Bricolage Grotesque is the whole reason
+                 the brand reads as confident rather than generic-SaaS.
+       sans    — everything else.
+       mono    — eyebrows, micro-labels, metrics, code. Never body copy.
+     ------------------------------------------------------------------ */
+  --font-sfere-display:
+    'Bricolage Grotesque Variable', 'Plus Jakarta Sans', ui-sans-serif,
+    system-ui, sans-serif;
+  --font-sfere-sans: 'Inter', ui-sans-serif, system-ui, sans-serif;
+  --font-sfere-mono:
+    'Geist Mono', ui-monospace, SFMono-Regular, 'SF Mono', Menlo, monospace;
+
+  /* ------------------------------------------------------------------
+     TYPE SCALE
+     Each token carries its own leading, tracking and weight, so one
+     class sets all four properties and one `!` makes all four win over
+     Quasar. Sizes are the *desktop* end of the site's responsive steps;
+     the responsive shrink is applied at the component level.
+     ------------------------------------------------------------------ */
+  --text-sfere-display: 4.5rem; /* 72px — hero, one per page */
+  --text-sfere-display--line-height: 1.04;
+  --text-sfere-display--letter-spacing: -0.025em;
+  --text-sfere-display--font-weight: 700;
+
+  --text-sfere-h1: 3rem; /* 48px */
+  --text-sfere-h1--line-height: 1.08;
+  --text-sfere-h1--letter-spacing: -0.025em;
+  --text-sfere-h1--font-weight: 700;
+
+  --text-sfere-h2: 2.25rem; /* 36px — section headings */
+  --text-sfere-h2--line-height: 1.11;
+  --text-sfere-h2--letter-spacing: -0.025em;
+  --text-sfere-h2--font-weight: 700;
+
+  --text-sfere-h3: 1.5rem; /* 24px */
+  --text-sfere-h3--line-height: 1.25;
+  --text-sfere-h3--letter-spacing: -0.02em;
+  --text-sfere-h3--font-weight: 700;
+
+  --text-sfere-h4: 1.125rem; /* 18px — card titles */
+  --text-sfere-h4--line-height: 1.4;
+  --text-sfere-h4--letter-spacing: -0.01em;
+  --text-sfere-h4--font-weight: 600;
+
+  --text-sfere-lead: 1.125rem; /* 18px — deck under a heading */
+  --text-sfere-lead--line-height: 1.6;
+
+  --text-sfere-body: 1rem; /* 16px */
+  --text-sfere-body--line-height: 1.6;
+
+  --text-sfere-sm: 0.875rem; /* 14px — UI default */
+  --text-sfere-sm--line-height: 1.45;
+
+  --text-sfere-xs: 0.75rem; /* 12px — captions */
+  --text-sfere-xs--line-height: 1.35;
+
+  /* Mono labels. The 0.18em eyebrow tracking is the single most
+     recognisable typographic move on the site — don't tighten it. */
+  --text-sfere-eyebrow: 0.75rem; /* 12px */
+  --text-sfere-eyebrow--line-height: 1;
+  --text-sfere-eyebrow--letter-spacing: 0.18em;
+  --text-sfere-eyebrow--font-weight: 500;
+
+  --text-sfere-label: 0.6875rem; /* 11px — nav section labels */
+  --text-sfere-label--line-height: 1.5;
+  --text-sfere-label--letter-spacing: 0.14em;
+  --text-sfere-label--font-weight: 600;
+
+  /* ------------------------------------------------------------------
+     RADII — 8px is the workhorse; pills are for buttons and status only.
+     ------------------------------------------------------------------ */
+  --radius-sfere-sm: 0.375rem; /*  6px — badges          */
+  --radius-sfere: 0.5rem; /*  8px — controls, rows  */
+  --radius-sfere-lg: 0.75rem; /* 12px — list items      */
+  --radius-sfere-xl: 1rem; /* 16px — cards, panels   */
+  --radius-sfere-2xl: 1.5rem; /* 24px — feature blocks  */
+
+  /* ------------------------------------------------------------------
+     SHADOWS
+     Note the tint: elevation on light surfaces is plum-tinted
+     (rgb(53 16 112)), never neutral black. That is what stops the site
+     looking like every other Tailwind template.
+     ------------------------------------------------------------------ */
+  --shadow-sfere-btn: 0 1px 2px 0 rgb(124 77 255 / 0.3);
+  --shadow-sfere-glow: 0 1px 6px rgb(124 77 255 / 0.5);
+  --shadow-sfere-card: 0 18px 44px -18px rgb(32 30 38 / 0.35);
+  --shadow-sfere-soft: 0 25px 50px -12px rgb(53 16 112 / 0.1);
+  --shadow-sfere-pop: 0 25px 50px -12px rgb(53 16 112 / 0.25);
+  --shadow-sfere-ink: 0 10px 24px -10px rgb(11 7 18 / 0.5);
+  --shadow-sfere-ink-deep: 0 24px 50px -20px rgb(0 0 0 / 0.8);
+
+  /* ------------------------------------------------------------------
+     MOTION — two curves. `sfere` is the branded one (slow out, hard
+     settle) used for reveals and panels; `sfere-ui` is the standard
+     Tailwind curve used for hovers so controls stay snappy.
+     ------------------------------------------------------------------ */
+  --ease-sfere: cubic-bezier(0.2, 0.7, 0.2, 1);
+  --ease-sfere-ui: cubic-bezier(0.4, 0, 0.2, 1);
+
+  /* Page shell: 80rem gutter-to-gutter, matching `.container-page`. */
+  --container-sfere-page: 80rem;
+
+  /* ------------------------------------------------------------------
+     ANIMATIONS
+     Keyframes live inside @theme so Tailwind only emits the ones an
+     `animate-*` utility actually references.
+     ------------------------------------------------------------------ */
+  --animate-sfere-flow: sfere-flow 3.2s linear infinite;
+  --animate-sfere-flow-y: sfere-flow-y 3.2s linear infinite;
+  --animate-sfere-blink: sfere-blink 4.2s ease-in-out infinite;
+  --animate-sfere-breathe: sfere-breathe 6.5s ease-in-out infinite;
+
+  @keyframes sfere-flow {
+    0% {
+      background-position: -60% 0;
+    }
+    100% {
+      background-position: 160% 0;
+    }
+  }
+  @keyframes sfere-flow-y {
+    0% {
+      background-position: 0 -60%;
+    }
+    100% {
+      background-position: 0 160%;
+    }
+  }
+  @keyframes sfere-blink {
+    0%,
+    92%,
+    100% {
+      opacity: 1;
+    }
+    94%,
+    98% {
+      opacity: 0.25;
+    }
+  }
+  @keyframes sfere-breathe {
+    0%,
+    100% {
+      opacity: 0.55;
+    }
+    50% {
+      opacity: 1;
+    }
+  }
+}
+
+/* ============================================================================
+   SIGNATURE SURFACE TREATMENTS
+   Five effects that can't be expressed as a token because they are gradients,
+   masks or pseudo-elements. They are `@utility` (not plain classes) so they
+   still compose with variants — `md:sfere-dot-grid`, `hover:sfere-glow-top`.
+   ========================================================================== */
+
+/* The purple bloom behind light sections. Sits on top of whatever background
+   colour the element already has, so pair it with `bg-sfere-bg`. */
+@utility sfere-glow-top {
+  background-image: radial-gradient(
+    60% 50% at 50% 0,
+    rgb(153 105 255 / 0.06),
+    transparent 70%
+  );
+}
+
+/* Faint dot lattice for dark sections. 22px pitch, white at 9%. */
+@utility sfere-dot-grid {
+  background-image: radial-gradient(rgb(255 255 255 / 0.09) 1px, transparent 0);
+  background-size: 22px 22px;
+}
+
+/* A 1px border that fades from brand purple to nothing across the corner.
+   Inherits the element's own radius, so put it on the rounded element. */
+@utility sfere-gradient-border {
+  position: relative;
+
+  &::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    padding: 1px;
+    background: linear-gradient(
+      135deg,
+      rgb(153 105 255 / 0.65),
+      rgb(124 77 255 / 0.12) 42%,
+      transparent 72%
+    );
+    -webkit-mask:
+      linear-gradient(#000 0 0) content-box,
+      linear-gradient(#000 0 0);
+    -webkit-mask-composite: xor;
+    mask:
+      linear-gradient(#000 0 0) content-box,
+      linear-gradient(#000 0 0);
+    mask-composite: exclude;
+    pointer-events: none;
+  }
+}
+
+/* Bleed the bottom / sides of a block into its background instead of cutting
+   it off — used on the site for logo rails and screenshot crops. */
+@utility sfere-fade-b {
+  -webkit-mask-image: linear-gradient(180deg, #000 55%, transparent);
+  mask-image: linear-gradient(180deg, #000 55%, transparent);
+}
+
+@utility sfere-fade-x {
+  -webkit-mask-image: linear-gradient(
+    90deg,
+    transparent,
+    #000 7%,
+    #000 93%,
+    transparent
+  );
+  mask-image: linear-gradient(
+    90deg,
+    transparent,
+    #000 7%,
+    #000 93%,
+    transparent
+  );
+}
+
+/* A travelling highlight along a hairline — the "data is moving" cue on the
+   pipeline diagrams. Pair with `animate-sfere-flow` (or `-flow-y`). */
+@utility sfere-flow-line {
+  background-image: linear-gradient(
+    90deg,
+    transparent,
+    rgb(170 128 255 / 0.9),
+    transparent
+  );
+  background-size: 40% 100%;
+  background-repeat: no-repeat;
+}
+
+@utility sfere-flow-line-y {
+  background-image: linear-gradient(
+    180deg,
+    transparent,
+    rgb(170 128 255 / 0.9),
+    transparent
+  );
+  background-size: 100% 40%;
+  background-repeat: no-repeat;
+}
+
+/* Every one of the above is decorative. Honour the OS setting. */
+@media (prefers-reduced-motion: reduce) {
+  .animate-sfere-flow,
+  .animate-sfere-flow-y,
+  .animate-sfere-blink,
+  .animate-sfere-breathe {
+    animation: none !important;
+  }
+}

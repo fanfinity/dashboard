@@ -27,6 +27,8 @@
     "worktree": "bash scripts/new-worktree.sh"
   },
   "dependencies": {
+    "@fontsource-variable/bricolage-grotesque": "^5.3.0",
+    "@fontsource/geist-mono": "^5.3.0",
     "@fontsource/inter": "^5.2.8",
     "@fontsource/plus-jakarta-sans": "^5.2.8",
     "@jitsu/js": "^1.10.4",
