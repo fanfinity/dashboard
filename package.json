@@ -1,11 +1,11 @@
 {
-  "name": "fanfinity-dashboard",
+  "name": "sfere-dashboard",
   "version": "0.0.1",
   "private": true,
-  "description": "Fanfinity dashboard",
+  "description": "Sfere dashboard",
   "keywords": [
     "dashboard",
-    "fanfinity",
+    "sfere",
     "vite",
     "vue",
     "vuejs"
@@ -56,5 +56,5 @@
   "engines": {
     "node": ">= 26 || ^24 || ^22.12"
   },
-  "productName": "Fanfinity"
+  "productName": "Sfere"
 }

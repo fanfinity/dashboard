@@ -2,7 +2,7 @@
   <q-page class="p-6">
     <PageHeader
       title="Authorizations"
-      subtitle="OAuth grants that let Fanfinity act on a third-party ad or CRM account on your behalf."
+      subtitle="OAuth grants that let Sfere act on a third-party ad or CRM account on your behalf."
     >
       <template #actions>
         <ToolbarSearch v-model="query" placeholder="Search authorizations..." />
@@ -370,7 +370,7 @@ function askRevoke(row) {
 
 const revokeMessage = computed(() =>
   target.value
-    ? `${target.value.providerName} (${target.value.accountLabel}) stops accepting Fanfinity's token immediately, and anything reading through it fails on its next run.`
+    ? `${target.value.providerName} (${target.value.accountLabel}) stops accepting Sfere's token immediately, and anything reading through it fails on its next run.`
     : ''
 )
 

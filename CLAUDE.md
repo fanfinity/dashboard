@@ -81,22 +81,27 @@ This is not only about consistency: `scripts/smoke.mjs` detects a broken screen 
 the single `[data-smoke="error"]` selector that `ErrorState` renders. Hand-rolled error blocks
 would leave the only behavioural gate in the repo with nothing to assert on.
 
-## The Sfere design system (the rebrand)
+## The Sfere design system
 
-Fanfinity is being renamed to **Sfere**. `src/css/sfere.css` holds the token layer for that
-rebrand, measured off the live marketing site (<https://sfere.io>) rather than eyeballed, and
-`src/components/sfere/` holds a 25-component kit built on it. Browse the whole thing at
-**`#/design-system`** (hash mode — not `/design-system`); no sign-in required.
+`src/css/sfere.css` holds the token layer, measured off the live marketing site
+(<https://sfere.io>) rather than eyeballed, and `src/components/sfere/` holds a 30-component
+kit built on it. Browse the whole thing at **`#/design-system`** (hash mode — not
+`/design-system`); no sign-in required.
 
-**It is additive and applies to nothing.** Every token is namespaced `sfere-*` and nothing
-redefines `--color-brand` or the rest of the Fanfinity set, so all 54 screens render exactly as
-before. Rebranding the app is a separate decision — the token mapping and both migration routes
-are in `docs/sfere-design-system.md`.
+**The tokens apply to the whole app; the component kit does not.** `src/css/tailwind.css`
+declares `--color-brand`, `--color-muted`, `--color-line`, `--font-sans` and friends as aliases
+pointing at the `sfere-*` values, so all 54 screens inherit the palette and typefaces with no
+markup change. `src/css/quasar.variables.scss` sets `$primary` to the same purple so Quasar's
+own controls match. **Never hardcode a hex in a screen** — that is what broke when the brand
+changed, and the alias layer only works if nothing bypasses it.
+
+Screens still use `src/components/ui/`. Moving one onto `src/components/sfere/` is a per-screen
+rewrite, tracked in `brand-rename-todo.md`.
 
 Rules for touching it:
 
-- `src/components/ui/` (Fanfinity) and `src/components/sfere/` are **separate systems**. Current
-  screens use `ui/`. Do not mix them in one screen.
+- `src/components/ui/` and `src/components/sfere/` are **separate kits** sharing one token
+  layer. Current screens use `ui/`. Do not mix them in one screen.
 - `sfere.css` is imported from `src/css/tailwind.css`, not registered in `quasar.config.js`'s
   `css: [...]` array — that file is frozen and this achieves the same thing.
 - The three brand faces (Bricolage Grotesque, Inter, Geist Mono) are self-hosted `@fontsource`
@@ -124,10 +129,15 @@ blocker to report, not an edit to make — see `docs/agent-workflow.md`.
 `src/composables/{useMockResource,useEntitlements,useDiagram,useTemplates}.js` ·
 `package.json` · `quasar.config.js` · `index.html` · `.gitignore` · `scripts/**` · this file
 
-The design-system branch edited two of them on purpose — `routes.js` (one top-level route) and
-`package.json` (three font packages) — as a foundation-phase change, not story work. That is the
-bar: an explicit, user-directed decision recorded in `docs/sfere-design-system.md`, not a
-convenient workaround discovered mid-story.
+Four have been edited on purpose, all as foundation-phase changes rather than story work:
+`routes.js` (one top-level route, three font packages), `package.json` (fonts plus the brand
+name fields), `MainLayout.vue` (the sidebar logo) and `quasar.config.js` (`appId`). Each is
+recorded in `docs/sfere-design-system.md` under "Frozen files edited for the brand". That is
+the bar: an explicit, user-directed decision written down, not a convenient workaround
+discovered mid-story.
+
+`tools/` exists because `scripts/**` is frozen — one-off maintenance scripts like
+`tools/brand-rename.mjs` go there.
 
 ## Data architecture
 

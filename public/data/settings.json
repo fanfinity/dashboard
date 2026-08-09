@@ -1,8 +1,8 @@
 {
   "workspace": {
-    "id": "ws_fanfinity",
-    "name": "Fanfinity",
-    "slug": "fanfinity",
+    "id": "ws_sfere",
+    "name": "Sfere",
+    "slug": "sfere",
     "region": "me-central-1",
     "regionLabel": "Saudi Arabia (Riyadh)",
     "timezone": "Asia/Riyadh",

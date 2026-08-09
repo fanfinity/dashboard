@@ -70,7 +70,7 @@
 
       <main id="ds-content" class="min-w-0 flex-1">
         <div class="mb-14">
-          <SfereEyebrow label="Fanfinity is becoming Sfere" dot />
+          <SfereEyebrow label="Design system" dot />
           <h1
             class="mt-4 font-sfere-display! text-sfere-h2! text-sfere-fg sm:text-sfere-h1!"
           >
@@ -102,9 +102,9 @@
             />
             <SfereStat
               bare
-              label="Screens rebranded"
-              value="0"
-              hint="additive by design"
+              label="Screens on the tokens"
+              value="54"
+              hint="every route in the manifest"
             />
           </div>
         </div>
@@ -121,7 +121,6 @@
           <ComponentsData />
           <ComponentsFeedback />
           <PatternsGallery />
-          <MigrationNotes />
         </div>
 
         <footer class="mt-20 border-t border-sfere-line pt-8">
@@ -161,7 +160,6 @@ import ComponentsForms from '@/components/sfere-docs/sections/ComponentsForms.vu
 import ComponentsData from '@/components/sfere-docs/sections/ComponentsData.vue'
 import ComponentsFeedback from '@/components/sfere-docs/sections/ComponentsFeedback.vue'
 import PatternsGallery from '@/components/sfere-docs/sections/PatternsGallery.vue'
-import MigrationNotes from '@/components/sfere-docs/sections/MigrationNotes.vue'
 
 // Bump when the token layer or a component's public props change. It is shown
 // in the header so a screenshot in a ticket says which version it came from.
@@ -179,8 +177,7 @@ const NAV = [
   { id: 'forms', label: 'Forms' },
   { id: 'data', label: 'Surfaces & data' },
   { id: 'feedback', label: 'Navigation & feedback' },
-  { id: 'patterns', label: 'Composition' },
-  { id: 'migration', label: 'Adoption' }
+  { id: 'patterns', label: 'Composition' }
 ]
 
 const active = ref(NAV[0].id)
@@ -194,9 +191,8 @@ let previousTitle = ''
 
 onMounted(() => {
   // The app has no meta plugin, so route meta.title is never applied to the
-  // document. Set it here and put it back on the way out — a tab reading
-  // "Fanfinity" while showing the Sfere system is exactly the confusion this
-  // branch exists to remove.
+  // document. Set it here and put it back on the way out, so a tab opened on
+  // this page is distinguishable from a tab on the app itself.
   previousTitle = document.title
   document.title = 'Sfere design system'
 

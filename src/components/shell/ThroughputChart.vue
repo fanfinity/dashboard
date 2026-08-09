@@ -12,7 +12,7 @@ const apexchart = VueApexCharts
 // `dashboard.json` colours its series with `var(--color-chart-N)` tokens that
 // are not defined in src/css/tailwind.css, so binding them would give ApexCharts
 // an empty colour. We use the brand/teal pair ContactDetailPage already ships.
-const COLORS = ['#3800c1', '#0d9488']
+const COLORS = ['#854dff', '#0d9488']
 
 const props = defineProps({
   labels: { type: Array, default: () => [] },

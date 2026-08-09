@@ -1,4 +1,4 @@
-# Fanfinity Dashboard
+# Sfere Dashboard
 
 ## Install the dependencies
 

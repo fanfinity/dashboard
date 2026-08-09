@@ -50,7 +50,7 @@
                 id="workspace-name"
                 v-model="form.name"
                 type="text"
-                placeholder="Fanfinity"
+                placeholder="Sfere"
                 class="h-9 rounded-lg border border-line2 bg-white px-2.5 text-sm text-ink outline-none placeholder:text-subtle"
               />
             </FormField>

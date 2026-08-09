@@ -196,13 +196,13 @@ export function buildDemoEvent(spec) {
       userId: profileId,
       source: { id: sourceId, name: sourceName },
       context: {
-        library: { name: 'fanfinity-web-sdk', version: '3.1.0' },
+        library: { name: 'sfere-web-sdk', version: '3.1.0' },
         locale: 'en-GB',
         timezone: 'Asia/Riyadh',
         page: {
-          url: 'https://demo.fanfinity.io/store',
+          url: 'https://demo.sfere.io/store',
           path: '/store',
-          title: 'Fanfinity Demo Store'
+          title: 'Sfere Demo Store'
         },
         consent: { analytics: true, marketing: false }
       },

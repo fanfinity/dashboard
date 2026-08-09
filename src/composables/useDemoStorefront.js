@@ -162,8 +162,8 @@ export function demoEventSpec(actionKey, product, context = {}) {
       eventName: 'page_view',
       properties: {
         path: `/store/${product.slug}`,
-        title: `${product.name} — Fanfinity Demo Store`,
-        referrer: 'https://demo.fanfinity.io/store',
+        title: `${product.name} — Sfere Demo Store`,
+        referrer: 'https://demo.sfere.io/store',
         productId: product.id
       }
     }

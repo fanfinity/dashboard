@@ -8,7 +8,7 @@
         >
         <p class="mt-2 text-sm text-muted">
           Browse the connector catalog. Pick a source to start syncing data into
-          Fanfinity.
+          Sfere.
         </p>
       </div>
 

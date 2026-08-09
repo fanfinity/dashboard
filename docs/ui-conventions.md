@@ -56,19 +56,34 @@ the smoke test can assert on a single selector across every route.
 
 4. **Design tokens only.** Defined in `src/css/tailwind.css` under `@theme`:
 
+   Each one is an alias for a token in `src/css/sfere.css`, so the hexes below
+   are the resolved value, not the source of truth — change the brand in
+   `tailwind.css` and this table follows.
+
    | Token          | Hex       | Use                                        |
    | -------------- | --------- | ------------------------------------------ |
-   | `brand`        | `#3800c1` | accent, active nav, primary buttons, links |
-   | `ink`          | `#030712` | primary text                               |
-   | `muted`        | `#4a5565` | body / secondary text, table cell text     |
-   | `subtle`       | `#6a7282` | placeholders, column headers, hints        |
-   | `sidebar`      | `#f9fafb` | sidebar bg, table row hover                |
-   | `fill`         | `#f3f4f6` | chip bg, button hover                      |
-   | `line`         | `#e7e9ed` | dividers (table rows, card header/footer)  |
-   | `line2`        | `#e5e7eb` | control + card borders                     |
-   | `success`      | `#029855` | success text                               |
-   | `success-bg`   | `#edfdf2` | success chip bg                            |
-   | `success-line` | `#bce9cd` | success chip border                        |
+   | `brand`        | `#854dff` | accent, active nav, primary buttons, links |
+   | `ink`          | `#0a0a0a` | primary text                               |
+   | `muted`        | `#737373` | body / secondary text, table cell text     |
+   | `subtle`       | `#737373` | placeholders, column headers, hints        |
+   | `sidebar`      | `#f7f8fa` | sidebar bg, table row hover                |
+   | `fill`         | `#f5f5f5` | chip bg, button hover                      |
+   | `line`         | `#e5e5e5` | dividers (table rows, card header/footer)  |
+   | `line2`        | `#e5e5e5` | control + card borders                     |
+   | `success`      | `#059669` | success text                               |
+   | `success-bg`   | `#ecfdf5` | success chip bg                            |
+   | `success-line` | `#a7f3d0` | success chip border                        |
+
+   Two pairs now resolve to the same value — `line`/`line2`, and
+   `muted`/`subtle`. Both names in each pair are kept so no markup has to
+   change, but there is no longer a visual difference between them. Do not
+   reach for one over the other expecting contrast; if you need a third level
+   of text hierarchy, get it from weight or size.
+
+   `subtle` collapsing into `muted` is forced by contrast, not laziness: on
+   this neutral ramp grey-on-white reaches the 4.5:1 AA floor at about
+   `#767676`, so no value both separates from `muted` and stays legible.
+   `#a1a1a1` — the obvious next step up — is 2.6:1.
 
    Opacity variants of `brand` are in play too: `border-brand/30`, `bg-brand/5`,
    `bg-brand/10`.

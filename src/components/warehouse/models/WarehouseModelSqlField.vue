@@ -40,8 +40,7 @@
       >
         <span>{{ sizeLabel }}</span>
         <span
-          >Fanfinity only reads — nothing is written back to the
-          warehouse.</span
+          >Sfere only reads — nothing is written back to the warehouse.</span
         >
       </div>
     </div>

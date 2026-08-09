@@ -1,19 +1,19 @@
 /* ============================================================================
    SFERE DESIGN SYSTEM — token layer
    ----------------------------------------------------------------------------
-   Fanfinity is being renamed to Sfere. This file is the machine-readable half of
-   that rebrand: every value here was measured off the live marketing site
-   (https://sfere.io, assets/css/main.css) rather than eyeballed, so the product
-   UI and the marketing site can converge on one vocabulary.
+   This file is the machine-readable half of the brand: every value here was
+   measured off the live marketing site (https://sfere.io, assets/css/main.css)
+   rather than eyeballed, so the product UI and the marketing site share one
+   vocabulary instead of drifting into two.
 
    THREE RULES FOR THIS FILE
 
-   1. ADDITIVE ONLY. Every token is namespaced `sfere-*`. Nothing here redefines
-      a token in tailwind.css — in particular `--color-brand` (#3800c1, the old
-      Fanfinity purple) is left alone, so the 54 existing screens render exactly
-      as before. Rebranding the app later means repointing those tokens at these
-      values, which is a deliberate one-file change, not a side effect of this
-      one.
+   1. THIS IS THE SOURCE. Every token is namespaced `sfere-*`, and the app-side
+      names the 54 product screens are written against — `--color-brand`,
+      `--color-muted`, `--color-line` — are aliases pointing here, declared in
+      src/css/tailwind.css. Change a value in this file and the whole app
+      follows. That indirection is the point: screens never name a hex, so the
+      brand lives in exactly one place.
 
    2. IT IS IMPORTED, NOT REGISTERED. `quasar.config.js` (`css: [...]`) is a
       frozen file, so this stylesheet is pulled in from `src/css/tailwind.css`

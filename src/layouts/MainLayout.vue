@@ -17,12 +17,7 @@
           class="flex h-14 shrink-0 items-center border-b border-line px-3"
           :class="mini ? 'justify-center' : 'justify-between'"
         >
-          <img
-            v-if="!mini"
-            :src="logo"
-            alt="Fanfinity"
-            class="h-[17px] w-auto"
-          />
+          <img v-if="!mini" :src="logo" alt="Sfere" class="h-[22px] w-auto" />
           <q-btn
             flat
             dense
@@ -285,7 +280,6 @@ import { useAuth } from '@/composables/useAuth'
 import { useMe } from '@/composables/useMe'
 import { useEntitlements } from '@/composables/useEntitlements'
 
-import logo from '@/assets/dashboard/logo.svg'
 import avatar from '@/assets/dashboard/avatar.jpg'
 import icCollapse from '@/assets/dashboard/ic-collapse.svg'
 import icChevron from '@/assets/dashboard/ic-chevron.svg'
@@ -523,6 +517,12 @@ const miniState = ref(false)
 // Collapse to a rail (icons only) on desktop; on mobile the drawer is an
 // overlay, so "mini" never applies and the toggle just closes it.
 const mini = computed(() => !$q.screen.lt.md && miniState.value)
+
+// Served from public/brand/ rather than imported from src/assets/ so there is
+// one copy of the brand asset, shared with SfereLogo and the design-system
+// page. The rail has no room for a lockup *and* the collapse toggle in 72px, so
+// it stays wordmark-free exactly as before.
+const logo = `${import.meta.env.BASE_URL}brand/sfere-logo.svg`
 
 function toggleCollapse() {
   if ($q.screen.lt.md) {

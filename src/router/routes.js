@@ -40,7 +40,7 @@ const routes = [
   // The Sfere design system, deliberately NOT a manifest screen.
   //
   // A screens.js entry would nest it under MainLayout, wrapping a Sfere-branded
-  // reference page in the Fanfinity sidebar and putting it behind the auth
+  // reference page in the Sfere sidebar and putting it behind the auth
   // guard — both wrong for a style guide meant to be opened and eyeballed. So
   // it sits here as a top-level route alongside /login, with no requiresAuth
   // meta and its own shell.

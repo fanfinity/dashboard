@@ -49,7 +49,7 @@
     <EmptyState
       v-else-if="isEmpty"
       title="No data is flowing yet"
-      description="Fanfinity collects fan signals from a source, routes them through a pipe, and delivers them to a destination. Set up the three and this screen fills in."
+      description="Sfere collects fan signals from a source, routes them through a pipe, and delivers them to a destination. Set up the three and this screen fills in."
     >
       <template #cta>
         <div class="flex flex-wrap items-center justify-center gap-2">

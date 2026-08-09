@@ -12,7 +12,7 @@ the competitor product.
 ## What this is not
 
 **Not a design target.** Do not copy layout, styling, iconography or copy from these images.
-The issues specify behaviour and API contracts; the Fanfinity UI should be our own, built from
+The issues specify behaviour and API contracts; the Sfere UI should be our own, built from
 Quasar + Tailwind like the rest of this app. Matching capability is the goal, not appearance.
 
 ## Provenance

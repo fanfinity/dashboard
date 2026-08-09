@@ -56,7 +56,7 @@
     <template #footer>
       <p class="text-xs text-subtle"
         >Authorizing sends you to the provider to sign in and approve the scopes
-        it asks for. Fanfinity stores the refresh token, never your password.</p
+        it asks for. Sfere stores the refresh token, never your password.</p
       >
     </template>
   </CardPanel>

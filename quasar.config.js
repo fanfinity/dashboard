@@ -211,7 +211,7 @@ export default defineConfig((/* ctx */) => {
       builder: {
         // https://www.electron.build/configuration
 
-        appId: 'fanfinity-dashboard'
+        appId: 'sfere-dashboard'
       }
     },
 

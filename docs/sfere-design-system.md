@@ -1,8 +1,7 @@
 # The Sfere design system
 
-Fanfinity is being renamed to Sfere. This is the design system for that rebrand:
-tokens, components and the rules for using them, all derived from the live
-marketing site at <https://sfere.io>.
+The design system for the Sfere product UI: tokens, components and the rules for
+using them, all derived from the live marketing site at <https://sfere.io>.
 
 **Open it at `#/design-system`.** The router runs in hash mode, so the real URL
 is `http://localhost:9000/#/design-system` — not `/design-system`. It needs no
@@ -12,17 +11,23 @@ The page is the reference; this file is the part you can grep.
 
 ---
 
-## What this branch does and does not do
+## How it reaches the app
 
-It **adds** a system. It does **not** apply one.
+Two layers, and the distinction matters when you are reading a screen.
 
-Every token is namespaced `sfere-*` and nothing redefines an existing token, so
-the 54 product screens still render in Fanfinity purple (`#3800c1`) with Plus
-Jakarta Sans, pixel for pixel. Rebranding the app is a separate, deliberate
-decision — see [Adopting it](#adopting-it) below.
+**The tokens are applied everywhere.** `src/css/tailwind.css` declares the
+app-side names screens are written against — `--color-brand`, `--color-muted`,
+`--color-line`, `--font-sans` — as aliases pointing at the `sfere-*` values in
+`src/css/sfere.css`. All 54 screens inherit the palette and the typefaces with
+no markup change. `src/css/quasar.variables.scss` sets `$primary` to the same
+purple so Quasar's own controls match.
 
-That is why the design-system page reports **0 screens rebranded**. It is not an
-oversight.
+**The component kit is not.** Screens still use `src/components/ui/`;
+`src/components/sfere/` is the kit for new work. Moving a screen from one to the
+other is a per-screen rewrite, tracked in `brand-rename-todo.md`.
+
+So: a screen looks like Sfere today because of the tokens, not because it was
+rewritten.
 
 ---
 
@@ -36,25 +41,35 @@ oversight.
 | `src/pages/design-system/`   | The showcase page itself                                     |
 | `public/brand/`              | Logo lockups and the mark, as real SVG files                 |
 
-`src/components/ui/` — the existing Fanfinity primitives — is untouched and stays
-the house style for every current screen.
+`src/components/ui/` — the primitives every current screen is built from — takes
+its colour and type from the same tokens, so it renders on-brand without being
+rewritten. It stays the house style until a screen is migrated.
 
-### Two frozen files were edited
+### Frozen files edited for the brand
 
-Both deliberately, both foundation-phase changes made for this branch rather than
-story work (see `docs/agent-workflow.md`):
+All deliberate, all foundation-phase changes rather than story work (see
+`docs/agent-workflow.md`):
 
-- **`src/router/routes.js`** — one top-level route. A `screens.js` entry would
-  nest the page under `MainLayout`, wrapping a Sfere-branded reference in the
-  Fanfinity sidebar and putting it behind the auth guard. Consequence:
-  `scripts/smoke.mjs` walks `screens.js`, so this route is invisible to the
-  smoke gate. `pnpm build` still covers it.
-- **`package.json`** — three `@fontsource` packages. The CSP is
-  `default-src 'self'`, which blocks the Google Fonts CDN the marketing site
-  uses, so all three faces must be self-hosted.
+- **`src/router/routes.js`** — one top-level route for this page. A `screens.js`
+  entry would nest it under `MainLayout` and put it behind the auth guard.
+  Consequence: `scripts/smoke.mjs` walks `screens.js`, so this route is
+  invisible to the smoke gate. `pnpm build` still covers it.
+- **`package.json`** — three `@fontsource` packages, plus `name`, `description`,
+  `keywords` and `productName`. The CSP is `default-src 'self'`, which blocks
+  the Google Fonts CDN the marketing site uses, so all three faces must be
+  self-hosted. `productName` is what `index.html` interpolates into `<title>`,
+  so the browser tab reads "Sfere" because of that field.
+- **`src/layouts/MainLayout.vue`** — the sidebar logo, now served from
+  `public/brand/sfere-logo.svg`.
+- **`quasar.config.js`** — `appId` only.
+- **`CLAUDE.md`** — the design-system section, which described the token layer
+  as unapplied.
 
-`quasar.config.js` was **not** edited. Its `css: [...]` array is the normal place
-to register a stylesheet, and it is frozen, so `sfere.css` is pulled in from
+`index.html` was **not** edited: its `<title>` comes from `productName`, and the
+only brand strings left in it are live CSP hosts.
+
+`quasar.config.js`'s `css: [...]` array is the normal place to register a
+stylesheet, and it is frozen, so `sfere.css` is still pulled in from
 `src/css/tailwind.css` instead. Same result.
 
 ---
@@ -228,32 +243,42 @@ They were right the first time and they still apply:
 
 ---
 
-## Adopting it
+## The alias layer
 
-Two routes, and the choice is about appetite for a single large visual diff.
-
-**A · Repoint the existing tokens.** Change the values in
-`src/css/tailwind.css` to the Sfere ones. Every screen rebrands at once, no
-component markup changes, and reverting one file undoes it. The mapping table is
-on the page under **Adoption**; the headline rows:
+`src/css/tailwind.css` is where the app's semantic names resolve to Sfere
+values. It is the one file to edit to change the brand, and reverting it alone
+undoes the whole visual change:
 
 ```
---color-brand   #3800c1 → #854dff   (sfere-brand-fill)
---color-ink     #030712 → #0a0a0a   (sfere-fg)
---color-muted   #4a5565 → #737373   (sfere-fg-muted; absorbs --color-subtle)
---color-line    #e7e9ed → #e5e5e5   (sfere-line; absorbs --color-line2)
---font-sans     Plus Jakarta Sans → Inter, + Bricolage for headings
+--color-brand   #854dff   sfere-600 / brand-fill
+--color-ink     #0a0a0a   sfere-fg
+--color-muted   #737373   sfere-fg-muted
+--color-subtle  #737373   sfere-fg-muted — same value as muted, see below
+--color-line    #e5e5e5   sfere-line (--color-line2 resolves to the same value)
+--font-sans     Inter, + Bricolage Grotesque on h1–h6
 ```
 
-**B · Migrate screen by screen.** Rewrite one page at a time against
-`src/components/sfere/`, leaving the rest alone. Slower, but every step is a
-small reviewable diff and both systems coexist while it happens. The screen
-manifest makes this cheap — implementing a screen means rewriting its file in
-place, never adding a route.
+**Two pairs of tokens now collapse.** `line`/`line2` and `muted`/`subtle` each
+resolve to one value. Both names in each pair survive so no markup changes, but
+there is no longer any visual difference between them.
 
-Whichever route: `--color-brand` at `#854dff` still passes AA against white, and
-the neutral ramp loses its blue cast. Check any screen that leans on
-`text-subtle` for hierarchy, since `subtle` and `muted` merge into one value.
+The `muted`/`subtle` collapse is forced by contrast. `subtle` carries column
+headers and hints — content, so it has to clear AA. On this neutral ramp
+grey-on-white reaches 4.5:1 at roughly `#767676`, which leaves no value that
+both separates from `muted` (`#737373`, 4.7:1) and stays legible; `#a1a1a1` is
+2.6:1. A third level of text hierarchy has to come from weight or size now.
+
+`--color-brand` at `#854dff` passes AA against white. The neutral ramp also lost
+its blue cast, so any screen that leaned on the old `subtle`/`muted` split is
+worth a look.
+
+### Migrating a screen onto the component kit
+
+Separate from the tokens, and per-screen. Rewrite one page at a time against
+`src/components/sfere/`, leaving the rest alone; every step is a small
+reviewable diff and both kits coexist while it happens. The screen manifest
+makes this cheap — implementing a screen means rewriting its file in place,
+never adding a route.
 
 ---
 
