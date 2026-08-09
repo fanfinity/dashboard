@@ -37,7 +37,24 @@ CSS v4** (via `@tailwindcss/vite` + PostCSS) used alongside Quasar's own compone
 both `app.scss` and `tailwind.css` are loaded. Charts use ApexCharts (`vue3-apexcharts`).
 
 Router uses **hash mode** (`vueRouterMode: 'hash'` in `quasar.config.js`). The `@/` alias maps
-to `src/`. All app routes are children of `src/layouts/MainLayout.vue`.
+to `src/`. All app routes are children of `src/layouts/MainLayout.vue`, except `/login` and
+`/design-system`, which are top-level and unauthenticated.
+
+Hash mode has one consequence worth internalising: the whole route lives after the first `#`,
+so an in-page `href="#some-id"` **replaces the route** instead of scrolling. Anchor navigation
+has to go through `scrollIntoView` — see `src/pages/design-system/DesignSystemPage.vue`.
+
+### Two Quasar/Tailwind cascade collisions
+
+Tailwind v4 emits utilities into `@layer utilities`; Quasar's base stylesheet is **unlayered**,
+and unlayered CSS beats layered CSS regardless of specificity. Both of these have cost real time:
+
+1. **Headings need the important _suffix_** — `text-2xl!`, never `!text-2xl`. Covered at length
+   in `docs/ui-conventions.md` rules 2–3.
+2. **A bare `hidden` can never be turned back on.** Quasar ships
+   `.hidden { display: none !important }`, so `class="hidden lg:block"` is permanently hidden at
+   every width. Use the inverse variant — `class="max-lg:hidden"` — which generates a class name
+   Quasar does not define. If an element is inexplicably invisible, look for a bare `hidden`.
 
 ## Screen manifest — routes are generated, not hand-written
 
@@ -64,6 +81,32 @@ This is not only about consistency: `scripts/smoke.mjs` detects a broken screen 
 the single `[data-smoke="error"]` selector that `ErrorState` renders. Hand-rolled error blocks
 would leave the only behavioural gate in the repo with nothing to assert on.
 
+## The Sfere design system (the rebrand)
+
+Fanfinity is being renamed to **Sfere**. `src/css/sfere.css` holds the token layer for that
+rebrand, measured off the live marketing site (<https://sfere.io>) rather than eyeballed, and
+`src/components/sfere/` holds a 25-component kit built on it. Browse the whole thing at
+**`#/design-system`** (hash mode — not `/design-system`); no sign-in required.
+
+**It is additive and applies to nothing.** Every token is namespaced `sfere-*` and nothing
+redefines `--color-brand` or the rest of the Fanfinity set, so all 54 screens render exactly as
+before. Rebranding the app is a separate decision — the token mapping and both migration routes
+are in `docs/sfere-design-system.md`.
+
+Rules for touching it:
+
+- `src/components/ui/` (Fanfinity) and `src/components/sfere/` are **separate systems**. Current
+  screens use `ui/`. Do not mix them in one screen.
+- `sfere.css` is imported from `src/css/tailwind.css`, not registered in `quasar.config.js`'s
+  `css: [...]` array — that file is frozen and this achieves the same thing.
+- The three brand faces (Bricolage Grotesque, Inter, Geist Mono) are self-hosted `@fontsource`
+  packages. The CSP is `default-src 'self'`, so the Google Fonts CDN is blocked; any new face
+  must be added the same way.
+- `/design-system` is registered directly in `routes.js` rather than in the screen manifest, so
+  `scripts/smoke.mjs` does not cover it. `pnpm build` does.
+
+Read `docs/sfere-design-system.md` before adding a component or changing a token.
+
 ## Mock data supersedes the issue acceptance criteria
 
 Every backlog issue says _"fetch through the generated orval client in `src/api/`"_. **That is
@@ -80,6 +123,11 @@ blocker to report, not an edit to make — see `docs/agent-workflow.md`.
 `src/router/**` · `src/layouts/**` · `src/components/ui/**` ·
 `src/composables/{useMockResource,useEntitlements,useDiagram,useTemplates}.js` ·
 `package.json` · `quasar.config.js` · `index.html` · `.gitignore` · `scripts/**` · this file
+
+The design-system branch edited two of them on purpose — `routes.js` (one top-level route) and
+`package.json` (three font packages) — as a foundation-phase change, not story work. That is the
+bar: an explicit, user-directed decision recorded in `docs/sfere-design-system.md`, not a
+convenient workaround discovered mid-story.
 
 ## Data architecture
 

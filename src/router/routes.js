@@ -36,6 +36,23 @@ const routes = [
     name: 'login',
     component: () => import('@/pages/LoginPage.vue')
   },
+
+  // The Sfere design system, deliberately NOT a manifest screen.
+  //
+  // A screens.js entry would nest it under MainLayout, wrapping a Sfere-branded
+  // reference page in the Fanfinity sidebar and putting it behind the auth
+  // guard — both wrong for a style guide meant to be opened and eyeballed. So
+  // it sits here as a top-level route alongside /login, with no requiresAuth
+  // meta and its own shell.
+  //
+  // Consequence worth knowing: scripts/smoke.mjs walks screens.js, so this
+  // route is invisible to the smoke gate. `pnpm build` still covers it.
+  {
+    path: '/design-system',
+    name: 'design-system',
+    component: () => import('@/pages/design-system/DesignSystemPage.vue'),
+    meta: { title: 'Sfere design system' }
+  },
   {
     path: '/',
     component: () => import('@/layouts/MainLayout.vue'),
