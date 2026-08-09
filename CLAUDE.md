@@ -127,14 +127,14 @@ blocker to report, not an edit to make — see `docs/agent-workflow.md`.
 
 `src/router/**` · `src/layouts/**` · `src/components/ui/**` ·
 `src/composables/{useMockResource,useEntitlements,useDiagram,useTemplates}.js` ·
-`package.json` · `quasar.config.js` · `index.html` · `.gitignore` · `scripts/**` · this file
+`package.json` · `quasar.config.js` · `index.html` · `scripts/**` · this file
 
-Five have been edited on purpose, all as foundation-phase changes rather than story work:
+Four have been edited on purpose, all as foundation-phase changes rather than story work:
 `routes.js` (one top-level route, three font packages), `package.json` (fonts plus the brand
-name fields), `MainLayout.vue` (the sidebar logo), `quasar.config.js` (`appId`) and
-`.gitignore` (`todos/`). Each is recorded in `docs/sfere-design-system.md` under "Frozen files
-edited for the brand". That is the bar: an explicit, user-directed decision written down, not a
-convenient workaround discovered mid-story.
+name fields), `MainLayout.vue` (the sidebar logo) and `quasar.config.js` (`appId`). Each is
+recorded in `docs/sfere-design-system.md` under "Frozen files edited for the brand". That is the
+bar: an explicit, user-directed decision written down, not a convenient workaround discovered
+mid-story.
 
 `tools/` exists because `scripts/**` is frozen — one-off maintenance scripts like
 `tools/brand-rename.mjs` and `tools/make-favicons.mjs` go there.
