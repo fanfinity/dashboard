@@ -181,7 +181,7 @@
       "id": "dwh_staging_postgres",
       "name": "Staging Postgres",
       "type": "postgres",
-      "host": "staging-db.internal.fanfinity.io",
+      "host": "staging-db.internal.sfere.io",
       "port": 5432,
       "database": "staging",
       "status": "disconnected",

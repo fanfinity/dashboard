@@ -29,8 +29,17 @@ node_modules
 # Smoke-test artifacts
 .playwright/
 
+# Working notes and handover drafts — deliberately local, not shared history
+todos/
+
 # Log files
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 .pnpm-store
+# design-sync build output and staged converter scripts (see docs/sfere-design-system.md)
+ds-bundle/
+.ds-sync/
+.design-sync/.cache/
+.design-sync/learnings/
+.design-sync/node_modules

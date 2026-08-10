@@ -101,7 +101,7 @@
             id="source-description"
             v-model="form.description"
             rows="3"
-            placeholder="First-party web tracker on fanfinity.io"
+            placeholder="First-party web tracker on sfere.io"
             class="rounded-lg border border-line2 bg-white px-2.5 py-2 text-sm text-ink outline-none placeholder:text-subtle"
           ></textarea>
         </FormField>

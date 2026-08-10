@@ -4,7 +4,7 @@
     "name": "Web SDK",
     "slug": "web-sdk",
     "sourceType": "event_stream",
-    "description": "First-party web tracker on fanfinity.io and the fan portal.",
+    "description": "First-party web tracker on sfere.io and the fan portal.",
     "isEnabled": true,
     "version": 3,
     "createdAt": "2026-02-11T09:14:02.104Z",

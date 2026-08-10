@@ -3,8 +3,8 @@
     {
       "id": "usr_mahmoud",
       "pk": 201,
-      "email": "m.abumusa@fanfinity.io",
-      "username": "m_abumusa_fanfinity_io",
+      "email": "m.abumusa@sfere.io",
+      "username": "m_abumusa_sfere_io",
       "name": "Mahmoud Abu Musa",
       "role": "owner",
       "isActive": true,
@@ -14,8 +14,8 @@
     {
       "id": "usr_dana",
       "pk": 214,
-      "email": "dana.rashid@fanfinity.io",
-      "username": "dana_rashid_fanfinity_io",
+      "email": "dana.rashid@sfere.io",
+      "username": "dana_rashid_sfere_io",
       "name": "Dana Rashid",
       "role": "admin",
       "isActive": true,
@@ -25,8 +25,8 @@
     {
       "id": "usr_faisal",
       "pk": 233,
-      "email": "faisal.otaibi@fanfinity.io",
-      "username": "faisal_otaibi_fanfinity_io",
+      "email": "faisal.otaibi@sfere.io",
+      "username": "faisal_otaibi_sfere_io",
       "name": "Faisal Al-Otaibi",
       "role": "editor",
       "isActive": true,
@@ -36,8 +36,8 @@
     {
       "id": "usr_hana",
       "pk": 251,
-      "email": "hana.said@fanfinity.io",
-      "username": "hana_said_fanfinity_io",
+      "email": "hana.said@sfere.io",
+      "username": "hana_said_sfere_io",
       "name": "Hana Said",
       "role": "viewer",
       "isActive": true,
@@ -59,7 +59,7 @@
   "pendingUsers": [
     {
       "id": "inv_layla",
-      "email": "layla.khan@fanfinity.io",
+      "email": "layla.khan@sfere.io",
       "role": "editor",
       "invitedBy": "usr_mahmoud",
       "invitedByName": "Mahmoud Abu Musa",
@@ -68,7 +68,7 @@
     },
     {
       "id": "inv_saeed",
-      "email": "saeed.marketing@fanfinity.io",
+      "email": "saeed.marketing@sfere.io",
       "role": "viewer",
       "invitedBy": "usr_dana",
       "invitedByName": "Dana Rashid",

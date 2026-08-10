@@ -1,7 +1,7 @@
 import { useMockResource } from '@/composables/useMockResource'
 
 /**
- * OAuth authorizations = the consent Fanfinity holds to act on a third-party
+ * OAuth authorizations = the consent Sfere holds to act on a third-party
  * account (a Google Ads manager account, a Meta business, a Salesforce org) on
  * the workspace's behalf.
  *

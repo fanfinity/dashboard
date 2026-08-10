@@ -37,7 +37,24 @@ CSS v4** (via `@tailwindcss/vite` + PostCSS) used alongside Quasar's own compone
 both `app.scss` and `tailwind.css` are loaded. Charts use ApexCharts (`vue3-apexcharts`).
 
 Router uses **hash mode** (`vueRouterMode: 'hash'` in `quasar.config.js`). The `@/` alias maps
-to `src/`. All app routes are children of `src/layouts/MainLayout.vue`.
+to `src/`. All app routes are children of `src/layouts/MainLayout.vue`, except `/login` and
+`/design-system`, which are top-level and unauthenticated.
+
+Hash mode has one consequence worth internalising: the whole route lives after the first `#`,
+so an in-page `href="#some-id"` **replaces the route** instead of scrolling. Anchor navigation
+has to go through `scrollIntoView` — see `src/pages/design-system/DesignSystemPage.vue`.
+
+### Two Quasar/Tailwind cascade collisions
+
+Tailwind v4 emits utilities into `@layer utilities`; Quasar's base stylesheet is **unlayered**,
+and unlayered CSS beats layered CSS regardless of specificity. Both of these have cost real time:
+
+1. **Headings need the important _suffix_** — `text-2xl!`, never `!text-2xl`. Covered at length
+   in `docs/ui-conventions.md` rules 2–3.
+2. **A bare `hidden` can never be turned back on.** Quasar ships
+   `.hidden { display: none !important }`, so `class="hidden lg:block"` is permanently hidden at
+   every width. Use the inverse variant — `class="max-lg:hidden"` — which generates a class name
+   Quasar does not define. If an element is inexplicably invisible, look for a bare `hidden`.
 
 ## Screen manifest — routes are generated, not hand-written
 
@@ -64,6 +81,63 @@ This is not only about consistency: `scripts/smoke.mjs` detects a broken screen 
 the single `[data-smoke="error"]` selector that `ErrorState` renders. Hand-rolled error blocks
 would leave the only behavioural gate in the repo with nothing to assert on.
 
+## The Sfere design system
+
+`src/css/sfere.css` holds the token layer, measured off the live marketing site
+(<https://sfere.io>) rather than eyeballed, and `src/components/sfere/` holds a 30-component
+kit built on it. Browse the whole thing at **`#/design-system`** (hash mode — not
+`/design-system`); no sign-in required.
+
+**The tokens apply to the whole app; the component kit does not.** `src/css/tailwind.css`
+declares `--color-brand`, `--color-muted`, `--color-line`, `--font-sans` and friends as aliases
+pointing at the `sfere-*` values, so all 54 screens inherit the palette and typefaces with no
+markup change. `src/css/quasar.variables.scss` sets `$primary` to the same purple so Quasar's
+own controls match. **Never hardcode a hex in a screen** — that is what broke when the brand
+changed, and the alias layer only works if nothing bypasses it.
+
+Screens still use `src/components/ui/`. Moving one onto `src/components/sfere/` is a per-screen
+rewrite, tracked in `todos/brand-rename-todo.md`.
+
+Rules for touching it:
+
+- `src/components/ui/` and `src/components/sfere/` are **separate kits** sharing one token
+  layer. Current screens use `ui/`. Do not mix them in one screen.
+- `sfere.css` is imported from `src/css/tailwind.css`, not registered in `quasar.config.js`'s
+  `css: [...]` array — that file is frozen and this achieves the same thing.
+- The three brand faces (Bricolage Grotesque, Inter, Geist Mono) are self-hosted `@fontsource`
+  packages. The CSP is `default-src 'self'`, so the Google Fonts CDN is blocked; any new face
+  must be added the same way.
+- `/design-system` is registered directly in `routes.js` rather than in the screen manifest, so
+  `scripts/smoke.mjs` does not cover it. `pnpm build` does.
+
+Read `docs/sfere-design-system.md` before adding a component or changing a token.
+
+### Published to claude.ai/design (tokens only)
+
+The token layer is published as a company-wide design system at
+`https://claude.ai/design/p/51046f6e-0f11-47c7-9d1e-66a183ec2ac7`. **Only the tokens and
+fonts cross over — `src/components/sfere/` does not.** Claude Design's agent builds in React;
+the kit is Vue, so the uploaded `_ds_bundle.js` is a deliberately empty namespace. Anyone
+designing there composes their own components from the Sfere tokens.
+
+Rebuild and re-upload with:
+
+```bash
+node tools/build-design-sync-bundle.mjs        # emits ds-bundle/ (gitignored)
+node .ds-sync/package-validate.mjs ./ds-bundle # the real gate — must exit 0
+```
+
+The builder is hand-written (in `tools/`, since `scripts/**` is frozen) because the bundled
+`/design-sync` converter only supports React design systems. **Never ship `src/css/sfere.css`
+raw** — it is Tailwind v4 source (`@theme`, `@utility`, bare `@fontsource` imports) and a
+browser silently ignores all three, producing designs with no tokens and no fonts.
+
+Sync inputs live in `.design-sync/` (committed): `config.json`, `NOTES.md` (read it before
+re-running) and `conventions.md`. That last one is prepended to the uploaded README and
+inlined into the design agent's prompt; it enumerates 54 token names, so **re-verify it
+against the built CSS whenever a token is renamed** — a name that no longer resolves makes
+every design the agent builds silently unstyled.
+
 ## Mock data supersedes the issue acceptance criteria
 
 Every backlog issue says _"fetch through the generated orval client in `src/api/`"_. **That is
@@ -79,7 +153,22 @@ blocker to report, not an edit to make — see `docs/agent-workflow.md`.
 
 `src/router/**` · `src/layouts/**` · `src/components/ui/**` ·
 `src/composables/{useMockResource,useEntitlements,useDiagram,useTemplates}.js` ·
-`package.json` · `quasar.config.js` · `index.html` · `.gitignore` · `scripts/**` · this file
+`package.json` · `quasar.config.js` · `index.html` · `scripts/**` · this file
+
+Four have been edited on purpose, all as foundation-phase changes rather than story work:
+`routes.js` (one top-level route, three font packages), `package.json` (fonts plus the brand
+name fields), `MainLayout.vue` (the sidebar logo) and `quasar.config.js` (`appId`). Each is
+recorded in `docs/sfere-design-system.md` under "Frozen files edited for the brand". That is the
+bar: an explicit, user-directed decision written down, not a convenient workaround discovered
+mid-story.
+
+`tools/` exists because `scripts/**` is frozen — one-off maintenance scripts like
+`tools/brand-rename.mjs` and `tools/make-favicons.mjs` go there.
+
+`todos/` is gitignored working notes — planning docs and handover drafts that should not enter
+shared history. `todos/brand-rename-todo.md` is the live record of what the rebrand still owes.
+Because it is outside git, it is also outside the codemod's reach: `tools/brand-rename.mjs`
+skips the whole directory.
 
 ## Data architecture
 

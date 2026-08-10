@@ -12,7 +12,7 @@ const BASE = (import.meta.env.VITE_EVENTS_API_BASE || '/japi').replace(
 )
 
 // Internal workspace id (cuid), NOT the slug — the API rejects the slug.
-// Resolve via GET /japi/workspace; this is just the default for the fanfinity ws.
+// Resolve via GET /japi/workspace; this is just the default for the sfere ws.
 export const WORKSPACE_ID =
   import.meta.env.VITE_EVENTS_WORKSPACE_ID || 'cmqgzfe6n0007ws09k1wa8qnb'
 

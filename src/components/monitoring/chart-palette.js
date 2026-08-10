@@ -41,7 +41,7 @@ export function resolveToken(name, fallback = '') {
  * @returns {string[]}
  *
  * @example
- * resolvePalette(['var(--color-chart-1)']) // ['#3800c1']
+ * resolvePalette(['var(--color-chart-1)']) // ['#854dff']
  */
 export function resolvePalette(colors) {
   return (colors ?? []).map(color => {

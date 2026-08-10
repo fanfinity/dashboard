@@ -159,7 +159,7 @@ const target = ref(null)
 
 const RETENTION_DAYS = 30
 
-const noticeMessage = `Only Fanfinity's copy of the query and its column mapping are removed — the table it reads stays exactly as it is. Restoring a model puts the definition back and recomputes it on the next refresh, so any attribute built on it starts updating again. Deleted models are purged automatically after ${RETENTION_DAYS} days.`
+const noticeMessage = `Only Sfere's copy of the query and its column mapping are removed — the table it reads stays exactly as it is. Restoring a model puts the definition back and recomputes it on the next refresh, so any attribute built on it starts updating again. Deleted models are purged automatically after ${RETENTION_DAYS} days.`
 
 const columns = [
   { key: 'name', label: 'Model', sortable: true },

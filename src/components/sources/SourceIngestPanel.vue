@@ -10,8 +10,8 @@
 
     <!-- Cloud apps are polled by a connector, so no write key is ever issued. -->
     <p v-if="!source.writeKey" class="text-sm text-muted">
-      {{ source.name }} is a cloud app: Fanfinity pulls from it on a schedule,
-      so there is no write key or ingest endpoint to configure here. Credentials
+      {{ source.name }} is a cloud app: Sfere pulls from it on a schedule, so
+      there is no write key or ingest endpoint to configure here. Credentials
       are managed with the connector.
     </p>
 
@@ -99,7 +99,7 @@ const emit = defineEmits(['copy'])
 const revealed = ref(false)
 
 const endpoint = computed(
-  () => `https://ingest.fanfinity.io/v1/${props.source.slug}`
+  () => `https://ingest.sfere.io/v1/${props.source.slug}`
 )
 
 // The key is masked by default; `shownKey` is what the eye sees, `source.writeKey`
@@ -121,25 +121,25 @@ function buildSnippet(templateId, key, slug) {
   if (templateId === 'web-sdk') {
     return {
       label: 'Web snippet',
-      code: `<script src="https://cdn.fanfinity.io/fp.js" data-write-key="${key}" defer>${CLOSE_SCRIPT}`
+      code: `<script src="https://cdn.sfere.io/fp.js" data-write-key="${key}" defer>${CLOSE_SCRIPT}`
     }
   }
   if (templateId === 'ios-sdk') {
     return {
       label: 'iOS snippet',
-      code: `import Fanfinity\n\nFanfinity.start(writeKey: "${key}")`
+      code: `import Sfere\n\nSfere.start(writeKey: "${key}")`
     }
   }
   if (templateId === 'android-sdk') {
     return {
       label: 'Android snippet',
-      code: `import io.fanfinity.sdk.Fanfinity\n\nFanfinity.start(context = this, writeKey = "${key}")`
+      code: `import io.sfere.sdk.Sfere\n\nSfere.start(context = this, writeKey = "${key}")`
     }
   }
   return {
     label: 'Server-side example',
     code:
-      `curl -X POST https://ingest.fanfinity.io/v1/${slug} \\\n` +
+      `curl -X POST https://ingest.sfere.io/v1/${slug} \\\n` +
       `  -H "Authorization: Bearer ${key}" \\\n` +
       `  -H "Content-Type: application/json" \\\n` +
       `  -d '[{"event_type":"ticket_purchased","event_time":"2026-07-31T12:00:00Z"}]'`

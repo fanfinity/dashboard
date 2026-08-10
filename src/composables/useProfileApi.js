@@ -165,7 +165,7 @@ export function buildCurlSnippet(endpoint) {
   const url = `${endpointUrl(endpoint)}?${param}=FAN_IDENTIFIER`
   return (
     `curl -s "${url}" \\\n` +
-    `  -H "Authorization: Bearer $FANFINITY_PROFILE_API_KEY" \\\n` +
+    `  -H "Authorization: Bearer $SFERE_PROFILE_API_KEY" \\\n` +
     `  -H "Accept: application/json"`
   )
 }

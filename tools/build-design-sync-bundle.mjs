@@ -1,0 +1,760 @@
+#!/usr/bin/env node
+// ============================================================================
+// Build the claude.ai/design upload bundle for the Sfere design system.
+//
+// WHY THIS SCRIPT EXISTS INSTEAD OF THE /design-sync CONVERTER
+// ------------------------------------------------------------------------
+// The bundled converter (.ds-sync/package-build.mjs) targets React design
+// systems: it compiles a package's dist entry into an IIFE that hangs every
+// component off `window.<Global>` for the Claude Design agent to import. Sfere
+// is 30 Vue SFCs on Quasar, so there is no such entry and no React component to
+// hand over. What CAN cross the boundary is the half of the design system that
+// is framework-agnostic: the token layer, the three brand faces, and the seven
+// signature surface treatments.
+//
+// So this emits the same OUTPUT CONTRACT the converter does — that contract,
+// not the converter, is what the app consumes — with componentCount 0 on the
+// importable side and foundation specimen cards on the preview side.
+//
+// THE ONE TRAP THIS SCRIPT EXISTS TO AVOID
+// ------------------------------------------------------------------------
+// src/css/sfere.css is Tailwind v4 SOURCE: `@theme`, `@utility`, and bare
+// `@fontsource/...` imports. A browser ignores `@theme` as an unknown at-rule
+// and cannot resolve a bare specifier, so shipping that file raw would render
+// every design with no tokens and no fonts, silently. Only compiled output is
+// shippable. Two different techniques, each chosen deliberately:
+//
+//   * TOKENS are parsed straight out of the `@theme` source block, because
+//     Tailwind v4 tree-shakes theme variables that no utility references — a
+//     compile would drop tokens the design agent still needs to name.
+//   * UTILITIES are taken from a real Tailwind compile, because `@utility`
+//     bodies use nesting and multi-line masks that must not be hand-copied.
+//
+// Run: node tools/build-design-sync-bundle.mjs [--out ./ds-bundle]
+// Then: node .ds-sync/package-validate.mjs ./ds-bundle
+// ============================================================================
+
+import {
+  cpSync,
+  existsSync,
+  mkdirSync,
+  readFileSync,
+  rmSync,
+  writeFileSync
+} from 'node:fs'
+import { basename, dirname, join, resolve } from 'node:path'
+import postcss from 'postcss'
+import tw from '@tailwindcss/postcss'
+
+const ROOT = resolve(dirname(new URL(import.meta.url).pathname), '..')
+const argOut = process.argv.indexOf('--out')
+const OUT = resolve(
+  ROOT,
+  argOut > -1 ? process.argv[argOut + 1] : './ds-bundle'
+)
+const GLOBAL = 'Sfere'
+const GROUP = 'Foundations'
+
+const SFERE_CSS = join(ROOT, 'src/css/sfere.css')
+const TAILWIND_CSS = join(ROOT, 'src/css/tailwind.css')
+
+// Only these subsets ship. The @fontsource packages carry cyrillic, greek and
+// vietnamese too; shipping all of them roughly quadruples the bundle for
+// coverage no design in this pane will exercise.
+const SUBSETS = ['-latin-', '-latin-ext-']
+
+const log = m => console.log(m)
+
+// ---------------------------------------------------------------------------
+// 1. Tokens — read from the @theme SOURCE block, not from a compile.
+// ---------------------------------------------------------------------------
+
+/**
+ * Pull every custom property (and any @keyframes) out of a file's `@theme`
+ * block and re-emit it as plain CSS a browser understands.
+ */
+function extractTheme(file) {
+  const root = postcss.parse(readFileSync(file, 'utf8'), { from: file })
+  const decls = []
+  const keyframes = []
+  root.walkAtRules('theme', at => {
+    at.each(node => {
+      if (node.type === 'decl' && node.prop.startsWith('--')) {
+        decls.push({
+          prop: node.prop,
+          value: node.value,
+          comment: inlineComment(node)
+        })
+      } else if (node.type === 'atrule' && node.name === 'keyframes') {
+        keyframes.push(node.toString())
+      }
+    })
+  })
+  return { decls, keyframes }
+}
+
+// Keep the trailing `/* … */` note that follows a token on its own line — the
+// comments in sfere.css carry the reasoning (which step is derived, which hex
+// the oklch approximates) and that is exactly what a design agent benefits from
+// reading next to the value.
+function inlineComment(node) {
+  const raw = node.raws?.value?.raw ?? ''
+  const after = node.next()
+  if (
+    after?.type === 'comment' &&
+    !String(after.raws?.before ?? '').includes('\n')
+  ) {
+    return after.toString()
+  }
+  const m = /\/\*[^*]*\*+([^/*][^*]*\*+)*\//.exec(raw)
+  return m ? m[0] : ''
+}
+
+function renderTokens(title, note, { decls, keyframes }) {
+  const width = Math.max(...decls.map(d => `  ${d.prop}: ${d.value};`.length))
+  const body = decls
+    .map(d => {
+      const line = `  ${d.prop}: ${d.value};`
+      return d.comment ? `${line.padEnd(width)} ${d.comment}` : line
+    })
+    .join('\n')
+  return (
+    `/* ${title}\n${note
+      .split('\n')
+      .map(l => `   ${l}`)
+      .join(
+        '\n'
+      )}\n   Generated by tools/build-design-sync-bundle.mjs — do not hand-edit. */\n\n` +
+    `:root {\n${body}\n}\n` +
+    (keyframes.length ? `\n${keyframes.join('\n\n')}\n` : '')
+  )
+}
+
+// ---------------------------------------------------------------------------
+// 2. Utilities + fonts — from a real Tailwind v4 compile.
+// ---------------------------------------------------------------------------
+
+const UTILITIES = [
+  'sfere-glow-top',
+  'sfere-dot-grid',
+  'sfere-gradient-border',
+  'sfere-fade-b',
+  'sfere-fade-x',
+  'sfere-flow-line',
+  'sfere-flow-line-y'
+]
+
+// The four animation utilities Tailwind generates from the `--animate-sfere-*`
+// theme vars. They ship for two reasons: the flow-line treatment is inert
+// without one, and the prefers-reduced-motion guard in sfere.css targets these
+// exact class names — shipping the tokens but not the classes would leave that
+// guard pointing at nothing.
+const ANIMATIONS = [
+  'animate-sfere-flow',
+  'animate-sfere-flow-y',
+  'animate-sfere-blink',
+  'animate-sfere-breathe'
+]
+
+async function compileSource() {
+  // Preflight is deliberately omitted (no `@import 'tailwindcss'`): this
+  // stylesheet is loaded alongside whatever the design agent is already
+  // building with, and a base-layer reset would fight it.
+  const entry =
+    `@layer theme, base, components, utilities;\n` +
+    `@import 'tailwindcss/theme.css' layer(theme);\n` +
+    `@import 'tailwindcss/utilities.css' layer(utilities);\n` +
+    `@import './src/css/sfere.css';\n` +
+    // --font-sfere-display names Plus Jakarta Sans as its second-position
+    // fallback. sfere.css doesn't import it (the app never needs the fallback
+    // to fire), but a design system that ships a family string it can't honour
+    // is a lie the browser resolves silently — so the two weights the type
+    // scale actually uses ship too. 600 = h4, 700 = display/h1–h3.
+    `@import '@fontsource/plus-jakarta-sans/600.css';\n` +
+    `@import '@fontsource/plus-jakarta-sans/700.css';\n` +
+    `@source inline("${[...UTILITIES, ...ANIMATIONS].join(' ')}");\n`
+  const res = await postcss([tw()]).process(entry, {
+    from: join(ROOT, '.design-sync-entry.css')
+  })
+  return postcss.parse(res.css)
+}
+
+function extractUtilities(compiled) {
+  const wanted = [...UTILITIES, ...ANIMATIONS]
+  const rules = new Map()
+  compiled.walkRules(rule => {
+    const m = /^\.((?:animate-)?sfere-[a-z-]+)$/.exec(rule.selector.trim())
+    if (m && wanted.includes(m[1])) rules.set(m[1], rule.toString())
+  })
+  const missing = wanted.filter(u => !rules.has(u))
+  if (missing.length)
+    throw new Error(`utilities did not compile: ${missing.join(', ')}`)
+  // The @keyframes these animations reference are not re-emitted here — they
+  // live inside the @theme block, so tokens/sfere-tokens.css already carries
+  // them and styles.css imports that first.
+  return wanted.map(u => rules.get(u))
+}
+
+/**
+ * Collect @font-face rules for the shipped subsets, copy their woff2 files flat
+ * into fonts/, and rewrite each `src:` to point at the copy. `.woff` fallbacks
+ * are dropped — every browser that can open the Design pane supports woff2.
+ */
+function extractFonts(compiled, fontsDir) {
+  const faces = []
+  const copied = new Set()
+  compiled.walkAtRules('font-face', at => {
+    const src = at.nodes.find(n => n.type === 'decl' && n.prop === 'src')
+    if (!src) return
+    const url = /url\(([^)]+\.woff2)\)/.exec(src.value)
+    if (!url) return
+    const abs = resolve(ROOT, url[1].replace(/^\.\//, ''))
+    const file = basename(abs)
+    if (!SUBSETS.some(s => file.includes(s))) return
+    if (!existsSync(abs)) throw new Error(`font file missing: ${abs}`)
+    if (!copied.has(file)) {
+      cpSync(abs, join(fontsDir, file))
+      copied.add(file)
+    }
+    const format = /format\(([^)]+)\)/.exec(src.value)?.[1] ?? "'woff2'"
+    src.value = `url(./${file}) format(${format})`
+    faces.push(at.toString())
+  })
+  if (!copied.size) throw new Error('no font files were copied')
+  return { faces, files: [...copied].sort() }
+}
+
+/** Top-level rules in sfere.css that live outside @theme/@utility — today the
+ *  prefers-reduced-motion guard, which must ship with the animation tokens. */
+function extractLooseRules(file) {
+  const root = postcss.parse(readFileSync(file, 'utf8'), { from: file })
+  const out = []
+  root.each(node => {
+    if (
+      node.type === 'atrule' &&
+      ['theme', 'utility', 'import'].includes(node.name)
+    )
+      return
+    if (node.type === 'comment') return
+    out.push(node.toString())
+  })
+  return out
+}
+
+// ---------------------------------------------------------------------------
+// 3. Foundation specimen cards.
+// ---------------------------------------------------------------------------
+
+const RAMP = [
+  '50',
+  '100',
+  '200',
+  '300',
+  '400',
+  '500',
+  '600',
+  '700',
+  '800',
+  '900'
+]
+const SEMANTIC = [
+  ['brand', '500 — identity, logo, focus ring'],
+  ['brand-fill', '600 — primary button background'],
+  ['brand-text', '700 — brand text, links, hover fill'],
+  ['plum', '900 — text on white-on-dark buttons']
+]
+const SURFACES = [
+  ['bg', 'page'],
+  ['surface', 'cards, panels, nav'],
+  ['fill', 'hover / inset'],
+  ['line', 'hairlines'],
+  ['fg', 'primary text'],
+  ['fg-muted', 'secondary text']
+]
+const STATUS = [
+  'success',
+  'success-soft',
+  'warn',
+  'warn-soft',
+  'danger',
+  'danger-soft'
+]
+const TYPE_SCALE = [
+  ['display', 'Hero — one per page', 'Data that moves'],
+  ['h1', 'Page title', 'Every event, one profile'],
+  ['h2', 'Section heading', 'Connect your sources'],
+  ['h3', 'Sub-section', 'Identity resolution'],
+  ['h4', 'Card title', 'Warehouse sync'],
+  [
+    'lead',
+    'Deck under a heading',
+    'A customer data platform that keeps the whole picture in one place.'
+  ],
+  [
+    'body',
+    'Body copy',
+    'Sfere folds every event into a single profile, so the same person is one person everywhere.'
+  ],
+  ['sm', 'UI default', 'Last synced 4 minutes ago'],
+  ['xs', 'Caption', '12 of 340 contacts shown']
+]
+const RADII = [
+  ['sm', 'badges'],
+  ['', 'controls, rows'],
+  ['lg', 'list items'],
+  ['xl', 'cards, panels'],
+  ['2xl', 'feature blocks']
+]
+const SHADOWS = ['btn', 'glow', 'card', 'soft', 'pop', 'ink', 'ink-deep']
+
+const CARD_CSS = `
+  body { margin:0; padding:28px; background:var(--color-sfere-bg); font-family:var(--font-sfere-sans);
+         color:var(--color-sfere-fg); font-size:14px; line-height:1.45 }
+  h2 { font-family:var(--font-sfere-display); font-size:var(--text-sfere-h3);
+       line-height:var(--text-sfere-h3--line-height); letter-spacing:var(--text-sfere-h3--letter-spacing);
+       font-weight:var(--text-sfere-h3--font-weight); margin:0 0 4px }
+  .eyebrow { font-family:var(--font-sfere-mono); font-size:var(--text-sfere-eyebrow);
+             letter-spacing:var(--text-sfere-eyebrow--letter-spacing); font-weight:500;
+             text-transform:uppercase; color:var(--color-sfere-brand-text) }
+  .lede { color:var(--color-sfere-fg-muted); margin:0 0 22px; max-width:62ch }
+  section { margin:0 0 26px }
+  h3 { font-family:var(--font-sfere-mono); font-size:var(--text-sfere-label);
+       letter-spacing:var(--text-sfere-label--letter-spacing); font-weight:600; text-transform:uppercase;
+       color:var(--color-sfere-fg-muted); margin:0 0 10px }
+  code { font-family:var(--font-sfere-mono); font-size:12px; color:var(--color-sfere-fg-muted) }
+  .grid { display:grid; gap:10px }
+  .swatch { border-radius:var(--radius-sfere-lg); overflow:hidden; border:1px solid var(--color-sfere-line);
+            background:var(--color-sfere-surface) }
+  .swatch .chip { height:52px }
+  .swatch .meta { padding:7px 9px; display:flex; flex-direction:column; gap:1px }
+  .swatch .name { font-weight:600; font-size:12px }
+  .swatch .hex { font-family:var(--font-sfere-mono); font-size:11px; color:var(--color-sfere-fg-muted) }
+  .note { color:var(--color-sfere-fg-muted); font-size:12px; margin-top:8px }
+`
+
+const shell = (name, subtitle, body) =>
+  `<!-- @dsCard group="${GROUP}" name="${name}" subtitle="${subtitle}" -->
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+  <title>${name} — Sfere</title>
+  <link rel="stylesheet" href="../../../styles.css">
+  <style>${CARD_CSS}</style>
+</head><body>
+<div id="root">
+${body}
+</div>
+</body></html>
+`
+
+const head = (eyebrow, title, lede) =>
+  `  <div class="eyebrow">${eyebrow}</div>\n  <h2>${title}</h2>\n  <p class="lede">${lede}</p>`
+
+function paletteCard() {
+  const chip = (token, label, sub) =>
+    `    <div class="swatch"><div class="chip" style="background:var(--color-sfere-${token})"></div>` +
+    `<div class="meta"><span class="name">${label}</span><span class="hex">--color-sfere-${token}</span>` +
+    (sub ? `<span class="hex">${sub}</span>` : '') +
+    `</div></div>`
+  return shell(
+    'Colour palette',
+    'Brand ramp, surfaces, status — as CSS custom properties',
+    head(
+      'Foundations',
+      'Colour',
+      'Measured off the live marketing site. Reach for a semantic name first; reach for the numeric ramp only when you genuinely mean “one step lighter”.'
+    ) +
+      `
+  <section>
+    <h3>Brand ramp</h3>
+    <div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(140px,1fr))">
+${RAMP.map(s => chip(s, s, '')).join('\n')}
+    </div>
+    <p class="note">500 is the identity colour. 600 fills primary buttons; 700 is the hover state <em>and</em> every piece of brand-coloured text — that split is deliberate. 800 is the one interpolated step.</p>
+  </section>
+  <section>
+    <h3>Semantic aliases</h3>
+    <div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(160px,1fr))">
+${SEMANTIC.map(([t, d]) => chip(t, t, d)).join('\n')}
+    </div>
+  </section>
+  <section>
+    <h3>Light surfaces</h3>
+    <div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(170px,1fr))">
+${SURFACES.map(([t, d]) => chip(t, t, d)).join('\n')}
+    </div>
+    <p class="note">The page background is the only tinted neutral — a barely-cool off-white. Everything else is the plain neutral ramp, which is why the brand purple reads as loud as it does.</p>
+  </section>
+  <section>
+    <h3>Status</h3>
+    <div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(170px,1fr))">
+${STATUS.map(t => chip(t, t, '')).join('\n')}
+    </div>
+  </section>
+  <section>
+    <h3>Dark section treatment</h3>
+    <div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(170px,1fr))">
+${['ink', 'ink-raised', 'ink-wordmark'].map(t => chip(t, t, '')).join('\n')}
+    </div>
+    <p class="note">On sfere.io dark is a <em>section treatment</em>, not a theme: the hero, the deployment band and the footer sit on <code>--color-sfere-ink</code> while the rest of the page stays light.</p>
+  </section>`
+  )
+}
+
+function typographyCard() {
+  const row = ([t, use, sample]) =>
+    `    <div style="padding:14px 0;border-top:1px solid var(--color-sfere-line)">
+      <div style="display:flex;justify-content:space-between;gap:16px;margin-bottom:6px">
+        <code>--text-sfere-${t}</code><code>${use}</code>
+      </div>
+      <div style="font-family:var(--font-sfere-${t === 'body' || t === 'sm' || t === 'xs' || t === 'lead' ? 'sans' : 'display'});font-size:var(--text-sfere-${t});line-height:var(--text-sfere-${t}--line-height);letter-spacing:var(--text-sfere-${t}--letter-spacing,normal);font-weight:var(--text-sfere-${t}--font-weight,400)">${sample}</div>
+    </div>`
+  return shell(
+    'Type scale',
+    'Three faces, nine sizes — each token carries its own leading and tracking',
+    head(
+      'Foundations',
+      'Typography',
+      'Bricolage Grotesque for headings, Inter for everything else, Geist Mono for eyebrows and metrics. Each size token bundles size, leading, tracking and weight so one declaration sets all four.'
+    ) +
+      `
+  <section>
+    <h3>Faces</h3>
+    <div style="display:grid;gap:12px">
+      <div><code>--font-sfere-display</code><div style="font-family:var(--font-sfere-display);font-size:30px;font-weight:700;letter-spacing:-0.025em">Bricolage Grotesque — headings only</div></div>
+      <div><code>--font-sfere-sans</code><div style="font-family:var(--font-sfere-sans);font-size:22px">Inter — everything else</div></div>
+      <div><code>--font-sfere-mono</code><div style="font-family:var(--font-sfere-mono);font-size:20px">Geist Mono — labels, metrics, code</div></div>
+    </div>
+  </section>
+  <section>
+    <h3>Scale</h3>
+${TYPE_SCALE.map(row).join('\n')}
+  </section>
+  <section>
+    <h3>Mono labels</h3>
+    <div style="display:flex;flex-direction:column;gap:12px">
+      <div><code>--text-sfere-eyebrow</code><div style="font-family:var(--font-sfere-mono);font-size:var(--text-sfere-eyebrow);letter-spacing:var(--text-sfere-eyebrow--letter-spacing);font-weight:500;text-transform:uppercase;color:var(--color-sfere-brand-text);margin-top:4px">Identity resolution</div></div>
+      <div><code>--text-sfere-label</code><div style="font-family:var(--font-sfere-mono);font-size:var(--text-sfere-label);letter-spacing:var(--text-sfere-label--letter-spacing);font-weight:600;text-transform:uppercase;color:var(--color-sfere-fg-muted);margin-top:4px">Workspace</div></div>
+    </div>
+    <p class="note">The 0.18em eyebrow tracking is the single most recognisable typographic move on the site — don't tighten it.</p>
+  </section>`
+  )
+}
+
+function elevationCard() {
+  const radius = ([s, use]) => {
+    const token = s ? `--radius-sfere-${s}` : '--radius-sfere'
+    return `    <div style="text-align:center">
+      <div style="height:64px;background:var(--color-sfere-surface);border:1px solid var(--color-sfere-line);border-radius:var(${token})"></div>
+      <div style="margin-top:6px"><code>${token}</code></div>
+      <div style="font-size:11px;color:var(--color-sfere-fg-muted)">${use}</div>
+    </div>`
+  }
+  const shadow = s =>
+    `    <div style="text-align:center">
+      <div style="height:64px;background:var(--color-sfere-surface);border-radius:var(--radius-sfere-xl);box-shadow:var(--shadow-sfere-${s})"></div>
+      <div style="margin-top:10px"><code>--shadow-sfere-${s}</code></div>
+    </div>`
+  return shell(
+    'Radii & elevation',
+    'Five radii, seven shadows — elevation is plum-tinted, never neutral black',
+    head(
+      'Foundations',
+      'Radii & elevation',
+      '8px is the workhorse radius; pills are for buttons and status only. Every shadow is tinted plum rather than black — that tint is what stops the system looking like a default Tailwind template.'
+    ) +
+      `
+  <section>
+    <h3>Radii</h3>
+    <div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(140px,1fr))">
+${RADII.map(radius).join('\n')}
+    </div>
+  </section>
+  <section>
+    <h3>Shadows</h3>
+    <div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:18px">
+${SHADOWS.slice(0, 5).map(shadow).join('\n')}
+    </div>
+  </section>
+  <section>
+    <h3>On ink</h3>
+    <div style="background:var(--color-sfere-ink);border-radius:var(--radius-sfere-xl);padding:22px">
+      <div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:18px">
+${SHADOWS.slice(5)
+  .map(
+    s => `        <div style="text-align:center">
+          <div style="height:64px;background:var(--color-sfere-ink-raised);border-radius:var(--radius-sfere-xl);box-shadow:var(--shadow-sfere-${s})"></div>
+          <div style="margin-top:10px"><code style="color:var(--color-sfere-dark-fg-muted)">--shadow-sfere-${s}</code></div>
+        </div>`
+  )
+  .join('\n')}
+      </div>
+    </div>
+  </section>`
+  )
+}
+
+function surfacesCard() {
+  return shell(
+    'Surface treatments',
+    'The seven signature effects that cannot be expressed as a token',
+    head(
+      'Foundations',
+      'Surface treatments',
+      'Gradients, masks and pseudo-elements — shipped as real classes in <code>_ds_bundle.css</code>. Apply them by class name; they compose with any layout you build.'
+    ) +
+      `
+  <section>
+    <h3>On light</h3>
+    <div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:16px">
+      <div>
+        <div class="sfere-glow-top" style="height:96px;background:var(--color-sfere-bg);border:1px solid var(--color-sfere-line);border-radius:var(--radius-sfere-xl)"></div>
+        <div style="margin-top:8px"><code>.sfere-glow-top</code></div>
+        <div style="font-size:11px;color:var(--color-sfere-fg-muted)">purple bloom behind light sections — pair with the page background</div>
+      </div>
+      <div>
+        <div class="sfere-gradient-border" style="height:96px;background:var(--color-sfere-surface);border-radius:var(--radius-sfere-xl)"></div>
+        <div style="margin-top:8px"><code>.sfere-gradient-border</code></div>
+        <div style="font-size:11px;color:var(--color-sfere-fg-muted)">1px border fading from brand purple across the corner; inherits the element's radius</div>
+      </div>
+    </div>
+  </section>
+  <section>
+    <h3>On ink</h3>
+    <div style="background:var(--color-sfere-ink);border-radius:var(--radius-sfere-xl);padding:20px">
+      <div class="sfere-dot-grid" style="height:88px;border-radius:var(--radius-sfere-lg);border:1px solid var(--color-sfere-hairline)"></div>
+      <div style="margin-top:8px"><code style="color:var(--color-sfere-dark-fg-muted)">.sfere-dot-grid</code></div>
+      <div style="margin-top:20px;height:2px;background:var(--color-sfere-hairline);position:relative;border-radius:2px">
+        <div class="sfere-flow-line animate-sfere-flow" style="position:absolute;inset:0;border-radius:2px"></div>
+      </div>
+      <div style="margin-top:8px"><code style="color:var(--color-sfere-dark-fg-muted)">.sfere-flow-line</code> + <code style="color:var(--color-sfere-dark-fg-muted)">.animate-sfere-flow</code></div>
+      <div style="font-size:11px;color:var(--color-sfere-dark-fg-muted)">the “data is moving” cue on pipeline diagrams. <code style="color:var(--color-sfere-dark-fg-muted)">.sfere-flow-line-y</code> is the vertical cut.</div>
+    </div>
+  </section>
+  <section>
+    <h3>Masks</h3>
+    <div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:16px">
+      <div>
+        <div class="sfere-fade-b" style="height:88px;background:linear-gradient(135deg,var(--color-sfere-400),var(--color-sfere-700));border-radius:var(--radius-sfere-lg)"></div>
+        <div style="margin-top:8px"><code>.sfere-fade-b</code></div>
+      </div>
+      <div>
+        <div class="sfere-fade-x" style="height:88px;background:linear-gradient(135deg,var(--color-sfere-400),var(--color-sfere-700));border-radius:var(--radius-sfere-lg)"></div>
+        <div style="margin-top:8px"><code>.sfere-fade-x</code></div>
+      </div>
+    </div>
+    <p class="note">Bleed a block into its background instead of cutting it off — used for logo rails and screenshot crops. Every treatment here is decorative, and all four animations honour <code>prefers-reduced-motion</code>.</p>
+  </section>`
+  )
+}
+
+const CARDS = [
+  [
+    'Palette',
+    paletteCard,
+    'the Sfere brand colour ramp, surfaces, status colours and the dark section treatment'
+  ],
+  [
+    'Typography',
+    typographyCard,
+    'the three brand faces and the nine-step type scale'
+  ],
+  ['Elevation', elevationCard, 'the five radii and seven plum-tinted shadows'],
+  [
+    'Surfaces',
+    surfacesCard,
+    'the seven signature gradient/mask treatments shipped as real classes'
+  ]
+]
+
+const promptFor = (name, what) =>
+  `Token specimen — NOT an importable component. Visual reference for ${what}.
+
+This card documents part of the Sfere token layer. There is no \`window.${GLOBAL}.${name}\`
+to import and no props interface: the Sfere component kit is written in Vue and cannot be
+handed to a React design agent. What you build with is the token layer itself.
+
+**How to use it**: style your own components with the CSS custom properties this card
+shows — \`var(--color-sfere-brand-fill)\`, \`var(--text-sfere-h2)\`, \`var(--radius-sfere-xl)\`,
+\`var(--shadow-sfere-card)\` — all of which are defined in \`styles.css\` and are already
+loaded in every design built with this system. See \`README.md\` for the full vocabulary.
+`
+
+// ---------------------------------------------------------------------------
+// 4. Emit.
+// ---------------------------------------------------------------------------
+
+const readme = fontFiles => `# Sfere Design System
+
+Brand foundations for Sfere — the token layer, the three brand typefaces and the
+seven signature surface treatments, generated from the product repo's own
+\`src/css/sfere.css\`.
+
+## What is here
+
+| Path | What |
+|---|---|
+| \`styles.css\` | The entry point. Imports everything below; loaded in every design. |
+| \`tokens/sfere-tokens.css\` | The brand token layer — colour, type, radii, shadows, motion. |
+| \`tokens/app-aliases.css\` | Product-side aliases (\`--color-brand\`, \`--color-muted\`, chart series). |
+| \`fonts/\` | Bricolage Grotesque, Inter and Geist Mono, self-hosted (${fontFiles} files). |
+| \`_ds_bundle.css\` | The seven \`.sfere-*\` surface-treatment classes. |
+| \`components/${GROUP}/\` | Specimen cards showing the tokens. Reference only — not importable. |
+
+## What is NOT here
+
+**No importable components.** The Sfere component kit is 30 Vue single-file
+components built on Quasar; a React design agent cannot import them. Everything
+you build with this design system is built from the tokens and classes above.
+
+Read \`components/${GROUP}/<Name>/<Name>.prompt.md\` for a per-card summary.
+`
+
+async function main() {
+  log(`→ out: ${OUT}`)
+  if (existsSync(OUT)) rmSync(OUT, { recursive: true })
+  mkdirSync(join(OUT, 'tokens'), { recursive: true })
+  mkdirSync(join(OUT, 'fonts'), { recursive: true })
+
+  // Tokens
+  const sfereTheme = extractTheme(SFERE_CSS)
+  const appTheme = extractTheme(TAILWIND_CSS)
+  writeFileSync(
+    join(OUT, 'tokens/sfere-tokens.css'),
+    renderTokens(
+      'SFERE DESIGN SYSTEM — token layer',
+      'Every value measured off the live marketing site (https://sfere.io) rather than\neyeballed, so the product UI and the marketing site share one vocabulary.\nSource: src/css/sfere.css (@theme block).',
+      sfereTheme
+    )
+  )
+  writeFileSync(
+    join(OUT, 'tokens/app-aliases.css'),
+    renderTokens(
+      'SFERE — product-side aliases',
+      'The names the product screens are written against. Each points at a token in\nsfere-tokens.css, so the brand lives in exactly one place.\nSource: src/css/tailwind.css (@theme block).',
+      appTheme
+    )
+  )
+  log(
+    `✓ tokens: ${sfereTheme.decls.length} brand + ${appTheme.decls.length} alias, ${sfereTheme.keyframes.length} keyframes`
+  )
+
+  // Compile once, use twice.
+  const compiled = await compileSource()
+  const { faces, files } = extractFonts(compiled, join(OUT, 'fonts'))
+  writeFileSync(
+    join(OUT, 'fonts/fonts.css'),
+    `/* Self-hosted brand faces — latin + latin-ext.\n` +
+      `   Generated by tools/build-design-sync-bundle.mjs — do not hand-edit. */\n\n` +
+      faces.join('\n\n') +
+      '\n'
+  )
+  log(`✓ fonts: ${faces.length} @font-face rules, ${files.length} woff2 files`)
+
+  const utilities = extractUtilities(compiled)
+  const loose = extractLooseRules(SFERE_CSS)
+  writeFileSync(
+    join(OUT, '_ds_bundle.css'),
+    `/* SFERE — signature surface treatments.\n` +
+      `   Five effects that cannot be expressed as a token because they are gradients,\n` +
+      `   masks or pseudo-elements, plus the two flow-line cuts. Compiled by Tailwind v4\n` +
+      `   from the @utility blocks in src/css/sfere.css.\n` +
+      `   Generated by tools/build-design-sync-bundle.mjs — do not hand-edit. */\n\n` +
+      utilities.join('\n\n') +
+      '\n\n' +
+      `/* Headings take the display face. Deliberately unlayered so it beats a host\n` +
+      `   stylesheet's own base rules, exactly as it does in the product app. */\n` +
+      `h1, h2, h3, h4, h5, h6 { font-family: var(--font-sfere-display); }\n` +
+      (loose.length ? `\n${loose.join('\n\n')}\n` : '')
+  )
+  log(
+    `✓ _ds_bundle.css: ${utilities.length} utilities + ${loose.length} loose rule(s)`
+  )
+
+  // styles.css — the import closure. Designs receive ONLY what is reachable
+  // from this file, so anything that must reach a design is imported here.
+  writeFileSync(
+    join(OUT, 'styles.css'),
+    `/* Sfere design system — entry point.\n` +
+      `   Rendered designs receive only this file's transitive @import closure, so\n` +
+      `   everything the brand needs is reachable from here. */\n\n` +
+      `@import './fonts/fonts.css';\n` +
+      `@import './tokens/sfere-tokens.css';\n` +
+      `@import './tokens/app-aliases.css';\n` +
+      `@import './_ds_bundle.css';\n`
+  )
+
+  // _ds_bundle.js — the contract requires this file. There are no React
+  // exports to hang off it, so it is an honest empty namespace rather than a
+  // stub that would make the agent think something is importable.
+  // `components: []` is the load-bearing part: the app's self-check and the
+  // consuming agent read this list, and an empty one is the truthful answer.
+  const header = {
+    namespace: GLOBAL,
+    components: [],
+    sourceHashes: {},
+    inlinedExternals: [],
+    source: 'sfere-dashboard@0.0.1',
+    note: 'tokens-only — the Sfere component kit is Vue (Quasar) and is not importable from React'
+  }
+  writeFileSync(
+    join(OUT, '_ds_bundle.js'),
+    `/* @ds-bundle: ${JSON.stringify(header).replace(/\*\//g, '*\\/')} */\n` +
+      `(function(){\n` +
+      `  // Tokens-only design system. The Sfere component kit is 30 Vue SFCs on\n` +
+      `  // Quasar, which a React design agent cannot import — so this namespace is\n` +
+      `  // deliberately empty. Build with the tokens in styles.css instead.\n` +
+      `  window.${GLOBAL} = window.${GLOBAL} || {};\n` +
+      `})();\n`
+  )
+
+  // Foundation cards
+  let count = 0
+  for (const [name, render, what] of CARDS) {
+    const dir = join(OUT, 'components', GROUP, name)
+    mkdirSync(dir, { recursive: true })
+    writeFileSync(join(dir, `${name}.html`), render())
+    writeFileSync(join(dir, `${name}.prompt.md`), promptFor(name, what))
+    count++
+  }
+  log(`✓ components/${GROUP}: ${count} specimen cards`)
+
+  // README — conventions header (if present) + generated body.
+  const conventionsPath = join(ROOT, '.design-sync/conventions.md')
+  const hasConventions = existsSync(conventionsPath)
+  const body = readme(files.length)
+  writeFileSync(
+    join(OUT, 'README.md'),
+    hasConventions
+      ? `${readFileSync(conventionsPath, 'utf8').trimEnd()}\n\n---\n\n${body}`
+      : body
+  )
+  log(
+    hasConventions
+      ? '✓ README.md (with conventions header)'
+      : '! README.md — no .design-sync/conventions.md yet'
+  )
+
+  writeFileSync(
+    join(OUT, '.ds-build-meta.json'),
+    JSON.stringify(
+      {
+        namespace: GLOBAL,
+        source: 'sfere-dashboard@0.0.1',
+        shape: 'tokens-only',
+        provider: null,
+        componentCount: count,
+        skippedStoryIds: [],
+        runtimeFontPrefixes: []
+      },
+      null,
+      2
+    ) + '\n'
+  )
+  writeFileSync(
+    join(OUT, '_ds_needs_recompile'),
+    JSON.stringify({ by: 'design-sync-cli' })
+  )
+  log('✓ done')
+}
+
+await main()

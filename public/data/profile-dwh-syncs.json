@@ -29,7 +29,7 @@
     "name": "Consent flags to CRM",
     "dwhConnectionId": "dwh_postgres_crm",
     "dwhConnectionName": "CRM Postgres",
-    "targetTable": "public.fanfinity_consent",
+    "targetTable": "public.sfere_consent",
     "attributes": [
       "system_email_unsubscribed",
       "system_whatsapp_unsubscribed",

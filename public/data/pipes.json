@@ -102,7 +102,7 @@
     "isEnabled": true,
     "version": 5,
     "hasFunctionCode": true,
-    "destinationParams": { "url": "https://ops.fanfinity.io/hooks/merch" },
+    "destinationParams": { "url": "https://ops.sfere.io/hooks/merch" },
     "createdAt": "2026-05-19T10:30:12.660Z",
     "updatedAt": "2026-07-26T06:04:19.443Z",
     "deliveryCountLastHour": 214

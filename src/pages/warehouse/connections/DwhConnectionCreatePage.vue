@@ -2,7 +2,7 @@
   <q-page class="p-6">
     <PageHeader
       title="New warehouse connection"
-      subtitle="Pick an engine, then give Fanfinity a service user that can read your tables."
+      subtitle="Pick an engine, then give Sfere a service user that can read your tables."
     >
       <template #actions>
         <button
@@ -197,13 +197,13 @@
 
       <FormSection
         title="Audience snapshot location"
-        description="Optional. A writable schema for the snapshot tables Fanfinity creates when an audience is materialised in your warehouse."
+        description="Optional. A writable schema for the snapshot tables Sfere creates when an audience is materialised in your warehouse."
       >
         <FormField
           label="Schema"
           for="dwh-schema"
           :error="errors.schema"
-          hint="Leave empty to keep audience snapshots inside Fanfinity."
+          hint="Leave empty to keep audience snapshots inside Sfere."
         >
           <input
             id="dwh-schema"

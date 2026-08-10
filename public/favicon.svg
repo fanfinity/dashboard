@@ -1,4 +1,23 @@
-<svg width="64" height="64" viewBox="0 -6.78 41.13 41.13" fill="none" xmlns="http://www.w3.org/2000/svg">
-<path fill-rule="evenodd" clip-rule="evenodd" d="M29.0391 0L16.3266 6.92638L20.5682 13.7827L33.0702 6.04843L31.2864 16.3788L24.8058 20.6435L29.0096 27.3752L39.3488 20.7882L41.1326 7.19286L29.0391 0Z" fill="#9969FF"/>
-<path fill-rule="evenodd" clip-rule="evenodd" d="M12.0935 27.5708L24.806 20.6444L20.5644 13.7881L8.06233 21.5224L9.84613 11.192L16.3267 6.92727L12.123 0.195633L1.78379 6.78265L0 20.3779L12.0935 27.5708Z" fill="#7C4DFF"/>
+<!-- Sfere mark, cut for a favicon.
+     Same geometry as public/brand/sfere-mark.svg, with two changes forced by the
+     16px case: the three faintest nodes (r=1.4 at 38% opacity) are dropped
+     because they render as grey mush at tab size, and the viewBox is squared and
+     tightened around what remains. Everything left is the sphere plus the two
+     node columns that still read at 16px. -->
+<svg
+  xmlns="http://www.w3.org/2000/svg"
+  width="64"
+  height="64"
+  viewBox="6.66 0.95 36 36"
+  fill="none"
+  role="img"
+  aria-label="Sfere"
+>
+  <circle cx="13.45" cy="31.69" r="2" fill="#9969FF" fill-opacity=".45" />
+  <circle cx="9.91" cy="18.95" r="2" fill="#9969FF" fill-opacity=".45" />
+  <circle cx="13.45" cy="6.21" r="2" fill="#9969FF" fill-opacity=".45" />
+  <circle cx="20" cy="27.76" r="2.6" fill="#7C4DFF" />
+  <circle cx="17.56" cy="18.95" r="2.6" fill="#7C4DFF" />
+  <circle cx="20" cy="10.14" r="2.6" fill="#7C4DFF" />
+  <circle cx="34.66" cy="18.95" r="6.75" fill="#9969FF" />
 </svg>

@@ -2,9 +2,9 @@
 <g id="Group">
 <g id="Path">
 </g>
-<path id="Path_2" fill-rule="evenodd" clip-rule="evenodd" d="M5.55867 12.9107L7.484 10.5593C7.75067 10.2333 8.24867 10.2333 8.51533 10.5593L10.4407 12.9107C10.798 13.346 10.488 14 9.92533 14H6.07467C5.512 14 5.202 13.346 5.55867 12.9107V12.9107Z" stroke="var(--stroke-0, #3800C1)" stroke-linecap="round" stroke-linejoin="round"/>
-<path id="Path_3" d="M5.326 8.65933C5.936 7.84267 6.902 7.306 8 7.306C9.098 7.306 10.064 7.842 10.674 8.65933" stroke="var(--stroke-0, #3800C1)" stroke-linecap="round" stroke-linejoin="round"/>
-<path id="Path_4" d="M3.44333 6.77667C4.54133 5.48667 6.17333 4.66667 8 4.66667C9.82667 4.66667 11.4587 5.48667 12.5567 6.77667" stroke="var(--stroke-0, #3800C1)" stroke-linecap="round" stroke-linejoin="round"/>
-<path id="Path_5" d="M1.55733 4.89067C3.142 3.12067 5.43733 2 8 2C10.5627 2 12.858 3.12067 14.4427 4.89067" stroke="var(--stroke-0, #3800C1)" stroke-linecap="round" stroke-linejoin="round"/>
+<path id="Path_2" fill-rule="evenodd" clip-rule="evenodd" d="M5.55867 12.9107L7.484 10.5593C7.75067 10.2333 8.24867 10.2333 8.51533 10.5593L10.4407 12.9107C10.798 13.346 10.488 14 9.92533 14H6.07467C5.512 14 5.202 13.346 5.55867 12.9107V12.9107Z" stroke="var(--stroke-0, #854DFF)" stroke-linecap="round" stroke-linejoin="round"/>
+<path id="Path_3" d="M5.326 8.65933C5.936 7.84267 6.902 7.306 8 7.306C9.098 7.306 10.064 7.842 10.674 8.65933" stroke="var(--stroke-0, #854DFF)" stroke-linecap="round" stroke-linejoin="round"/>
+<path id="Path_4" d="M3.44333 6.77667C4.54133 5.48667 6.17333 4.66667 8 4.66667C9.82667 4.66667 11.4587 5.48667 12.5567 6.77667" stroke="var(--stroke-0, #854DFF)" stroke-linecap="round" stroke-linejoin="round"/>
+<path id="Path_5" d="M1.55733 4.89067C3.142 3.12067 5.43733 2 8 2C10.5627 2 12.858 3.12067 14.4427 4.89067" stroke="var(--stroke-0, #854DFF)" stroke-linecap="round" stroke-linejoin="round"/>
 </g>
 </svg>
