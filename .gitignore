@@ -37,3 +37,9 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 .pnpm-store
+# design-sync build output and staged converter scripts (see docs/sfere-design-system.md)
+ds-bundle/
+.ds-sync/
+.design-sync/.cache/
+.design-sync/learnings/
+.design-sync/node_modules
