@@ -112,6 +112,32 @@ Rules for touching it:
 
 Read `docs/sfere-design-system.md` before adding a component or changing a token.
 
+### Published to claude.ai/design (tokens only)
+
+The token layer is published as a company-wide design system at
+`https://claude.ai/design/p/51046f6e-0f11-47c7-9d1e-66a183ec2ac7`. **Only the tokens and
+fonts cross over — `src/components/sfere/` does not.** Claude Design's agent builds in React;
+the kit is Vue, so the uploaded `_ds_bundle.js` is a deliberately empty namespace. Anyone
+designing there composes their own components from the Sfere tokens.
+
+Rebuild and re-upload with:
+
+```bash
+node tools/build-design-sync-bundle.mjs        # emits ds-bundle/ (gitignored)
+node .ds-sync/package-validate.mjs ./ds-bundle # the real gate — must exit 0
+```
+
+The builder is hand-written (in `tools/`, since `scripts/**` is frozen) because the bundled
+`/design-sync` converter only supports React design systems. **Never ship `src/css/sfere.css`
+raw** — it is Tailwind v4 source (`@theme`, `@utility`, bare `@fontsource` imports) and a
+browser silently ignores all three, producing designs with no tokens and no fonts.
+
+Sync inputs live in `.design-sync/` (committed): `config.json`, `NOTES.md` (read it before
+re-running) and `conventions.md`. That last one is prepended to the uploaded README and
+inlined into the design agent's prompt; it enumerates 54 token names, so **re-verify it
+against the built CSS whenever a token is renamed** — a name that no longer resolves makes
+every design the agent builds silently unstyled.
+
 ## Mock data supersedes the issue acceptance criteria
 
 Every backlog issue says _"fetch through the generated orval client in `src/api/`"_. **That is

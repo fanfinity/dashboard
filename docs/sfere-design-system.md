@@ -34,13 +34,13 @@ rewritten.
 
 ## Where things live
 
-| Path                         | What                                                         |
-| ---------------------------- | ------------------------------------------------------------ |
-| `src/css/sfere.css`          | The token layer: `@theme` tokens + six `@utility` treatments |
-| `src/components/sfere/`      | 30 components. The shipped kit                               |
-| `src/components/sfere-docs/` | Doc-page scaffolding. **Not** part of the kit                |
-| `src/pages/design-system/`   | The showcase page itself                                     |
-| `public/brand/`              | Logo lockups and the mark, as real SVG files                 |
+| Path                         | What                                                           |
+| ---------------------------- | -------------------------------------------------------------- |
+| `src/css/sfere.css`          | The token layer: `@theme` tokens + seven `@utility` treatments |
+| `src/components/sfere/`      | 30 components. The shipped kit                                 |
+| `src/components/sfere-docs/` | Doc-page scaffolding. **Not** part of the kit                  |
+| `src/pages/design-system/`   | The showcase page itself                                       |
+| `public/brand/`              | Logo lockups and the mark, as real SVG files                   |
 
 `src/components/ui/` — the primitives every current screen is built from — takes
 its colour and type from the same tokens, so it renders on-brand without being
@@ -65,11 +65,13 @@ All deliberate, all foundation-phase changes rather than story work (see
 - **`quasar.config.js`** — `appId` only.
 - **`CLAUDE.md`** — the design-system section, which described the token layer
   as unapplied.
-- **`.gitignore`** — one entry, `todos/`. The rebrand's tracker and the
-  infrastructure handover note are working documents, not shared history; they
-  live there and stay out of git. `tools/brand-rename.mjs` skips the directory
-  for the same reason, so `--verify` does not report the old brand names those
-  documents necessarily contain.
+- **`.gitignore`** — two changes. First, one entry, `todos/`: the rebrand's
+  tracker and the infrastructure handover note are working documents, not shared
+  history; they live there and stay out of git. `tools/brand-rename.mjs` skips
+  the directory for the same reason, so `--verify` does not report the old brand
+  names those documents necessarily contain. Second, the build output and staged
+  scripts of the claude.ai/design sync (`ds-bundle/`, `.ds-sync/`,
+  `.design-sync/.cache/`) — see "Publishing to claude.ai/design" below.
 
 `index.html` was **not** edited: its `<title>` comes from `productName`, and the
 only brand strings left in it are live CSP hosts.
@@ -142,9 +144,12 @@ four — which matters for the next section.
   Cards carry no shadow at rest — elevation is for things that float.
 - Two curves: `ease-sfere-ui` for feedback, `ease-sfere` for anything that moves
   or resizes. Durations 150 / 200 / 500 / 700ms.
-- Six surface treatments as `@utility`: `sfere-glow-top`, `sfere-dot-grid`,
-  `sfere-gradient-border`, `sfere-fade-b`, `sfere-fade-x`, `sfere-flow-line`.
-  All decorative; all disabled under `prefers-reduced-motion`.
+- Seven surface treatments as `@utility`: `sfere-glow-top`, `sfere-dot-grid`,
+  `sfere-gradient-border`, `sfere-fade-b`, `sfere-fade-x`, `sfere-flow-line` and
+  its vertical cut `sfere-flow-line-y`. All decorative; all disabled under
+  `prefers-reduced-motion`. Note that the four `animate-sfere-*` classes are
+  generated from the `--animate-sfere-*` theme vars, not from `@utility` — the
+  reduced-motion guard targets the class names, so both must ship together.
 
 ---
 
@@ -301,3 +306,41 @@ pnpm lint:check   # oxfmt --check then oxlint
 Note for worktrees: `.env` is gitignored, so `git worktree add` does not carry it
 across and the app will fail to boot with `auth/invalid-api-key`. Use
 `pnpm worktree`, which copies it in.
+
+---
+
+## Publishing to claude.ai/design
+
+The token layer is published as an organisation-wide design system at
+<https://claude.ai/design/p/51046f6e-0f11-47c7-9d1e-66a183ec2ac7>, so anyone at
+the company prompting Claude Design gets the Sfere palette and typefaces by
+default.
+
+**Only the tokens cross over — the component kit does not.** Claude Design's
+agent builds in React; `src/components/sfere/` is 30 Vue SFCs and cannot be
+imported there. The uploaded `_ds_bundle.js` is an empty namespace and says so.
+Anyone using it composes their own components from the tokens.
+
+```bash
+node tools/build-design-sync-bundle.mjs      # emit ds-bundle/
+node .ds-sync/package-validate.mjs ./ds-bundle
+```
+
+The builder lives in `tools/` because `scripts/**` is frozen, and it exists
+because the bundled `/design-sync` converter only handles React design systems.
+It emits the same output contract by hand: `styles.css` and its `@import`
+closure (tokens, fonts, the seven `.sfere-*` treatments) plus four foundation
+specimen cards.
+
+The one trap it exists to avoid: `src/css/sfere.css` is Tailwind v4 _source_
+(`@theme`, `@utility`, bare `@fontsource` imports). Shipping it raw would render
+every design with no tokens and no fonts, silently — so tokens are parsed out of
+the `@theme` block (a compile would tree-shake unreferenced ones) and the
+utilities come from a real Tailwind compile (their nesting and masks must not be
+hand-copied).
+
+Sync inputs live in `.design-sync/`: `config.json` (the project pin),
+`conventions.md` (prepended to the uploaded README and inlined into the design
+agent's prompt — it enumerates 54 token names, so **re-check it against the
+built CSS whenever a token is renamed**) and `NOTES.md` (the full gotcha list and
+re-sync risks). Read `NOTES.md` before re-running.
