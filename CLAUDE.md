@@ -21,7 +21,12 @@ single quotes, printWidth 80, `arrowParens: avoid`, no trailing commas. oxlint r
 There is **no unit-test runner**. The behavioural gate is `pnpm smoke:dist`, which builds,
 serves `dist/spa`, signs in for real, walks every route in the screen manifest, and fails on any
 console error, uncaught error, rendered `ErrorState`, unresolved route, or missing `<h1>`.
-It needs `SMOKE_EMAIL`/`SMOKE_PASSWORD` in `.env` (see `.env.example`).
+It needs `SMOKE_EMAIL`/`SMOKE_PASSWORD` in `.env` (see `.env.example`) — but **`smoke.mjs` never
+loads `.env` itself**, it only reads `process.env`, so bare `pnpm smoke:dist` exits 2 unless those
+two are already exported in the shell. The form that works from a clean shell is
+`pnpm build && node --env-file=.env scripts/smoke.mjs --serve`. Fixing the script itself would
+mean editing frozen files (`package.json`, `scripts/**`), so the working invocation lives in
+`.vscode/tasks.json` instead.
 
 `pnpm build` is the other gate worth leaning on: it hard-fails on unresolved `@/` imports,
 unimported components and malformed templates.
@@ -29,6 +34,12 @@ unimported components and malformed templates.
 **Never run `pnpm dev` (or `quasar dev`) yourself.** The user always runs the dev server
 themselves in watch mode, in a separate terminal. It's already running with HMR — edits to
 source files apply automatically, so there's no need to start, stop, or restart it.
+
+`.vscode/tasks.json` is committed and wraps each of the commands above as a VS Code task
+(command palette → "Tasks: Run Task"). Two things about it: `options.shell` forces a **login**
+zsh (`zsh -l -c`) because VS Code otherwise runs a non-login shell that never sources
+`.zprofile`, so `nvm`/`pnpm` don't resolve; and its "Dev server" task exists for the user, not
+for you — the rule above still holds.
 
 ## Stack
 

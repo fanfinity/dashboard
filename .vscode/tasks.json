@@ -1,0 +1,67 @@
+{
+  // Run these from the command palette: "Tasks: Run Task".
+  // Login shell so nvm/pnpm resolve — VS Code tasks otherwise run a
+  // non-login zsh that never sources .zprofile.
+  "version": "2.0.0",
+  "options": {
+    "shell": { "executable": "/bin/zsh", "args": ["-l", "-c"] }
+  },
+  "tasks": [
+    {
+      "label": "Dev server",
+      "detail": "pnpm dev — quasar dev with HMR and the /japi proxy",
+      "type": "shell",
+      "command": "pnpm dev",
+      "isBackground": true,
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated",
+        "group": "dashboard"
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "Build",
+      "detail": "pnpm build — static SPA into dist/spa",
+      "type": "shell",
+      "command": "pnpm build",
+      "group": "build",
+      "presentation": { "reveal": "always", "panel": "dedicated" },
+      "problemMatcher": []
+    },
+    {
+      "label": "Lint (fix)",
+      "detail": "pnpm lint — oxfmt then oxlint --fix",
+      "type": "shell",
+      "command": "pnpm lint",
+      "presentation": { "reveal": "always", "panel": "dedicated" },
+      "problemMatcher": []
+    },
+    {
+      "label": "Lint (check)",
+      "detail": "pnpm lint:check — CI-style, no writes",
+      "type": "shell",
+      "command": "pnpm lint:check",
+      "presentation": { "reveal": "always", "panel": "dedicated" },
+      "problemMatcher": []
+    },
+    {
+      "label": "Smoke (build + walk every route)",
+      "detail": "Builds, serves dist/spa, signs in, visits every screen. Needs SMOKE_EMAIL / SMOKE_PASSWORD in .env",
+      "type": "shell",
+      "command": "pnpm build && node --env-file=.env scripts/smoke.mjs --serve",
+      "group": "test",
+      "presentation": { "reveal": "always", "panel": "dedicated" },
+      "problemMatcher": []
+    },
+    {
+      "label": "Serve dist/spa",
+      "detail": "pnpm serve:dist — serve the last build without rebuilding",
+      "type": "shell",
+      "command": "pnpm serve:dist",
+      "isBackground": true,
+      "presentation": { "reveal": "always", "panel": "dedicated" },
+      "problemMatcher": []
+    }
+  ]
+}
