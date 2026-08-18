@@ -183,6 +183,10 @@
         @create="createToken"
       />
 
+      <!-- Must sit above the danger-zone `v-else`, which is the catch-all
+           branch and would otherwise swallow this tab. -->
+      <SettingsFeaturePanel v-else-if="tab === 'features'" />
+
       <SettingsDangerZone
         v-else
         :workspace-name="workspace.name"
@@ -222,6 +226,8 @@ import ConfirmDialog from '@/components/ui/ConfirmDialog.vue'
 import SettingsMembersPanel from '@/components/settings/SettingsMembersPanel.vue'
 import SettingsApiTokensPanel from '@/components/settings/SettingsApiTokensPanel.vue'
 import SettingsDangerZone from '@/components/settings/SettingsDangerZone.vue'
+import SettingsFeaturePanel from '@/components/settings/SettingsFeaturePanel.vue'
+import { useFeatures } from '@/composables/useFeatures'
 import { formatDate, formatDays } from '@/composables/useSettingsFormat'
 import {
   RETENTION_MAX_DAYS,
@@ -324,8 +330,18 @@ const dirty = computed(() => {
   )
 })
 
+// Only the count is needed here — the panel itself reads the registry.
+const { activeCount } = useFeatures()
+
 const tabs = computed(() => [
   { key: 'general', label: 'General' },
+  // Counted so the tab reads "6 of 16 on" at a glance — this is the panel you
+  // come here to check, and the number is the answer to the question.
+  {
+    key: 'features',
+    label: 'Feature activation',
+    count: activeCount.value
+  },
   {
     key: 'members',
     label: 'Members',

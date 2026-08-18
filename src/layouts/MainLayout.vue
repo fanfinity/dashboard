@@ -49,9 +49,38 @@
             </div>
             <q-separator v-else-if="group.caption" class="my-2 bg-line!" />
 
+            <!-- Switched-off module: visible, inert. No `clickable` and no
+                 @click, so there is no ripple and no cursor promising a
+                 destination — the Soon pill is the whole affordance. Children
+                 are not rendered: there is nothing to expand into yet. -->
+            <q-item
+              v-if="isSoon(group)"
+              :class="mini ? 'justify-center px-0!' : 'px-3!'"
+              class="min-h-9! rounded-lg! py-2! mb-0.5 flex cursor-not-allowed items-center gap-2 text-subtle"
+            >
+              <img
+                :src="group.icon"
+                :alt="group.label"
+                class="size-4 shrink-0 opacity-50"
+              />
+              <span v-if="!mini" class="flex-1 text-sm tracking-[-0.35px]">{{
+                group.label
+              }}</span>
+              <span v-if="!mini" :class="[BADGE_BASE, BADGES.soon.class]">{{
+                BADGES.soon.label
+              }}</span>
+              <q-tooltip
+                v-if="mini"
+                anchor="center right"
+                self="center left"
+                class="bg-ink! text-xs"
+                >{{ railLabel(group) }}</q-tooltip
+              >
+            </q-item>
+
             <!-- Leaf entry: navigates directly -->
             <q-item
-              v-if="!group.children"
+              v-else-if="!group.children"
               clickable
               :class="[
                 itemClass(group),
@@ -98,9 +127,9 @@
                   group.label
                 }}</span>
                 <span
-                  v-if="!mini && group.badge"
-                  :class="[BADGE_BASE, BADGES[group.badge].class]"
-                  >{{ BADGES[group.badge].label }}</span
+                  v-if="!mini && navBadge(group)"
+                  :class="[BADGE_BASE, BADGES[navBadge(group)].class]"
+                  >{{ BADGES[navBadge(group)].label }}</span
                 >
                 <img
                   v-if="!mini"
@@ -134,10 +163,10 @@
                     child.label
                   }}</span>
                   <span
-                    v-if="child.badge"
-                    :class="[BADGE_BASE, BADGES[child.badge].class]"
+                    v-if="navBadge(child)"
+                    :class="[BADGE_BASE, BADGES[navBadge(child)].class]"
                     class="ml-1.5"
-                    >{{ BADGES[child.badge].label }}</span
+                    >{{ BADGES[navBadge(child)].label }}</span
                   >
                 </q-item>
               </div>
@@ -148,29 +177,60 @@
         <!-- Bottom menu -->
         <div class="shrink-0 border-t border-line p-3">
           <q-list>
-            <q-item
-              v-for="item in bottomMenu"
-              :key="item.label"
-              clickable
-              :class="[
-                itemClass(item),
-                mini ? 'justify-center px-0!' : 'px-3!'
-              ]"
-              class="min-h-9! rounded-lg! py-2! mb-0.5 flex items-center gap-2"
-              @click="select(item)"
-            >
-              <img :src="item.icon" :alt="item.label" class="size-4 shrink-0" />
-              <span v-if="!mini" class="flex-1 text-sm tracking-[-0.35px]">{{
-                item.label
-              }}</span>
-              <q-tooltip
-                v-if="mini"
-                anchor="center right"
-                self="center left"
-                class="bg-ink! text-xs"
-                >{{ item.label }}</q-tooltip
+            <template v-for="item in bottomMenu" :key="item.label">
+              <!-- Same inert treatment as a switched-off group above. -->
+              <q-item
+                v-if="isSoon(item)"
+                :class="mini ? 'justify-center px-0!' : 'px-3!'"
+                class="min-h-9! rounded-lg! py-2! mb-0.5 flex cursor-not-allowed items-center gap-2 text-subtle"
               >
-            </q-item>
+                <img
+                  :src="item.icon"
+                  :alt="item.label"
+                  class="size-4 shrink-0 opacity-50"
+                />
+                <span v-if="!mini" class="flex-1 text-sm tracking-[-0.35px]">{{
+                  item.label
+                }}</span>
+                <span v-if="!mini" :class="[BADGE_BASE, BADGES.soon.class]">{{
+                  BADGES.soon.label
+                }}</span>
+                <q-tooltip
+                  v-if="mini"
+                  anchor="center right"
+                  self="center left"
+                  class="bg-ink! text-xs"
+                  >{{ railLabel(item) }}</q-tooltip
+                >
+              </q-item>
+
+              <q-item
+                v-else
+                clickable
+                :class="[
+                  itemClass(item),
+                  mini ? 'justify-center px-0!' : 'px-3!'
+                ]"
+                class="min-h-9! rounded-lg! py-2! mb-0.5 flex items-center gap-2"
+                @click="select(item)"
+              >
+                <img
+                  :src="item.icon"
+                  :alt="item.label"
+                  class="size-4 shrink-0"
+                />
+                <span v-if="!mini" class="flex-1 text-sm tracking-[-0.35px]">{{
+                  item.label
+                }}</span>
+                <q-tooltip
+                  v-if="mini"
+                  anchor="center right"
+                  self="center left"
+                  class="bg-ink! text-xs"
+                  >{{ item.label }}</q-tooltip
+                >
+              </q-item>
+            </template>
           </q-list>
         </div>
       </div>
@@ -267,7 +327,18 @@
 
     <!-- Page content -->
     <q-page-container>
-      <router-view />
+      <!-- The gate is here rather than in a router beforeEach for two reasons: a
+           guard cannot swap a component, only redirect, and a redirect would
+           throw away the URL you asked for. Standing ComingSoonPanel in front of
+           <router-view> keeps the address bar honest — switch the module on and
+           the same URL renders the real screen — while the v-else means the page
+           component never mounts, so nothing it fetches on mount ever runs. -->
+      <ComingSoonPanel
+        v-if="lockedFeature"
+        :feature="lockedFeature"
+        :title="route.meta.title || 'Coming soon'"
+      />
+      <router-view v-else />
     </q-page-container>
   </q-layout>
 </template>
@@ -279,6 +350,8 @@ import { useQuasar } from 'quasar'
 import { useAuth } from '@/composables/useAuth'
 import { useMe } from '@/composables/useMe'
 import { useEntitlements } from '@/composables/useEntitlements'
+import { useFeatures } from '@/composables/useFeatures'
+import ComingSoonPanel from '@/components/ComingSoonPanel.vue'
 
 import avatar from '@/assets/dashboard/avatar.jpg'
 import icCollapse from '@/assets/dashboard/ic-collapse.svg'
@@ -323,16 +396,29 @@ const BADGES = {
     class: 'border-success-line bg-success-bg text-success'
   },
   demo: { label: 'Demo', class: 'border-line2 bg-fill text-subtle' },
-  preview: { label: 'Preview', class: 'border-brand/30 bg-brand/5 text-brand' }
+  preview: { label: 'Preview', class: 'border-brand/30 bg-brand/5 text-brand' },
+  // `soon` is not authored on a nav entry like the three above — it is derived
+  // from src/config/features.js, so one switch changes the pill, the row's
+  // interactivity and what the route renders together and they cannot disagree.
+  soon: { label: 'Soon', class: 'border-line2 bg-fill text-subtle' }
 }
 
 const BADGE_BASE =
   'inline-flex shrink-0 items-center rounded-md border px-1.5 py-px text-[10px]! font-medium uppercase tracking-wide'
 
+// Which pill a row wears. `soon` outranks an authored badge because it answers
+// the more urgent question — can I click this? — and Engage would otherwise show
+// `preview` while being inert.
+function navBadge(item) {
+  if (isSoon(item)) return 'soon'
+  return item.badge || null
+}
+
 // A rail is icons and tooltips only, so the pill has nowhere to render — the
 // tooltip carries the same word instead rather than dropping the honesty cue.
 function railLabel(item) {
-  return item.badge ? `${item.label} — ${BADGES[item.badge].label}` : item.label
+  const badge = navBadge(item)
+  return badge ? `${item.label} — ${BADGES[badge].label}` : item.label
 }
 
 // Screens are registered in src/router/screens.js; this list decides what is
@@ -356,26 +442,42 @@ function railLabel(item) {
 // identity graph, Segments, Activation, Communications, Integrations, Fan
 // overview) were deleted, so FANS is Profiles alone and every row below points at
 // a product screen.
+//
+// `key` is the feature-activation key from src/config/features.js. A group whose
+// feature is off renders as an inert row with a Soon pill instead of navigating,
+// and its routes render ComingSoonPanel — see isSoon()/lockedFeature below. Every
+// group here keeps its children while it is switched off, so activating a module
+// is one flag rather than a nav rewrite.
 const navGroups = [
   { key: 'dashboard', label: 'Dashboard', icon: icOverview, to: '/' },
+  // Live events sits above COLLECT, uncaptioned, next to Dashboard: it is
+  // watching the stream, not configuring it, so it belongs with the things you
+  // look at rather than the things you set up. Carrying no `caption` is what
+  // keeps it outside the section below.
+  {
+    key: 'live-events',
+    label: 'Live events',
+    icon: icBell,
+    to: '/live-events'
+  },
+  // Sources leads COLLECT, so the caption lives here. It is one click, not a
+  // drawer: its three former children were not siblings — Event streams IS
+  // Sources, and Connectors is the catalog you browse to add one (now a tab on
+  // that page).
   {
     key: 'sources',
     caption: 'COLLECT',
     label: 'Sources',
     icon: icSources,
-    children: [
-      { label: 'Event streams', to: '/sources' },
-      { label: 'Live events', to: '/live-events' },
-      { label: 'Connectors', to: '/connectors' }
-    ]
+    to: '/sources'
   },
-  { key: 'pipes', label: 'Pipes', icon: icIntegrations, to: '/pipes' },
   {
     key: 'destinations',
     label: 'Destinations',
     icon: icActivation,
     to: '/destinations'
   },
+  { key: 'pipes', label: 'Pipes', icon: icIntegrations, to: '/pipes' },
   {
     key: 'warehouse',
     label: 'Warehouse',
@@ -464,20 +566,51 @@ const navGroups = [
   }
 ]
 
+// Same `key` contract as navGroups. Settings carries `locked: true` in
+// features.js because it hosts the activation panel — switching it off would take
+// every other switch with it.  Logout has no key, so it is never gated.
 const bottomMenu = [
-  { label: 'Authorizations', icon: icSetup, to: '/authorizations' },
-  { label: 'Secrets', icon: icSettings, to: '/secrets' },
-  { label: 'Settings', icon: icSettings, to: '/settings' },
+  {
+    key: 'authorizations',
+    label: 'Authorizations',
+    icon: icSetup,
+    to: '/authorizations'
+  },
+  { key: 'secrets', label: 'Secrets', icon: icSettings, to: '/secrets' },
+  { key: 'settings', label: 'Settings', icon: icSettings, to: '/settings' },
   { label: 'Logout', icon: icLogout, action: 'logout' }
 ]
 
 const { isEnabled, load: loadEntitlements } = useEntitlements()
+// Named for what it checks: this file's own isActive() is the route-matching
+// helper further down, and the two are asked entirely different questions.
+const { isActive: isFeatureActive } = useFeatures()
+
+// A module that is not switched on yet. Rendered rather than hidden — the sidebar
+// is the product roadmap, and a row you can see but not click says "not yet",
+// where a missing row says "does not exist".
+function isSoon(item) {
+  return Boolean(item.key) && !isFeatureActive(item.key)
+}
+
+// The feature standing between this route and its page, or null when the screen
+// is switched on. MainLayout swaps ComingSoonPanel in for <router-view> on this,
+// which is why the real page component never mounts and never fetches.
+const lockedFeature = computed(() => {
+  const group = route.meta.group
+  if (!group) return null
+  return isFeatureActive(group) ? null : group
+})
 
 // Without this the gate never reads public/data/entitlements.json and every
 // entitlement silently falls back to its optimistic default.
 loadEntitlements()
 
 // Entitlement-gated groups disappear entirely rather than rendering dead links.
+// Note this is the opposite of feature activation, which renders a Soon row: an
+// entitlement you do not hold is not yours to see, whereas a module that is not
+// built yet is worth advertising. Engage is subject to both, and the entitlement
+// wins because it removes the row before isSoon() is ever asked.
 const visibleGroups = computed(() =>
   navGroups.filter(g => !g.entitlement || isEnabled(g.entitlement))
 )

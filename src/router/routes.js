@@ -1,4 +1,5 @@
 import { allScreens } from './screens.js'
+import { FEATURE_KEYS } from '@/config/features'
 
 // Do not add routes here — add them to src/router/screens.js.
 //
@@ -21,6 +22,16 @@ const children = allScreens.map(screen => {
       `screens.js references ${screen.component}, but src/pages/${screen.component} does not exist`
     )
   }
+  // meta.group is what MainLayout consults to decide between the real page and
+  // ComingSoonPanel, so a group with no entry in the activation registry would
+  // switch the screen off silently and for good — no toggle could reach it. Same
+  // reasoning as the missing-file throw above: fail at module load, loudly.
+  if (!FEATURE_KEYS.includes(screen.group)) {
+    throw new Error(
+      `screens.js gives ${screen.path} the group '${screen.group}', which has no entry in src/config/features.js — add one, or point the screen at an existing feature key`
+    )
+  }
+
   return {
     // Children of the '/' layout route take relative paths.
     path: screen.path === '/' ? '' : screen.path.slice(1),
@@ -58,6 +69,15 @@ const routes = [
     component: () => import('@/layouts/MainLayout.vue'),
     meta: { requiresAuth: true },
     children
+  },
+
+  // The connector catalog stopped being a screen of its own and became a tab on
+  // /sources — browsing connector *types* is how you add a source, so it belongs
+  // in that page rather than beside it in the sidebar. This keeps the old URL
+  // working instead of 404-ing anyone who bookmarked it.
+  {
+    path: '/connectors',
+    redirect: '/sources?tab=connectors'
   },
 
   // Always leave this as last one,

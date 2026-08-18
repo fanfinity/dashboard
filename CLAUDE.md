@@ -91,11 +91,57 @@ preserved) and **must not be hand-edited**. A manifest entry whose page file is 
 at module load rather than 404-ing silently.
 
 `screens.js` is deliberately import-free — no Vue, no `@/` aliases — so plain Node can read it.
-`scripts/smoke.mjs` walks every route from it.
+`scripts/smoke.mjs` walks every route from it — every route in `screens`, that is, not in
+`legacyScreens`. That split is load-bearing for `/live-events`, which reads the events backend
+through the `/japi` dev proxy that a production build does not have.
+
+A screen's **`group` field does three jobs**, so it has to be accurate: it picks the sidebar
+section, and it is the feature-activation key that decides whether the route renders its real
+page or `ComingSoonPanel`. `routes.js` throws at module load if a `group` has no entry in
+`src/config/features.js`.
 
 The product backlog (54 screens, GitHub issues #16–#69) is scaffolded: every screen already
 exists as a stub page at its final path. Implementing one means **rewriting that file in place**,
 never creating a file and registering a route.
+
+One place the nav deliberately departs from one-row-per-route: **Connectors is a tab on
+`/sources`**, not a screen. Browsing connector _types_ is a step in adding a source, so it lives
+in `src/components/sources/ConnectorCatalog.vue` behind `/sources?tab=connectors`, and the old
+`/connectors` URL redirects there from `routes.js`. Tab state is a query rather than a child route
+because both halves are the same screen with the same `<h1>` — a child route would put Connectors
+back in the sidebar, which is exactly what this undid.
+
+## Feature activation — most of the sidebar is switched off
+
+Only the CDP core is live: **Dashboard, Live events, Sources, Destinations, Pipes** and
+**Settings**. The other ten modules (Warehouse, Monitoring, Profiles, Audiences, Campaigns,
+Engage, Reporting, Demo lab, Secrets, Authorizations) are built but dark, and get switched on one
+at a time as they become real.
+
+`src/config/features.js` is the registry — pure data, one entry per module, `enabled` being the
+shipped default. `src/composables/useFeatures.js` layers per-browser overrides from
+`localStorage` (`sfere_feature_activation`) on top, and **Settings → Feature activation** is the
+UI for those overrides.
+
+- **To ship a module to everyone**: flip `enabled` in `features.js`. That is the permanent change.
+- **To try one out yourself**: use the toggle. It writes only the keys you touched, so a later
+  default flip still reaches you.
+- `settings` carries `locked: true` because it hosts the panel — switching it off would take every
+  other switch with it. `useFeatures().setActive()` refuses locked keys, not just the UI.
+
+**This is not `useEntitlements`, and the two must not be merged.** An entitlement asks "did this
+account buy the module?" and defaults optimistically **on**; activation asks "is it built yet?"
+and defaults **off**. They also fail differently in the nav: an entitlement you lack removes the
+row, while an inactive module renders an inert row with a `Soon` pill, because a missing row says
+"does not exist" and a dimmed one says "not yet". Engage is subject to both.
+
+The gate is in `MainLayout.vue`'s `q-page-container`, which renders `ComingSoonPanel` **instead
+of** `<router-view>` when `route.meta.group` is inactive. Deliberately not a `beforeEach` guard: a
+guard can only redirect, which throws away the URL you asked for. This way the address survives,
+the real page component never mounts (so nothing it fetches on mount runs), and
+`ComingSoonPanel` renders the screen's own title as a real `<h1>` — which is what lets
+`pnpm smoke:dist` keep walking **all 54 routes** instead of being narrowed to the active few.
+Any new gating must preserve that; a redirect would silently drop the gate to ~6 routes.
 
 ## UI primitives
 
@@ -195,8 +241,9 @@ changing one changes every screen at once, so they are worth a moment's thought 
 commit message rather than a drive-by edit mid-task:
 
 `src/router/**` (the manifest generates all 54 routes) · `src/layouts/MainLayout.vue` (the nav
-is the IA) · `src/components/ui/**` (the kit) ·
-`src/composables/{useMockResource,useEntitlements,useDiagram,useTemplates}.js` (the
+is the IA, and the feature gate lives in its `q-page-container`) · `src/components/ui/**` (the
+kit) · `src/config/features.js` + `src/composables/useFeatures.js` (which modules are switched
+on at all) · `src/composables/{useMockResource,useEntitlements,useDiagram,useTemplates}.js` (the
 `{ data, loading, error, load() }` contract every page is written against) · `quasar.config.js`
 and `index.html` (build config and the CSP).
 

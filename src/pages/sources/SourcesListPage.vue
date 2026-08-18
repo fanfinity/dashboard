@@ -4,7 +4,10 @@
       title="Sources"
       subtitle="Every event stream and cloud app feeding the fan graph."
     >
-      <template #actions>
+      <!-- Stream-only actions. On the Connectors tab a "New source" button would
+           be pointing at the wrong flow — you pick a connector from the catalog
+           itself — and its search box would compete with the catalog's own. -->
+      <template v-if="view === 'streams'" #actions>
         <ToolbarSearch v-model="query" placeholder="Search sources..." />
         <button
           class="flex h-9 items-center gap-1.5 rounded-lg border border-line2 bg-white px-3 text-sm text-ink shadow-sm hover:bg-fill"
@@ -21,85 +24,96 @@
       </template>
     </PageHeader>
 
-    <TabNav v-model="tab" :tabs="tabs" />
+    <!-- Underline tabs switch the page's primary content; the pill row below
+         filters one list. That is exactly the split TabNav documents, and the two
+         shapes are what stop a filter reading like a navigation change. -->
+    <TabNav v-model="view" :tabs="viewTabs" />
 
-    <DataTable
-      :columns="columns"
-      :rows="visible"
-      :loading="loading"
-      :error="error"
-      row-key="id"
-      clickable-rows
-      @retry="load"
-      @row-click="open"
-    >
-      <template #cell-name="{ row }">
-        <div class="flex items-center gap-2">
-          <p class="font-medium text-ink">{{ row.name }}</p>
+    <ConnectorCatalog v-if="view === 'connectors'" />
+
+    <template v-else>
+      <div class="mb-4">
+        <TabNav v-model="tab" :tabs="tabs" variant="pill" />
+      </div>
+
+      <DataTable
+        :columns="columns"
+        :rows="visible"
+        :loading="loading"
+        :error="error"
+        row-key="id"
+        clickable-rows
+        @retry="load"
+        @row-click="open"
+      >
+        <template #cell-name="{ row }">
+          <div class="flex items-center gap-2">
+            <p class="font-medium text-ink">{{ row.name }}</p>
+            <StatusBadge
+              v-if="hasUpgrade(row)"
+              tone="warn"
+              :label="`Upgrade to ${row.latestTemplateVersion}`"
+            />
+          </div>
+          <p class="text-xs text-subtle">{{ row.slug }}</p>
+        </template>
+
+        <template #cell-sourceType="{ value }">
+          <StatusBadge tone="neutral" :label="sourceTypeLabel(value)" />
+        </template>
+
+        <template #cell-isEnabled="{ value }">
           <StatusBadge
-            v-if="hasUpgrade(row)"
-            tone="warn"
-            :label="`Upgrade to ${row.latestTemplateVersion}`"
+            :tone="value ? 'success' : 'neutral'"
+            :label="value ? 'Enabled' : 'Paused'"
           />
-        </div>
-        <p class="text-xs text-subtle">{{ row.slug }}</p>
-      </template>
+        </template>
 
-      <template #cell-sourceType="{ value }">
-        <StatusBadge tone="neutral" :label="sourceTypeLabel(value)" />
-      </template>
+        <template #cell-eventCountLastHour="{ value }">
+          {{ formatCount(value) }}
+        </template>
 
-      <template #cell-isEnabled="{ value }">
-        <StatusBadge
-          :tone="value ? 'success' : 'neutral'"
-          :label="value ? 'Enabled' : 'Paused'"
-        />
-      </template>
-
-      <template #cell-eventCountLastHour="{ value }">
-        {{ formatCount(value) }}
-      </template>
-
-      <template #cell-actions="{ row }">
-        <div class="flex items-center justify-end gap-2">
-          <button
-            class="rounded-lg border border-line2 bg-white px-3 py-1.5 text-sm font-medium text-brand hover:bg-fill"
-            @click.stop="toggle(row)"
-          >
-            {{ row.isEnabled ? 'Pause' : 'Enable' }}
-          </button>
-          <button
-            class="rounded-lg border border-line2 bg-white px-3 py-1.5 text-sm font-medium text-rose-600 hover:bg-fill"
-            @click.stop="ask(row)"
-          >
-            Delete
-          </button>
-        </div>
-      </template>
-
-      <!-- Two different "no rows" cases: nothing configured yet (offer the
-           primary CTA) and nothing matching the filters (offer a way back). -->
-      <template #empty>
-        <EmptyState :title="emptyTitle" :description="emptyDescription">
-          <template #cta>
+        <template #cell-actions="{ row }">
+          <div class="flex items-center justify-end gap-2">
             <button
-              v-if="!sources.length"
-              class="flex h-9 items-center gap-1.5 rounded-lg bg-brand px-3.5 text-sm font-medium text-white shadow-sm hover:opacity-90"
-              @click="router.push({ name: 'sources-new' })"
-            >
-              Connect your first source
-            </button>
-            <button
-              v-else
               class="rounded-lg border border-line2 bg-white px-3 py-1.5 text-sm font-medium text-brand hover:bg-fill"
-              @click="clearFilters"
+              @click.stop="toggle(row)"
             >
-              Clear filters
+              {{ row.isEnabled ? 'Pause' : 'Enable' }}
             </button>
-          </template>
-        </EmptyState>
-      </template>
-    </DataTable>
+            <button
+              class="rounded-lg border border-line2 bg-white px-3 py-1.5 text-sm font-medium text-rose-600 hover:bg-fill"
+              @click.stop="ask(row)"
+            >
+              Delete
+            </button>
+          </div>
+        </template>
+
+        <!-- Two different "no rows" cases: nothing configured yet (offer the
+             primary CTA) and nothing matching the filters (offer a way back). -->
+        <template #empty>
+          <EmptyState :title="emptyTitle" :description="emptyDescription">
+            <template #cta>
+              <button
+                v-if="!sources.length"
+                class="flex h-9 items-center gap-1.5 rounded-lg bg-brand px-3.5 text-sm font-medium text-white shadow-sm hover:opacity-90"
+                @click="router.push({ name: 'sources-new' })"
+              >
+                Connect your first source
+              </button>
+              <button
+                v-else
+                class="rounded-lg border border-line2 bg-white px-3 py-1.5 text-sm font-medium text-brand hover:bg-fill"
+                @click="clearFilters"
+              >
+                Clear filters
+              </button>
+            </template>
+          </EmptyState>
+        </template>
+      </DataTable>
+    </template>
 
     <ConfirmDialog
       v-model="confirmDelete"
@@ -113,8 +127,8 @@
 </template>
 
 <script setup>
-import { computed, onMounted, ref } from 'vue'
-import { useRouter } from 'vue-router'
+import { computed, onMounted, ref, watch } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import { useQuasar } from 'quasar'
 import PageHeader from '@/components/ui/PageHeader.vue'
 import TabNav from '@/components/ui/TabNav.vue'
@@ -123,6 +137,7 @@ import StatusBadge from '@/components/ui/StatusBadge.vue'
 import EmptyState from '@/components/ui/EmptyState.vue'
 import ToolbarSearch from '@/components/ui/ToolbarSearch.vue'
 import ConfirmDialog from '@/components/ui/ConfirmDialog.vue'
+import ConnectorCatalog from '@/components/sources/ConnectorCatalog.vue'
 import { useTemplates } from '@/composables/useTemplates'
 import {
   formatCount,
@@ -131,6 +146,7 @@ import {
 } from '@/composables/useSources'
 
 const router = useRouter()
+const route = useRoute()
 const $q = useQuasar()
 const { hasUpgrade } = useTemplates()
 const {
@@ -146,6 +162,37 @@ const query = ref('')
 const tab = ref('all')
 const confirmDelete = ref(false)
 const target = ref(null)
+
+// Which half of the page you are looking at, held in ?tab= so the Connectors
+// catalog is linkable and survives a reload. It is a query rather than a child
+// route because both halves are the same screen with the same <h1> — a route
+// would put "Connectors" back in the sidebar, which is what this change undid.
+const VIEWS = ['streams', 'connectors']
+
+const view = ref(VIEWS.includes(route.query.tab) ? route.query.tab : 'streams')
+
+const viewTabs = [
+  { key: 'streams', label: 'Event streams' },
+  { key: 'connectors', label: 'Connectors' }
+]
+
+// `replace` so flipping tabs does not stack history entries the back button then
+// has to chew through. The default view writes no query at all, keeping /sources
+// clean as the canonical URL.
+watch(view, next => {
+  const tabQuery = next === 'streams' ? undefined : next
+  if (route.query.tab === tabQuery) return
+  router.replace({ query: { ...route.query, tab: tabQuery } })
+})
+
+// Someone editing the URL, or arriving via the /connectors redirect, moves the
+// tabs rather than being ignored.
+watch(
+  () => route.query.tab,
+  next => {
+    view.value = VIEWS.includes(next) ? next : 'streams'
+  }
+)
 
 const columns = [
   { key: 'name', label: 'Source', sortable: true },
