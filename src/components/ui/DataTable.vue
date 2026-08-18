@@ -16,6 +16,17 @@
       @retry="emit('retry')"
     />
 
+    <!-- Settings → Data source is set to "real" and this resource has no live
+         endpoint behind it yet (no `api` wired on its composable, a 404, or the
+         request never reached a backend at all). Distinct from ErrorState: the
+         fetch didn't fail, there's simply nothing to call yet. -->
+    <EmptyState
+      v-else-if="apiMissing"
+      title="No API yet"
+      description="This screen doesn't have a live backend endpoint yet. Switch back to demo data in Settings, or check back once it ships."
+      :on-dark="onDark"
+    />
+
     <!-- A list has two empty states and they need different copy: filters
          matched nothing -> "No X match your search" + Clear filters, versus
          nothing exists yet -> the create action. The props below cover the
@@ -155,6 +166,9 @@ const props = defineProps({
   rows: { type: Array, default: () => [] },
   loading: { type: Boolean, default: false },
   error: { type: String, default: null },
+  // Real-mode-only: true when this resource has no live endpoint to call yet.
+  // See useMockResource's `apiMissing`.
+  apiMissing: { type: Boolean, default: false },
   rowKey: { type: String, default: 'id' },
   emptyTitle: { type: String, default: 'Nothing here yet' },
   emptyDescription: { type: String, default: '' },

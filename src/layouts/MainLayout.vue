@@ -151,24 +151,38 @@
                 v-if="!mini && isExpanded(group)"
                 class="mb-1 ml-4 border-l border-line pl-2"
               >
-                <q-item
-                  v-for="child in group.children"
-                  :key="child.to"
-                  clickable
-                  :class="itemClass(child)"
-                  class="min-h-8! rounded-lg! px-3! py-1.5! mb-0.5 flex items-center"
-                  @click="select(child)"
-                >
-                  <span class="flex-1 text-[13px] tracking-[-0.3px]">{{
-                    child.label
-                  }}</span>
-                  <span
-                    v-if="navBadge(child)"
-                    :class="[BADGE_BASE, BADGES[navBadge(child)].class]"
-                    class="ml-1.5"
-                    >{{ BADGES[navBadge(child)].label }}</span
+                <template v-for="child in group.children" :key="child.to">
+                  <!-- Disabled child: inert with Soon pill -->
+                  <q-item
+                    v-if="isSoon(child)"
+                    class="min-h-8! rounded-lg! px-3! py-1.5! mb-0.5 flex cursor-not-allowed items-center gap-1 text-subtle"
                   >
-                </q-item>
+                    <span class="flex-1 text-[13px] tracking-[-0.3px]">{{
+                      child.label
+                    }}</span>
+                    <span :class="[BADGE_BASE, BADGES.soon.class]">{{
+                      BADGES.soon.label
+                    }}</span>
+                  </q-item>
+                  <!-- Active child: clickable -->
+                  <q-item
+                    v-else
+                    clickable
+                    :class="itemClass(child)"
+                    class="min-h-8! rounded-lg! px-3! py-1.5! mb-0.5 flex items-center"
+                    @click="select(child)"
+                  >
+                    <span class="flex-1 text-[13px] tracking-[-0.3px]">{{
+                      child.label
+                    }}</span>
+                    <span
+                      v-if="navBadge(child)"
+                      :class="[BADGE_BASE, BADGES[navBadge(child)].class]"
+                      class="ml-1.5"
+                      >{{ BADGES[navBadge(child)].label }}</span
+                    >
+                  </q-item>
+                </template>
               </div>
             </template>
           </template>
@@ -340,6 +354,22 @@
       />
       <router-view v-else />
     </q-page-container>
+
+    <!-- Standing indicator that every screen is reading mock JSON, not a real
+         backend. Its own file explains why a q-footer rather than a
+         hand-rolled fixed bar. -->
+    <DemoModeBanner v-if="isMockData" />
+
+    <!-- The onboarding fork. An overlay over a fully-rendered Home, opened only
+         on `/`: a deep link from Slack must not be met by a modal demanding a
+         role, and the smoke gate needs the nav and every <h1> to stay in the
+         DOM. Binding it to the route rather than to a one-shot flag is what
+         makes it close itself the moment you navigate away. -->
+    <PersonaQuestion
+      :open="personaQuestionOpen"
+      @choose="onChoosePersona"
+      @skip="onSkipPersona"
+    />
   </q-layout>
 </template>
 
@@ -351,7 +381,11 @@ import { useAuth } from '@/composables/useAuth'
 import { useMe } from '@/composables/useMe'
 import { useEntitlements } from '@/composables/useEntitlements'
 import { useFeatures } from '@/composables/useFeatures'
+import { useOnboarding } from '@/composables/useOnboarding'
+import { useDataSource } from '@/composables/useDataSource'
 import ComingSoonPanel from '@/components/ComingSoonPanel.vue'
+import PersonaQuestion from '@/components/onboarding/PersonaQuestion.vue'
+import DemoModeBanner from '@/components/DemoModeBanner.vue'
 
 import avatar from '@/assets/dashboard/avatar.jpg'
 import icCollapse from '@/assets/dashboard/ic-collapse.svg'
@@ -484,8 +518,12 @@ const navGroups = [
     icon: icSetup,
     children: [
       { label: 'Warehouse connections', to: '/dwh-connections' },
-      { label: 'DWH syncs', to: '/dwh-syncs' },
-      { label: 'Warehouse models', to: '/warehouse-models' }
+      { label: 'DWH syncs', to: '/dwh-syncs', key: 'dwh-syncs' },
+      {
+        label: 'Warehouse models',
+        to: '/warehouse-models',
+        key: 'warehouse-models'
+      }
     ]
   },
   {
@@ -504,11 +542,23 @@ const navGroups = [
     icon: icContacts,
     children: [
       { label: 'Profile search', to: '/profiles/search' },
-      { label: 'Identity resolution', to: '/profiles/identity-resolution' },
-      { label: 'Attributes', to: '/attributes' },
-      { label: 'Profile API', to: '/profile-api' },
-      { label: 'Live profile syncs', to: '/live-profile-syncs' },
-      { label: 'Profile DWH syncs', to: '/profile-dwh-syncs' }
+      {
+        label: 'Identity resolution',
+        to: '/profiles/identity-resolution',
+        key: 'identity-resolution'
+      },
+      { label: 'Attributes', to: '/attributes', key: 'attributes' },
+      { label: 'Profile API', to: '/profile-api', key: 'profile-api' },
+      {
+        label: 'Live profile syncs',
+        to: '/live-profile-syncs',
+        key: 'live-profile-syncs'
+      },
+      {
+        label: 'Profile DWH syncs',
+        to: '/profile-dwh-syncs',
+        key: 'profile-dwh-syncs'
+      }
     ]
   },
   {
@@ -585,6 +635,7 @@ const { isEnabled, load: loadEntitlements } = useEntitlements()
 // Named for what it checks: this file's own isActive() is the route-matching
 // helper further down, and the two are asked entirely different questions.
 const { isActive: isFeatureActive } = useFeatures()
+const { isMock: isMockData } = useDataSource()
 
 // A module that is not switched on yet. Rendered rather than hidden — the sidebar
 // is the product roadmap, and a row you can see but not click says "not yet",
@@ -614,6 +665,35 @@ loadEntitlements()
 const visibleGroups = computed(() =>
   navGroups.filter(g => !g.entitlement || isEnabled(g.entitlement))
 )
+
+// Which persona this person picked, and whether they have been asked at all. The
+// answer steers onboarding and, later, what Home leads with — it never changes
+// what the sidebar contains, which is why nothing above reads it.
+const {
+  personaMeta,
+  needsPersona,
+  setPersona,
+  skip: skipPersonaQuestion
+} = useOnboarding()
+
+const personaQuestionOpen = computed(
+  () => needsPersona.value && route.path === '/'
+)
+
+function onChoosePersona(key) {
+  setPersona(key)
+  $q.notify({
+    message: `Set to “${personaMeta.value?.label ?? key}”`,
+    caption: 'Change it any time in Settings → Your role.',
+    color: 'dark',
+    position: 'bottom',
+    timeout: 2500
+  })
+}
+
+function onSkipPersona() {
+  skipPersonaQuestion()
+}
 
 // Groups the user has explicitly toggled. A group whose screen is active is
 // always shown open regardless, so navigation never hides where you are.

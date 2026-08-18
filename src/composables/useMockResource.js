@@ -1,7 +1,11 @@
 import { ref } from 'vue'
+import { useDataSource } from '@/composables/useDataSource'
+import { waitForAuthReady } from '@/composables/useAuth'
+import { customFetch, ApiError } from '@/api/mutator'
 
 /**
- * Loads one JSON collection from `public/data/`.
+ * Loads one JSON collection from `public/data/`, or — once Settings → Data
+ * source is switched to "real" — the equivalent live endpoint.
  *
  * Every screen in the rebuild reads its data through this factory, so the
  * fetch/normalise/error semantics are written once. It mirrors
@@ -9,10 +13,10 @@ import { ref } from 'vue'
  * failure, it normalises whatever was thrown into a string on `error`, and it
  * always clears `loading` in `finally`.
  *
- * The URL is built as `${import.meta.env.BASE_URL}data/${name}.json` — note
- * there is NO leading slash on the `data/` segment. BASE_URL already ends in
- * one, and a second slash would resolve against the origin root, which breaks
- * hash-mode routing and any deploy under a subpath.
+ * The mock URL is built as `${import.meta.env.BASE_URL}data/${name}.json` —
+ * note there is NO leading slash on the `data/` segment. BASE_URL already ends
+ * in one, and a second slash would resolve against the origin root, which
+ * breaks hash-mode routing and any deploy under a subpath.
  *
  * @param {string} name
  *   File basename without `.json`, e.g. `'pipes'` -> `data/pipes.json`.
@@ -21,33 +25,40 @@ import { ref } from 'vue'
  *   Value `data` holds before the first load and after a failed one. Pass `{}`
  *   (or a shaped object) for endpoints that return an object rather than a list.
  * @param {(payload: any) => any} [options.select]
- *   Picks a sub-key out of the parsed payload. Used for `trash.json`, which is
- *   one file keyed by resource, and for the object-shaped files.
- * @returns {{ data: import('vue').Ref, loading: import('vue').Ref<boolean>, error: import('vue').Ref<string|null>, load: () => Promise<void> }}
+ *   Picks a sub-key out of the parsed mock payload. Used for `trash.json`,
+ *   which is one file keyed by resource, and for the object-shaped files.
+ * @param {object} [options.api]
+ *   Wires this resource to a real endpoint from `openapi/cdp-api-draft.yaml`
+ *   for when Settings → Data source is set to "real". Omit it entirely for a
+ *   domain that has not been checked against the draft yet — in real mode it
+ *   then reports `apiMissing` with no network attempt, rather than guessing a
+ *   path. The real payload shape is its own contract: `api.select` defaults to
+ *   identity rather than falling back to `options.select`, because several
+ *   mock files are wrapped (e.g. `trash.json`'s `payload.pipes`) in a way the
+ *   drafted real endpoint is not.
+ * @param {string} options.api.path
+ *   e.g. `'/v1/sources'` — appended to the same `VITE_API_BASE` the generated
+ *   accounts/RBAC client uses (`src/api/mutator.js`).
+ * @param {(payload: any) => any} [options.api.select]
+ * @returns {{ data: import('vue').Ref, loading: import('vue').Ref<boolean>, error: import('vue').Ref<string|null>, apiMissing: import('vue').Ref<boolean>, load: () => Promise<void> }}
  *
  * @example
- * // A plain list.
- * const { data: pipes, loading, error, load } = useMockResource('pipes')
+ * // A plain list, wired to the real endpoint once the backend ships it.
+ * const { data: sources, loading, error, apiMissing, load } = useMockResource(
+ *   'sources',
+ *   { api: { path: '/v1/sources' } }
+ * )
  * onMounted(load)
  *
  * @example
- * // One resource's slice of the shared trash file.
+ * // One resource's slice of the shared trash file — mock only for now.
  * const { data: deletedPipes, load } = useMockResource('trash', {
  *   select: payload => payload.pipes
  * })
- *
- * @example
- * // An object-shaped payload (dashboard, settings, error-logs, ...).
- * const { data: stats, load } = useMockResource('error-stats', { initial: {} })
- *
- * @example
- * // A nested list inside an object-shaped payload.
- * const { data: errors, load } = useMockResource('error-logs', {
- *   select: payload => payload.errors
- * })
  */
 export function useMockResource(name, options = {}) {
-  const { initial = [], select = null } = options
+  const { initial = [], select = null, api = null } = options
+  const { isReal } = useDataSource()
 
   // A fresh copy every time, so a screen that mutates `data` in place cannot
   // poison the value a later failed load resets to.
@@ -60,8 +71,13 @@ export function useMockResource(name, options = {}) {
   const data = ref(blank())
   const loading = ref(false)
   const error = ref(null)
+  // True when real mode has nothing to call — either this resource has no
+  // `api` wired yet, or the live request came back 404 / failed outright
+  // (network error, CORS, an unreachable local backend). All three read the
+  // same to a screen: "no endpoint exists here yet", not "something broke".
+  const apiMissing = ref(false)
 
-  async function load() {
+  async function loadMock() {
     loading.value = true
     error.value = null
     try {
@@ -85,5 +101,43 @@ export function useMockResource(name, options = {}) {
     }
   }
 
-  return { data, loading, error, load }
+  async function loadReal() {
+    if (!api) {
+      apiMissing.value = true
+      data.value = blank()
+      return
+    }
+    loading.value = true
+    error.value = null
+    try {
+      await waitForAuthReady()
+      const { data: payload } = await customFetch(api.path, { method: 'GET' })
+      const picked = api.select ? api.select(payload) : payload
+      data.value = picked === undefined || picked === null ? blank() : picked
+    } catch (e) {
+      // A route that does not exist yet, or a request that never reached the
+      // backend at all (connection refused, CORS-blocked staging), both mean
+      // "not built yet" here — only a real non-404 response is a genuine
+      // error worth an `ErrorState`.
+      if (e instanceof ApiError && e.status !== 404) {
+        error.value = e.message
+      } else {
+        apiMissing.value = true
+      }
+      data.value = blank()
+    } finally {
+      loading.value = false
+    }
+  }
+
+  async function load() {
+    apiMissing.value = false
+    if (isReal.value) {
+      await loadReal()
+    } else {
+      await loadMock()
+    }
+  }
+
+  return { data, loading, error, apiMissing, load }
 }

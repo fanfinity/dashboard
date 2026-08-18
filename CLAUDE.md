@@ -71,10 +71,11 @@ Hash mode has one consequence worth internalising: the whole route lives after t
 so an in-page `href="#some-id"` **replaces the route** instead of scrolling. Anchor navigation
 has to go through `scrollIntoView` — see `src/pages/design-system/DesignSystemPage.vue`.
 
-### Two Quasar/Tailwind cascade collisions
+### Three Quasar/Tailwind cascade collisions
 
 Tailwind v4 emits utilities into `@layer utilities`; Quasar's base stylesheet is **unlayered**,
-and unlayered CSS beats layered CSS regardless of specificity. Both of these have cost real time:
+and unlayered CSS beats layered CSS regardless of specificity. All three of these have cost real
+time:
 
 1. **Headings need the important _suffix_** — `text-2xl!`, never `!text-2xl`. Covered at length
    in `docs/ui-conventions.md` rules 2–3.
@@ -82,6 +83,11 @@ and unlayered CSS beats layered CSS regardless of specificity. Both of these hav
    `.hidden { display: none !important }`, so `class="hidden lg:block"` is permanently hidden at
    every width. Use the inverse variant — `class="max-lg:hidden"` — which generates a class name
    Quasar does not define. If an element is inexplicably invisible, look for a bare `hidden`.
+3. **A `q-dialog` child is capped at 560px, and `mt-auto` does nothing on a bare block.** Quasar
+   ships `.q-dialog__inner--minimized > div { max-width: 560px }` and margins on unclassed block
+   elements, both unlayered. A three-column picker in a dialog silently renders as
+   two-and-a-bit columns, and auto margins are ignored, until the suffix goes on:
+   `w-[820px]!`, `mt-auto!`. `PersonaQuestion.vue` needs both.
 
 ## Screen manifest — routes are generated, not hand-written
 
@@ -113,15 +119,24 @@ back in the sidebar, which is exactly what this undid.
 
 ## Feature activation — most of the sidebar is switched off
 
-Only the CDP core is live: **Dashboard, Live events, Sources, Destinations, Pipes** and
-**Settings**. The other ten modules (Warehouse, Monitoring, Profiles, Audiences, Campaigns,
-Engage, Reporting, Demo lab, Secrets, Authorizations) are built but dark, and get switched on one
-at a time as they become real.
+`enabled: true` in `features.js` today covers **Dashboard, Live events, Sources, Destinations,
+Pipes, Settings, Warehouse, Monitoring, Profiles, Secrets** and **Authorizations** — eleven
+top-level keys, not six. Two of those are partly on: Warehouse and Profiles each gate their own
+children by a separate key (`dwh-syncs`, `warehouse-models`, `identity-resolution`, `attributes`,
+`profile-api`, `live-profile-syncs`, `profile-dwh-syncs`), so switching the parent on only exposes
+the child screens whose own key is _also_ `true` — right now that's just Warehouse connections and
+Profile search, everything else under those two stays a `Soon` row. Audiences, Campaigns, Engage,
+Reporting and Demo lab remain fully dark and get switched on one at a time as they become real.
 
 `src/config/features.js` is the registry — pure data, one entry per module, `enabled` being the
 shipped default. `src/composables/useFeatures.js` layers per-browser overrides from
 `localStorage` (`sfere_feature_activation`) on top, and **Settings → Feature activation** is the
-UI for those overrides.
+UI for those overrides. That panel (`SettingsFeaturePanel.vue`) splits the registry into two
+cards — "CDP core" and "Backlog modules" — by a hardcoded `CORE_KEYS` list, not by each feature's
+`active` state, so toggling a core module off locally doesn't bounce it into the backlog card.
+**`CORE_KEYS` has to be kept manually in step with the shipped-active top-level keys** — flipping
+a module's `enabled` default in `features.js` and forgetting the matching edit in `CORE_KEYS`
+leaves a live module stranded under "Backlog modules".
 
 - **To ship a module to everyone**: flip `enabled` in `features.js`. That is the permanent change.
 - **To try one out yourself**: use the toggle. It writes only the keys you touched, so a later
@@ -142,6 +157,47 @@ the real page component never mounts (so nothing it fetches on mount runs), and
 `ComingSoonPanel` renders the screen's own title as a real `<h1>` — which is what lets
 `pnpm smoke:dist` keep walking **all 54 routes** instead of being narrowed to the active few.
 Any new gating must preserve that; a redirect would silently drop the gate to ~6 routes.
+
+## Onboarding — one question, asked once
+
+First sign-in asks **"Before we start — what do you do?"** and offers three personas:
+engineer ("I build the pipes"), marketer ("I run the campaigns"), analyst ("I answer for the
+numbers"). `src/config/personas.js` is the registry — pure data, no imports, same idiom as
+`features.js` and `screens.js`.
+
+**The question is an overlay over a fully-rendered Home, never a route.** A `/welcome` route
+would replace `MainLayout`, so `[data-smoke="nav"]` would never appear and `pnpm smoke:dist`
+would fail at sign-in for all 54 routes rather than on one screen. Three consequences that any
+change here has to preserve: the page beneath stays mounted and visible, the overlay renders
+**no `<h1>`** (smoke asserts on the first one, which belongs to the page), and it opens **only on
+`/`** — a deep link to `/errors` from Slack must not be met by a modal demanding a role.
+`MainLayout` binds it to `route.path`, not to a one-shot flag, which is also what closes it on
+navigation.
+
+State is `src/composables/useOnboarding.js` — module singleton, `localStorage` key
+`sfere_onboarding`, the shape `{ v, uid, persona, askedAt, skipped, completedAt, chapters, runs }`:
+
+- **`uid` is what makes it "first login" rather than "once per browser".** A record whose uid is
+  not the signed-in user's reads as unanswered, so a shared machine asks the second person instead
+  of handing them the first person's answer. Nothing is persisted while signed out.
+- A `persona` that is not a key in `personas.js` reads as unanswered too — a renamed key or a
+  hand-edited store must not resolve to a truthy persona nothing can render.
+- Skipping is a real answer (`skipped: true`), not a deferral. The way back is Settings.
+- `chapters` and `runs` are written empty on purpose. The tour itself — stepper, progress strip,
+  completion card — is a later phase (`todos/site-overhaul-plan.md` §5.3–5.8), and it should find
+  a record it can extend rather than inventing a second key.
+
+**The persona picks emphasis, never contents.** It is allowed to choose which onboarding script
+runs, what Home leads with, and which nav section starts expanded. It must never remove a sidebar
+row: support and handover docs have to be able to say "click Pipes" and be right. Removal is
+entitlements' job, and that mechanism stays separate — as does feature activation, which answers
+"is it built yet?".
+
+**Settings → Your role** (`SettingsPersonaPanel.vue`) is the other surface, so changing the answer
+never means re-running a tour, and `Ask me again` clears it. Both surfaces render the same three
+cards and the same marks from `PersonaIcon.vue` — drawn there rather than reused from
+`src/assets/dashboard/`, because those are `<img>` with brand purple baked into a `stroke`
+attribute and cannot take the colour of the chip they sit in.
 
 ## UI primitives
 
@@ -244,7 +300,8 @@ commit message rather than a drive-by edit mid-task:
 is the IA, and the feature gate lives in its `q-page-container`) · `src/components/ui/**` (the
 kit) · `src/config/features.js` + `src/composables/useFeatures.js` (which modules are switched
 on at all) · `src/composables/{useMockResource,useEntitlements,useDiagram,useTemplates}.js` (the
-`{ data, loading, error, load() }` contract every page is written against) · `quasar.config.js`
+`{ data, loading, error, apiMissing, load() }` contract every page is written against —
+`apiMissing` is real-mode-only, see Data architecture below) · `quasar.config.js`
 and `index.html` (build config and the CSP).
 
 The bar is the same one that applies anywhere: if the change is right, make it and say why. If
@@ -272,6 +329,25 @@ all follow the same `{ data, loading, error, load() }` contract (`src/composable
    `sources.json`, and so on. Adding fields and records is fine; **renaming or renumbering an
    existing `id` is not.** `screens.js`'s `smokeParams` point at those ids by value, and a
    broken lookup renders `undefined` silently rather than failing.
+
+   **Settings → Data source is a global mock/real switch** (`useDataSource.js`, `localStorage`
+   key `sfere_data_source_mode`, default `mock`), and a `DemoModeBanner` `q-footer` stays up in
+   `MainLayout.vue` for as long as it is on. Flipping it does not, by itself, change what a
+   screen shows — `useMockResource()` only calls the real endpoint for a resource whose
+   composable passes an `options.api = { path, select? }` (mirroring `cdp-api-draft.yaml`); a
+   resource with no `api` wired reports `apiMissing: true` with **no network attempt** the
+   moment real mode is on, and `DataTable`'s `api-missing` prop renders that as "No API yet"
+   rather than as an empty list. Today only `useSources()` is wired (`/v1/sources`), as the
+   worked example — the same three-line change (`api: { path }`, forward `apiMissing`, pass
+   `:api-missing` to `DataTable`) rolls out to the rest of the active-11 domains once their
+   composables are checked against the draft spec's `200` schema, per-domain (a mock file's
+   `select` does **not** carry over automatically — several are wrapped, e.g. `trash.json`'s
+   `payload.pipes`, in a way the drafted real endpoint is not). A 404, a CORS block and a
+   connection refused (no local backend running) all read the same as "not built yet"; only a
+   real non-404 response escalates to `ErrorState`. Any page whose empty state depends on a
+   _different_ composable (e.g. `SettingsPage.vue`'s workspace record) needs its own check that
+   flipping to real mode doesn't strand the user — the tab bar there now renders regardless of
+   `workspace`, specifically so the Data source tab that undoes the switch never disappears.
 
 2. **The Jitsu events backend** (`console.fanfinity.io`):
    - **Read** incoming events (`useLiveEvents.js`) through a same-origin dev proxy: the browser

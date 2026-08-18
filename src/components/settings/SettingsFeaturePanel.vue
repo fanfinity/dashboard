@@ -94,14 +94,22 @@ const { features, overriddenCount, setActive, reset } = useFeatures()
 
 // Two groups, because they answer different questions: "which of these can I use
 // today" versus "which am I waiting on". Sorting by state instead would reshuffle
-// the list under the user's cursor every time they flipped a switch.
+// the list under the user's cursor every time they flipped a switch. This list is
+// the shipped-active top-level keys from src/config/features.js — keep it in sync
+// whenever a module's `enabled` default flips, or a shipped module stays stuck in
+// "Backlog modules" here even after it goes live everywhere else.
 const CORE_KEYS = [
   'dashboard',
-  'sources',
   'live-events',
-  'pipes',
+  'sources',
   'destinations',
-  'settings'
+  'pipes',
+  'settings',
+  'warehouse',
+  'monitoring',
+  'profiles',
+  'secrets',
+  'authorizations'
 ]
 
 const sections = computed(() => {

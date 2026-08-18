@@ -41,6 +41,7 @@
         :rows="visible"
         :loading="loading"
         :error="error"
+        :api-missing="apiMissing"
         row-key="id"
         clickable-rows
         @retry="load"
@@ -153,6 +154,7 @@ const {
   sources,
   loading,
   error,
+  apiMissing,
   load,
   setEnabled,
   remove: removeSource

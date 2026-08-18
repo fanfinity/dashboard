@@ -73,20 +73,63 @@ export const FEATURES = [
     key: 'warehouse',
     label: 'Warehouse',
     description: 'Warehouse connections, syncs and models.',
+    enabled: true
+  },
+  {
+    key: 'dwh-syncs',
+    label: 'DWH syncs',
+    description:
+      'Scheduled copies of collected events between a source and a warehouse.',
+    enabled: false
+  },
+  {
+    key: 'warehouse-models',
+    label: 'Warehouse models',
+    description: 'Named selects against a warehouse connection.',
+    enabled: false
+  },
+  {
+    key: 'identity-resolution',
+    label: 'Identity resolution',
+    description: 'Identity stitching over the fan graph.',
+    enabled: false
+  },
+  {
+    key: 'attributes',
+    label: 'Attributes',
+    description: 'Fan profile attributes.',
+    enabled: false
+  },
+  {
+    key: 'profile-api',
+    label: 'Profile API',
+    description: 'API for profile access.',
+    enabled: false
+  },
+  {
+    key: 'live-profile-syncs',
+    label: 'Live profile syncs',
+    description: 'Real-time profile synchronization.',
+    enabled: false
+  },
+  {
+    key: 'profile-dwh-syncs',
+    label: 'Profile DWH syncs',
+    description: 'Batch writes of profiles to warehouses.',
     enabled: false
   },
   {
     key: 'monitoring',
     label: 'Monitoring',
     description: 'Delivery errors and pipeline health.',
-    enabled: false
+    enabled: true
   },
   {
     key: 'profiles',
     label: 'Profiles',
     description:
       'Profile search, identity resolution, attributes and the profile API.',
-    enabled: false
+    enabled: true
   },
   {
     key: 'audiences',
@@ -123,13 +166,13 @@ export const FEATURES = [
     key: 'secrets',
     label: 'Secrets',
     description: 'Credentials shared across sources and destinations.',
-    enabled: false
+    enabled: true
   },
   {
     key: 'authorizations',
     label: 'Authorizations',
     description: 'OAuth grants and per-integration authorizations.',
-    enabled: false
+    enabled: true
   }
 ]
 

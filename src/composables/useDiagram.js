@@ -1,4 +1,5 @@
-import { computed, ref } from 'vue'
+import { computed } from 'vue'
+import { useMockResource } from '@/composables/useMockResource'
 
 const EMPTY = { sources: [], eventDestinations: [], pipes: [] }
 
@@ -6,9 +7,10 @@ const EMPTY = { sources: [], eventDestinations: [], pipes: [] }
  * Loads `data/pipes-diagram.json` — the flow view of the pipeline: every source,
  * every event destination, and the pipes that connect them.
  *
- * Same semantics as useConnectorCatalog(): never throws, normalises the error to
- * a string, resets `diagram` to an empty graph on failure, always clears
- * `loading` in `finally`.
+ * Data comes through `useMockResource`, so this inherits the repo-wide
+ * `{ data, loading, error, load() }` semantics (never throws, resets to `EMPTY`
+ * on failure). `select` normalises the three arrays defensively, since a
+ * malformed payload must still land on `EMPTY`'s shape rather than undefined.
  *
  * `nodes` is the adjacency helper. Every pipe in `pipes-diagram.json` is
  * guaranteed by the data contract to reference a source id and a destination id
@@ -32,38 +34,21 @@ const EMPTY = { sources: [], eventDestinations: [], pipes: [] }
  * // nodes.value.links[0].destination-> the resolved destination record
  */
 export function useDiagram() {
-  const diagram = ref(EMPTY)
-  const loading = ref(false)
-  const error = ref(null)
-
-  async function load() {
-    loading.value = true
-    error.value = null
-    try {
-      const res = await fetch(
-        `${import.meta.env.BASE_URL}data/pipes-diagram.json`,
-        {
-          headers: { Accept: 'application/json' }
-        }
-      )
-      if (!res.ok) {
-        throw new Error(`Request failed (${res.status})`)
-      }
-      const payload = await res.json()
-      diagram.value = {
-        sources: Array.isArray(payload?.sources) ? payload.sources : [],
-        eventDestinations: Array.isArray(payload?.eventDestinations)
-          ? payload.eventDestinations
-          : [],
-        pipes: Array.isArray(payload?.pipes) ? payload.pipes : []
-      }
-    } catch (e) {
-      error.value = e instanceof Error ? e.message : String(e)
-      diagram.value = EMPTY
-    } finally {
-      loading.value = false
-    }
-  }
+  const {
+    data: diagram,
+    loading,
+    error,
+    load
+  } = useMockResource('pipes-diagram', {
+    initial: EMPTY,
+    select: payload => ({
+      sources: Array.isArray(payload?.sources) ? payload.sources : [],
+      eventDestinations: Array.isArray(payload?.eventDestinations)
+        ? payload.eventDestinations
+        : [],
+      pipes: Array.isArray(payload?.pipes) ? payload.pipes : []
+    })
+  })
 
   const nodes = computed(() => {
     const { sources, eventDestinations, pipes } = diagram.value
