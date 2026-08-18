@@ -1,10 +1,10 @@
 import { allScreens } from './screens.js'
 
-// FROZEN FILE. Do not add routes here — add them to src/router/screens.js.
+// Do not add routes here — add them to src/router/screens.js.
 //
-// Every app route is generated from the manifest so that dozens of screens can be
-// built in parallel without agents contending on this one file. Adding a screen is
-// a data edit, not a code edit.
+// Every app route is generated from the manifest, so adding a screen is a data
+// edit rather than a code edit, and several screens can be built at once without
+// everyone contending on this one file.
 //
 // import.meta.glob gives Vite a statically-analysable set of page modules while
 // still returning lazy loaders, so code-splitting behaves exactly as it did when

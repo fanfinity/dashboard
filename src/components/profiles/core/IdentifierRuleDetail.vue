@@ -10,10 +10,10 @@
             <span class="font-mono text-xs text-subtle">{{ rule.name }}</span>
           </div>
           <div class="flex items-center gap-2">
-            <StatusBadge :variant="rule.methodVariant" :label="rule.method" />
+            <StatusBadge :tone="rule.methodVariant" :label="rule.method" />
             <StatusBadge
               v-if="rule.rank === 1"
-              variant="brand"
+              tone="brand"
               label="Highest precedence"
             />
           </div>
@@ -44,7 +44,7 @@
       >
         <template #cell-kind="{ value }">
           <StatusBadge
-            :variant="value === 'Event stream' ? 'brand' : 'neutral'"
+            :tone="value === 'Event stream' ? 'brand' : 'neutral'"
             :label="value"
           />
         </template>

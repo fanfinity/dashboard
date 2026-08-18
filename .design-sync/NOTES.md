@@ -6,11 +6,11 @@ Repo-specific gotchas for anyone re-running the claude.ai/design sync.
 
 - **`/design-sync`'s converter targets React design systems only** (stated in
   `non-storybook/SKILL.md`: "a non-React DS has nothing for the claude.ai/design
-  agent to build with"). Sfere is 30 Vue SFCs on Quasar and the repo has zero
+  agent to build with"). Sfere is 39 Vue SFCs on Quasar and the repo has zero
   React, so `package-build.mjs` is not runnable here and never will be.
 - The bundle is produced by **`tools/build-design-sync-bundle.mjs`** instead,
-  which emits the same output contract by hand. It lives in `tools/` because
-  `scripts/**` is a frozen path.
+  which emits the same output contract by hand. It lives in `tools/`, where
+  one-off maintenance goes; `scripts/` is for what the build and gates run.
 - `.ds-sync/package-validate.mjs` **is** used — it is the real gate, and it
   passes (exit 0, render check 4/4). Re-stage it with the `cp -r` line in the
   skill before re-validating; a stale `.ds-sync/` runs an old validator.
@@ -82,11 +82,6 @@ Repo-specific gotchas for anyone re-running the claude.ai/design sync.
   to fixed column counts** — the render check will not catch the regression,
   because these cards do not use the `.ds-grid`/`.ds-cell` markup that the
   `[GRID_OVERFLOW]` check inspects.
-
-## Frozen files
-
-- `.gitignore` was edited (build-output entries) with the user's explicit
-  approval. It has since been removed from CLAUDE.md's frozen list.
 
 ## Re-sync risks — what can silently go stale
 

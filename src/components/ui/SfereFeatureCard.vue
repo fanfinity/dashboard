@@ -1,5 +1,5 @@
 <template>
-  <SfereCard
+  <CardPanel
     :tone="onDark ? 'ink' : 'surface'"
     interactive
     :gradient-border="highlighted"
@@ -24,18 +24,18 @@
       :on-dark="onDark"
       class="mt-4"
     />
-  </SfereCard>
+  </CardPanel>
 </template>
 
 <script setup>
 import { computed } from 'vue'
-import SfereCard from './SfereCard.vue'
+import CardPanel from './CardPanel.vue'
 import SfereIconChip from './SfereIconChip.vue'
 import SfereLinkArrow from './SfereLinkArrow.vue'
 
 // The repeating unit of every "what this does" grid on sfere.io: tinted icon,
 // short title, two lines of body, one link. Composed from the primitives rather
-// than styled from scratch, so a change to SfereCard reaches every feature grid.
+// than styled from scratch, so a change to CardPanel reaches every feature grid.
 //
 // Note the `!` suffixes on the <h3>: Quasar's unlayered base stylesheet sets
 // font-size, weight and leading on bare headings and beats any layered Tailwind

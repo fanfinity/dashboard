@@ -12,7 +12,7 @@
           }}</span>
           <StatusBadge
             v-if="item.badge"
-            :variant="item.badge.variant"
+            :tone="item.badge.variant"
             :label="item.badge.label"
           />
         </div>

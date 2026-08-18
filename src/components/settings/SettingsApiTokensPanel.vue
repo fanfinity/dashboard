@@ -26,7 +26,7 @@
         <StatusBadge
           v-for="scope in row.scopes"
           :key="scope"
-          variant="neutral"
+          tone="neutral"
           :label="scope"
         />
       </div>
@@ -34,7 +34,7 @@
 
     <template #cell-status="{ row }">
       <StatusBadge
-        :variant="tokenStatus(row).variant"
+        :tone="tokenStatus(row).variant"
         :label="tokenStatus(row).label"
       />
     </template>
@@ -58,7 +58,7 @@
         </button>
         <StatusBadge
           v-else
-          variant="neutral"
+          tone="neutral"
           :label="`Revoked ${formatDate(row.revokedAt)}`"
         />
       </div>

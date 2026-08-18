@@ -79,7 +79,7 @@
       <template #cell-lastRunAt="{ row }">
         <div class="flex items-center gap-2">
           <StatusBadge
-            :variant="runStatusMeta(row.lastRunStatus).variant"
+            :tone="runStatusMeta(row.lastRunStatus).variant"
             :label="runStatusMeta(row.lastRunStatus).label"
           />
           <span class="text-xs text-subtle">{{
@@ -89,7 +89,10 @@
       </template>
 
       <template #cell-isEnabled="{ value }">
-        <StatusBadge :enabled="value" :label="value ? 'Enabled' : 'Paused'" />
+        <StatusBadge
+          :tone="value ? 'success' : 'neutral'"
+          :label="value ? 'Enabled' : 'Paused'"
+        />
       </template>
 
       <template #cell-actions="{ row }">

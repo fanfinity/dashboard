@@ -90,7 +90,7 @@
         <FormField
           label="Name"
           required
-          for="destination-name"
+          for-id="destination-name"
           :error="errors.name"
         >
           <input
@@ -105,7 +105,7 @@
         <FormField
           label="Description"
           hint="Optional. One line on why this destination exists."
-          for="destination-description"
+          for-id="destination-description"
         >
           <input
             id="destination-description"
@@ -117,7 +117,7 @@
 
         <FormField label="Template">
           <div class="flex flex-wrap items-center gap-2">
-            <StatusBadge variant="brand" :label="templateBadgeLabel" />
+            <StatusBadge tone="brand" :label="templateBadgeLabel" />
             <span class="text-xs text-subtle">{{ selected.description }}</span>
           </div>
         </FormField>
@@ -147,7 +147,7 @@
           :label="secret.keyPrefix"
           :hint="secret.description"
           :error="errors.secrets[secret.keyPrefix] || ''"
-          :for="`destination-secret-${secret.keyPrefix}`"
+          :for-id="`destination-secret-${secret.keyPrefix}`"
           required
         >
           <input

@@ -26,7 +26,7 @@
          screen, so it is a notice rather than an ErrorState. -->
     <NoticeBanner
       v-if="!loading && !error && items.length"
-      variant="warn"
+      tone="warn"
       class="mb-4"
       title="A restored connection comes back without its password"
       message="Host, port and database survive deletion; the secret does not. Restore, re-enter the credentials and test before anything can read from it again."
@@ -36,7 +36,7 @@
          purges without it, so a failure degrades in place with its own retry. -->
     <NoticeBanner
       v-else-if="dependantsError"
-      variant="info"
+      tone="info"
       class="mb-4"
       title="Couldn't check what was deleted alongside these"
       :message="dependantsError"
@@ -64,7 +64,7 @@
           <p class="font-medium text-ink">{{ row.name }}</p>
           <StatusBadge
             v-if="cascadeCount(row)"
-            variant="warn"
+            tone="warn"
             :label="`${cascadeCount(row)} deleted with it`"
           />
         </div>
@@ -74,7 +74,7 @@
       </template>
 
       <template #cell-type="{ row }">
-        <StatusBadge variant="neutral" :label="connectionTypeLabel(row.type)" />
+        <StatusBadge tone="neutral" :label="connectionTypeLabel(row.type)" />
         <p class="mt-1 font-mono text-xs text-subtle">{{ row.database }}</p>
       </template>
 

@@ -50,20 +50,20 @@
     >
       <SfereSection tone="soft" size="sm" class="rounded-none">
         <div class="grid gap-8 sm:grid-cols-2 lg:grid-cols-4">
-          <SfereStat bare label="Events / hour" value="1.28M" delta="4.2%" />
-          <SfereStat
+          <StatCard bare label="Events / hour" value="1.28M" delta="4.2%" />
+          <StatCard
             bare
             label="Resolved profiles"
             value="812,405"
             delta="1.1%"
           />
-          <SfereStat
+          <StatCard
             bare
             label="Match rate"
             value="94.6%"
             hint="rarity-weighted"
           />
-          <SfereStat
+          <StatCard
             bare
             label="Median latency"
             value="240ms"
@@ -130,14 +130,14 @@
 <script setup>
 import DocSection from '../DocSection.vue'
 import DocSpecimen from '../DocSpecimen.vue'
-import SfereButton from '@/components/sfere/SfereButton.vue'
-import SfereEyebrow from '@/components/sfere/SfereEyebrow.vue'
-import SfereFeatureCard from '@/components/sfere/SfereFeatureCard.vue'
-import SfereLogo from '@/components/sfere/SfereLogo.vue'
-import SferePill from '@/components/sfere/SferePill.vue'
-import SfereSection from '@/components/sfere/SfereSection.vue'
-import SfereSectionHeading from '@/components/sfere/SfereSectionHeading.vue'
-import SfereStat from '@/components/sfere/SfereStat.vue'
+import SfereButton from '@/components/ui/SfereButton.vue'
+import SfereEyebrow from '@/components/ui/SfereEyebrow.vue'
+import SfereFeatureCard from '@/components/ui/SfereFeatureCard.vue'
+import SfereLogo from '@/components/ui/SfereLogo.vue'
+import SferePill from '@/components/ui/SferePill.vue'
+import SfereSection from '@/components/ui/SfereSection.vue'
+import SfereSectionHeading from '@/components/ui/SfereSectionHeading.vue'
+import StatCard from '@/components/ui/StatCard.vue'
 
 const features = [
   {

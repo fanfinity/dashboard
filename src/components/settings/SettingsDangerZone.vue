@@ -1,13 +1,13 @@
 <template>
   <div class="flex max-w-3xl flex-col gap-4">
     <NoticeBanner
-      variant="warn"
+      tone="warn"
       title="These actions are not reversible"
       message="Everything below removes data that no backup on your side can bring back. Read the confirmation carefully."
     />
 
     <NoticeBanner
-      variant="danger"
+      tone="danger"
       title="Purge raw event history"
       :message="purgeMessage"
     >
@@ -20,7 +20,7 @@
     </NoticeBanner>
 
     <NoticeBanner
-      variant="danger"
+      tone="danger"
       title="Delete this workspace"
       :message="deleteMessage"
     >

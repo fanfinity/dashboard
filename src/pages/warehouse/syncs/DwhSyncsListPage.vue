@@ -51,7 +51,7 @@
          down is not a load failure — so this is a notice, not an ErrorState. -->
     <NoticeBanner
       v-if="unhealthyCount"
-      variant="warn"
+      tone="warn"
       class="mb-4"
       title="Some of these cannot run right now"
       :message="unhealthyMessage"
@@ -61,7 +61,7 @@
          loads and the check offers its own retry. -->
     <NoticeBanner
       v-else-if="connectionsError"
-      variant="info"
+      tone="info"
       class="mb-4"
       title="Couldn't check the warehouse connections"
       :message="connectionsError"
@@ -91,7 +91,7 @@
           <p class="font-medium text-ink">{{ row.name }}</p>
           <StatusBadge
             v-if="isUnhealthy(row)"
-            variant="warn"
+            tone="warn"
             label="Connection failing"
           />
         </div>
@@ -112,7 +112,7 @@
 
       <template #cell-lastRunAt="{ row }">
         <StatusBadge
-          :variant="runStatusMeta(row.lastRunStatus).variant"
+          :tone="runStatusMeta(row.lastRunStatus).variant"
           :label="runStatusMeta(row.lastRunStatus).label"
         />
         <p class="mt-1 text-xs text-subtle"
@@ -122,7 +122,10 @@
       </template>
 
       <template #cell-isEnabled="{ value }">
-        <StatusBadge :enabled="value" :label="value ? 'Enabled' : 'Paused'" />
+        <StatusBadge
+          :tone="value ? 'success' : 'neutral'"
+          :label="value ? 'Enabled' : 'Paused'"
+        />
       </template>
 
       <template #cell-actions="{ row }">

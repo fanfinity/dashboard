@@ -64,16 +64,16 @@
     </DocSpecimen>
 
     <DocSpecimen
-      title="SfereBadge"
+      title="StatusBadge"
       usage="A state, not a label. Six tones and no more — a seventh means the states are not actually distinct."
-      code='<SfereBadge tone="success" label="Delivered" dot />'
+      code='<StatusBadge tone="success" label="Delivered" dot />'
     >
       <div class="flex flex-wrap items-center gap-2.5">
-        <SfereBadge tone="brand" label="Beta" />
-        <SfereBadge tone="neutral" label="Draft" />
-        <SfereBadge tone="success" label="Delivered" dot />
-        <SfereBadge tone="warn" label="Throttled" dot />
-        <SfereBadge tone="danger" label="Failed" dot />
+        <StatusBadge tone="brand" label="Beta" />
+        <StatusBadge tone="neutral" label="Draft" />
+        <StatusBadge tone="success" label="Delivered" dot />
+        <StatusBadge tone="warn" label="Throttled" dot />
+        <StatusBadge tone="danger" label="Failed" dot />
       </div>
     </DocSpecimen>
 
@@ -138,12 +138,12 @@
 <script setup>
 import DocSection from '../DocSection.vue'
 import DocSpecimen from '../DocSpecimen.vue'
-import SfereAvatar from '@/components/sfere/SfereAvatar.vue'
-import SfereBadge from '@/components/sfere/SfereBadge.vue'
-import SfereButton from '@/components/sfere/SfereButton.vue'
-import SfereIconChip from '@/components/sfere/SfereIconChip.vue'
-import SfereKbd from '@/components/sfere/SfereKbd.vue'
-import SfereLinkArrow from '@/components/sfere/SfereLinkArrow.vue'
-import SferePill from '@/components/sfere/SferePill.vue'
-import SfereTooltip from '@/components/sfere/SfereTooltip.vue'
+import SfereAvatar from '@/components/ui/SfereAvatar.vue'
+import StatusBadge from '@/components/ui/StatusBadge.vue'
+import SfereButton from '@/components/ui/SfereButton.vue'
+import SfereIconChip from '@/components/ui/SfereIconChip.vue'
+import SfereKbd from '@/components/ui/SfereKbd.vue'
+import SfereLinkArrow from '@/components/ui/SfereLinkArrow.vue'
+import SferePill from '@/components/ui/SferePill.vue'
+import SfereTooltip from '@/components/ui/SfereTooltip.vue'
 </script>

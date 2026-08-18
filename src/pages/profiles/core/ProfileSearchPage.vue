@@ -17,7 +17,7 @@
         <FormField
           class="min-w-[280px] flex-1"
           label="Profile ID or identifier value"
-          for="profile-query"
+          for-id="profile-query"
           :error="formError"
           hint="Matches any identifier — email, phone, browser cookie, account id, device id or ticket reference."
         >
@@ -107,7 +107,7 @@
               <span class="font-medium text-ink">{{ row.displayName }}</span>
               <StatusBadge
                 v-if="row.id === selectedId"
-                variant="brand"
+                tone="brand"
                 label="Viewing"
               />
             </div>
@@ -156,7 +156,7 @@
               <span class="font-medium text-ink">{{ row.displayName }}</span>
               <StatusBadge
                 v-if="row.id === selectedId"
-                variant="brand"
+                tone="brand"
                 label="Viewing"
               />
             </div>

@@ -4,8 +4,9 @@
 // read this file (scripts/smoke.mjs imports it directly to walk every route), and
 // it lets src/router/routes.js build the route table without hand-editing.
 //
-// FROZEN. Adding or renaming a screen is a foundation-phase change, not story work.
-// Story agents rewrite the component file this points at; they never touch this.
+// Adding or renaming a screen is an edit here; implementing one is a rewrite of
+// the component file this points at. An entry whose page file is missing throws
+// at module load rather than 404-ing silently.
 //
 // Fields:
 //   path         router path; ':id' segments need `smokeParams` to be smoke-testable

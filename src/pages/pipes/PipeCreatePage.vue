@@ -47,7 +47,7 @@
         <template #header>
           <span class="text-sm font-medium text-ink">{{ created.name }}</span>
           <StatusBadge
-            :enabled="created.isEnabled"
+            :tone="created.isEnabled ? 'success' : 'neutral'"
             :label="created.isEnabled ? 'Enabled' : 'Paused'"
           />
         </template>
@@ -90,7 +90,7 @@
         <FormField
           label="Name"
           required
-          for="pipe-name"
+          for-id="pipe-name"
           :error="errors.name"
           hint="Something a teammate can recognise, e.g. “Web SDK to Snowflake”."
         >
@@ -175,7 +175,7 @@
 
         <FormField
           label="Destination parameters"
-          for="pipe-params"
+          for-id="pipe-params"
           :error="errors.destinationParams"
           hint='A JSON object handed to the destination, e.g. {"table": "raw_web_events"}. Leave blank to use its defaults.'
         >

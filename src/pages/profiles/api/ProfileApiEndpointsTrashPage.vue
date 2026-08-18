@@ -27,7 +27,7 @@
     <NoticeBanner
       v-if="!loading && !error && items.length"
       class="mb-5"
-      variant="warn"
+      tone="warn"
       title="A restored endpoint comes back without its key"
       message="Deleting an endpoint revokes the key issued for it. Restoring brings back the path and its configuration, so issue a new key before pointing clients at it again."
     />
@@ -50,7 +50,7 @@
       </template>
 
       <template #cell-identifierTypeName="{ value }">
-        <StatusBadge variant="neutral" :label="value" />
+        <StatusBadge tone="neutral" :label="value" />
       </template>
 
       <template #cell-deletedAt="{ row }">

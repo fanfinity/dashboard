@@ -5,7 +5,7 @@
         <span class="truncate text-sm font-semibold text-ink">{{
           campaign.name
         }}</span>
-        <StatusBadge :variant="status.variant" :label="status.label" />
+        <StatusBadge :tone="status.variant" :label="status.label" />
       </div>
       <button
         type="button"
@@ -88,7 +88,7 @@
               <p class="truncate text-sm text-ink">{{ asset.name }}</p>
               <p class="text-xs text-subtle">{{ asset.folderName }}</p>
             </div>
-            <StatusBadge variant="neutral" :label="asset.type" />
+            <StatusBadge tone="neutral" :label="asset.type" />
           </li>
         </ul>
       </div>

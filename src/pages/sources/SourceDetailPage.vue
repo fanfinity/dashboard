@@ -66,7 +66,7 @@
       </div>
 
       <div v-if="upgradeText" class="flex flex-wrap items-center gap-3">
-        <StatusBadge variant="warn" :label="upgradeText" />
+        <StatusBadge tone="warn" :label="upgradeText" />
         <button
           class="rounded-lg border border-line2 bg-white px-3 py-1.5 text-sm font-medium text-brand hover:bg-fill"
           @click="upgrade"
@@ -81,7 +81,7 @@
         <template #header>
           <span class="text-sm font-semibold text-ink">Configuration</span>
           <StatusBadge
-            :enabled="source.isEnabled"
+            :tone="source.isEnabled ? 'success' : 'neutral'"
             :label="source.isEnabled ? 'Enabled' : 'Paused'"
           />
         </template>
@@ -117,7 +117,7 @@
               template.name
             }}</span>
             <StatusBadge
-              :variant="upgradeText ? 'warn' : 'success'"
+              :tone="upgradeText ? 'warn' : 'success'"
               :label="upgradeText || 'Up to date'"
             />
           </template>
@@ -128,7 +128,7 @@
             <StatusBadge
               v-for="t in template.tags"
               :key="t"
-              variant="neutral"
+              tone="neutral"
               :label="t"
             />
           </div>

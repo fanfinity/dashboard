@@ -16,7 +16,7 @@
              notice and not an ErrorState — nothing here carries data-smoke. -->
         <NoticeBanner
           v-if="sync?.lastRunMessage"
-          variant="danger"
+          tone="danger"
           class="mb-4"
           title="The last run did not finish"
           :message="sync.lastRunMessage"
@@ -25,7 +25,7 @@
         <DefinitionList :items="facts" :columns="1">
           <template #value-status>
             <StatusBadge
-              :enabled="Boolean(sync?.isEnabled)"
+              :tone="Boolean(sync?.isEnabled) ? 'success' : 'neutral'"
               :label="sync?.isEnabled ? 'Enabled' : 'Paused'"
             />
           </template>
@@ -36,7 +36,7 @@
 
           <template #value-last-run="{ value }">
             <div class="flex flex-wrap items-center justify-end gap-2">
-              <StatusBadge :variant="lastRun.variant" :label="lastRun.label" />
+              <StatusBadge :tone="lastRun.variant" :label="lastRun.label" />
               <span>{{ value }}</span>
             </div>
           </template>
@@ -101,8 +101,7 @@ import {
 // The read-out for one sync.
 //
 // `/profile-dwh-syncs` has no detail route — the manifest ships a list, a create
-// form and a trash, and adding a fourth route would mean editing frozen router
-// files. A sync still carries more than a table row can hold (the whole column
+// form and a trash. A sync still carries more than a table row can hold (the whole column
 // map, the last run's message, the cron behind the friendly label), so the row
 // opens this instead. It is a q-dialog wrapping CardPanel rather than a bespoke
 // surface, so it is the same white card as everywhere else.

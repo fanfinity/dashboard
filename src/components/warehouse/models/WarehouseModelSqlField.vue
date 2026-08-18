@@ -2,7 +2,7 @@
   <FormField
     label="Query"
     required
-    for="model-query"
+    for-id="model-query"
     :error="error"
     hint="One read-only select. It is stored as written and re-run on every refresh."
   >

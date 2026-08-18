@@ -154,7 +154,7 @@
         <template #cell-name="{ row }">
           <div class="flex flex-wrap items-center gap-2">
             <span class="font-medium text-ink">{{ row.name }}</span>
-            <StatusBadge v-if="!row.volume" variant="neutral" label="Idle" />
+            <StatusBadge v-if="!row.volume" tone="neutral" label="Idle" />
           </div>
           <p class="font-mono text-xs text-subtle">{{ row.id }}</p>
         </template>

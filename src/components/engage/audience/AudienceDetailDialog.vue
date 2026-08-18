@@ -18,7 +18,7 @@
              is a notice and carries no data-smoke hook. -->
         <NoticeBanner
           v-if="audience && !audience.isEnabled"
-          variant="warn"
+          tone="warn"
           class="mb-4"
           title="This audience is paused"
           message="Its membership is frozen at the last evaluation, and anything reading it keeps the profiles it had then."
@@ -27,7 +27,7 @@
         <DefinitionList :items="facts" :columns="1">
           <template #value-status>
             <StatusBadge
-              :enabled="Boolean(audience?.isEnabled)"
+              :tone="Boolean(audience?.isEnabled) ? 'success' : 'neutral'"
               :label="audience?.isEnabled ? 'Active' : 'Paused'"
             />
           </template>
@@ -103,9 +103,8 @@ import {
 
 // The read-out for one audience.
 //
-// `/audiences` has no detail route — the manifest ships a single list screen,
-// and adding a route would mean editing frozen router files. An audience still
-// carries more than a table row can hold (its whole condition set, which
+// `/audiences` has no detail route — the manifest ships a single list screen.
+// An audience still carries more than a table row can hold (its whole condition set, which
 // destinations it feeds, when it was last evaluated), so the row opens this
 // instead. Same q-dialog-wrapping-CardPanel shape as the wave-2 sync dialogs.
 const props = defineProps({

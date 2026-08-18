@@ -92,9 +92,9 @@
 import DocSection from '../DocSection.vue'
 import DocSpecimen from '../DocSpecimen.vue'
 import DocSpecRow from '../DocSpecRow.vue'
-import SfereButton from '@/components/sfere/SfereButton.vue'
-import SfereInput from '@/components/sfere/SfereInput.vue'
-import SfereSelect from '@/components/sfere/SfereSelect.vue'
+import SfereButton from '@/components/ui/SfereButton.vue'
+import SfereInput from '@/components/ui/SfereInput.vue'
+import SfereSelect from '@/components/ui/SfereSelect.vue'
 
 const radii = [
   { token: 'rounded-sfere-sm', value: '6px', className: 'rounded-sfere-sm' },

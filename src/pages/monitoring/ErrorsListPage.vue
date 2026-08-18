@@ -103,19 +103,19 @@
         </template>
 
         <template #cell-categoryLabel="{ value }">
-          <StatusBadge variant="neutral" :label="value" />
+          <StatusBadge tone="neutral" :label="value" />
         </template>
 
         <template #cell-errors="{ row }">
           <div class="flex flex-wrap items-center justify-end gap-1.5">
             <StatusBadge
               v-if="row.errors"
-              variant="danger"
+              tone="danger"
               :label="`${row.errors} error${row.errors === 1 ? '' : 's'}`"
             />
             <StatusBadge
               v-if="row.warnings"
-              variant="warn"
+              tone="warn"
               :label="`${row.warnings} warning${row.warnings === 1 ? '' : 's'}`"
             />
           </div>
@@ -192,12 +192,12 @@
         <template #cell-severity="{ row }">
           <div class="flex flex-wrap items-center gap-1.5">
             <StatusBadge
-              :variant="row.severityVariant"
+              :tone="row.severityVariant"
               :label="row.severityLabel"
             />
             <StatusBadge
               v-if="isAcknowledged(row.id)"
-              variant="neutral"
+              tone="neutral"
               label="Acknowledged"
             />
           </div>

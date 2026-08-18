@@ -23,7 +23,7 @@
 
         <NoticeBanner
           v-if="catalog.lastSyncStatus === 'failed'"
-          variant="danger"
+          tone="danger"
           title="The last sync failed"
           :message="
             catalog.lastSyncMessage ||
@@ -33,7 +33,7 @@
 
         <NoticeBanner
           v-else-if="connectionUnhealthy"
-          variant="warn"
+          tone="warn"
           title="This catalog's connection is unhealthy"
           :message="`${catalog.dwhConnectionName} is reporting a problem, so the next sync will not run.`"
         />
@@ -41,7 +41,7 @@
         <DefinitionList :items="facts" :columns="1">
           <template #value-status>
             <StatusBadge
-              :enabled="catalog.isEnabled"
+              :tone="catalog.isEnabled ? 'success' : 'neutral'"
               :label="catalog.isEnabled ? 'Enabled' : 'Paused'"
             />
           </template>
@@ -49,10 +49,7 @@
           <template #value-last-sync>
             <div class="flex flex-wrap items-center justify-end gap-2">
               <span>{{ formatDateTime(catalog.lastSyncedAt) }}</span>
-              <StatusBadge
-                :variant="syncMeta.variant"
-                :label="syncMeta.label"
-              />
+              <StatusBadge :tone="syncMeta.variant" :label="syncMeta.label" />
             </div>
           </template>
 
@@ -63,7 +60,7 @@
             >
               <span>{{ catalog.dwhConnectionName }}</span>
               <StatusBadge
-                :variant="connectionMeta.variant"
+                :tone="connectionMeta.variant"
                 :label="connectionMeta.label"
               />
             </div>

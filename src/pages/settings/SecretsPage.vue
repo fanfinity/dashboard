@@ -42,7 +42,7 @@
     <NoticeBanner
       v-if="!loading && !error && unusedCount"
       class="mb-5"
-      variant="info"
+      tone="info"
       :title="unusedTitle"
       message="A credential nobody reads is a credential nobody rotates. Delete the ones you no longer need."
     />

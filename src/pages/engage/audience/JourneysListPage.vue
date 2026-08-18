@@ -39,7 +39,7 @@
          into a name. Its failure costs one column, not the screen. -->
     <NoticeBanner
       v-if="goalsError"
-      variant="warn"
+      tone="warn"
       class="mb-4"
       title="Goal names are unavailable"
       message="The goal catalog could not be loaded, so journeys show their goal id instead."
@@ -83,7 +83,7 @@
 
       <template #cell-status="{ value }">
         <StatusBadge
-          :variant="journeyStatusMeta(value).variant"
+          :tone="journeyStatusMeta(value).variant"
           :label="journeyStatusMeta(value).label"
         />
       </template>

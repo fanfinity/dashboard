@@ -26,7 +26,7 @@
          explanation rather than leaving the user to guess what deleting did. -->
     <NoticeBanner
       v-if="!loading && !error"
-      variant="info"
+      tone="info"
       class="mb-5"
       title="Deleting a model never touches your warehouse"
       :message="noticeMessage"

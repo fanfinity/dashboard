@@ -7,7 +7,7 @@
       <template #actions>
         <StatusBadge
           v-if="workspace"
-          variant="neutral"
+          tone="neutral"
           :label="workspace.regionLabel"
         />
       </template>
@@ -42,7 +42,7 @@
             <FormField
               label="Name"
               required
-              for="workspace-name"
+              for-id="workspace-name"
               :error="errors.name"
               hint="Shown in the sidebar and on every export."
             >
@@ -67,7 +67,7 @@
               :key="field.key"
               :label="field.label"
               required
-              :for="`retention-${field.key}`"
+              :for-id="`retention-${field.key}`"
               :error="errors[field.key]"
               :hint="retentionHint(field)"
             >
@@ -115,10 +115,7 @@
         <CardPanel>
           <template #header>
             <span class="text-sm font-semibold text-ink">Error alerts</span>
-            <StatusBadge
-              variant="neutral"
-              :label="String(alertChannels.length)"
-            />
+            <StatusBadge tone="neutral" :label="String(alertChannels.length)" />
           </template>
 
           <EmptyState
@@ -139,9 +136,9 @@
                   <p class="truncate text-sm font-medium text-ink">{{
                     channel.label
                   }}</p>
-                  <StatusBadge variant="neutral" :label="channel.kind" />
+                  <StatusBadge tone="neutral" :label="channel.kind" />
                   <StatusBadge
-                    :enabled="channel.isEnabled"
+                    :tone="channel.isEnabled ? 'success' : 'neutral'"
                     :label="channel.isEnabled ? 'Enabled' : 'Paused'"
                   />
                 </div>
@@ -151,7 +148,7 @@
                 >
               </div>
 
-              <StatusBadge variant="warn" :label="`≥ ${channel.minSeverity}`" />
+              <StatusBadge tone="warn" :label="`≥ ${channel.minSeverity}`" />
             </li>
           </ul>
 

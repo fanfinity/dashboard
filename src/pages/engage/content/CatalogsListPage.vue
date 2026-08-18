@@ -39,7 +39,7 @@
     <NoticeBanner
       v-if="attention.length"
       class="mb-5"
-      variant="warn"
+      tone="warn"
       :title="attentionTitle"
       :message="attentionMessage"
     />
@@ -49,7 +49,7 @@
     <NoticeBanner
       v-if="connectionsError"
       class="mb-5"
-      variant="info"
+      tone="info"
       title="Connection health is unavailable"
       :message="connectionsError"
     >
@@ -83,7 +83,7 @@
           <span class="text-ink">{{ row.sourceLabel }}</span>
           <StatusBadge
             v-if="row.connectionStatus === 'error'"
-            variant="danger"
+            tone="danger"
             label="Connection failed"
           />
         </div>
@@ -104,14 +104,17 @@
         <div class="flex items-center justify-end gap-2">
           <span>{{ formatDate(value) }}</span>
           <StatusBadge
-            :variant="syncStatusMeta(row.lastSyncStatus).variant"
+            :tone="syncStatusMeta(row.lastSyncStatus).variant"
             :label="syncStatusMeta(row.lastSyncStatus).label"
           />
         </div>
       </template>
 
       <template #cell-isEnabled="{ value }">
-        <StatusBadge :enabled="value" :label="value ? 'Enabled' : 'Paused'" />
+        <StatusBadge
+          :tone="value ? 'success' : 'neutral'"
+          :label="value ? 'Enabled' : 'Paused'"
+        />
       </template>
 
       <template #cell-actions="{ row }">

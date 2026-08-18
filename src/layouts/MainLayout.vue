@@ -335,8 +335,8 @@ function railLabel(item) {
   return item.badge ? `${item.label} — ${BADGES[item.badge].label}` : item.label
 }
 
-// FROZEN. Screens are registered in src/router/screens.js; this list decides what
-// is *reachable from the sidebar* and how it is grouped. Only list views belong
+// Screens are registered in src/router/screens.js; this list decides what is
+// *reachable from the sidebar* and how it is grouped. Only list views belong
 // here — create/detail/trash screens are reached from within their list.
 //
 // A group with no `children` is a direct link. Groups auto-expand when one of

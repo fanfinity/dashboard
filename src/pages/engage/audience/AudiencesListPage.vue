@@ -22,7 +22,7 @@
         label="Fans in an audience"
         :value="formatCount(totalProfiles)"
         :delta="formatChange(totalChange)"
-        :delta-direction="trendDirection(totalChange)"
+        :direction="trendDirection(totalChange)"
         hint="Counted once per audience — a fan can be in several."
       />
       <StatCard
@@ -41,7 +41,7 @@
          notice with its own retry rather than a page-level ErrorState. -->
     <NoticeBanner
       v-if="secondaryError"
-      variant="warn"
+      tone="warn"
       class="mb-4"
       title="Some audience details are unavailable"
       :message="secondaryError"
@@ -72,11 +72,14 @@
       </template>
 
       <template #cell-type="{ value }">
-        <StatusBadge variant="neutral" :label="audienceTypeLabel(value)" />
+        <StatusBadge tone="neutral" :label="audienceTypeLabel(value)" />
       </template>
 
       <template #cell-isEnabled="{ value }">
-        <StatusBadge :enabled="value" :label="value ? 'Active' : 'Paused'" />
+        <StatusBadge
+          :tone="value ? 'success' : 'neutral'"
+          :label="value ? 'Active' : 'Paused'"
+        />
       </template>
 
       <template #cell-profileCount="{ row }">

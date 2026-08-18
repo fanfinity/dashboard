@@ -93,21 +93,26 @@ the smoke test can assert on a single selector across every route.
    **violet** (anonymous/unknown). Never introduce a fourth.
 
 5. **Tables are hand-rolled.** Never `q-table`. Use `DataTable.vue`. If a screen
-   needs a shape `DataTable` cannot express, hand-roll a `<table>` copying the
-   class strings out of `DataTable.vue` — do not reach for Quasar.
+   needs a shape `DataTable` cannot express, drop to `SfereTable.vue` — the
+   presentational `<table>` `DataTable` is itself built on — and own the four
+   states yourself. Do not reach for Quasar, and do not copy class strings out of
+   `DataTable.vue`: it holds no `<table>` of its own any more.
 
-6. **These primitives are frozen.** Story agents must **not** edit anything in
-   `src/components/ui/`. If a primitive is inadequate for your screen, compose
-   raw Tailwind inside one of its slots (every primitive has an escape hatch)
-   and **report the gap** in your PR/ticket so it can be folded in deliberately
-   during an amendment window. Fifty-four agents editing the same sixteen files
-   is how a design system dies.
+6. **Change a primitive deliberately, not mid-screen.** `src/components/ui/` is
+   imported by ~104 files, so an edit here is never local. If a primitive is
+   inadequate for the one screen you are on, compose raw Tailwind inside one of
+   its slots — every primitive has an escape hatch — and **report the gap**. If
+   the same gap shows up on several screens, that is the case for changing the
+   primitive, and it should land as its own change with its own reasoning rather
+   than buried in a story.
 
-   Amendment windows so far: **Phase 0** (the original thirteen) and
-   **post-wave-1**, which added `DefinitionList`, `SelectableCard` and
-   `NoticeBanner` and extended `DataTable`, `EmptyState` and `StatCard`. Each of
-   those closed a gap that several independent story agents hit and worked
-   around; that is the bar for reopening the folder.
+   The point is not that the folder is sacred; it is that fifty-four screens
+   changing shape as a side effect of one of them is how a design system rots.
+
+   Changes so far: the original thirteen; a post-wave-1 pass that added
+   `DefinitionList`, `SelectableCard` and `NoticeBanner` and extended
+   `DataTable`, `EmptyState` and `StatCard`; and the Sfere migration, which
+   replaced all sixteen implementations and added twenty-three more.
 
 7. **Primitives are dumb.** Props in, slots out. No `useRouter`, no `useRoute`,
    no composables, no `fetch`. Pages own all data and navigation; primitives own
@@ -185,6 +190,55 @@ the smoke run still sees `data-smoke="empty"` either way.
 If the screen only ever has the second case, skip the slot entirely and use
 `DataTable`'s `empty-cta-label` / `empty-cta-to` props.
 
+### Every H1 owes a purpose line
+
+`PageHeader` / `SferePageHeader` take a `subtitle`, and on a screen it is not
+optional: **one plain sentence saying what this section is for**, under every
+`<h1>`, no exceptions. It is the cheapest documentation in the product and the
+only one that is guaranteed to be read.
+
+A purpose line is a sentence, not a label. It says what the thing is for and who
+would want it — not what the page is called again in other words:
+
+```vue
+<!-- WRONG: a label wearing a sentence's clothes -->
+<PageHeader title="Pipes" subtitle="Manage your pipes" />
+
+<!-- RIGHT -->
+<PageHeader
+  title="Pipes"
+  subtitle="A pipe takes events from one source, reshapes them, and delivers them to one destination."
+/>
+```
+
+Two tests it has to pass. It names the object in plain words rather than
+repeating the nav label, and someone who has never seen the screen could say
+what it is for after reading it once.
+
+### Dependent empty states explain the dependency
+
+Some screens cannot have any rows until something else exists first. `/pipes`
+needs a source and a destination; `/journeys` and `/audiences` need a fan
+population. On those screens the "nothing exists yet" empty state must **name
+the dependency and link to it** — never offer a create CTA that leads to a form
+the user cannot complete.
+
+```vue
+<!-- WRONG: the button opens a form with two empty required pickers -->
+<EmptyState title="No pipes yet" description="Create your first pipe.">
+
+<!-- RIGHT -->
+<EmptyState
+  title="No pipes yet"
+  description="A pipe connects one source to one destination, so you need both before you can build one."
+>
+  <template #cta>…Connect a source…</template>
+</EmptyState>
+```
+
+A dead CTA is worse than no CTA: it costs the user a page load, a form and a
+guess before the product admits the answer is somewhere else.
+
 ### Secondary resources degrade in place
 
 A screen usually loads one **primary** resource (the thing the route is named
@@ -240,17 +294,31 @@ All components live in `src/components/ui/` and are imported by path:
 import DataTable from '@/components/ui/DataTable.vue'
 ```
 
+**These are Sfere components.** The originals were replaced in place by
+implementations built on the Sfere token layer, keeping their filenames so no
+screen had to change its imports. Two props were renamed in that swap and the
+tables below reflect the current API: `StatusBadge` takes **`tone`**, not
+`variant`, and has no `enabled`; `FormField` takes **`for-id`**, not `for`.
+
+The folder also holds twenty-three components with `Sfere*` names —
+`SfereButton`, `SfereInput`, `SfereTable`, `SfereSection` and friends — which
+have no pre-Sfere counterpart. They are documented in
+`docs/sfere-design-system.md` and rendered at `#/design-system`.
+
 ### PageHeader.vue
 
 Page title block. Sits at the top of every `q-page`.
 
-| Prop       | Type   | Default | Notes                               |
-| ---------- | ------ | ------- | ----------------------------------- |
-| `title`    | String | —       | required                            |
-| `subtitle` | String | `''`    | one line of context under the title |
+| Prop       | Type    | Default | Notes                                                |
+| ---------- | ------- | ------- | ---------------------------------------------------- |
+| `title`    | String  | `''`    | the `<h1>` — 24px, display face                      |
+| `subtitle` | String  | `''`    | **the purpose line.** One sentence, on every screen  |
+| `eyebrow`  | String  | `''`    | section label above the title — `Collect`, `Act`     |
+| `onDark`   | Boolean | `false` | only for a header inside a `SfereSection tone="ink"` |
 
 | Slot       | Scope | Notes                                          |
 | ---------- | ----- | ---------------------------------------------- |
+| `title`    | —     | overrides the `title` prop for rich content    |
 | `subtitle` | —     | overrides the `subtitle` prop for rich content |
 | `actions`  | —     | right-hand buttons / search box                |
 
@@ -260,18 +328,23 @@ No events.
 
 "Nothing here yet" panel. Renders `data-smoke="empty"` **in both variants**.
 
-| Prop          | Type                 | Default  | Notes               |
-| ------------- | -------------------- | -------- | ------------------- |
-| `title`       | String               | —        | required            |
-| `description` | String               | `''`     |                     |
-| `icon`        | String               | `''`     | an imported SVG url |
-| `variant`     | `'card' \| 'inline'` | `'card'` | see below           |
+| Prop          | Type                 | Default  | Notes     |
+| ------------- | -------------------- | -------- | --------- |
+| `title`       | String               | —        | required  |
+| `description` | String               | `''`     |           |
+| `variant`     | `'card' \| 'inline'` | `'card'` | see below |
+| `onDark`      | Boolean              | `false`  |           |
 
-| Slot  | Scope |
-| ----- | ----- |
-| `cta` | —     |
+| Slot   | Scope | Notes                                                 |
+| ------ | ----- | ----------------------------------------------------- |
+| `icon` | —     | inline SVG, rendered in a tinted chip. **Not a prop** |
+| `cta`  | —     |                                                       |
 
 No events.
+
+The icon is a **slot taking inline SVG**, not a URL prop as it once was: the CSP
+is `default-src 'self'` and `assetsInlineLimit` is `0`, so an inline glyph is
+the only form that costs no extra request.
 
 `card` is the full bordered surface — the default, and what a whole screen or a
 `DataTable` empty state uses. `inline` is a compact centred hint with no border
@@ -291,17 +364,22 @@ loses `data-smoke="empty"`.
 
 ### CardPanel.vue
 
-Generic white surface: `rounded-xl border border-line2 bg-white shadow-sm`.
+The surface everything else sits on. 16px radius, hairline border, and **no
+shadow at rest** — elevation is reserved for things that float, so a grid of
+cards reads as one plane. (It is `SfereCard` under the filename.)
 
-| Prop     | Type    | Default | Notes                                         |
-| -------- | ------- | ------- | --------------------------------------------- |
-| `padded` | Boolean | `true`  | `false` for full-bleed content (e.g. a table) |
+| Prop             | Type                           | Default     | Notes                                                |
+| ---------------- | ------------------------------ | ----------- | ---------------------------------------------------- |
+| `tone`           | `'surface' \| 'soft' \| 'ink'` | `'surface'` | `ink` belongs inside a dark section and nowhere else |
+| `padded`         | Boolean                        | `true`      | `false` for full-bleed content (e.g. a table)        |
+| `interactive`    | Boolean                        | `false`     | lifts and warms the border on hover — links only     |
+| `gradientBorder` | Boolean                        | `false`     | the brand corner fade. At most one card per view     |
 
-| Slot     | Scope | Notes                                         |
-| -------- | ----- | --------------------------------------------- |
-| default  | —     | body                                          |
-| `header` | —     | adds a `border-b border-line px-5 py-3.5` bar |
-| `footer` | —     | adds a `border-t border-line px-5 py-3` bar   |
+| Slot     | Scope | Notes                              |
+| -------- | ----- | ---------------------------------- |
+| default  | —     | body                               |
+| `header` | —     | adds a bordered bar above the body |
+| `footer` | —     | adds a bordered bar below it       |
 
 No events.
 
@@ -309,10 +387,12 @@ No events.
 
 The failure surface. **Renders `data-smoke="error"` on its root.**
 
-| Prop      | Type   | Default                   |
-| --------- | ------ | ------------------------- |
-| `title`   | String | `'Something went wrong'`  |
-| `message` | String | `''` — the raw error text |
+| Prop         | Type    | Default                   |
+| ------------ | ------- | ------------------------- |
+| `title`      | String  | `'Something went wrong'`  |
+| `message`    | String  | `''` — the raw error text |
+| `retryLabel` | String  | `'Retry'`                 |
+| `onDark`     | Boolean | `false`                   |
 
 | Event   | Payload                                |
 | ------- | -------------------------------------- |
@@ -328,13 +408,18 @@ Skeleton placeholder.
 | --------- | ----------------------------- | --------- | ----------------------------------------- |
 | `variant` | `'table' \| 'grid' \| 'form'` | `'table'` |                                           |
 | `rows`    | Number                        | `6`       | bars for `table`/`form`, cards for `grid` |
+| `onDark`  | Boolean                       | `false`   |                                           |
 
 No slots, no events.
 
+Bar heights track the kit's own controls — 40px for a field, 32px for a table
+row — so nothing jumps when the data lands.
+
 ### DataTable.vue
 
-The list-screen workhorse. Hand-rolled `<table>`; owns sorting, paging and all
-three non-populated states.
+The list-screen workhorse. Owns sorting, paging and all three non-populated
+states, and renders the rows through `SfereTable` rather than carrying a second
+`<table>` of its own.
 
 | Prop               | Type             | Default              | Notes                                                                                                                   |
 | ------------------ | ---------------- | -------------------- | ----------------------------------------------------------------------------------------------------------------------- |
@@ -349,6 +434,7 @@ three non-populated states.
 | `emptyCtaTo`       | Object \| String | `null`               | router location, e.g. `{ name: 'sources-new' }`                                                                         |
 | `perPage`          | Number           | `25`                 |                                                                                                                         |
 | `clickableRows`    | Boolean          | `false`              | adds `cursor-pointer` and enables `row-click`                                                                           |
+| `onDark`           | Boolean          | `false`              | for a table inside a dark section                                                                                       |
 
 | Slot         | Scope            | Notes                                                 |
 | ------------ | ---------------- | ----------------------------------------------------- |
@@ -408,11 +494,11 @@ State precedence: `loading` → `error` → empty → populated.
 
 ### StatusBadge.vue
 
-| Prop      | Type                                                      | Default     | Notes                                          |
-| --------- | --------------------------------------------------------- | ----------- | ---------------------------------------------- |
-| `variant` | `'success' \| 'warn' \| 'neutral' \| 'danger' \| 'brand'` | `''`        | wins over `enabled`                            |
-| `enabled` | Boolean                                                   | `undefined` | shorthand: `true` → success, `false` → neutral |
-| `label`   | String                                                    | `''`        |                                                |
+| Prop    | Type                                                                  | Default   | Notes                              |
+| ------- | --------------------------------------------------------------------- | --------- | ---------------------------------- |
+| `tone`  | `'brand' \| 'neutral' \| 'success' \| 'warn' \| 'danger' \| 'onDark'` | `'brand'` | **not `variant`**                  |
+| `label` | String                                                                | `''`      |                                    |
+| `dot`   | Boolean                                                               | `false`   | leading status dot in the same hue |
 
 | Slot    | Scope                     |
 | ------- | ------------------------- |
@@ -420,21 +506,40 @@ State precedence: `loading` → `error` → empty → populated.
 
 No events.
 
+**Two things changed when the Sfere kit replaced this**, and both bite from
+memory:
+
+- The prop is **`tone`**, not `variant`.
+- There is **no `enabled` shorthand.** Write the ternary out:
+  `:tone="row.isEnabled ? 'success' : 'neutral'"`. `enabled` read as on/off next
+  to a prop called `variant`; next to `tone` it looks like it might tint rather
+  than switch.
+
+The default is also `brand`, where this used to default to `neutral` — every
+call site in the repo passes a tone, but a bare `<StatusBadge>` comes out
+purple.
+
 ### StatCard.vue
 
-| Prop             | Type                       | Default      | Notes                                       |
-| ---------------- | -------------------------- | ------------ | ------------------------------------------- |
-| `label`          | String                     | — (required) |                                             |
-| `value`          | String \| Number           | `''`         | pre-formatted — the card does no formatting |
-| `delta`          | String                     | `''`         | e.g. `'4%'`; hidden when empty              |
-| `deltaDirection` | `'up' \| 'down' \| 'flat'` | `'up'`       | ↑ success / ↓ rose / → muted                |
-| `hint`           | String                     | `''`         | muted caption line under the value          |
+| Prop        | Type                       | Default      | Notes                                         |
+| ----------- | -------------------------- | ------------ | --------------------------------------------- |
+| `label`     | String                     | — (required) |                                               |
+| `value`     | String \| Number           | `''`         | pre-formatted — the card does no formatting   |
+| `delta`     | String                     | `''`         | e.g. `'4%'`; hidden when empty                |
+| `direction` | `'up' \| 'down' \| 'flat'` | `'up'`       | **not `deltaDirection`**                      |
+| `hint`      | String                     | `''`         | muted caption line under the value            |
+| `bare`      | Boolean                    | `false`      | drops the border and padding to sit in a card |
+| `onDark`    | Boolean                    | `false`      |                                               |
 
-| Slot    | Scope | Notes                                        |
-| ------- | ----- | -------------------------------------------- |
-| default | —     | rich `hint`; wins over the prop when present |
+| Slot    | Scope | Notes                                          |
+| ------- | ----- | ---------------------------------------------- |
+| default | —     | the **value**, for rich content — not the hint |
+| `hint`  | —     | rich `hint`; wins over the prop when present   |
 
 No events.
+
+Note the default slot: it fills `value`, not `hint`. A rich hint goes in the
+named `#hint` slot.
 
 `delta` is a **trend** — "this moved by X since last period" — and always draws
 an arrow in a trend colour. Anything that is not a trend goes in `hint`.
@@ -455,6 +560,7 @@ a `<dl>` — before it existed, four screens each carried their own copy.
 | --------- | -------- | ------- | ---------------------------------------- |
 | `items`   | Array    | `[]`    | `{ label, value, hint? }`                |
 | `columns` | `1 \| 2` | `2`     | `2` is responsive: one column below `sm` |
+| `onDark`  | Boolean  | `false` |                                          |
 
 | Slot                 | Scope                   | Notes                              |
 | -------------------- | ----------------------- | ---------------------------------- |
@@ -487,7 +593,7 @@ above value, two per row from `sm` up — and suits a full-width panel.
 
   <template #value-status>
     <StatusBadge
-      :enabled="pipe.isEnabled"
+      :tone="pipe.isEnabled ? 'success' : 'neutral'"
       :label="pipe.isEnabled ? 'Enabled' : 'Paused'"
     />
   </template>
@@ -522,6 +628,7 @@ in a button by hand.
 | ---------- | ------- | ------- | ---------------------------------------------- |
 | `selected` | Boolean | `false` | draws `ring-2 ring-brand`, sets `aria-pressed` |
 | `disabled` | Boolean | `false` | suppresses hover and the `select` event        |
+| `onDark`   | Boolean | `false` |                                                |
 
 | Slot    | Scope                    |
 | ------- | ------------------------ |
@@ -545,11 +652,7 @@ state; a selected card would otherwise show no focus at all.
   >
     <div class="flex w-full items-start justify-between gap-2">
       <span class="text-sm font-medium text-ink">{{ t.name }}</span>
-      <StatusBadge
-        v-if="modelValue === t.id"
-        variant="brand"
-        label="Selected"
-      />
+      <StatusBadge v-if="modelValue === t.id" tone="brand" label="Selected" />
     </div>
     <p class="mt-1.5 text-xs leading-5 text-muted">{{ t.description }}</p>
   </SelectableCard>
@@ -563,27 +666,30 @@ know" — the cascade warning on a trash screen, a degraded check on a health
 screen. It deliberately carries **no** `data-smoke` attribute: a notice is not a
 failure, and it must not trip the smoke gate.
 
-| Prop      | Type                           | Default  |
-| --------- | ------------------------------ | -------- |
-| `variant` | `'info' \| 'warn' \| 'danger'` | `'info'` |
-| `title`   | String                         | `''`     |
-| `message` | String                         | `''`     |
+| Prop          | Type                                        | Default  | Notes             |
+| ------------- | ------------------------------------------- | -------- | ----------------- |
+| `tone`        | `'info' \| 'success' \| 'warn' \| 'danger'` | `'info'` | **not `variant`** |
+| `title`       | String                                      | `''`     |                   |
+| `message`     | String                                      | `''`     |                   |
+| `dismissible` | Boolean                                     | `false`  | adds a close ×    |
 
 | Slot    | Scope | Notes                                         |
 | ------- | ----- | --------------------------------------------- |
 | default | —     | actions or rich body, under `title`/`message` |
 
-No events.
+| Event     | Payload                                     |
+| --------- | ------------------------------------------- |
+| `dismiss` | — (only when `dismissible`; you own hiding) |
 
 Use this rather than stretching a `StatusBadge` — a badge is a pill sized for one
 or two words, and a whole sentence in one looks like a bug. `info` is brand,
 `warn` is amber, `danger` is rose; a genuine load failure is still `ErrorState`,
-not `NoticeBanner variant="danger"`.
+not `NoticeBanner tone="danger"`.
 
 ```html
 <NoticeBanner
   v-if="cascadeCount"
-  variant="warn"
+  tone="warn"
   title="Some of these cannot be restored on their own"
   :message="`${cascadeCount} reference a source or destination that was deleted too.`"
 />
@@ -591,44 +697,54 @@ not `NoticeBanner variant="danger"`.
 
 ### ToolbarSearch.vue
 
-| Prop          | Type   | Default     |
-| ------------- | ------ | ----------- |
-| `modelValue`  | String | `''`        |
-| `placeholder` | String | `'Search…'` |
+| Prop          | Type    | Default     | Notes                                          |
+| ------------- | ------- | ----------- | ---------------------------------------------- |
+| `modelValue`  | String  | `''`        |                                                |
+| `placeholder` | String  | `'Search…'` |                                                |
+| `id`          | String  | `''`        | pair with a `FormField` `for-id`               |
+| `block`       | Boolean | `false`     | fill the cell instead of holding the 280px cap |
+| `onDark`      | Boolean | `false`     |                                                |
 
 | Event               | Payload |
 | ------------------- | ------- |
 | `update:modelValue` | String  |
 
-Use with `v-model`. No slots.
+Use with `v-model`. No slots. 40px tall, like every other control in the kit.
 
 ### FormSection.vue
 
 A `CardPanel` with a heading, for grouping fields.
 
-| Prop          | Type   | Default      |
-| ------------- | ------ | ------------ |
-| `title`       | String | — (required) |
-| `description` | String | `''`         |
+| Prop          | Type    | Default      |
+| ------------- | ------- | ------------ |
+| `title`       | String  | — (required) |
+| `description` | String  | `''`         |
+| `onDark`      | Boolean | `false`      |
 
-| Slot    | Scope                                  |
-| ------- | -------------------------------------- |
-| default | — (fields, in a `flex flex-col gap-4`) |
+| Slot      | Scope | Notes                              |
+| --------- | ----- | ---------------------------------- |
+| default   | —     | fields, in a `flex flex-col gap-4` |
+| `actions` | —     | a footer bar under the fields      |
 
 No events.
+
+`onDark` reaches the card and its heading but **not** the fields inside it —
+each `FormField` needs its own `on-dark`, or the labels stay black on black.
 
 ### FormField.vue
 
 Label + control + hint/error. The control goes in the slot, so a page can use
 `q-input`, `q-select` or a raw `<input>`.
 
-| Prop       | Type    | Default | Notes                                       |
-| ---------- | ------- | ------- | ------------------------------------------- |
-| `label`    | String  | `''`    |                                             |
-| `hint`     | String  | `''`    | suppressed while `error` is set             |
-| `error`    | String  | `''`    | renders in `text-rose-500`                  |
-| `required` | Boolean | `false` | appends a rose asterisk                     |
-| `for`      | String  | `''`    | `<label for>`; pair with the control's `id` |
+| Prop       | Type    | Default | Notes                                  |
+| ---------- | ------- | ------- | -------------------------------------- |
+| `label`    | String  | `''`    |                                        |
+| `hint`     | String  | `''`    | suppressed while `error` is set        |
+| `error`    | String  | `''`    | replaces the hint rather than stacking |
+| `required` | Boolean | `false` | appends a danger asterisk              |
+| `optional` | Boolean | `false` | marks the field optional instead       |
+| `forId`    | String  | `''`    | **not `for`** — `for` is a JS keyword  |
+| `onDark`   | Boolean | `false` |                                        |
 
 | Slot    | Scope           |
 | ------- | --------------- |
@@ -636,24 +752,31 @@ Label + control + hint/error. The control goes in the slot, so a page can use
 
 No events.
 
-The house raw input, when not using Quasar:
+The control goes in the slot. Use `SfereInput`, `SfereSelect`, `SfereTextarea`,
+`SfereToggle` or `SfereCheckbox` — all 40px, all sharing the same focus ring —
+rather than a raw `<input>`:
 
 ```html
-<input
-  class="h-9 rounded-lg border border-line2 bg-white px-2.5 text-sm text-ink outline-none placeholder:text-subtle"
-/>
+<FormField label="Name" for-id="pipe-name" required>
+  <SfereInput id="pipe-name" v-model="name" placeholder="e.g. Club shop" />
+</FormField>
 ```
 
 ### ConfirmDialog.vue
 
-| Prop           | Type    | Default           |
-| -------------- | ------- | ----------------- |
-| `modelValue`   | Boolean | `false`           |
-| `title`        | String  | `'Are you sure?'` |
-| `message`      | String  | `''`              |
-| `confirmLabel` | String  | `'Confirm'`       |
-| `cancelLabel`  | String  | `'Cancel'`        |
-| `destructive`  | Boolean | `false`           |
+| Prop           | Type    | Default           | Notes                                 |
+| -------------- | ------- | ----------------- | ------------------------------------- |
+| `modelValue`   | Boolean | `false`           |                                       |
+| `title`        | String  | `'Are you sure?'` |                                       |
+| `message`      | String  | `''`              |                                       |
+| `confirmLabel` | String  | `'Confirm'`       |                                       |
+| `cancelLabel`  | String  | `'Cancel'`        |                                       |
+| `destructive`  | Boolean | `false`           | red confirm. Only for destroying data |
+| `loading`      | Boolean | `false`           | spinner on confirm; blocks the click  |
+
+Wraps `q-dialog` — the one Quasar dependency in the kit — for the focus trap,
+Escape, scroll lock, backdrop and teleport. Escape, the backdrop, Cancel and the
+× all dismiss it.
 
 | Slot    | Scope                                  |
 | ------- | -------------------------------------- |
@@ -666,18 +789,24 @@ The house raw input, when not using Quasar:
 
 ### TabNav.vue
 
-Underline tabs.
+Underline tabs by default.
 
-| Prop         | Type   | Default | Notes                                            |
-| ------------ | ------ | ------- | ------------------------------------------------ |
-| `modelValue` | String | `''`    | the active tab's `key`                           |
-| `tabs`       | Array  | `[]`    | `{ key, label, count? }`; `count` renders a pill |
+| Prop         | Type                    | Default       | Notes                                            |
+| ------------ | ----------------------- | ------------- | ------------------------------------------------ |
+| `modelValue` | String                  | `''`          | the active tab's `key`                           |
+| `tabs`       | Array                   | `[]`          | `{ key, label, count? }`; `count` renders a pill |
+| `variant`    | `'underline' \| 'pill'` | `'underline'` | see below                                        |
+| `onDark`     | Boolean                 | `false`       |                                                  |
 
 | Event               | Payload          |
 | ------------------- | ---------------- |
 | `update:modelValue` | String (tab key) |
 
 No slots.
+
+`underline` switches a page's primary content and carries its own `mb-4`.
+`pill` is for filtering a list, sits in a tray, and carries no margin. Mixing
+both on one screen makes them read as the same control.
 
 ---
 
@@ -754,7 +883,10 @@ All four states, zero bespoke markup. `DataTable` selects between them.
       </template>
 
       <template #cell-enabled="{ value }">
-        <StatusBadge :enabled="value" :label="value ? 'Enabled' : 'Paused'" />
+        <StatusBadge
+          :tone="value ? 'success' : 'neutral'"
+          :label="value ? 'Enabled' : 'Paused'"
+        />
       </template>
     </DataTable>
   </q-page>
@@ -833,13 +965,17 @@ A form has no `DataTable` to lean on, so it switches on the states itself.
         title="Basics"
         description="How this destination appears in lists."
       >
-        <FormField label="Name" required for="dest-name" :error="errors.name">
-          <input
+        <FormField
+          label="Name"
+          required
+          for-id="dest-name"
+          :error="errors.name"
+        >
+          <SfereInput
             id="dest-name"
             v-model="formState.name"
-            type="text"
             placeholder="e.g. Meta CAPI — production"
-            class="h-9 rounded-lg border border-line2 bg-white px-2.5 text-sm text-ink outline-none placeholder:text-subtle"
+            :invalid="Boolean(errors.name)"
           />
         </FormField>
 
@@ -938,7 +1074,7 @@ outcome.
       @retry="load"
     >
       <template #cell-kind="{ value }">
-        <StatusBadge variant="neutral" :label="value" />
+        <StatusBadge tone="neutral" :label="value" />
       </template>
 
       <template #cell-actions="{ row }">

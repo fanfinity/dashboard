@@ -7,7 +7,7 @@
       <FormField
         label="Key"
         required
-        for="secret-key"
+        for-id="secret-key"
         :error="errors.key"
         :hint="keyHint"
       >
@@ -25,7 +25,7 @@
       <FormField
         label="Value"
         required
-        for="secret-value"
+        for-id="secret-value"
         :error="errors.value"
         hint="Write-only. Stored encrypted; nothing on this screen can print it back."
       >
@@ -41,7 +41,7 @@
 
       <FormField
         label="Description"
-        for="secret-description"
+        for-id="secret-description"
         hint="Optional. One line of context for whoever inherits this."
       >
         <input

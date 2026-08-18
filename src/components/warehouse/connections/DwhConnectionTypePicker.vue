@@ -10,7 +10,7 @@
         <span class="text-sm font-medium text-ink">{{ t.label }}</span>
         <StatusBadge
           v-if="modelValue === t.value"
-          variant="brand"
+          tone="brand"
           label="Selected"
         />
       </div>
@@ -18,8 +18,8 @@
       <p class="mt-2 text-xs leading-5 text-muted">{{ t.description }}</p>
 
       <div class="mt-2 flex flex-wrap items-center gap-1.5">
-        <StatusBadge variant="neutral" :label="`Port ${t.defaultPort}`" />
-        <StatusBadge variant="neutral" :label="t.usernameLabel" />
+        <StatusBadge tone="neutral" :label="`Port ${t.defaultPort}`" />
+        <StatusBadge tone="neutral" :label="t.usernameLabel" />
       </div>
     </SelectableCard>
   </div>

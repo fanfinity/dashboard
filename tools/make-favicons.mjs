@@ -24,8 +24,8 @@
  *   node tools/make-favicons.mjs           # write the PNGs and the ICO
  *   node tools/make-favicons.mjs --check   # render and report, write nothing
  *
- * Lives in tools/ rather than scripts/ because scripts/ is a frozen path
- * (see CLAUDE.md).
+ * Lives in tools/ rather than scripts/: scripts/ holds what the build and the
+ * gates run, tools/ holds one-off maintenance like this.
  */
 
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs'

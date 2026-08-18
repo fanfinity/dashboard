@@ -5,7 +5,7 @@
     title="Typography"
     description="Three faces with no overlap in what they do. Bricolage Grotesque carries every heading and is the main reason the brand reads as confident rather than as another Inter-on-white SaaS page; Inter does all the work; Geist Mono labels things."
   >
-    <SfereAlert
+    <NoticeBanner
       tone="warn"
       title="Headings need the Tailwind v4 important suffix"
       message="Tailwind emits utilities into @layer utilities, and Quasar's base stylesheet is unlayered — unlayered CSS beats layered CSS whatever the specificity. So a bare h1–h6 needs text-sfere-h2!, not text-sfere-h2. The type tokens bundle size, leading, tracking and weight into one utility precisely so a single ! covers all four."
@@ -21,7 +21,7 @@
 &lt;!-- better: let the component do it --&gt;
 &lt;SfereSectionHeading title="Section" /&gt;'
       />
-    </SfereAlert>
+    </NoticeBanner>
 
     <DocSpecimen
       title="The three faces"
@@ -108,10 +108,10 @@
 import DocSection from '../DocSection.vue'
 import DocSpecimen from '../DocSpecimen.vue'
 import DocSpecRow from '../DocSpecRow.vue'
-import SfereAlert from '@/components/sfere/SfereAlert.vue'
-import SfereCode from '@/components/sfere/SfereCode.vue'
-import SfereEyebrow from '@/components/sfere/SfereEyebrow.vue'
-import SfereSectionHeading from '@/components/sfere/SfereSectionHeading.vue'
+import NoticeBanner from '@/components/ui/NoticeBanner.vue'
+import SfereCode from '@/components/ui/SfereCode.vue'
+import SfereEyebrow from '@/components/ui/SfereEyebrow.vue'
+import SfereSectionHeading from '@/components/ui/SfereSectionHeading.vue'
 
 const faces = [
   {

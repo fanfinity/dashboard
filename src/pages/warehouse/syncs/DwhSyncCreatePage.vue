@@ -49,7 +49,7 @@
         <FormField
           label="Name"
           required
-          for="dwh-sync-name"
+          for-id="dwh-sync-name"
           :error="errors.name"
           hint="Shown everywhere this sync is referenced."
         >
@@ -111,7 +111,7 @@
 
         <NoticeBanner
           v-if="selectedSource && !selectedSource.isEnabled"
-          variant="warn"
+          tone="warn"
           :title="`${selectedSource.name} is paused`"
           message="It is not collecting events right now, so the sync will run and copy nothing until the source is enabled again."
         />
@@ -137,7 +137,7 @@
               <div class="flex w-full items-start justify-between gap-2">
                 <span class="text-sm font-medium text-ink">{{ c.name }}</span>
                 <StatusBadge
-                  :variant="isConnectionHealthy(c) ? 'success' : 'danger'"
+                  :tone="isConnectionHealthy(c) ? 'success' : 'danger'"
                   :label="isConnectionHealthy(c) ? 'Connected' : 'Failing'"
                 />
               </div>
@@ -154,7 +154,7 @@
         <FormField
           label="Target table"
           required
-          for="dwh-sync-table"
+          for-id="dwh-sync-table"
           :error="errors.targetTable"
           hint="Created on the first run if it does not exist. Fully qualified: database.schema.table."
         >
@@ -215,11 +215,7 @@
         </FormField>
       </FormSection>
 
-      <NoticeBanner
-        variant="info"
-        title="What this will do"
-        :message="summary"
-      />
+      <NoticeBanner tone="info" title="What this will do" :message="summary" />
 
       <div class="flex flex-wrap items-center gap-2">
         <button

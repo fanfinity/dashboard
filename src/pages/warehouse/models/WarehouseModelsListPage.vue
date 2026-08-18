@@ -60,7 +60,7 @@
 
     <NoticeBanner
       v-else-if="attention.length"
-      variant="warn"
+      tone="warn"
       class="mb-5"
       :title="attentionTitle"
       :message="attentionMessage"
@@ -81,7 +81,7 @@
           <p class="font-medium text-ink">{{ row.name }}</p>
           <StatusBadge
             v-if="row.connectionBroken"
-            variant="danger"
+            tone="danger"
             label="Connection down"
           />
         </div>
@@ -104,7 +104,7 @@
         <p class="whitespace-nowrap text-muted">{{ row.refreshedLabel }}</p>
         <div class="mt-1">
           <StatusBadge
-            :variant="refreshStatusVariant(row.lastRefreshStatus)"
+            :tone="refreshStatusVariant(row.lastRefreshStatus)"
             :label="refreshStatusLabel(row.lastRefreshStatus)"
           />
         </div>
@@ -123,7 +123,10 @@
       </template>
 
       <template #cell-isEnabled="{ value }">
-        <StatusBadge :enabled="value" :label="value ? 'Active' : 'Paused'" />
+        <StatusBadge
+          :tone="value ? 'success' : 'neutral'"
+          :label="value ? 'Active' : 'Paused'"
+        />
       </template>
 
       <template #cell-actions="{ row }">

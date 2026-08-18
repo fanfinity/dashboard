@@ -7,7 +7,7 @@
             group.source.name
           }}</p>
           <StatusBadge
-            :enabled="group.source.isEnabled"
+            :tone="group.source.isEnabled ? 'success' : 'neutral'"
             :label="group.source.isEnabled ? 'Enabled' : 'Paused'"
           />
         </div>
@@ -30,7 +30,7 @@
                 link.pipe.name
               }}</span>
               <StatusBadge
-                :enabled="link.pipe.isEnabled"
+                :tone="link.pipe.isEnabled ? 'success' : 'neutral'"
                 :label="link.pipe.isEnabled ? 'Enabled' : 'Paused'"
               />
             </span>
@@ -64,7 +64,7 @@
         <StatusBadge
           v-for="node in idle"
           :key="`${node.kind}-${node.id}`"
-          variant="neutral"
+          tone="neutral"
           :label="`${node.name} · ${node.kind}`"
         />
       </div>

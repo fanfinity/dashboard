@@ -24,13 +24,13 @@
         <div class="flex items-center gap-3">
           <AssetThumbnail :asset="asset" size="sm" />
           <div class="min-w-0">
-            <StatusBadge variant="neutral" :label="typeLabel" />
+            <StatusBadge tone="neutral" :label="typeLabel" />
             <p class="mt-1.5 truncate text-xs text-subtle">{{ asset.url }}</p>
           </div>
         </div>
 
         <NoticeBanner
-          variant="info"
+          tone="info"
           message="Remote files are not fetched in this preview, so the tile above is a typed placeholder rather than the real image."
         />
 
@@ -43,7 +43,7 @@
               <StatusBadge
                 v-for="tag in asset.tags"
                 :key="tag"
-                variant="neutral"
+                tone="neutral"
                 :label="tag"
               />
             </div>
@@ -85,7 +85,7 @@
                   campaign.journeyName || campaign.audienceName || campaign.id
                 }}</p>
               </div>
-              <StatusBadge variant="neutral" :label="campaign.channel" />
+              <StatusBadge tone="neutral" :label="campaign.channel" />
             </li>
           </ul>
         </div>

@@ -1,142 +1,156 @@
 <template>
   <div>
-    <!-- Toolbar (search / filters / actions) sits above every state. -->
+    <!-- Toolbar (search / filters / actions) sits above every state, so it does
+         not disappear the moment a filter empties the list and strand the user
+         with no way to undo the filter. -->
     <div v-if="$slots.toolbar" class="mb-4 flex flex-wrap items-center gap-2">
       <slot name="toolbar" />
     </div>
 
-    <LoadingState v-if="loading" variant="table" :rows="6" />
+    <LoadingState v-if="loading" variant="table" :rows="6" :on-dark="onDark" />
 
-    <ErrorState v-else-if="error" :message="error" @retry="emit('retry')" />
+    <ErrorState
+      v-else-if="error"
+      :message="error"
+      :on-dark="onDark"
+      @retry="emit('retry')"
+    />
 
-    <!-- A page needing the two-case pattern (filtered-empty -> "Clear filters"
-         vs never-had-any -> primary CTA) still overrides `#empty` wholesale and
-         gets no help from the props below; the one-CTA common case needs no
-         slot at all. -->
+    <!-- A list has two empty states and they need different copy: filters
+         matched nothing -> "No X match your search" + Clear filters, versus
+         nothing exists yet -> the create action. The props below cover the
+         second, common case; a page needing both overrides `empty` wholesale. -->
     <slot v-else-if="!rows.length" name="empty">
-      <EmptyState :title="emptyTitle" :description="emptyDescription">
+      <EmptyState
+        :title="emptyTitle"
+        :description="emptyDescription"
+        :on-dark="onDark"
+      >
         <template
           v-if="$slots['empty-cta'] || (emptyCtaLabel && emptyCtaTo)"
           #cta
         >
           <slot name="empty-cta">
-            <router-link
+            <SfereButton
+              :variant="onDark ? 'white' : 'primary'"
+              size="sm"
               :to="emptyCtaTo"
-              class="flex h-9 items-center gap-1.5 rounded-lg bg-brand px-3.5 text-sm font-medium text-white shadow-sm hover:opacity-90"
-              >{{ emptyCtaLabel }}</router-link
+              >{{ emptyCtaLabel }}</SfereButton
             >
           </slot>
         </template>
       </EmptyState>
     </slot>
 
-    <div
+    <SfereTable
       v-else
-      class="overflow-hidden rounded-xl border border-line2 bg-white shadow-sm"
+      :columns="tableColumns"
+      :rows="pagedRows"
+      :row-key="rowKey"
+      :clickable-rows="clickableRows"
+      :on-dark="onDark"
+      @row-click="row => emit('row-click', row)"
     >
-      <table class="w-full text-sm">
-        <thead>
-          <tr class="border-b border-line text-left">
-            <th
-              v-for="col in columns"
-              :key="col.key"
-              class="px-5 py-3 text-[11px] font-semibold uppercase tracking-[0.4px] text-subtle"
-              :class="[
-                alignClass(col),
-                col.sortable ? 'cursor-pointer select-none hover:text-ink' : ''
-              ]"
-              :style="col.width ? { width: col.width } : undefined"
-              @click="col.sortable && toggleSort(col.key)"
-            >
-              <span
-                class="inline-flex items-center gap-1"
-                :class="col.align === 'right' ? 'flex-row-reverse' : ''"
-              >
-                {{ col.label }}
-                <span
-                  v-if="col.sortable"
-                  class="text-[8px] leading-none"
-                  :class="
-                    sortKey === col.key ? 'text-brand' : 'text-transparent'
-                  "
-                  >{{
-                    sortKey === col.key && sortDir === 'desc' ? '▼' : '▲'
-                  }}</span
-                >
-              </span>
-            </th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr
-            v-for="(row, i) in pagedRows"
-            :key="row[rowKey] ?? i"
-            class="border-b border-line last:border-0 hover:bg-sidebar"
-            :class="clickableRows ? 'cursor-pointer' : ''"
-            @click="clickableRows && emit('row-click', row)"
-          >
-            <td
-              v-for="col in columns"
-              :key="col.key"
-              class="px-5 py-3.5 text-muted"
-              :class="alignClass(col)"
-            >
-              <slot
-                :name="`cell-${col.key}`"
-                :row="row"
-                :value="row[col.key]"
-                >{{ row[col.key] }}</slot
-              >
-            </td>
-          </tr>
-        </tbody>
-      </table>
-
-      <!-- Pagination footer -->
-      <div
-        class="flex items-center justify-between border-t border-line px-5 py-3 text-xs text-muted"
+      <!-- Sortable headers become real buttons. The caret holds its space when
+           a column is unsorted (`opacity-0`, not `hidden`) so the header row
+           does not reflow by a few pixels every time the sort changes. -->
+      <template
+        v-for="col in sortableColumns"
+        :key="`head-${col.key}`"
+        #[`head-${col.key}`]
       >
+        <button
+          type="button"
+          class="inline-flex items-center gap-1 uppercase transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sfere-500/60"
+          :class="[
+            col.align === 'right' ? 'flex-row-reverse' : '',
+            onDark ? 'hover:text-white' : 'hover:text-sfere-fg'
+          ]"
+          @click="toggleSort(col.key)"
+        >
+          {{ col.label }}
+          <span
+            aria-hidden="true"
+            class="text-[0.5rem] leading-none"
+            :class="
+              sortKey === col.key
+                ? onDark
+                  ? 'text-sfere-300'
+                  : 'text-sfere-brand-text'
+                : 'opacity-0'
+            "
+            >{{ sortKey === col.key && sortDir === 'desc' ? '▼' : '▲' }}</span
+          >
+        </button>
+      </template>
+
+      <!-- Every cell slot is forwarded through with the same fallback SfereTable
+           already renders, so a page's `#cell-status` reaches the <td> and a
+           column with no slot still prints row[col.key]. -->
+      <template
+        v-for="col in columns"
+        :key="`cell-${col.key}`"
+        #[`cell-${col.key}`]="cell"
+      >
+        <slot :name="`cell-${col.key}`" v-bind="cell">{{ cell.value }}</slot>
+      </template>
+
+      <!-- Always rendered, even for a single page. "Showing 1-5 of 5" is the
+           answer to "is this everything?", which a list owes the reader whether
+           or not it happens to paginate. -->
+      <template #footer>
         <span
           >Showing {{ rangeStart }}–{{ rangeEnd }} of
-          {{ rows.length.toLocaleString() }}</span
+          {{ rows.length.toLocaleString('en-GB') }}</span
         >
-        <div class="flex items-center gap-1">
-          <button
-            class="rounded-md border border-line2 bg-white px-2.5 py-1 hover:bg-fill disabled:cursor-not-allowed disabled:opacity-40"
+        <div class="flex items-center gap-1.5">
+          <SfereButton
+            variant="secondary"
+            size="sm"
             :disabled="page <= 1"
             @click="page--"
-            >Prev</button
+            >Prev</SfereButton
           >
-          <span class="px-1">Page {{ page }} of {{ pageCount }}</span>
-          <button
-            class="rounded-md border border-line2 bg-white px-2.5 py-1 hover:bg-fill disabled:cursor-not-allowed disabled:opacity-40"
+          <span class="px-1 font-sfere-mono tabular-nums"
+            >{{ page }} / {{ pageCount }}</span
+          >
+          <SfereButton
+            variant="secondary"
+            size="sm"
             :disabled="page >= pageCount"
             @click="page++"
-            >Next</button
+            >Next</SfereButton
           >
         </div>
-      </div>
-    </div>
+      </template>
+    </SfereTable>
   </div>
 </template>
 
 <script setup>
 import { computed, ref, watch } from 'vue'
-import LoadingState from '@/components/ui/LoadingState.vue'
-import ErrorState from '@/components/ui/ErrorState.vue'
-import EmptyState from '@/components/ui/EmptyState.vue'
+import SfereButton from './SfereButton.vue'
+import EmptyState from './EmptyState.vue'
+import ErrorState from './ErrorState.vue'
+import LoadingState from './LoadingState.vue'
+import SfereTable from './SfereTable.vue'
 
-// Hand-rolled table — never q-table. Every class string here is lifted verbatim
-// from ContactsPage: the card shell, the <th> treatment and its sort caret, the
-// row hover/border rules, and the pagination footer. Loading / error / empty are
-// delegated to the three state primitives rather than re-implemented, so the
-// smoke test's single `[data-smoke="error"]` hook covers every list screen.
+// The list screen, as one component. SfereTable stays presentation-only — this
+// is the layer that owns the four states a real list has (loading, failed,
+// empty, populated) plus sorting and paging, and it COMPOSES on SfereTable
+// through its `head-<key>` and `footer` slots rather than growing a second
+// <table>. One set of table styles, two entry points.
 //
-// Sorting and paging are internal: pass the full `rows` array and let the
-// component slice it. Cells render `row[col.key]` by default; override any one
-// of them with a `cell-<key>` scoped slot receiving `{ row, value }`.
+// The props and slot names are carried over verbatim from the table this
+// replaced, so the ~30 list screens did not change when the kit did. Note
+// `error` is a STRING (the message), not a boolean — every page that passes
+// `:error="error"` straight from useMockResource relies on that.
+//
+// Sorting and paging are internal: hand down the whole `rows` array and let this
+// slice it. Filtering stays with the page, because only the page knows which
+// fields are searchable and what "Clear filters" should reset.
 const props = defineProps({
-  // [{ key, label, sortable?, align?: 'left'|'center'|'right', width?: string }]
+  // [{ key, label, sortable?, align?: 'left'|'center'|'right', width? }]
   columns: { type: Array, default: () => [] },
   rows: { type: Array, default: () => [] },
   loading: { type: Boolean, default: false },
@@ -145,24 +159,30 @@ const props = defineProps({
   emptyTitle: { type: String, default: 'Nothing here yet' },
   emptyDescription: { type: String, default: '' },
   // One-CTA shortcut for the default empty state. Both must be set for the
-  // button to render; anything richer goes in the `empty-cta` slot, and the
-  // two-case pattern goes in `empty`.
+  // button to render; anything richer goes in `empty-cta`, and the two-case
+  // pattern goes in `empty`.
   emptyCtaLabel: { type: String, default: '' },
-  // A router location object, e.g. `{ name: 'sources-new' }`. Declarative only —
-  // this stays a dumb primitive; it never reads the router.
+  // A router location, e.g. { name: 'sources-new' }. Declarative only — this
+  // stays a dumb primitive and never reads the router.
   emptyCtaTo: { type: [Object, String], default: null },
   perPage: { type: Number, default: 25 },
-  clickableRows: { type: Boolean, default: false }
+  clickableRows: { type: Boolean, default: false },
+  onDark: { type: Boolean, default: false }
 })
+
 const emit = defineEmits(['row-click', 'retry'])
 
-const ALIGN = {
-  right: 'text-right',
-  center: 'text-center'
-}
-function alignClass(col) {
-  return ALIGN[col.align] ?? ''
-}
+const sortableColumns = computed(() => props.columns.filter(c => c.sortable))
+
+// The sort state reaches the <th> through the column list rather than through
+// the header slot, because `aria-sort` belongs on the columnheader and a slot
+// cannot put an attribute on the element that hosts it. SfereTable stays dumb:
+// it renders whatever the column says.
+const tableColumns = computed(() =>
+  props.columns.map(col =>
+    col.sortable ? { ...col, ariaSort: ariaSort(col.key) } : col
+  )
+)
 
 const sortKey = ref('')
 const sortDir = ref('asc')
@@ -177,11 +197,18 @@ function toggleSort(key) {
   }
 }
 
+function ariaSort(key) {
+  if (sortKey.value !== key) return 'none'
+  return sortDir.value === 'asc' ? 'ascending' : 'descending'
+}
+
 function sortValue(row, key) {
   const v = row[key]
   return typeof v === 'string' ? v.toLowerCase() : v
 }
 
+// Sort the whole set, then slice — sorting the visible page only would reorder
+// rows within a page and leave the pages themselves in the original order.
 const sortedRows = computed(() => {
   if (!sortKey.value) return props.rows
   const dir = sortDir.value === 'asc' ? 1 : -1
@@ -189,6 +216,8 @@ const sortedRows = computed(() => {
     const av = sortValue(a, sortKey.value)
     const bv = sortValue(b, sortKey.value)
     if (av == null && bv == null) return 0
+    // Blanks sort last in either direction. A column of empty cells at the top
+    // is never the answer someone clicked a header looking for.
     if (av == null) return dir
     if (bv == null) return -dir
     if (av < bv) return -dir
@@ -209,12 +238,13 @@ const pagedRows = computed(() => {
 const rangeStart = computed(() =>
   props.rows.length ? (page.value - 1) * props.perPage + 1 : 0
 )
+
 const rangeEnd = computed(() =>
   Math.min(page.value * props.perPage, props.rows.length)
 )
 
-// A filtered-down result set must not strand the user on a page that no longer
-// exists — clamp back into range whenever the row count changes.
+// A filter that shrinks the set must not strand the user on a page that no
+// longer exists — clamp back into range whenever the row count changes.
 watch(
   () => props.rows.length,
   () => {

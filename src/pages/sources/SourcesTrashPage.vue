@@ -38,7 +38,7 @@
       </template>
 
       <template #cell-sourceType="{ value }">
-        <StatusBadge variant="neutral" :label="sourceTypeLabel(value)" />
+        <StatusBadge tone="neutral" :label="sourceTypeLabel(value)" />
       </template>
 
       <template #cell-deletedAt="{ row }">

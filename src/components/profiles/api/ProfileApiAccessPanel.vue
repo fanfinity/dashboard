@@ -5,7 +5,7 @@
         >Calling the Profile API</span
       >
       <StatusBadge
-        :variant="selected?.isEnabled ? 'success' : 'neutral'"
+        :tone="selected?.isEnabled ? 'success' : 'neutral'"
         :label="selected?.isEnabled ? 'Live' : 'Paused'"
       />
     </template>

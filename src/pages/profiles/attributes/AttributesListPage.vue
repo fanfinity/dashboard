@@ -58,7 +58,7 @@
           <p class="font-medium text-ink">{{ row.name }}</p>
           <StatusBadge
             v-if="row.isManaged"
-            variant="brand"
+            tone="brand"
             :label="`Managed by ${row.managedBy}`"
           />
         </div>
@@ -67,7 +67,7 @@
 
       <template #cell-type="{ row }">
         <StatusBadge
-          :variant="row.type === 'realtime' ? 'success' : 'neutral'"
+          :tone="row.type === 'realtime' ? 'success' : 'neutral'"
           :label="attributeTypeLabel(row.type)"
         />
       </template>

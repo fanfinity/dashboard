@@ -24,7 +24,7 @@
 
     <div class="flex flex-col gap-5">
       <NoticeBanner
-        variant="info"
+        tone="info"
         title="Local capture only"
         message="These events were simulated by the Demo Store in this browser tab. Nothing was ingested, no pipe actually ran, and the log is cleared on reload."
       />
@@ -89,17 +89,13 @@
             </template>
 
             <template #cell-profileId="{ value }">
-              <StatusBadge
-                v-if="value"
-                variant="success"
-                :label="String(value)"
-              />
-              <StatusBadge v-else variant="neutral" label="Anonymous" />
+              <StatusBadge v-if="value" tone="success" :label="String(value)" />
+              <StatusBadge v-else tone="neutral" label="Anonymous" />
             </template>
 
             <template #cell-routing="{ row }">
               <StatusBadge
-                :variant="deliveredCount(row) ? 'success' : 'warn'"
+                :tone="deliveredCount(row) ? 'success' : 'warn'"
                 :label="routingLabel(row)"
               />
             </template>
@@ -171,7 +167,7 @@
               >
               <StatusBadge
                 v-if="!samplesLoading && !samplesError"
-                variant="neutral"
+                tone="neutral"
                 :label="`${formatCount(samples.length)} recent`"
               />
             </template>

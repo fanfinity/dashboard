@@ -38,7 +38,7 @@
           <p class="font-medium text-ink">{{ row.name }}</p>
           <StatusBadge
             v-if="hasUpgrade(row)"
-            variant="warn"
+            tone="warn"
             :label="`Upgrade to ${row.latestTemplateVersion}`"
           />
         </div>
@@ -46,11 +46,14 @@
       </template>
 
       <template #cell-sourceType="{ value }">
-        <StatusBadge variant="neutral" :label="sourceTypeLabel(value)" />
+        <StatusBadge tone="neutral" :label="sourceTypeLabel(value)" />
       </template>
 
       <template #cell-isEnabled="{ value }">
-        <StatusBadge :enabled="value" :label="value ? 'Enabled' : 'Paused'" />
+        <StatusBadge
+          :tone="value ? 'success' : 'neutral'"
+          :label="value ? 'Enabled' : 'Paused'"
+        />
       </template>
 
       <template #cell-eventCountLastHour="{ value }">

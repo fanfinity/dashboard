@@ -2,19 +2,19 @@
   <div class="flex flex-wrap items-center gap-1.5">
     <StatusBadge
       v-if="label"
-      variant="brand"
+      tone="brand"
       :label="label"
       :title="`Created from the ${record.templateId} template`"
     />
     <StatusBadge
       v-else
-      variant="neutral"
+      tone="neutral"
       label="Custom"
       title="Hand-configured — not created from a template"
     />
     <StatusBadge
       v-if="upgrade"
-      variant="warn"
+      tone="warn"
       :label="upgradeText"
       :title="upgradeTitle"
     />

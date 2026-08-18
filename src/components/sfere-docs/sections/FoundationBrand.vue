@@ -99,7 +99,7 @@
 <script setup>
 import DocSection from '../DocSection.vue'
 import DocSpecimen from '../DocSpecimen.vue'
-import SfereLogo from '@/components/sfere/SfereLogo.vue'
+import SfereLogo from '@/components/ui/SfereLogo.vue'
 
 const misuse = [
   {

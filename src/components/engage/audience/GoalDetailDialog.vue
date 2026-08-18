@@ -14,7 +14,7 @@
       <div class="max-h-[70vh] overflow-y-auto px-5 py-4">
         <NoticeBanner
           v-if="goal && !goal.isEnabled"
-          variant="warn"
+          tone="warn"
           class="mb-4"
           title="This goal is paused"
           message="It is no longer being measured, and journeys attached to it are not optimising against it."
@@ -24,11 +24,11 @@
 
         <DefinitionList :items="facts" :columns="1">
           <template #value-status>
-            <StatusBadge :variant="status.variant" :label="status.label" />
+            <StatusBadge :tone="status.variant" :label="status.label" />
           </template>
 
           <template #value-measured>
-            <StatusBadge variant="neutral" :label="metricLabel(goal?.metric)" />
+            <StatusBadge tone="neutral" :label="metricLabel(goal?.metric)" />
           </template>
 
           <template #value-attached-journeys>

@@ -56,7 +56,7 @@
           @submit.prevent="saveOperator"
         >
           <NoticeBanner
-            variant="info"
+            tone="info"
             title="The operator proposes; a human decides"
             message="Every proposal and every applied change lands in the work log with the fan-facing effect spelled out."
           >
@@ -84,7 +84,7 @@
                   }}</span>
                   <StatusBadge
                     v-if="operatorForm.mode === mode.value"
-                    variant="brand"
+                    tone="brand"
                     label="Selected"
                   />
                 </div>
@@ -120,7 +120,7 @@
             <FormField
               label="Notify channel"
               required
-              for="operator-notify"
+              for-id="operator-notify"
               hint="Where proposals and applied changes are announced."
               :error="operatorErrors.notifyChannel"
             >
@@ -181,7 +181,7 @@
             <FormField
               label="Maximum messages a week"
               required
-              for="limits-max"
+              for-id="limits-max"
               :error="limitsErrors.max"
               hint="Counted per fan, Monday to Sunday."
             >
@@ -204,7 +204,7 @@
             <FormField
               label="Starts at"
               required
-              for="limits-quiet-start"
+              for-id="limits-quiet-start"
               :error="limitsErrors.start"
               hint="24-hour time."
             >
@@ -220,7 +220,7 @@
             <FormField
               label="Ends at"
               required
-              for="limits-quiet-end"
+              for-id="limits-quiet-end"
               :error="limitsErrors.end"
               :hint="`Times are read in ${quietTimezone}.`"
             >
@@ -235,7 +235,7 @@
           </FormSection>
 
           <NoticeBanner
-            variant="warn"
+            tone="warn"
             title="Quiet hours do not hold transactional mail"
             message="Ticket confirmations and password resets are sent regardless — only campaign and journey messages wait."
           />

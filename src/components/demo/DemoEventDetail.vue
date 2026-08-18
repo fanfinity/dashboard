@@ -7,7 +7,7 @@
       <span class="text-sm font-semibold text-ink">Event detail</span>
       <StatusBadge
         v-if="event"
-        :variant="event.origin === 'store' ? 'brand' : 'neutral'"
+        :tone="event.origin === 'store' ? 'brand' : 'neutral'"
         :label="event.origin === 'store' ? 'Demo Store' : 'Replayed sample'"
       />
     </template>
@@ -37,10 +37,10 @@
         <template #value-profile>
           <StatusBadge
             v-if="event.profileId"
-            variant="success"
+            tone="success"
             :label="event.profileId"
           />
-          <StatusBadge v-else variant="neutral" label="Anonymous" />
+          <StatusBadge v-else tone="neutral" label="Anonymous" />
         </template>
       </DefinitionList>
 
@@ -73,7 +73,7 @@
               }}</p>
             </div>
             <StatusBadge
-              :variant="route.delivered ? 'success' : 'warn'"
+              :tone="route.delivered ? 'success' : 'warn'"
               :label="route.status"
             />
           </li>

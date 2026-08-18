@@ -38,7 +38,7 @@
           <StatusBadge
             v-for="role in rolesFor(column)"
             :key="role.label"
-            :variant="role.variant"
+            :tone="role.variant"
             :label="role.label"
           />
         </div>

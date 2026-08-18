@@ -27,7 +27,7 @@
          ErrorState. -->
     <NoticeBanner
       v-if="blockedCount"
-      variant="warn"
+      tone="warn"
       class="mb-4"
       title="Some of these cannot resume on their own"
       :message="blockedMessage"
@@ -37,7 +37,7 @@
          and restores, and the check offers its own retry. -->
     <NoticeBanner
       v-else-if="connectionsError"
-      variant="info"
+      tone="info"
       class="mb-4"
       title="Couldn't check the warehouse connections"
       :message="connectionsError"
@@ -72,7 +72,7 @@
           <span class="text-muted">{{ row.dwhConnectionName }}</span>
           <StatusBadge
             v-if="blockReason(row)"
-            variant="warn"
+            tone="warn"
             :label="blockReason(row)"
           />
         </div>

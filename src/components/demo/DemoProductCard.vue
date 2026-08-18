@@ -17,7 +17,7 @@
           <path v-for="(d, i) in art" :key="i" :d="d" />
         </svg>
       </span>
-      <StatusBadge v-if="selected" variant="brand" label="Selected" />
+      <StatusBadge v-if="selected" tone="brand" label="Selected" />
     </div>
 
     <p class="mt-3 text-sm font-medium text-ink">{{ product.name }}</p>

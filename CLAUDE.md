@@ -18,15 +18,24 @@ Linting/formatting is **oxlint + oxfmt**, not ESLint/Prettier. oxfmt style: no s
 single quotes, printWidth 80, `arrowParens: avoid`, no trailing commas. oxlint runs only the
 `correctness` category as errors (max 10 warnings).
 
+**Pass oxfmt no path.** `oxfmt --check src/` covers only `src/`, but the scripts above run it
+over the whole repo — `CLAUDE.md`, `docs/**`, `public/data/*.json` and `scripts/` included.
+Linting only `src/` is how a green local run turns into a red CI run.
+
 There is **no unit-test runner**. The behavioural gate is `pnpm smoke:dist`, which builds,
 serves `dist/spa`, signs in for real, walks every route in the screen manifest, and fails on any
 console error, uncaught error, rendered `ErrorState`, unresolved route, or missing `<h1>`.
 It needs `SMOKE_EMAIL`/`SMOKE_PASSWORD` in `.env` (see `.env.example`) — but **`smoke.mjs` never
 loads `.env` itself**, it only reads `process.env`, so bare `pnpm smoke:dist` exits 2 unless those
 two are already exported in the shell. The form that works from a clean shell is
-`pnpm build && node --env-file=.env scripts/smoke.mjs --serve`. Fixing the script itself would
-mean editing frozen files (`package.json`, `scripts/**`), so the working invocation lives in
-`.vscode/tasks.json` instead.
+`pnpm build && node --env-file=.env scripts/smoke.mjs --serve`, and that is what
+`.vscode/tasks.json` runs. Teaching `smoke.mjs` to call `process.loadEnvFile()` itself would fix
+it properly and nobody has done it yet.
+
+`SMOKE_ROUTES` narrows the walk while iterating —
+`SMOKE_ROUTES=/pipes,/sources node --env-file=.env scripts/smoke.mjs --serve` — then run it
+unfiltered once to confirm nothing else broke. A route named there that is not in the manifest
+is an error, not a silent skip.
 
 `pnpm build` is the other gate worth leaning on: it hard-fails on unresolved `@/` imports,
 unimported components and malformed templates.
@@ -34,6 +43,13 @@ unimported components and malformed templates.
 **Never run `pnpm dev` (or `quasar dev`) yourself.** The user always runs the dev server
 themselves in watch mode, in a separate terminal. It's already running with HMR — edits to
 source files apply automatically, so there's no need to start, stop, or restart it.
+
+**Use `pnpm worktree <name>` to create a worktree**, never bare `git worktree add`. `.env` is
+gitignored, so `git worktree add` copies tracked files only and leaves the new tree with no
+Firebase config — sign-in then fails and the auth guard bounces every route to `/login`, which
+looks like a broken app rather than a missing file. The script copies `.env` across and runs
+`pnpm install`, which is needed because `postinstall` runs `quasar prepare`. Each worktree gets
+its own `dist/`, so concurrent builds do not race.
 
 `.vscode/tasks.json` is committed and wraps each of the commands above as a VS Code task
 (command palette → "Tasks: Run Task"). Two things about it: `options.shell` forces a **login**
@@ -83,10 +99,22 @@ never creating a file and registering a route.
 
 ## UI primitives
 
-`src/components/ui/` holds the shared building blocks — `PageHeader`, `DataTable`, `EmptyState`,
-`ErrorState`, `LoadingState`, `StatusBadge` and friends. **Use them; do not re-implement their
-markup and do not copy their class strings into a page.** Read `docs/ui-conventions.md` before
-writing any new screen.
+`src/components/ui/` is **the** component kit — 39 components, all built on the Sfere token
+layer. **Use them; do not re-implement their markup and do not copy their class strings into a
+page.** Read `docs/ui-conventions.md` before writing any new screen.
+
+Two naming schemes live in the folder, for a reason worth knowing:
+
+- **16 screen primitives keep the names the screens already imported** — `PageHeader`,
+  `DataTable`, `EmptyState`, `ErrorState`, `LoadingState`, `StatusBadge`, `CardPanel`,
+  `NoticeBanner`, `StatCard`, `TabNav`, `FormField`, `FormSection`, `ConfirmDialog`,
+  `DefinitionList`, `SelectableCard`, `ToolbarSearch`. Keeping the filenames is what let the
+  Sfere implementations replace the originals across 104 files without rewriting 571 imports.
+  A few of those names are now worse than what they hold (`CardPanel` is a card, `NoticeBanner`
+  is an alert); that was the price of the swap.
+- **23 keep their `Sfere*` names** — `SfereButton`, `SfereInput`, `SfereTable`, `SfereSection`,
+  `SfereFeatureCard` and friends. These have no pre-Sfere counterpart, and the prefix keeps
+  `SfereTable` distinguishable from a bare `<table>` and from `QTable`.
 
 This is not only about consistency: `scripts/smoke.mjs` detects a broken screen by looking for
 the single `[data-smoke="error"]` selector that `ErrorState` renders. Hand-rolled error blocks
@@ -95,26 +123,29 @@ would leave the only behavioural gate in the repo with nothing to assert on.
 ## The Sfere design system
 
 `src/css/sfere.css` holds the token layer, measured off the live marketing site
-(<https://sfere.io>) rather than eyeballed, and `src/components/sfere/` holds a 30-component
-kit built on it. Browse the whole thing at **`#/design-system`** (hash mode — not
-`/design-system`); no sign-in required.
+(<https://sfere.io>) rather than eyeballed, and `src/components/ui/` holds the 39-component kit
+built on it. Browse the whole thing at **`#/design-system`** (hash mode — not `/design-system`);
+no sign-in required.
 
-**The tokens apply to the whole app; the component kit does not.** `src/css/tailwind.css`
-declares `--color-brand`, `--color-muted`, `--color-line`, `--font-sans` and friends as aliases
-pointing at the `sfere-*` values, so all 54 screens inherit the palette and typefaces with no
-markup change. `src/css/quasar.variables.scss` sets `$primary` to the same purple so Quasar's
-own controls match. **Never hardcode a hex in a screen** — that is what broke when the brand
-changed, and the alias layer only works if nothing bypasses it.
+`src/css/tailwind.css` declares `--color-brand`, `--color-muted`, `--color-line`, `--font-sans`
+and friends as aliases pointing at the `sfere-*` values, so a screen written against the app-side
+names still resolves to Sfere. `src/css/quasar.variables.scss` sets `$primary` to the same purple
+so Quasar's own controls match. **Never hardcode a hex in a screen** — that is what broke when the
+brand changed, and the alias layer only works if nothing bypasses it.
 
-Screens still use `src/components/ui/`. Moving one onto `src/components/sfere/` is a per-screen
-rewrite, tracked in `todos/brand-rename-todo.md`.
+**There is one kit.** The pre-Sfere primitives were replaced in place, not deprecated alongside
+it: all 54 screens now render Sfere components.
 
 Rules for touching it:
 
-- `src/components/ui/` and `src/components/sfere/` are **separate kits** sharing one token
-  layer. Current screens use `ui/`. Do not mix them in one screen.
-- `sfere.css` is imported from `src/css/tailwind.css`, not registered in `quasar.config.js`'s
-  `css: [...]` array — that file is frozen and this achieves the same thing.
+- The kit has exactly **two `data-smoke` attributes** — `ErrorState` (`error`) and `EmptyState`
+  (`empty`) — and exactly **one Quasar dependency**, `ConfirmDialog` wrapping `q-dialog`. Both
+  are named carve-outs in `docs/sfere-design-system.md`; neither is licence to add a third.
+- `sfere.css` is imported from `src/css/tailwind.css` rather than registered in
+  `quasar.config.js`'s `css: [...]` array. Either works; the import keeps the whole token layer
+  reachable from one stylesheet.
+- `StatusBadge` takes `tone`, not `variant`, and there is no `enabled` shorthand — write
+  `:tone="x ? 'success' : 'neutral'"`. `FormField` takes `for-id`, not `for`.
 - The three brand faces (Bricolage Grotesque, Inter, Geist Mono) are self-hosted `@fontsource`
   packages. The CSP is `default-src 'self'`, so the Google Fonts CDN is blocked; any new face
   must be added the same way.
@@ -127,7 +158,7 @@ Read `docs/sfere-design-system.md` before adding a component or changing a token
 
 The token layer is published as a company-wide design system at
 `https://claude.ai/design/p/51046f6e-0f11-47c7-9d1e-66a183ec2ac7`. **Only the tokens and
-fonts cross over — `src/components/sfere/` does not.** Claude Design's agent builds in React;
+fonts cross over — `src/components/ui/` does not.** Claude Design's agent builds in React;
 the kit is Vue, so the uploaded `_ds_bundle.js` is a deliberately empty namespace. Anyone
 designing there composes their own components from the Sfere tokens.
 
@@ -138,7 +169,7 @@ node tools/build-design-sync-bundle.mjs        # emits ds-bundle/ (gitignored)
 node .ds-sync/package-validate.mjs ./ds-bundle # the real gate — must exit 0
 ```
 
-The builder is hand-written (in `tools/`, since `scripts/**` is frozen) because the bundled
+The builder is hand-written (in `tools/`, where one-off maintenance lives) because the bundled
 `/design-sync` converter only supports React design systems. **Never ship `src/css/sfere.css`
 raw** — it is Tailwind v4 source (`@theme`, `@utility`, bare `@fontsource` imports) and a
 browser silently ignores all three, producing designs with no tokens and no fonts.
@@ -157,24 +188,24 @@ wrong for these screens** — there is no backend behind any of them. Data comes
 `{ data, loading, error, load() }` contract as everything else. `src/api/` remains reserved for
 the real accounts/RBAC backend.
 
-## Frozen files
+## Files that reach every screen
 
-These are owned by the foundation phase. If a task seems to require editing one, that is a
-blocker to report, not an edit to make — see `docs/agent-workflow.md`.
+Nothing in this repo is off-limits to edit. But a handful of files are load-bearing enough that
+changing one changes every screen at once, so they are worth a moment's thought and a line in the
+commit message rather than a drive-by edit mid-task:
 
-`src/router/**` · `src/layouts/**` · `src/components/ui/**` ·
-`src/composables/{useMockResource,useEntitlements,useDiagram,useTemplates}.js` ·
-`package.json` · `quasar.config.js` · `index.html` · `scripts/**` · this file
+`src/router/**` (the manifest generates all 54 routes) · `src/layouts/MainLayout.vue` (the nav
+is the IA) · `src/components/ui/**` (the kit) ·
+`src/composables/{useMockResource,useEntitlements,useDiagram,useTemplates}.js` (the
+`{ data, loading, error, load() }` contract every page is written against) · `quasar.config.js`
+and `index.html` (build config and the CSP).
 
-Four have been edited on purpose, all as foundation-phase changes rather than story work:
-`routes.js` (one top-level route, three font packages), `package.json` (fonts plus the brand
-name fields), `MainLayout.vue` (the sidebar logo) and `quasar.config.js` (`appId`). Each is
-recorded in `docs/sfere-design-system.md` under "Frozen files edited for the brand". That is the
-bar: an explicit, user-directed decision written down, not a convenient workaround discovered
-mid-story.
+The bar is the same one that applies anywhere: if the change is right, make it and say why. If
+you are reaching for one of these to work around a problem somewhere else, that is the signal to
+stop and fix the actual problem.
 
-`tools/` exists because `scripts/**` is frozen — one-off maintenance scripts like
-`tools/brand-rename.mjs` and `tools/make-favicons.mjs` go there.
+`scripts/` holds what the build and the gates run; `tools/` holds one-off maintenance like
+`tools/brand-rename.mjs` and `tools/make-favicons.mjs`.
 
 `todos/` is gitignored working notes — planning docs and handover drafts that should not enter
 shared history. `todos/brand-rename-todo.md` is the live record of what the rebrand still owes.
@@ -189,6 +220,11 @@ all follow the same `{ data, loading, error, load() }` contract (`src/composable
 1. **Static mock JSON** in `public/data/*.json`, fetched via `import.meta.env.BASE_URL`
    (e.g. `ContactDetailPage.vue` loads `data/contacts.json` + `data/contact-details.json`).
    Most pages also define inline mock arrays for demo content.
+
+   The fixtures are cross-referentially consistent — `pipes[].sourceId` resolves in
+   `sources.json`, and so on. Adding fields and records is fine; **renaming or renumbering an
+   existing `id` is not.** `screens.js`'s `smokeParams` point at those ids by value, and a
+   broken lookup renders `undefined` silently rather than failing.
 
 2. **The Jitsu events backend** (`console.fanfinity.io`):
    - **Read** incoming events (`useLiveEvents.js`) through a same-origin dev proxy: the browser

@@ -50,7 +50,7 @@
         <FormField
           label="Name"
           required
-          for="live-sync-name"
+          for-id="live-sync-name"
           :error="errors.name"
           hint="Name it after what it feeds, not how it works."
         >
@@ -88,7 +88,7 @@
 
         <NoticeBanner
           v-if="selectedAudience"
-          variant="info"
+          tone="info"
           :title="`${selectedAudience.name} currently resolves ${formatCount(selectedAudience.profileCount)} profiles.`"
           :message="audienceNotice"
         />
@@ -135,7 +135,7 @@
 
           <NoticeBanner
             v-if="selectedDestination && !selectedDestination.isEnabled"
-            variant="warn"
+            tone="warn"
             :title="`${selectedDestination.name} is paused.`"
             message="Nothing will be delivered until the destination itself is enabled."
           />

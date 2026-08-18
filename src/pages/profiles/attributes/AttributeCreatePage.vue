@@ -57,7 +57,7 @@
               <span class="text-sm font-medium text-ink">{{ kind.label }}</span>
               <StatusBadge
                 v-if="form.type === kind.value"
-                variant="brand"
+                tone="brand"
                 label="Selected"
               />
             </div>
@@ -75,7 +75,7 @@
         <FormField
           label="Name"
           required
-          for="attribute-name"
+          for-id="attribute-name"
           :error="errors.name"
           :hint="idHint"
         >
@@ -163,7 +163,7 @@
           <FormField
             label="Value column"
             required
-            for="attribute-column"
+            for-id="attribute-column"
             :error="errors.dataColumn"
             hint="The column the aggregation is applied to."
           >
@@ -178,7 +178,7 @@
 
           <FormField
             label="Timestamp column"
-            for="attribute-timestamp"
+            for-id="attribute-timestamp"
             hint="Orders the rows so “last value” means the newest one. Defaults to the model's own timestamp."
           >
             <input
@@ -234,7 +234,7 @@
 
         <FormField
           label="Timestamp field"
-          for="attribute-event-timestamp"
+          for-id="attribute-event-timestamp"
           hint="The event field used to order the stream."
         >
           <input
@@ -263,7 +263,7 @@
         <FormField
           label="Query"
           :required="form.type === 'realtime'"
-          for="attribute-query"
+          for-id="attribute-query"
           :error="errors.query"
           hint="Select one column per dimension, named exactly as the dimension is."
         >

@@ -6,7 +6,7 @@
     :required="field.required"
     :hint="field.description"
     :error="errors[field.key] || ''"
-    :for="field.type === 'boolean' ? '' : `${idPrefix}-${field.key}`"
+    :for-id="field.type === 'boolean' ? '' : `${idPrefix}-${field.key}`"
   >
     <q-toggle
       v-if="field.type === 'boolean'"
