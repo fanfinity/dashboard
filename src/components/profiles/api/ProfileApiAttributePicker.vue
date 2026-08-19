@@ -22,7 +22,7 @@
           <span class="text-sm font-medium text-ink">{{ attribute.name }}</span>
           <StatusBadge
             v-if="modelValue.includes(attribute.id)"
-            variant="brand"
+            tone="brand"
             label="Returned"
           />
         </div>
@@ -31,10 +31,10 @@
 
         <div class="mt-2 flex flex-wrap items-center gap-1.5">
           <StatusBadge
-            :variant="attribute.type === 'realtime' ? 'success' : 'neutral'"
+            :tone="attribute.type === 'realtime' ? 'success' : 'neutral'"
             :label="attribute.type === 'realtime' ? 'Real time' : 'Warehouse'"
           />
-          <StatusBadge variant="neutral" :label="sourceLabel(attribute)" />
+          <StatusBadge tone="neutral" :label="sourceLabel(attribute)" />
         </div>
       </SelectableCard>
     </div>

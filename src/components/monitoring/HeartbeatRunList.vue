@@ -7,7 +7,7 @@
     >
       <div class="flex flex-wrap items-center justify-between gap-2">
         <div class="flex flex-wrap items-center gap-2">
-          <StatusBadge :variant="run.statusVariant" :label="run.statusLabel" />
+          <StatusBadge :tone="run.statusVariant" :label="run.statusLabel" />
           <span class="text-sm font-medium text-ink">{{
             run.startedAtLabel
           }}</span>

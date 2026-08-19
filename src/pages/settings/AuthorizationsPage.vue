@@ -49,7 +49,7 @@
     <NoticeBanner
       v-if="!loading && !error && statusCounts.expired"
       class="mb-5"
-      variant="warn"
+      tone="warn"
       :title="expiredTitle"
       message="Anything that reads through an expired grant fails on its next run. Reconnect it to mint a fresh token."
     />
@@ -87,7 +87,7 @@
 
       <template #cell-status="{ row }">
         <StatusBadge
-          :variant="authorizationStatus(row).variant"
+          :tone="authorizationStatus(row).variant"
           :label="authorizationStatus(row).label"
         />
       </template>
@@ -172,7 +172,7 @@
             }}</span>
             <StatusBadge
               v-if="connectProviderId === provider.id"
-              variant="brand"
+              tone="brand"
               label="Selected"
             />
           </div>

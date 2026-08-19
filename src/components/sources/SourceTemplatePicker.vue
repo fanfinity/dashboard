@@ -8,21 +8,17 @@
     >
       <div class="flex w-full items-start justify-between gap-2">
         <span class="text-sm font-medium text-ink">{{ t.name }}</span>
-        <StatusBadge
-          v-if="modelValue === t.id"
-          variant="brand"
-          label="Selected"
-        />
+        <StatusBadge v-if="modelValue === t.id" tone="brand" label="Selected" />
       </div>
 
       <p class="mt-2 text-xs leading-5 text-muted">{{ t.description }}</p>
 
       <div class="mt-2 flex flex-wrap items-center gap-1.5">
-        <StatusBadge variant="neutral" :label="`v${t.version}`" />
+        <StatusBadge tone="neutral" :label="`v${t.version}`" />
         <StatusBadge
           v-for="tag in t.tags"
           :key="tag"
-          variant="neutral"
+          tone="neutral"
           :label="tag"
         />
       </div>

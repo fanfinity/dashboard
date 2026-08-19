@@ -52,7 +52,7 @@
           <p class="font-medium text-ink">{{ row.name }}</p>
           <StatusBadge
             v-if="row.hasFunctionCode"
-            variant="brand"
+            tone="brand"
             label="Transform"
           />
         </div>
@@ -70,7 +70,10 @@
       </template>
 
       <template #cell-isEnabled="{ value }">
-        <StatusBadge :enabled="value" :label="value ? 'Enabled' : 'Paused'" />
+        <StatusBadge
+          :tone="value ? 'success' : 'neutral'"
+          :label="value ? 'Enabled' : 'Paused'"
+        />
       </template>
 
       <template #cell-updatedAt="{ value }">

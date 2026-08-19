@@ -62,7 +62,7 @@
         <FormField
           label="Name"
           required
-          for="source-name"
+          for-id="source-name"
           :error="errors.name"
           hint="Shown everywhere this source is referenced."
         >
@@ -78,7 +78,7 @@
         <FormField
           label="Slug"
           required
-          for="source-slug"
+          for-id="source-slug"
           :error="errors.slug"
           :hint="slugHint"
         >
@@ -94,7 +94,7 @@
 
         <FormField
           label="Description"
-          for="source-description"
+          for-id="source-description"
           hint="Optional. One line of context for whoever inherits this."
         >
           <textarea

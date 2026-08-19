@@ -26,7 +26,7 @@
          down is not a load failure — so this is a notice, not an ErrorState. -->
     <NoticeBanner
       v-if="unhealthyCount"
-      variant="warn"
+      tone="warn"
       class="mb-4"
       title="Some of these cannot resume on their own"
       :message="`${unhealthyCount} of these write into a warehouse connection that is not healthy. Restoring works, but the sync will not run until the connection is fixed.`"
@@ -36,7 +36,7 @@
          lists and restores, and the check offers its own retry. -->
     <NoticeBanner
       v-else-if="connectionsError"
-      variant="info"
+      tone="info"
       class="mb-4"
       title="Couldn't check the warehouse connections"
       :message="connectionsError"
@@ -69,7 +69,7 @@
           <span class="text-muted">{{ row.dwhConnectionName }}</span>
           <StatusBadge
             v-if="isUnhealthy(row)"
-            variant="warn"
+            tone="warn"
             label="Connection failing"
           />
         </div>

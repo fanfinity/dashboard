@@ -4,20 +4,30 @@
 // read this file (scripts/smoke.mjs imports it directly to walk every route), and
 // it lets src/router/routes.js build the route table without hand-editing.
 //
-// FROZEN. Adding or renaming a screen is a foundation-phase change, not story work.
-// Story agents rewrite the component file this points at; they never touch this.
+// Adding or renaming a screen is an edit here; implementing one is a rewrite of
+// the component file this points at. An entry whose page file is missing throws
+// at module load rather than 404-ing silently.
 //
 // Fields:
 //   path         router path; ':id' segments need `smokeParams` to be smoke-testable
 //   name         unique route name
 //   component    path under src/pages/
 //   title        shown in nav + <h1>; also route meta.title
-//   group        nav group key (see src/layouts/MainLayout.vue navGroups)
+//   group        nav group key AND feature-activation key — see below
 //   issue        GitHub issue implementing this screen
 //   smokeParams  params substituted by scripts/smoke.mjs; ids MUST exist in public/data/
 //
 // ORDER MATTERS: static paths precede dynamic ones, so /sources/new wins over
 // /sources/:id. The sort that produced this file enforces it; keep it that way.
+//
+// `group` DOES THREE JOBS, so it has to be right. It picks the sidebar section
+// (src/layouts/MainLayout.vue navGroups), and it is the feature-activation key
+// (src/config/features.js) that decides whether this route renders its real page
+// or ComingSoonPanel. It used to be nav-group-ish and had drifted — /audiences
+// claimed `engage`, /demo-store claimed `sources` — which was harmless while it
+// was only a label and is not harmless now that it gates the route. routes.js
+// throws at module load if a group here has no entry in features.js, which is
+// what keeps the two files from drifting apart again.
 
 export const screens = [
   {
@@ -33,7 +43,7 @@ export const screens = [
     name: 'assets',
     component: 'engage/content/AssetsListPage.vue',
     title: 'Assets — list view',
-    group: 'engage',
+    group: 'campaigns',
     issue: 17
   },
   {
@@ -49,7 +59,7 @@ export const screens = [
     name: 'audiences',
     component: 'engage/audience/AudiencesListPage.vue',
     title: 'Audiences — list view',
-    group: 'engage',
+    group: 'audiences',
     issue: 21
   },
   {
@@ -57,7 +67,7 @@ export const screens = [
     name: 'authorizations',
     component: 'settings/AuthorizationsPage.vue',
     title: 'Authorizations — list view',
-    group: 'settings',
+    group: 'authorizations',
     issue: 22
   },
   {
@@ -65,7 +75,7 @@ export const screens = [
     name: 'catalogs',
     component: 'engage/content/CatalogsListPage.vue',
     title: 'Catalogs — list view',
-    group: 'engage',
+    group: 'campaigns',
     issue: 23
   },
   {
@@ -73,7 +83,7 @@ export const screens = [
     name: 'demo-event-inspector',
     component: 'demo/DemoEventInspectorPage.vue',
     title: 'Demo Event Inspector — list view',
-    group: 'sources',
+    group: 'demo',
     issue: 26
   },
   {
@@ -81,7 +91,7 @@ export const screens = [
     name: 'demo-store',
     component: 'demo/DemoStorePage.vue',
     title: 'Demo Store — list view',
-    group: 'sources',
+    group: 'demo',
     issue: 27
   },
   {
@@ -129,7 +139,7 @@ export const screens = [
     name: 'goals',
     component: 'engage/audience/GoalsListPage.vue',
     title: 'Goals — list view',
-    group: 'engage',
+    group: 'campaigns',
     issue: 41
   },
   {
@@ -145,7 +155,7 @@ export const screens = [
     name: 'journeys',
     component: 'engage/audience/JourneysListPage.vue',
     title: 'Journeys — list view',
-    group: 'engage',
+    group: 'campaigns',
     issue: 43
   },
   {
@@ -185,7 +195,7 @@ export const screens = [
     name: 'reporting',
     component: 'monitoring/ReportingPage.vue',
     title: 'Reporting — list view',
-    group: 'monitoring',
+    group: 'reporting',
     issue: 59
   },
   {
@@ -193,7 +203,7 @@ export const screens = [
     name: 'secrets',
     component: 'settings/SecretsPage.vue',
     title: 'Secrets — list view',
-    group: 'settings',
+    group: 'secrets',
     issue: 60
   },
   {
@@ -249,7 +259,7 @@ export const screens = [
     name: 'channels-email',
     component: 'engage/channels/ChannelsEmailPage.vue',
     title: 'Channels — email',
-    group: 'engage',
+    group: 'campaigns',
     issue: 24
   },
   {
@@ -257,7 +267,7 @@ export const screens = [
     name: 'channels-settings',
     component: 'engage/channels/ChannelsSettingsPage.vue',
     title: 'Channels — settings',
-    group: 'engage',
+    group: 'campaigns',
     issue: 25
   },
   {
@@ -457,34 +467,38 @@ export const screens = [
   }
 ]
 
-// The pre-existing pages that survived the legacy consolidation: the only three
-// with no equivalent among the screens above. The other eight were duplicates of
-// a product screen — a second, bespoke surface for the same concept, and none of
+// The pre-existing pages that survived the legacy consolidation: the ones with
+// no equivalent among the screens above. The other eight were duplicates of a
+// product screen — a second, bespoke surface for the same concept, and none of
 // them backed by real data — so they were deleted rather than ported. Dead URLs:
 // /fan-overview, /contacts, /contacts/:email, /identity-resolution, /segments,
 // /activation, /communications, /integrations. The catch-all in routes.js 404s
 // them; there are deliberately no redirects.
+//
+// These are routed exactly like `screens` but are NOT walked by
+// scripts/smoke.mjs, which imports `screens` alone. That is load-bearing for
+// /live-events: it reads the events backend through the /japi dev proxy, and
+// `pnpm smoke:dist` serves a production build where no proxy exists, so the
+// failed request would fail the gate for a reason that has nothing to do with
+// the screen. Promoting it into `screens` needs the dist-proxy story solved
+// first (see "Data architecture" in CLAUDE.md).
+//
+// /connectors used to live here. It is now a tab inside /sources rather than a
+// route of its own — routes.js redirects the old URL to /sources?tab=connectors.
 export const legacyScreens = [
-  {
-    path: '/connectors',
-    name: 'connectors',
-    component: 'ConnectorsPage.vue',
-    title: 'Connectors',
-    group: 'legacy'
-  },
   {
     path: '/live-events',
     name: 'live-events',
     component: 'LiveEventsPage.vue',
     title: 'Live Events',
-    group: 'legacy'
+    group: 'live-events'
   },
   {
     path: '/events-demo',
     name: 'events-demo',
     component: 'JitsuDemoPage.vue',
     title: 'Events Demo',
-    group: 'legacy'
+    group: 'demo'
   }
 ]
 

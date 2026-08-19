@@ -18,7 +18,7 @@
             </div>
           </div>
           <StatusBadge
-            :variant="profile.isAnonymous ? 'neutral' : 'success'"
+            :tone="profile.isAnonymous ? 'neutral' : 'success'"
             :label="profile.isAnonymous ? 'Anonymous' : 'Identified'"
           />
         </div>
@@ -79,13 +79,13 @@
             <span class="break-all font-mono text-xs text-ink">{{
               row.value
             }}</span>
-            <StatusBadge v-if="row.isMatch" variant="brand" label="Matched" />
+            <StatusBadge v-if="row.isMatch" tone="brand" label="Matched" />
           </div>
         </template>
 
         <template #cell-role="{ value }">
           <StatusBadge
-            :variant="value === 'Anchor' ? 'success' : 'neutral'"
+            :tone="value === 'Anchor' ? 'success' : 'neutral'"
             :label="value"
           />
         </template>
@@ -107,7 +107,7 @@
 
         <template #cell-type="{ value }">
           <StatusBadge
-            :variant="value === 'Real-time' ? 'brand' : 'neutral'"
+            :tone="value === 'Real-time' ? 'brand' : 'neutral'"
             :label="value"
           />
         </template>

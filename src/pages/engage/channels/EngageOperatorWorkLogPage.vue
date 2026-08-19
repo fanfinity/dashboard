@@ -31,7 +31,7 @@
     <NoticeBanner
       v-if="!loading && !error && pendingCount"
       class="mb-5"
-      variant="warn"
+      tone="warn"
       title="Proposals are waiting on a decision"
       :message="`${pendingCount} ${
         pendingCount === 1 ? 'proposal is' : 'proposals are'

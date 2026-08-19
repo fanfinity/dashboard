@@ -85,7 +85,7 @@
         <template #header>
           <span class="text-sm font-medium text-ink">Details</span>
           <StatusBadge
-            :enabled="pipe.isEnabled"
+            :tone="pipe.isEnabled ? 'success' : 'neutral'"
             :label="pipe.isEnabled ? 'Enabled' : 'Paused'"
           />
         </template>
@@ -126,7 +126,7 @@
           <template #header>
             <span class="text-sm font-medium text-ink">Transformation</span>
             <StatusBadge
-              :variant="pipe.hasFunctionCode ? 'brand' : 'neutral'"
+              :tone="pipe.hasFunctionCode ? 'brand' : 'neutral'"
               :label="pipe.hasFunctionCode ? 'Custom function' : 'Pass-through'"
             />
           </template>
@@ -178,7 +178,7 @@
                 >{{ item.source.name }} → {{ item.destination.name }}</span
               >
             </span>
-            <StatusBadge variant="neutral" :label="item.reason" />
+            <StatusBadge tone="neutral" :label="item.reason" />
           </button>
         </div>
 

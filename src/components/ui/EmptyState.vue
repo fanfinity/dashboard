@@ -1,9 +1,13 @@
 <template>
-  <div data-smoke="empty" :class="rootClass">
-    <img v-if="icon" :src="icon" alt="" :class="iconClass" />
-    <p :class="titleClass">{{ title }}</p>
-    <p v-if="description" :class="descriptionClass">{{ description }}</p>
-    <div v-if="$slots.cta" :class="inline ? 'mt-1.5' : 'mt-2'">
+  <div data-smoke="empty" :class="rootClasses">
+    <SfereIconChip v-if="$slots.icon" :on-dark="onDark" class="mb-4">
+      <slot name="icon" />
+    </SfereIconChip>
+
+    <p :class="titleClasses">{{ title }}</p>
+    <p v-if="description" :class="descriptionClasses">{{ description }}</p>
+
+    <div v-if="$slots.cta" class="mt-5">
       <slot name="cta" />
     </div>
   </div>
@@ -11,45 +15,53 @@
 
 <script setup>
 import { computed } from 'vue'
+import SfereIconChip from './SfereIconChip.vue'
 
-// "Nothing here yet" panel. Carries data-smoke="empty" — in BOTH variants — so
-// scripts/smoke.mjs can tell an intentionally-empty screen apart from a broken
-// one.
+// "Nothing here" is information, not failure — this surface stays calm and
+// never borrows the danger colour.
 //
-//   card    (default) the full bordered surface. Unchanged from Phase 0.
-//   inline  a compact centred hint with no border and no background, for a
-//           nested slot. PipelineFlowPanel's per-column empty and ActivityList's
-//           empty both hand-rolled `py-2 text-sm text-subtle` rather than nest a
-//           bordered card inside an already-bordered CardPanel; `inline` is that
-//           hint, and it keeps the smoke hook those hand-rolled versions lost.
+// Carries `data-smoke="empty"` on the root, in BOTH variants. That attribute is
+// one of exactly two the kit is allowed to render (the other is
+// ErrorState's `data-smoke="error"`) — it is what lets scripts/smoke.mjs
+// tell a screen that is deliberately empty apart from one that is broken.
+//
+// A list with no rows is in one of two situations and they need different copy:
+// filters matched nothing ("No X match your search" → Clear filters) versus
+// nothing exists yet ("No X yet" → the create action). Offering "create your
+// first" to someone with forty records and a typo in the search box is the
+// failure mode worth designing around.
 const props = defineProps({
   title: { type: String, required: true },
   description: { type: String, default: '' },
-  icon: { type: String, default: '' },
+  // `inline` drops the border so this can nest inside a card without reading
+  // as a rendering bug (a bordered box inside a bordered box).
   variant: {
     type: String,
     default: 'card',
     validator: v => ['card', 'inline'].includes(v)
-  }
+  },
+  onDark: { type: Boolean, default: false }
 })
 
-const inline = computed(() => props.variant === 'inline')
+const rootClasses = computed(() => [
+  'flex flex-col items-center text-center',
+  props.variant === 'card'
+    ? [
+        'rounded-sfere-xl border px-6 py-12',
+        props.onDark
+          ? 'border-sfere-hairline bg-sfere-ink-raised'
+          : 'border-sfere-line bg-sfere-surface'
+      ]
+    : 'px-2 py-6'
+])
 
-const rootClass = computed(() =>
-  inline.value
-    ? 'flex flex-col items-center gap-1 px-4 py-6 text-center'
-    : 'flex flex-col items-center gap-2 rounded-xl border border-line2 bg-white px-6 py-12 text-center'
-)
+const titleClasses = computed(() => [
+  'text-sfere-sm font-semibold',
+  props.onDark ? 'text-white' : 'text-sfere-fg'
+])
 
-const iconClass = computed(() =>
-  inline.value ? 'size-5 opacity-40' : 'mb-1 size-8 opacity-40'
-)
-
-const titleClass = computed(() =>
-  inline.value ? 'text-sm text-subtle' : 'text-sm font-medium text-ink'
-)
-
-const descriptionClass = computed(() =>
-  inline.value ? 'max-w-md text-xs text-subtle' : 'max-w-md text-sm text-muted'
-)
+const descriptionClasses = computed(() => [
+  'mt-1 max-w-sm text-sfere-sm',
+  props.onDark ? 'text-white/55' : 'text-sfere-fg-muted'
+])
 </script>

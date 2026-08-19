@@ -49,7 +49,7 @@
         <FormField
           label="Name"
           required
-          for="sync-name"
+          for-id="sync-name"
           :error="errors.name"
           hint="Shown everywhere this sync is referenced."
         >
@@ -84,7 +84,7 @@
               <div class="flex w-full items-start justify-between gap-2">
                 <span class="text-sm font-medium text-ink">{{ c.name }}</span>
                 <StatusBadge
-                  :variant="c.status === 'connected' ? 'success' : 'danger'"
+                  :tone="c.status === 'connected' ? 'success' : 'danger'"
                   :label="c.status === 'connected' ? 'Connected' : 'Failing'"
                 />
               </div>
@@ -101,7 +101,7 @@
         <FormField
           label="Target table"
           required
-          for="sync-table"
+          for-id="sync-table"
           :error="errors.targetTable"
           hint="Created on the first run if it does not exist. Fully qualified: database.schema.table."
         >
@@ -137,7 +137,7 @@
 
         <NoticeBanner
           v-if="form.writeMode === 'replace'"
-          variant="warn"
+          tone="warn"
           title="Replace truncates the target table"
           message="Every run empties the table before writing. Point this at a table the sync owns, not one anything else writes to."
         />
@@ -224,11 +224,7 @@
         </FormField>
       </FormSection>
 
-      <NoticeBanner
-        variant="info"
-        title="What this will do"
-        :message="summary"
-      />
+      <NoticeBanner tone="info" title="What this will do" :message="summary" />
 
       <div class="flex flex-wrap items-center gap-2">
         <button

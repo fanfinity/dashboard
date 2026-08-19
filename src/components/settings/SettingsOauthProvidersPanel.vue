@@ -2,7 +2,7 @@
   <CardPanel>
     <template #header>
       <span class="text-sm font-semibold text-ink">OAuth providers</span>
-      <StatusBadge variant="neutral" :label="String(providers.length)" />
+      <StatusBadge tone="neutral" :label="String(providers.length)" />
     </template>
 
     <LoadingState v-if="loading" variant="form" :rows="3" />
@@ -35,7 +35,7 @@
               provider.displayName
             }}</p>
             <StatusBadge
-              :variant="provider.isConnected ? 'success' : 'neutral'"
+              :tone="provider.isConnected ? 'success' : 'neutral'"
               :label="provider.isConnected ? 'Connected' : 'Not connected'"
             />
           </div>

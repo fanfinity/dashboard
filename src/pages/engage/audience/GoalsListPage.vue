@@ -39,7 +39,7 @@
          notice with its own retry rather than a page-level ErrorState. -->
     <NoticeBanner
       v-if="secondaryError"
-      variant="warn"
+      tone="warn"
       class="mb-4"
       title="Some goal details are unavailable"
       :message="secondaryError"
@@ -79,7 +79,7 @@
       </template>
 
       <template #cell-metric="{ value }">
-        <StatusBadge variant="neutral" :label="metricLabel(value)" />
+        <StatusBadge tone="neutral" :label="metricLabel(value)" />
       </template>
 
       <template #cell-progress="{ row }">
@@ -89,7 +89,7 @@
       <template #cell-status="{ row }">
         <div class="flex flex-col items-start gap-1">
           <StatusBadge
-            :variant="goalStatusMeta(row.status).variant"
+            :tone="goalStatusMeta(row.status).variant"
             :label="goalStatusMeta(row.status).label"
           />
           <span v-if="!row.isEnabled" class="text-xs text-subtle"

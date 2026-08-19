@@ -75,7 +75,7 @@
 
         <NoticeBanner
           v-if="unverified.length"
-          variant="warn"
+          tone="warn"
           title="Some transports cannot send yet"
           :message="`${unverified.length} of the transports on this channel are unverified or waiting on setup.`"
         />
@@ -156,7 +156,7 @@
             <FormField
               label="Opens at"
               required
-              for="email-window-start"
+              for-id="email-window-start"
               :error="emailErrors.start"
               hint="24-hour time."
             >
@@ -172,7 +172,7 @@
             <FormField
               label="Closes at"
               required
-              for="email-window-end"
+              for-id="email-window-end"
               :error="emailErrors.end"
               :hint="`Times are read in ${emailTimezone}.`"
             >
@@ -215,7 +215,7 @@
               >WhatsApp Business account</span
             >
             <StatusBadge
-              variant="neutral"
+              tone="neutral"
               :label="`${whatsapp.templatesApproved ?? 0} templates approved`"
             />
           </template>
@@ -247,13 +247,13 @@
 
         <NoticeBanner
           v-else-if="tab === 'push'"
-          variant="info"
+          tone="info"
           title="Push has no channel-level defaults"
           message="Quiet hours and frequency caps apply to push from the module-level Engage settings instead."
         />
 
         <NoticeBanner
-          variant="info"
+          tone="info"
           title="Provider credentials live in Secrets"
           message="No API key, token or signing key is stored on this screen — a transport only holds the identity it sends as."
         >

@@ -11,7 +11,7 @@
           >{{ stage.title }}</h3
         >
       </div>
-      <StatusBadge :variant="stage.statusVariant" :label="stage.statusLabel" />
+      <StatusBadge :tone="stage.statusVariant" :label="stage.statusLabel" />
     </div>
 
     <p class="mt-1.5 text-xs leading-5 text-muted">{{ stage.description }}</p>

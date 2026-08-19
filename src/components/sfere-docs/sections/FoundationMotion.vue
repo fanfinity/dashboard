@@ -81,7 +81,7 @@
       </div>
     </DocSpecimen>
 
-    <SfereAlert
+    <NoticeBanner
       tone="info"
       title="Every animation here is decorative"
       message="The token layer disables all four under prefers-reduced-motion, and the components that transform (SfereToggle, SfereProgress, SfereSkeleton) carry motion-reduce: variants. If you add motion, match that — nothing in this system may be the only way a state is communicated."
@@ -93,7 +93,7 @@
 import DocSection from '../DocSection.vue'
 import DocSpecimen from '../DocSpecimen.vue'
 import DocSpecRow from '../DocSpecRow.vue'
-import SfereAlert from '@/components/sfere/SfereAlert.vue'
+import NoticeBanner from '@/components/ui/NoticeBanner.vue'
 
 const durations = [
   {

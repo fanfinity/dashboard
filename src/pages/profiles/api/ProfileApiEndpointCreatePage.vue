@@ -48,7 +48,7 @@
         <FormField
           label="Name"
           required
-          for="endpoint-name"
+          for-id="endpoint-name"
           :error="errors.name"
           hint="Shown everywhere this endpoint is referenced."
         >
@@ -64,7 +64,7 @@
         <FormField
           label="Slug"
           required
-          for="endpoint-slug"
+          for-id="endpoint-slug"
           :error="errors.slug"
           :hint="slugHint"
         >
@@ -80,7 +80,7 @@
 
         <FormField
           label="Description"
-          for="endpoint-description"
+          for-id="endpoint-description"
           hint="Optional. One line on who calls this and why."
         >
           <textarea
@@ -149,7 +149,7 @@
 
         <NoticeBanner
           v-if="form.protection === 'public'"
-          variant="warn"
+          tone="warn"
           title="An unprotected endpoint answers anyone who knows the URL"
           message="Fan attributes would leave the platform with no audit trail. Keep it protected unless the response carries nothing personal."
         />

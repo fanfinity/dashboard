@@ -6,23 +6,23 @@
     description="Every control is a real form element with appearance-none, not a div wearing a costume. Keyboard behaviour, mobile pickers, autofill and screen-reader semantics come free, and nothing about the Sfere look needed them replaced."
   >
     <DocSpecimen
-      title="SfereField + SfereInput"
+      title="FormField + SfereInput"
       usage="The error message replaces the hint rather than stacking beneath it — two lines of guidance under one field is how a form starts to look frightening."
-      code='<SfereField label="Workspace name" for-id="ws" required hint="Shown in the tenant switcher.">
+      code='<FormField label="Workspace name" for-id="ws" required hint="Shown in the tenant switcher.">
   <SfereInput id="ws" v-model="name" placeholder="Al Nassr FC" />
-</SfereField>'
+</FormField>'
     >
       <div class="grid max-w-2xl gap-5 sm:grid-cols-2">
-        <SfereField
+        <FormField
           label="Workspace name"
           for-id="doc-ws"
           required
           hint="Shown in the tenant switcher."
         >
           <SfereInput id="doc-ws" v-model="name" placeholder="Al Nassr FC" />
-        </SfereField>
+        </FormField>
 
-        <SfereField label="Ingest key" for-id="doc-key" optional>
+        <FormField label="Ingest key" for-id="doc-key" optional>
           <SfereInput id="doc-key" v-model="key" placeholder="key_live_…">
             <template #leading>
               <svg class="size-4" viewBox="0 0 256 256" fill="currentColor">
@@ -36,23 +36,23 @@
               </svg>
             </template>
           </SfereInput>
-        </SfereField>
+        </FormField>
 
-        <SfereField
+        <FormField
           label="Primary region"
           for-id="doc-region"
           hint="Where events are stored at rest."
         >
           <SfereSelect id="doc-region" v-model="region" :options="regions" />
-        </SfereField>
+        </FormField>
 
-        <SfereField
+        <FormField
           label="Contact email"
           for-id="doc-email"
           error="That address is already in use."
         >
           <SfereInput id="doc-email" v-model="email" invalid type="email" />
-        </SfereField>
+        </FormField>
       </div>
     </DocSpecimen>
 
@@ -60,7 +60,7 @@
       title="SfereTextarea"
       usage="Same border, radius and focus ring as the input; only the height differs. Vertical resize only — horizontal resize breaks every layout it is in."
     >
-      <SfereField
+      <FormField
         label="Why are you requesting access?"
         for-id="doc-note"
         class="max-w-xl"
@@ -71,7 +71,7 @@
           v-model="note"
           placeholder="We run the fan app for…"
         />
-      </SfereField>
+      </FormField>
     </DocSpecimen>
 
     <DocSpecimen
@@ -103,22 +103,22 @@
       usage="Every control takes on-dark. Set it on the field as well as the control, or the label stays black on black."
     >
       <div class="grid max-w-xl gap-5 sm:grid-cols-2">
-        <SfereField label="Work email" for-id="doc-dark-email" on-dark required>
+        <FormField label="Work email" for-id="doc-dark-email" on-dark required>
           <SfereInput
             id="doc-dark-email"
             v-model="email"
             on-dark
             placeholder="you@club.com"
           />
-        </SfereField>
-        <SfereField label="Region" for-id="doc-dark-region" on-dark>
+        </FormField>
+        <FormField label="Region" for-id="doc-dark-region" on-dark>
           <SfereSelect
             id="doc-dark-region"
             v-model="region"
             on-dark
             :options="regions"
           />
-        </SfereField>
+        </FormField>
         <div class="sm:col-span-2">
           <SfereCheckbox
             v-model="agreed"
@@ -135,12 +135,12 @@
 import { ref } from 'vue'
 import DocSection from '../DocSection.vue'
 import DocSpecimen from '../DocSpecimen.vue'
-import SfereCheckbox from '@/components/sfere/SfereCheckbox.vue'
-import SfereField from '@/components/sfere/SfereField.vue'
-import SfereInput from '@/components/sfere/SfereInput.vue'
-import SfereSelect from '@/components/sfere/SfereSelect.vue'
-import SfereTextarea from '@/components/sfere/SfereTextarea.vue'
-import SfereToggle from '@/components/sfere/SfereToggle.vue'
+import SfereCheckbox from '@/components/ui/SfereCheckbox.vue'
+import FormField from '@/components/ui/FormField.vue'
+import SfereInput from '@/components/ui/SfereInput.vue'
+import SfereSelect from '@/components/ui/SfereSelect.vue'
+import SfereTextarea from '@/components/ui/SfereTextarea.vue'
+import SfereToggle from '@/components/ui/SfereToggle.vue'
 
 // Local state so the specimens are genuinely interactive — a form documented
 // with disabled inputs hides exactly the states worth reviewing.

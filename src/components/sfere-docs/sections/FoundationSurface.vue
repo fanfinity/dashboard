@@ -80,21 +80,21 @@
     <DocSpecimen
       title="sfere-gradient-border"
       usage="A 1px border fading from brand purple across the corner. It is a spotlight — one card per view, or it lights nothing."
-      code="<SfereCard gradient-border>…</SfereCard>"
+      code="<CardPanel gradient-border>…</CardPanel>"
     >
       <div class="grid gap-4 sm:grid-cols-2">
-        <SfereCard gradient-border>
+        <CardPanel gradient-border>
           <p class="text-sfere-sm font-semibold text-sfere-fg">Highlighted</p>
           <p class="mt-1 text-sfere-sm text-sfere-fg-muted">
             Purple fades in from the top-left and is gone by 72%.
           </p>
-        </SfereCard>
-        <SfereCard>
+        </CardPanel>
+        <CardPanel>
           <p class="text-sfere-sm font-semibold text-sfere-fg">Default</p>
           <p class="mt-1 text-sfere-sm text-sfere-fg-muted">
             The same card without the treatment, for comparison.
           </p>
-        </SfereCard>
+        </CardPanel>
       </div>
     </DocSpecimen>
 
@@ -121,7 +121,7 @@
 <script setup>
 import DocSection from '../DocSection.vue'
 import DocSpecimen from '../DocSpecimen.vue'
-import SfereCard from '@/components/sfere/SfereCard.vue'
+import CardPanel from '@/components/ui/CardPanel.vue'
 
 const shadows = [
   {

@@ -5,15 +5,11 @@
         <span class="truncate text-sm font-semibold text-ink">{{
           transport.label
         }}</span>
-        <StatusBadge :variant="status.variant" :label="status.label" />
-        <StatusBadge
-          v-if="transport.isDefault"
-          variant="brand"
-          label="Default"
-        />
+        <StatusBadge :tone="status.variant" :label="status.label" />
+        <StatusBadge v-if="transport.isDefault" tone="brand" label="Default" />
         <StatusBadge
           v-if="!transport.isVerified"
-          variant="warn"
+          tone="warn"
           label="Unverified"
         />
       </div>

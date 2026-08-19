@@ -1,34 +1,59 @@
 <template>
-  <div class="flex flex-col gap-1">
-    <label
-      v-if="label"
-      :for="props.for || undefined"
-      class="text-xs font-medium text-subtle"
-    >
+  <div class="flex flex-col gap-1.5">
+    <label v-if="label" :for="forId || undefined" :class="labelClasses">
       {{ label }}
-      <span v-if="required" class="text-rose-500">*</span>
+      <span v-if="required" class="text-sfere-danger" aria-hidden="true"
+        >*</span
+      >
+      <span v-if="optional" :class="optionalClasses">optional</span>
     </label>
 
     <slot />
 
-    <p v-if="error" class="text-xs text-rose-500">{{ error }}</p>
-    <p v-else-if="hint" class="text-xs text-subtle">{{ hint }}</p>
+    <p
+      v-if="error"
+      :class="['text-sfere-xs', onDark ? 'text-rose-300' : 'text-sfere-danger']"
+    >
+      {{ error }}
+    </p>
+    <p
+      v-else-if="hint"
+      :class="[
+        'text-sfere-xs',
+        onDark ? 'text-white/50' : 'text-sfere-fg-muted'
+      ]"
+    >
+      {{ hint }}
+    </p>
   </div>
 </template>
 
 <script setup>
-// Label + control + hint/error triplet. The control itself is a slot, so a page
-// can drop in a q-input, a q-select or the raw
-// `h-9 rounded-lg border border-line2 …` input used by SegmentBuilderDialog.
-// Label styling is lifted from that dialog's field labels; the error colour is
-// the `text-rose-500` ContactsPage already uses for load failures.
-//
-// `for` is a JS keyword, so the template reads it off `props` explicitly.
+import { computed } from 'vue'
+
+// Label + control + one line of help. The control goes in the slot so this
+// works with SfereInput, a native <select>, or a Quasar control, and the error
+// message replaces the hint rather than stacking under it — two lines of
+// guidance under one field is how forms start to look frightening.
 const props = defineProps({
   label: { type: String, default: '' },
   hint: { type: String, default: '' },
   error: { type: String, default: '' },
   required: { type: Boolean, default: false },
-  for: { type: String, default: '' }
+  // Marking what's optional beats marking what's required when most fields are.
+  optional: { type: Boolean, default: false },
+  // Pair with the control's `id` so clicking the label focuses it.
+  forId: { type: String, default: '' },
+  onDark: { type: Boolean, default: false }
 })
+
+const labelClasses = computed(() => [
+  'text-sfere-sm font-medium',
+  props.onDark ? 'text-white/85' : 'text-sfere-fg'
+])
+
+const optionalClasses = computed(() => [
+  'ml-1.5 font-sfere-mono text-sfere-label uppercase',
+  props.onDark ? 'text-white/40' : 'text-sfere-fg-muted'
+])
 </script>

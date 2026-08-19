@@ -61,7 +61,7 @@
 
       <NoticeBanner
         v-if="probabilisticMerges"
-        variant="warn"
+        tone="warn"
         title="Some fans were stitched on inferred signals"
         :message="probabilisticNotice"
       />
@@ -84,7 +84,7 @@
               <span class="font-medium text-ink">{{ row.displayName }}</span>
               <StatusBadge
                 v-if="row.id === selectedRuleId"
-                variant="brand"
+                tone="brand"
                 label="Viewing"
               />
             </div>
@@ -94,7 +94,7 @@
           <template #cell-rank="{ row }">{{ row.precedenceLabel }}</template>
 
           <template #cell-method="{ row }">
-            <StatusBadge :variant="row.methodVariant" :label="row.method" />
+            <StatusBadge :tone="row.methodVariant" :label="row.method" />
           </template>
 
           <template #cell-coverageLabel="{ value }">
@@ -128,7 +128,7 @@
               <span class="font-medium text-ink">{{ row.profileName }}</span>
               <StatusBadge
                 v-if="row.id === selectedMergeId"
-                variant="brand"
+                tone="brand"
                 label="Viewing"
               />
             </div>
@@ -143,12 +143,12 @@
           </template>
 
           <template #cell-method="{ row }">
-            <StatusBadge :variant="row.methodVariant" :label="row.method" />
+            <StatusBadge :tone="row.methodVariant" :label="row.method" />
           </template>
 
           <template #cell-confidence="{ row }">
             <div class="flex items-center justify-end gap-2">
-              <StatusBadge :variant="row.verdictVariant" :label="row.verdict" />
+              <StatusBadge :tone="row.verdictVariant" :label="row.verdict" />
               <span class="font-medium text-ink">{{ row.confidence }}%</span>
             </div>
           </template>

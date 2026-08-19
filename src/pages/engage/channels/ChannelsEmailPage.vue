@@ -58,7 +58,7 @@
 
       <template #cell-status="{ value }">
         <StatusBadge
-          :variant="campaignStatus(value).variant"
+          :tone="campaignStatus(value).variant"
           :label="campaignStatus(value).label"
         />
       </template>

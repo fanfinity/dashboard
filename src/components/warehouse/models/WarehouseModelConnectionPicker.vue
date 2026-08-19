@@ -11,17 +11,17 @@
         <span class="text-sm font-medium text-ink">{{ connection.name }}</span>
         <StatusBadge
           v-if="modelValue === connection.id"
-          variant="brand"
+          tone="brand"
           label="Selected"
         />
         <StatusBadge
           v-else-if="!isConnectionHealthy(connection)"
-          variant="danger"
+          tone="danger"
           label="Unreachable"
         />
         <StatusBadge
           v-else-if="connection.isPrimary"
-          variant="neutral"
+          tone="neutral"
           label="Primary"
         />
       </div>

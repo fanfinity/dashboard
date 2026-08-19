@@ -12,7 +12,7 @@
           Event Inspector
           <StatusBadge
             v-if="events.length"
-            variant="brand"
+            tone="brand"
             :label="formatCount(events.length)"
           />
         </button>
@@ -54,7 +54,7 @@
 
     <div v-else class="flex flex-col gap-5">
       <NoticeBanner
-        variant="info"
+        tone="info"
         title="Nothing here is really ingested"
         message="Every event you fire is simulated in this browser tab and kept for this session only. No request leaves the page, nothing reaches an ingest endpoint, and a reload starts over."
       />
@@ -110,7 +110,7 @@
             <div class="min-w-0">
               <div class="flex flex-wrap items-center gap-2">
                 <p class="text-sm font-medium text-ink">{{ action.label }}</p>
-                <StatusBadge variant="neutral" :label="action.eventName" />
+                <StatusBadge tone="neutral" :label="action.eventName" />
               </div>
               <p class="mt-0.5 text-xs leading-5 text-muted">{{
                 action.description
@@ -192,7 +192,7 @@
               >
               <StatusBadge
                 v-if="!routingLoading && !routingError"
-                variant="neutral"
+                tone="neutral"
                 :label="`${formatCount(routes.length)} pipes`"
               />
             </template>
@@ -228,7 +228,7 @@
                   >
                 </div>
                 <StatusBadge
-                  :enabled="route.isEnabled"
+                  :tone="route.isEnabled ? 'success' : 'neutral'"
                   :label="route.isEnabled ? 'Enabled' : 'Paused'"
                 />
               </li>

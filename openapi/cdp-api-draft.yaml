@@ -1,0 +1,1864 @@
+openapi: 3.1.0
+info:
+  title: Sfere CDP API (draft)
+  version: 0.2.0
+  description: |
+    Proposed API for the modules the dashboard has already built against mock
+    JSON in `public/data/`. This is a draft handed to the backend team to build
+    against — it is NOT pulled by `pnpm openapi` (that command only regenerates
+    `openapi/fanfinity-api.json`, the accounts/RBAC spec, from staging) and it is
+    NOT wired into any codegen today. Once real endpoints exist, this file (or
+    its merged descendant) becomes the input to a second orval client, and the
+    frontend composables currently reading `useMockResource(...)` switch to it
+    one at a time.
+
+    Scope: every module `enabled: true` in `src/config/features.js` as of this
+    draft — Dashboard, Sources, Destinations, Pipes, Settings, Warehouse
+    connections, Monitoring (Errors + Health), Profiles (search), Secrets and
+    Authorizations. Live Events already has a real backend (Jitsu) and is
+    intentionally out of scope here. Two modules are enabled but only partly
+    built: Warehouse and Profiles each gate several child screens behind their
+    own still-`false` feature key (DWH syncs, Warehouse models, Identity
+    resolution, Attributes, Profile API, Live/DWH profile syncs) — those are
+    deliberately excluded and belong in a follow-up draft once their screens
+    are worth building a backend for.
+
+    Every schema below was written by reading the actual mock JSON in
+    `public/data/*.json`, not guessed — field names, nullability and enum
+    values match the fixtures the frontend already renders.
+
+    ## Versioning
+
+    URI-versioned — every path is prefixed `/v1/`, and that prefix is the
+    entire versioning story for this draft. A breaking change (removing a
+    field, changing a type, changing what a status code means) gets a new
+    `/v2/` prefix living alongside `/v1/`, never an in-place change to `/v1/`.
+    A non-breaking change (a new optional field, a new endpoint, a new enum
+    value additive to existing handling) ships straight into `/v1/`, no
+    version bump needed. `/v1/` stays live until it is explicitly deprecated
+    with advance notice — there is no sunset mechanism in this draft because
+    there is no `/v2/` yet to deprecate it in favor of; add one (e.g.
+    `Deprecation`/`Sunset` response headers) when that day comes, not before.
+
+    ## Pagination
+
+    Every list endpoint is cursor-paginated: request `?cursor=<opaque
+    string>&limit=<n>` (both optional — omit `cursor` for the first page,
+    omit `limit` for the server default), response is `{ items: [...],
+    nextCursor, hasMore }`. Cursor beats page-number here because several of
+    these lists change while being read (errors, profiles) — a page number
+    can skip or repeat rows when rows are inserted between two requests; an
+    opaque cursor anchored to the last-seen row cannot. `nextCursor` is
+    `null` exactly when `hasMore` is `false`; a client should stop once
+    `nextCursor` is `null`, not once a page comes back short.
+
+    Three endpoints deliberately do NOT follow this and say why at the point
+    of use: `GET /v1/dashboard`, `GET /v1/pipes/diagram`, `GET /v1/error-stats`
+    and `GET /v1/workspace` return a single snapshot object, not a list, so
+    there is nothing to paginate. `GET /v1/trash` is paginated only when its
+    `resource` filter narrows to one kind — the unfiltered, all-three-kinds
+    view stays a single unpaginated object because `usePipesTrash()` needs
+    the complete graph in one response to resolve cascade state (a trashed
+    pipe pointing at a trashed source has to see both at once).
+
+    ## Idempotency
+
+    Every resource-creating `POST` (sources, destinations, pipes, dwh
+    connections, secrets, api tokens, member invites) requires an
+    `Idempotency-Key` header — see `components.parameters.IdempotencyKey`.
+    Retrying the same create with the same key returns the original 2xx
+    response rather than creating a second resource, which is what makes a
+    network-level retry after a dropped response safe. Reusing a key with a
+    materially different body is a `409` (`components.responses.
+    IdempotencyConflict`). `PATCH`/`DELETE` and action endpoints like restore
+    are left out on purpose — repeating any of them already converges to the
+    same end state, so there is nothing an idempotency key would additionally
+    protect.
+
+    ## Errors and standardization
+
+    Every non-2xx response across every endpoint is the same
+    `components.schemas.Problem` shape (RFC 9457 `problem+json`), extended
+    with two fields a real client needs that the bare RFC doesn't provide: a
+    stable machine-readable `code` (switch on this, never on `title`/
+    `detail` — those are human copy and are free to reword) and a
+    `requestId` for correlating a bug report against backend logs. A `422`
+    validation failure additionally carries `errors: [{ field, message }]`.
+    Success bodies are deliberately NOT wrapped in a matching envelope —
+    `GET /v1/sources/{id}` returns a bare `Source`, not `{ data: Source }` —
+    because the field that actually needed standardizing for a real client
+    was error handling (one shape, one place to parse it), and wrapping
+    every successful body too would be a bigger break from how the frontend
+    composables already read responses for no matching benefit.
+
+  contact:
+    name: Sfere Dashboard (frontend)
+
+servers:
+  - url: http://localhost:8080
+    description: Local backend dev (mirrors src/api/mutator.js's default)
+  - url: https://api-staging.fanfinity.io
+    description: Staging (VITE_API_BASE) — same host the accounts/RBAC API uses
+
+security:
+  - bearerAuth: []
+
+tags:
+  - name: Dashboard
+  - name: Sources
+  - name: Destinations
+  - name: Pipes
+  - name: Trash
+  - name: Settings
+  - name: Warehouse
+  - name: Monitoring
+  - name: Profiles
+  - name: Secrets
+  - name: Authorizations
+
+paths:
+  # ---------------------------------------------------------------- Dashboard
+  /v1/dashboard:
+    get:
+      tags: [Dashboard]
+      summary: Home screen stats, series and recent activity
+      description: >-
+        Backs useDashboardHome.js / dashboard.json. One object: counts,
+        hourly rates, five named time series (each an array of buckets with
+        per-key numeric fields, shape varies by series — see
+        DashboardSeriesPoint), a chart-color config per series, and the last
+        few raw events/profiles for the activity feed. A single snapshot,
+        not a list — not paginated.
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/DashboardSnapshot' }
+        default: { $ref: '#/components/responses/Problem' }
+
+  # ------------------------------------------------------------------ Sources
+  /v1/sources:
+    get:
+      tags: [Sources]
+      summary: List configured sources
+      parameters:
+        - $ref: '#/components/parameters/Cursor'
+        - $ref: '#/components/parameters/Limit'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/SourceList' }
+        default: { $ref: '#/components/responses/Problem' }
+    post:
+      tags: [Sources]
+      summary: Create a source from a template
+      description: Backs useSources().add() — currently a local-only mutation.
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/SourceCreateRequest' }
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Source' }
+        '409': { $ref: '#/components/responses/IdempotencyConflict' }
+        default: { $ref: '#/components/responses/Problem' }
+
+  /v1/sources/{id}:
+    parameters:
+      - $ref: '#/components/parameters/Id'
+    get:
+      tags: [Sources]
+      summary: Get one source
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Source' }
+        default: { $ref: '#/components/responses/Problem' }
+    patch:
+      tags: [Sources]
+      summary: Update a source
+      description: >-
+        Backs useSources().setEnabled() today (isEnabled only); the request
+        body is written open in case editable fields grow beyond that. No
+        Idempotency-Key — repeating the same patch converges to the same
+        state, so there is nothing an idempotency key would additionally
+        protect.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                isEnabled: { type: boolean }
+                name: { type: string }
+                description: { type: [string, 'null'] }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Source' }
+        default: { $ref: '#/components/responses/Problem' }
+    delete:
+      tags: [Sources]
+      summary: Soft-delete a source (moves it to trash)
+      description: Backs useSources().remove(); see the Trash endpoints below.
+      responses:
+        '204': { description: Deleted }
+        default: { $ref: '#/components/responses/Problem' }
+
+  /v1/source-templates:
+    get:
+      tags: [Sources]
+      summary: Catalog of source templates (the create-screen picker)
+      parameters:
+        - $ref: '#/components/parameters/Cursor'
+        - $ref: '#/components/parameters/Limit'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/SourceTemplateList' }
+        default: { $ref: '#/components/responses/Problem' }
+
+  # ------------------------------------------------------------- Destinations
+  /v1/destinations:
+    get:
+      tags: [Destinations]
+      summary: List configured destinations
+      parameters:
+        - $ref: '#/components/parameters/Cursor'
+        - $ref: '#/components/parameters/Limit'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/DestinationList' }
+        default: { $ref: '#/components/responses/Problem' }
+    post:
+      tags: [Destinations]
+      summary: Create a destination from a template
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/DestinationCreateRequest' }
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Destination' }
+        '409': { $ref: '#/components/responses/IdempotencyConflict' }
+        default: { $ref: '#/components/responses/Problem' }
+
+  /v1/destinations/{id}:
+    parameters:
+      - $ref: '#/components/parameters/Id'
+    get:
+      tags: [Destinations]
+      summary: Get one destination
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Destination' }
+        default: { $ref: '#/components/responses/Problem' }
+    patch:
+      tags: [Destinations]
+      summary: Update a destination
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                isEnabled: { type: boolean }
+                name: { type: string }
+                description: { type: [string, 'null'] }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Destination' }
+        default: { $ref: '#/components/responses/Problem' }
+    delete:
+      tags: [Destinations]
+      summary: Soft-delete a destination (moves it to trash)
+      responses:
+        '204': { description: Deleted }
+        default: { $ref: '#/components/responses/Problem' }
+
+  /v1/destination-templates:
+    get:
+      tags: [Destinations]
+      summary: Catalog of destination templates
+      parameters:
+        - $ref: '#/components/parameters/Cursor'
+        - $ref: '#/components/parameters/Limit'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/DestinationTemplateList' }
+        default: { $ref: '#/components/responses/Problem' }
+
+  # -------------------------------------------------------------------- Pipes
+  /v1/pipes:
+    get:
+      tags: [Pipes]
+      summary: List pipes (source → destination transforms)
+      parameters:
+        - $ref: '#/components/parameters/Cursor'
+        - $ref: '#/components/parameters/Limit'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/PipeList' }
+        default: { $ref: '#/components/responses/Problem' }
+    post:
+      tags: [Pipes]
+      summary: Create a pipe between an existing source and destination
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/PipeCreateRequest' }
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Pipe' }
+        '409': { $ref: '#/components/responses/IdempotencyConflict' }
+        default: { $ref: '#/components/responses/Problem' }
+
+  /v1/pipes/{id}:
+    parameters:
+      - $ref: '#/components/parameters/Id'
+    get:
+      tags: [Pipes]
+      summary: Get one pipe
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Pipe' }
+        default: { $ref: '#/components/responses/Problem' }
+    delete:
+      tags: [Pipes]
+      summary: Soft-delete a pipe (moves it to trash)
+      responses:
+        '204': { description: Deleted }
+        default: { $ref: '#/components/responses/Problem' }
+
+  /v1/pipes/diagram:
+    get:
+      tags: [Pipes]
+      summary: Sources, destinations and pipes as one flow graph
+      description: >-
+        Backs useDiagram()/pipes-diagram.json — the same sources and
+        destinations as their own list endpoints, pre-shaped for the flow
+        view so the frontend doesn't have to join three collections
+        client-side on every render. (`useDiagram`'s `nodes` computed still
+        does its own defensive join — a pipe whose endpoint id doesn't
+        resolve is dropped rather than rendered broken.) A single graph
+        snapshot, not a list — not paginated, same reasoning as the
+        unfiltered Trash view below.
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/PipesDiagram' }
+        default: { $ref: '#/components/responses/Problem' }
+
+  # ------------------------------------------------------------------- Trash
+  /v1/trash:
+    get:
+      tags: [Trash]
+      summary: Deleted sources, destinations and pipes
+      description: >-
+        Backs trash.json today, one file holding all three resource kinds
+        together — kept as one endpoint rather than three, since
+        usePipesTrash() already needs sources+destinations trash loaded
+        alongside pipes trash to resolve cascade state (a deleted pipe can
+        point at a source/destination that is itself deleted). Pagination
+        applies only when `resource` narrows the response to one kind
+        (returns `TrashList`, cursor-paginated like every other list here);
+        omitting `resource` returns the full `Trash` object, unpaginated,
+        because cascade resolution needs the complete cross-resource graph
+        in one response rather than a partial page of it.
+      parameters:
+        - name: resource
+          in: query
+          description: Filter to one resource kind; omit for all three.
+          schema: { type: string, enum: [sources, destinations, pipes] }
+        - name: cursor
+          in: query
+          description: Only applies when `resource` is set. Ignored otherwise.
+          schema: { type: string }
+        - name: limit
+          in: query
+          description: Only applies when `resource` is set. Ignored otherwise.
+          schema: { type: integer, default: 50, minimum: 1, maximum: 200 }
+      responses:
+        '200':
+          description: >-
+            `Trash` when `resource` is omitted; `TrashList` (paginated) when
+            `resource` is set.
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/Trash'
+                  - $ref: '#/components/schemas/TrashList'
+        default: { $ref: '#/components/responses/Problem' }
+
+  /v1/trash/{resource}/{id}/restore:
+    parameters:
+      - name: resource
+        in: path
+        required: true
+        schema: { type: string, enum: [sources, destinations, pipes] }
+      - $ref: '#/components/parameters/Id'
+    post:
+      tags: [Trash]
+      summary: Restore one deleted record
+      description: >-
+        Backs usePipesTrash().restore(). Restoring a pipe whose source or
+        destination is `trashed` (not `missing`) must cascade-restore that
+        record too — mirroring the frontend's cascade resolution — so this
+        is refused (409) rather than silently leaving a dangling reference
+        when the caller hasn't confirmed the cascade. No Idempotency-Key —
+        restoring an already-restored record is naturally idempotent (it
+        just returns the same restored state again), unlike the creates
+        below which would otherwise create a second resource on retry.
+      responses:
+        '200':
+          description: Restored
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/RestoreResult' }
+        '409':
+          description: >-
+            Blocked — the record references a trashed or missing
+            source/destination; see `RestoreResult.cascade`.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/RestoreResult' }
+        default: { $ref: '#/components/responses/Problem' }
+
+  /v1/trash/{resource}/{id}:
+    parameters:
+      - name: resource
+        in: path
+        required: true
+        schema: { type: string, enum: [sources, destinations, pipes] }
+      - $ref: '#/components/parameters/Id'
+    delete:
+      tags: [Trash]
+      summary: Purge one deleted record permanently
+      responses:
+        '204': { description: Purged }
+        default: { $ref: '#/components/responses/Problem' }
+
+  /v1/trash/{resource}:
+    parameters:
+      - name: resource
+        in: path
+        required: true
+        schema: { type: string, enum: [sources, destinations, pipes] }
+    delete:
+      tags: [Trash]
+      summary: Empty trash for one resource kind
+      description: Backs usePipesTrash().purgeAll().
+      responses:
+        '204': { description: Emptied }
+        default: { $ref: '#/components/responses/Problem' }
+
+  # ---------------------------------------------------------------- Settings
+  /v1/workspace:
+    get:
+      tags: [Settings]
+      summary: Workspace settings — identity, retention, identity resolution, alerts
+      description: A single settings snapshot, not a list — not paginated.
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/WorkspaceSettings' }
+        default: { $ref: '#/components/responses/Problem' }
+    patch:
+      tags: [Settings]
+      summary: Update workspace name and retention windows
+      description: >-
+        Backs SettingsPage.vue's `save()` — today purely local, the form's
+        own comment says "there is no backend behind this form."
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name: { type: string }
+                retention:
+                  $ref: '#/components/schemas/RetentionSettings'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/WorkspaceSettings' }
+        default: { $ref: '#/components/responses/Problem' }
+
+  /v1/members:
+    get:
+      tags: [Settings]
+      summary: Active members and pending invitations
+      description: >-
+        `managedUsers` is cursor-paginated like every list in this spec (an
+        account can accumulate hundreds of members); `pendingInvites` is
+        returned in full and unpaginated — invitations expire in days and
+        stay few in practice, so a second pagination axis on the same
+        response isn't worth the extra query params yet.
+      parameters:
+        - $ref: '#/components/parameters/Cursor'
+        - $ref: '#/components/parameters/Limit'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/MembersPage' }
+        default: { $ref: '#/components/responses/Problem' }
+    post:
+      tags: [Settings]
+      summary: Invite a member
+      description: >-
+        Backs SettingsPage.vue's inviteMember(), which today just notifies
+        "needs the accounts backend" — a real call likely belongs on the
+        existing accounts/RBAC API (fanfinity-api.json's
+        /v1/accounts/{id}/members) rather than here, since membership is an
+        account concept, not a CDP one. Listed for completeness; consider
+        merging this and the two DELETEs below into that spec instead of
+        this one.
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, role]
+              properties:
+                email: { type: string, format: email }
+                role: { type: string, enum: [owner, admin, editor, viewer] }
+      responses:
+        '201':
+          description: Invited
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/PendingInvite' }
+        '409': { $ref: '#/components/responses/IdempotencyConflict' }
+        default: { $ref: '#/components/responses/Problem' }
+
+  /v1/members/{id}:
+    parameters:
+      - $ref: '#/components/parameters/Id'
+    delete:
+      tags: [Settings]
+      summary: Remove a member
+      responses:
+        '204': { description: Removed }
+        default: { $ref: '#/components/responses/Problem' }
+
+  /v1/invites/{id}:
+    parameters:
+      - $ref: '#/components/parameters/Id'
+    delete:
+      tags: [Settings]
+      summary: Revoke a pending invitation
+      responses:
+        '204': { description: Revoked }
+        default: { $ref: '#/components/responses/Problem' }
+
+  /v1/api-tokens:
+    get:
+      tags: [Settings]
+      summary: List API tokens (preview only, never the full value)
+      parameters:
+        - $ref: '#/components/parameters/Cursor'
+        - $ref: '#/components/parameters/Limit'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ApiTokenList' }
+        default: { $ref: '#/components/responses/Problem' }
+    post:
+      tags: [Settings]
+      summary: Create an API token
+      description: >-
+        The full token value is returned exactly once, on creation — every
+        other read only ever returns `tokenPreview`, matching how
+        `secrets.json`'s `valuePreview` never round-trips the real value
+        either.
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name, scopes]
+              properties:
+                name: { type: string }
+                description: { type: [string, 'null'] }
+                scopes:
+                  type: array
+                  items: { type: string }
+                expiresAt: { type: [string, 'null'], format: date-time }
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiToken'
+                  - type: object
+                    required: [token]
+                    properties:
+                      token:
+                        type: string
+                        description: Full secret value — shown once.
+        '409': { $ref: '#/components/responses/IdempotencyConflict' }
+        default: { $ref: '#/components/responses/Problem' }
+
+  /v1/api-tokens/{id}:
+    parameters:
+      - $ref: '#/components/parameters/Id'
+    delete:
+      tags: [Settings]
+      summary: Revoke a token
+      responses:
+        '204': { description: Revoked }
+        default: { $ref: '#/components/responses/Problem' }
+
+  # -------------------------------------------------------------- Warehouse
+  /v1/dwh-connections:
+    get:
+      tags: [Warehouse]
+      summary: Warehouse connections
+      description: >-
+        Warehouse connections only — DWH syncs and Warehouse models are
+        still Soon (separate, disabled feature keys) and are intentionally
+        not spec'd here.
+      parameters:
+        - $ref: '#/components/parameters/Cursor'
+        - $ref: '#/components/parameters/Limit'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/DwhConnectionList' }
+        default: { $ref: '#/components/responses/Problem' }
+    post:
+      tags: [Warehouse]
+      summary: Add a warehouse connection
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name, type, host, database]
+              properties:
+                name: { type: string }
+                type: { type: string, enum: [snowflake, bigquery, redshift] }
+                host: { type: string }
+                port: { type: integer }
+                database: { type: string }
+                schema: { type: string }
+                username: { type: string }
+                password:
+                  type: string
+                  description: Write-only — never returned by any GET.
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/DwhConnection' }
+        '409': { $ref: '#/components/responses/IdempotencyConflict' }
+        default: { $ref: '#/components/responses/Problem' }
+
+  /v1/dwh-connections/{id}:
+    parameters:
+      - $ref: '#/components/parameters/Id'
+    get:
+      tags: [Warehouse]
+      summary: Get one warehouse connection
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/DwhConnection' }
+        default: { $ref: '#/components/responses/Problem' }
+    delete:
+      tags: [Warehouse]
+      summary: Remove a warehouse connection
+      responses:
+        '204': { description: Removed }
+        default: { $ref: '#/components/responses/Problem' }
+
+  # ------------------------------------------------------------- Monitoring
+  /v1/errors:
+    get:
+      tags: [Monitoring]
+      summary: Recent delivery/pipeline errors
+      parameters:
+        - name: since
+          in: query
+          schema: { type: string, format: date-time }
+        - name: severity
+          in: query
+          schema: { type: string, enum: [warning, error] }
+        - $ref: '#/components/parameters/Cursor'
+        - $ref: '#/components/parameters/Limit'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorLogEntryList' }
+        default: { $ref: '#/components/responses/Problem' }
+
+  /v1/error-stats:
+    get:
+      tags: [Monitoring]
+      summary: Error counts and an hourly series by category
+      description: >-
+        A single aggregate snapshot (counts plus an hourly bucketed time
+        series), not a list of records — not paginated. Contrast with
+        `GET /v1/errors` above, which lists the underlying records.
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorStats' }
+        default: { $ref: '#/components/responses/Problem' }
+
+  /v1/health:
+    get:
+      tags: [Monitoring]
+      summary: Queue depths and the async worker heartbeat log
+      description: >-
+        `queues` is a point-in-time snapshot; `heartbeat` is the one
+        cursor-paginated field on this endpoint, paged independently via
+        `heartbeatCursor`/`heartbeatLimit` rather than the top-level
+        `cursor`/`limit` used elsewhere, since `GET /v1/health` as a whole is
+        a snapshot object, not a list — only the heartbeat log inside it is.
+      parameters:
+        - name: heartbeatCursor
+          in: query
+          description: Pages through `heartbeat.items`. Omit for the first page.
+          schema: { type: string }
+        - name: heartbeatLimit
+          in: query
+          schema: { type: integer, default: 50, minimum: 1, maximum: 200 }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/HealthSnapshot' }
+        default: { $ref: '#/components/responses/Problem' }
+
+  # --------------------------------------------------------------- Profiles
+  /v1/profiles:
+    get:
+      tags: [Profiles]
+      summary: Search/list resolved fan profiles
+      description: >-
+        Backs Profile search only — the one Profiles child screen whose own
+        feature key is on today. Identity resolution, Attributes, Profile
+        API and the two sync screens stay out of scope until their keys
+        flip.
+      parameters:
+        - name: q
+          in: query
+          description: Free-text match against displayName/primaryEmail/identifiers.
+          schema: { type: string }
+        - $ref: '#/components/parameters/Cursor'
+        - $ref: '#/components/parameters/Limit'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ProfileList' }
+        default: { $ref: '#/components/responses/Problem' }
+
+  /v1/identifier-types:
+    get:
+      tags: [Profiles]
+      summary: Configured identifier types (email, user_id, browser, ...)
+      parameters:
+        - $ref: '#/components/parameters/Cursor'
+        - $ref: '#/components/parameters/Limit'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/IdentifierTypeList' }
+        default: { $ref: '#/components/responses/Problem' }
+
+  # ---------------------------------------------------------------- Secrets
+  /v1/secrets:
+    get:
+      tags: [Secrets]
+      summary: List secrets (preview only, never the full value)
+      parameters:
+        - $ref: '#/components/parameters/Cursor'
+        - $ref: '#/components/parameters/Limit'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/SecretList' }
+        default: { $ref: '#/components/responses/Problem' }
+    post:
+      tags: [Secrets]
+      summary: Create a secret
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [key, value]
+              properties:
+                key: { type: string }
+                description: { type: [string, 'null'] }
+                value:
+                  type: string
+                  description: Write-only — never returned by any GET.
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Secret' }
+        '409': { $ref: '#/components/responses/IdempotencyConflict' }
+        default: { $ref: '#/components/responses/Problem' }
+
+  /v1/secrets/{id}:
+    parameters:
+      - $ref: '#/components/parameters/Id'
+    delete:
+      tags: [Secrets]
+      summary: Delete a secret
+      description: >-
+        Refuse (409) when `usedByCount > 0` — matches the frontend's
+        `usedBy` list, which exists so a screen can warn before deleting a
+        secret a live destination still references.
+      responses:
+        '204': { description: Deleted }
+        '409':
+          description: Still referenced by usedBy
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Secret' }
+        default: { $ref: '#/components/responses/Problem' }
+
+  # ---------------------------------------------------------- Authorizations
+  /v1/oauth-providers:
+    get:
+      tags: [Authorizations]
+      summary: OAuth providers available to connect
+      parameters:
+        - $ref: '#/components/parameters/Cursor'
+        - $ref: '#/components/parameters/Limit'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/OAuthProviderList' }
+        default: { $ref: '#/components/responses/Problem' }
+
+  /v1/oauth-authorizations:
+    get:
+      tags: [Authorizations]
+      summary: Granted OAuth authorizations
+      parameters:
+        - $ref: '#/components/parameters/Cursor'
+        - $ref: '#/components/parameters/Limit'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/OAuthAuthorizationList' }
+        default: { $ref: '#/components/responses/Problem' }
+
+  /v1/oauth-authorizations/{id}:
+    parameters:
+      - $ref: '#/components/parameters/Id'
+    delete:
+      tags: [Authorizations]
+      summary: Revoke an authorization
+      responses:
+        '204': { description: Revoked }
+        default: { $ref: '#/components/responses/Problem' }
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: >-
+        Google Cloud Identity Platform ID token, same as the accounts/RBAC
+        API — src/api/mutator.js already attaches this header and retries
+        once with a force-refreshed token on 401. A client generated from
+        this spec should behave identically so both backends share one
+        mutator.
+
+  parameters:
+    Id:
+      name: id
+      in: path
+      required: true
+      schema: { type: string }
+
+    Cursor:
+      name: cursor
+      in: query
+      description: >-
+        Opaque pagination cursor copied from a previous response's
+        `nextCursor`. Omit for the first page. Never construct or parse this
+        value — treat it as an opaque token.
+      schema: { type: string }
+
+    Limit:
+      name: limit
+      in: query
+      description: Max items to return in this page.
+      schema: { type: integer, default: 50, minimum: 1, maximum: 200 }
+
+    IdempotencyKey:
+      name: Idempotency-Key
+      in: header
+      required: true
+      description: >-
+        Client-generated UUID, unique per logical create attempt. Retrying
+        the same create with the same key returns the original 2xx response
+        instead of creating a second resource — this is what makes a
+        network-level retry after a dropped response safe. Reusing the key
+        with a materially different request body is a 409 (see
+        `components.responses.IdempotencyConflict`). The server should keep
+        each key's original response for at least 24 hours.
+      schema: { type: string, format: uuid }
+
+  responses:
+    Problem:
+      description: >-
+        Error — RFC 9457 problem+json, matching src/api/mutator.js's
+        ApiError (status + { type, title, status, detail }), extended with
+        `code`/`requestId`/`errors` — see Problem schema.
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Problem' }
+
+    IdempotencyConflict:
+      description: >-
+        The Idempotency-Key header was already used on a previous request
+        whose body doesn't match this one.
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Problem' }
+
+  schemas:
+    Problem:
+      type: object
+      description: >-
+        RFC 9457 problem+json, extended with two fields a real client needs
+        that the bare RFC doesn't provide: a stable machine-readable `code`
+        (switch on this — `title`/`detail` are human copy, free to reword,
+        and must never be string-matched) and `requestId`, for correlating
+        a report against backend logs.
+      required: [type, title, status, code]
+      properties:
+        type: { type: string, format: uri }
+        title: { type: string }
+        status: { type: integer }
+        detail: { type: string }
+        instance: { type: string, format: uri }
+        code:
+          type: string
+          description: >-
+            Stable machine-readable error code, e.g. "not_found",
+            "validation_error", "idempotency_key_conflict", "conflict",
+            "rate_limited", "unauthorized", "forbidden".
+        requestId:
+          type: string
+          description: Correlates this response with backend logs.
+        errors:
+          type: array
+          description: >-
+            Field-level validation failures. Present when code is
+            "validation_error"; omitted otherwise.
+          items:
+            type: object
+            properties:
+              field: { type: string }
+              message: { type: string }
+
+    PageMeta:
+      type: object
+      description: Shared cursor-pagination fields, mixed into every *List schema.
+      required: [nextCursor, hasMore]
+      properties:
+        nextCursor:
+          type: [string, 'null']
+          description: Opaque cursor for the next page; null exactly when hasMore is false.
+        hasMore: { type: boolean }
+
+    # ------------------------------------------------------------ Dashboard
+    DashboardSeriesPoint:
+      type: object
+      description: >-
+        One time-bucket. `bucket` is always present; every other key is a
+        series-specific numeric field (e.g. sourceSeries has one key per
+        source slug) — modeled as additionalProperties since the key set
+        varies by which of the five series this point belongs to.
+      properties:
+        bucket: { type: string, format: date-time }
+      additionalProperties: { type: number }
+
+    ChartSeriesConfig:
+      type: object
+      properties:
+        key: { type: string }
+        label: { type: string }
+        color: { type: string }
+
+    DashboardSnapshot:
+      type: object
+      properties:
+        updatedAt: { type: string, format: date-time }
+        totalSources: { type: integer }
+        totalEventDestinations: { type: integer }
+        totalPipes: { type: integer }
+        totalEventsLastHour: { type: integer }
+        activeSourcesLastHour: { type: integer }
+        activeEventTypesLastHour: { type: integer }
+        activeEventStreamSourcesLastHour: { type: integer }
+        activeCloudAppSourcesLastHour: { type: integer }
+        activeEventDestinationsLastHour: { type: integer }
+        routedEventsLastHour: { type: integer }
+        failedProfileDeliveriesLastHour: { type: integer }
+        activeLiveProfileSyncsLastHour: { type: integer }
+        profilesRefreshedLastHour: { type: integer }
+        profilesRoutedLastHour: { type: integer }
+        errorsLastHour: { type: integer }
+        routingRate: { type: number }
+        sourceSeries:
+          type: array
+          items: { $ref: '#/components/schemas/DashboardSeriesPoint' }
+        eventTypeSeries:
+          type: array
+          items: { $ref: '#/components/schemas/DashboardSeriesPoint' }
+        routedSeries:
+          type: array
+          items: { $ref: '#/components/schemas/DashboardSeriesPoint' }
+        profileRefreshSeries:
+          type: array
+          items: { $ref: '#/components/schemas/DashboardSeriesPoint' }
+        profileDeliverySeries:
+          type: array
+          items: { $ref: '#/components/schemas/DashboardSeriesPoint' }
+        sourceConfig:
+          type: array
+          items: { $ref: '#/components/schemas/ChartSeriesConfig' }
+        eventTypeConfig:
+          type: array
+          items: { $ref: '#/components/schemas/ChartSeriesConfig' }
+        routedConfig:
+          type: array
+          items: { $ref: '#/components/schemas/ChartSeriesConfig' }
+        profileRefreshConfig:
+          type: array
+          items: { $ref: '#/components/schemas/ChartSeriesConfig' }
+        profileDeliveryConfig:
+          type: array
+          items: { $ref: '#/components/schemas/ChartSeriesConfig' }
+        lastEvents:
+          type: array
+          items:
+            type: object
+            properties:
+              id: { type: string }
+              eventName: { type: string }
+              sourceId: { type: string }
+              sourceName: { type: string }
+              profileId: { type: string }
+              occurredAt: { type: string, format: date-time }
+        lastProfiles:
+          type: array
+          items:
+            type: object
+            properties:
+              id: { type: string }
+              displayName: { type: string }
+              updatedAt: { type: string, format: date-time }
+
+    # --------------------------------------------------------------- Sources
+    Source:
+      type: object
+      required: [id, name, slug, sourceType, isEnabled]
+      properties:
+        id: { type: string }
+        name: { type: string }
+        slug: { type: string }
+        sourceType:
+          type: string
+          enum: [event_stream, cloud_app, reverse_etl]
+        description: { type: [string, 'null'] }
+        isEnabled: { type: boolean }
+        version: { type: integer }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+        eventCountLastHour: { type: integer }
+        eventTypeCount: { type: integer }
+        pipeCount: { type: integer }
+        templateId: { type: [string, 'null'] }
+        templateVersion: { type: [string, 'null'] }
+        latestTemplateVersion: { type: [string, 'null'] }
+        templateIcon: { type: [string, 'null'] }
+        writeKey:
+          type: [string, 'null']
+          description: >-
+            Present for event_stream sources with an active write key; null
+            for cloud_app sources authenticated another way (e.g. Shopify).
+
+    SourceList:
+      allOf:
+        - type: object
+          required: [items]
+          properties:
+            items:
+              type: array
+              items: { $ref: '#/components/schemas/Source' }
+        - $ref: '#/components/schemas/PageMeta'
+
+    SourceCreateRequest:
+      type: object
+      required: [templateId, name]
+      properties:
+        templateId: { type: string }
+        name: { type: string }
+        slug: { type: string }
+
+    SourceTemplate:
+      type: object
+      properties:
+        id: { type: string }
+        name: { type: string }
+        description: { type: string }
+        sourceType:
+          type: string
+          enum: [event_stream, cloud_app, reverse_etl]
+        version: { type: string }
+        icon: { type: string }
+        tags:
+          type: array
+          items: { type: string }
+        defaults:
+          type: object
+          additionalProperties: true
+        eventTypeCount: { type: integer }
+        realtimeAttributeCount: { type: integer }
+
+    SourceTemplateList:
+      allOf:
+        - type: object
+          required: [items]
+          properties:
+            items:
+              type: array
+              items: { $ref: '#/components/schemas/SourceTemplate' }
+        - $ref: '#/components/schemas/PageMeta'
+
+    # ---------------------------------------------------------- Destinations
+    Destination:
+      type: object
+      required: [id, name, slug, destinationType, isEnabled]
+      properties:
+        id: { type: string }
+        name: { type: string }
+        slug: { type: string }
+        description: { type: [string, 'null'] }
+        destinationType: { type: string, enum: [event_destination] }
+        isEnabled: { type: boolean }
+        version: { type: integer }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+        pipeCount: { type: integer }
+        deliveryCountLastHour: { type: integer }
+        warehouseConnections:
+          type: array
+          items: { type: string }
+          description: dwh-connections ids this destination writes through, if any.
+        templateId: { type: [string, 'null'] }
+        templateVersion: { type: [string, 'null'] }
+        latestTemplateVersion: { type: [string, 'null'] }
+        templateIcon: { type: [string, 'null'] }
+
+    DestinationList:
+      allOf:
+        - type: object
+          required: [items]
+          properties:
+            items:
+              type: array
+              items: { $ref: '#/components/schemas/Destination' }
+        - $ref: '#/components/schemas/PageMeta'
+
+    DestinationCreateRequest:
+      type: object
+      required: [templateId, name]
+      properties:
+        templateId: { type: string }
+        name: { type: string }
+        slug: { type: string }
+
+    DestinationTemplate:
+      type: object
+      properties:
+        id: { type: string }
+        name: { type: string }
+        description: { type: string }
+        destinationType: { type: string, enum: [event_destination] }
+        version: { type: string }
+        icon: { type: string }
+        tags:
+          type: array
+          items: { type: string }
+        defaults:
+          type: object
+          additionalProperties: true
+        secrets:
+          type: array
+          items:
+            type: object
+            properties:
+              keyPrefix: { type: string }
+              description: { type: string }
+
+    DestinationTemplateList:
+      allOf:
+        - type: object
+          required: [items]
+          properties:
+            items:
+              type: array
+              items: { $ref: '#/components/schemas/DestinationTemplate' }
+        - $ref: '#/components/schemas/PageMeta'
+
+    # ---------------------------------------------------------------- Pipes
+    Pipe:
+      type: object
+      required: [id, sourceId, eventDestinationId, isEnabled]
+      properties:
+        id: { type: string }
+        name: { type: string }
+        sourceId: { type: string }
+        sourceName: { type: string }
+        sourceSlug: { type: string }
+        sourceType:
+          type: string
+          enum: [event_stream, cloud_app, reverse_etl]
+        eventDestinationId: { type: string }
+        eventDestinationName: { type: string }
+        eventDestinationSlug: { type: string }
+        isEnabled: { type: boolean }
+        version: { type: integer }
+        hasFunctionCode: { type: boolean }
+        destinationParams:
+          type: object
+          additionalProperties: true
+          description: Free-form config, shape defined by the destination template.
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+        deliveryCountLastHour: { type: integer }
+
+    PipeList:
+      allOf:
+        - type: object
+          required: [items]
+          properties:
+            items:
+              type: array
+              items: { $ref: '#/components/schemas/Pipe' }
+        - $ref: '#/components/schemas/PageMeta'
+
+    PipeCreateRequest:
+      type: object
+      required: [sourceId, eventDestinationId]
+      properties:
+        sourceId: { type: string }
+        eventDestinationId: { type: string }
+        name: { type: string }
+        destinationParams:
+          type: object
+          additionalProperties: true
+
+    PipesDiagram:
+      type: object
+      properties:
+        sources:
+          type: array
+          items: { $ref: '#/components/schemas/Source' }
+        eventDestinations:
+          type: array
+          items: { $ref: '#/components/schemas/Destination' }
+        pipes:
+          type: array
+          items: { $ref: '#/components/schemas/Pipe' }
+
+    # ---------------------------------------------------------------- Trash
+    TrashedRecord:
+      description: >-
+        Fields added on top of a Source, Destination or Pipe once it's
+        trashed — who deleted it and when.
+      type: object
+      properties:
+        deletedAt: { type: string, format: date-time }
+        deletedBy: { type: string }
+        deletedByName: { type: string }
+
+    SourceTrashed:
+      description: A trashed Source. allOf against the live schema so a restore round-trips exactly back to it.
+      allOf:
+        - $ref: '#/components/schemas/Source'
+        - $ref: '#/components/schemas/TrashedRecord'
+
+    DestinationTrashed:
+      description: A trashed Destination. allOf against the live schema so a restore round-trips exactly back to it.
+      allOf:
+        - $ref: '#/components/schemas/Destination'
+        - $ref: '#/components/schemas/TrashedRecord'
+
+    PipeTrashed:
+      description: A trashed Pipe. allOf against the live schema so a restore round-trips exactly back to it.
+      allOf:
+        - $ref: '#/components/schemas/Pipe'
+        - $ref: '#/components/schemas/TrashedRecord'
+
+    Trash:
+      type: object
+      description: >-
+        All three trashed kinds together, unpaginated — see the
+        pagination note on GET /v1/trash for why.
+      properties:
+        sources:
+          type: array
+          items: { $ref: '#/components/schemas/SourceTrashed' }
+        destinations:
+          type: array
+          items: { $ref: '#/components/schemas/DestinationTrashed' }
+        pipes:
+          type: array
+          items: { $ref: '#/components/schemas/PipeTrashed' }
+
+    TrashList:
+      description: >-
+        One resource kind's trash, cursor-paginated — returned by
+        GET /v1/trash when its `resource` filter is set.
+      allOf:
+        - type: object
+          required: [items]
+          properties:
+            items:
+              type: array
+              items:
+                oneOf:
+                  - $ref: '#/components/schemas/SourceTrashed'
+                  - $ref: '#/components/schemas/DestinationTrashed'
+                  - $ref: '#/components/schemas/PipeTrashed'
+        - $ref: '#/components/schemas/PageMeta'
+
+    RestoreResult:
+      type: object
+      properties:
+        restored: { type: boolean }
+        cascade:
+          type: array
+          description: >-
+            What else had to (or needs to) come back with this record —
+            mirrors usePipesTrash()'s cascade array on a pipe whose
+            source/destination is itself trashed.
+          items:
+            type: object
+            properties:
+              kind: { type: string, enum: [source, destination] }
+              id: { type: string }
+              name: { type: string }
+              state: { type: string, enum: [live, trashed, missing] }
+
+    # ------------------------------------------------------------- Settings
+    WorkspaceSettings:
+      type: object
+      properties:
+        workspace:
+          type: object
+          properties:
+            id: { type: string }
+            name: { type: string }
+            slug: { type: string }
+            region: { type: string }
+            regionLabel: { type: string }
+            timezone: { type: string }
+            createdAt: { type: string, format: date-time }
+        errorAlerts:
+          type: object
+          properties:
+            slackWebhooks:
+              type: array
+              items: { $ref: '#/components/schemas/WebhookAlert' }
+            teamsWebhooks:
+              type: array
+              items: { $ref: '#/components/schemas/WebhookAlert' }
+        retention: { $ref: '#/components/schemas/RetentionSettings' }
+        identityResolution:
+          type: object
+          properties:
+            strategy: { type: string, enum: [deterministic, probabilistic] }
+            mergeOnSharedEmail: { type: boolean }
+            mergeOnSharedPhone: { type: boolean }
+            maxIdentifiersPerProfile: { type: integer }
+        instanceCapabilities:
+          type: object
+          properties:
+            signInLink: { type: boolean }
+            userManagement: { type: boolean }
+            googleLoginUrl: { type: string }
+            microsoftLoginUrl: { type: string }
+
+    RetentionSettings:
+      type: object
+      properties:
+        rawEventDays: { type: integer }
+        errorLogDays: { type: integer }
+        profileInactivityDays: { type: integer }
+
+    WebhookAlert:
+      type: object
+      properties:
+        id: { type: string }
+        label: { type: string }
+        url:
+          type: string
+          description: >-
+            Returned with its token segment redacted, same as today's mock
+            data — there is nothing further to reveal on a GET.
+        minSeverity: { type: string, enum: [warning, error] }
+        isEnabled: { type: boolean }
+
+    Member:
+      type: object
+      properties:
+        id: { type: string }
+        pk: { type: integer }
+        email: { type: string, format: email }
+        username: { type: string }
+        name: { type: string }
+        role: { type: string, enum: [owner, admin, editor, viewer] }
+        isActive: { type: boolean }
+        lastLogin: { type: string, format: date-time }
+        createdAt: { type: string, format: date-time }
+
+    PendingInvite:
+      type: object
+      properties:
+        id: { type: string }
+        email: { type: string, format: email }
+        role: { type: string, enum: [owner, admin, editor, viewer] }
+        invitedBy: { type: string }
+        invitedByName: { type: string }
+        invitedAt: { type: string, format: date-time }
+        expiresAt: { type: string, format: date-time }
+
+    MembersPage:
+      description: >-
+        managedUsers is cursor-paginated (PageMeta applies to it);
+        pendingInvites is returned in full, unpaginated — see the
+        description on GET /v1/members for why. Renamed from the earlier
+        draft's `pendingUsers` key for clarity — these are invites, not
+        users yet.
+      allOf:
+        - type: object
+          required: [managedUsers, pendingInvites]
+          properties:
+            managedUsers:
+              type: array
+              items: { $ref: '#/components/schemas/Member' }
+            pendingInvites:
+              type: array
+              items: { $ref: '#/components/schemas/PendingInvite' }
+        - $ref: '#/components/schemas/PageMeta'
+
+    ApiToken:
+      type: object
+      properties:
+        id: { type: string }
+        name: { type: string }
+        description: { type: [string, 'null'] }
+        tokenPreview:
+          type: string
+          description: e.g. "ffp_live_…a91c" — never the full value.
+        scopes:
+          type: array
+          items: { type: string }
+        createdBy: { type: string }
+        createdByName: { type: string }
+        lastUsedAt: { type: [string, 'null'], format: date-time }
+        expiresAt: { type: [string, 'null'], format: date-time }
+        isRevoked: { type: boolean }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+
+    ApiTokenList:
+      allOf:
+        - type: object
+          required: [items]
+          properties:
+            items:
+              type: array
+              items: { $ref: '#/components/schemas/ApiToken' }
+        - $ref: '#/components/schemas/PageMeta'
+
+    # ------------------------------------------------------------ Warehouse
+    DwhConnection:
+      type: object
+      properties:
+        id: { type: string }
+        name: { type: string }
+        type: { type: string, enum: [snowflake, bigquery, redshift] }
+        host: { type: string }
+        port: { type: integer }
+        database: { type: string }
+        schema: { type: string }
+        username: { type: string }
+        isPrimary: { type: boolean }
+        status: { type: string, enum: [connected, error, pending] }
+        lastValidatedAt: { type: string, format: date-time }
+        tableCount: { type: integer }
+        modelCount: { type: integer }
+        syncCount: { type: integer }
+        version: { type: integer }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+
+    DwhConnectionList:
+      allOf:
+        - type: object
+          required: [items]
+          properties:
+            items:
+              type: array
+              items: { $ref: '#/components/schemas/DwhConnection' }
+        - $ref: '#/components/schemas/PageMeta'
+
+    # ----------------------------------------------------------- Monitoring
+    ErrorLogEntry:
+      type: object
+      properties:
+        id: { type: string }
+        occurredAt: { type: string, format: date-time }
+        category:
+          type: string
+          enum:
+            - event_stream
+            - cloud_app
+            - reverse_etl
+            - pipe
+            - event_destination
+            - profile_destination
+            - secrets
+            - profile_refresh
+            - dwh_sync
+        severity: { type: string, enum: [warning, error] }
+        code: { type: string }
+        message: { type: string }
+        entityType: { type: string }
+        entityId: { type: string }
+        entityName: { type: string }
+        count: { type: integer }
+        context:
+          type: object
+          additionalProperties: true
+
+    ErrorLogEntryList:
+      allOf:
+        - type: object
+          required: [items]
+          properties:
+            items:
+              type: array
+              items: { $ref: '#/components/schemas/ErrorLogEntry' }
+        - $ref: '#/components/schemas/PageMeta'
+
+    ErrorStats:
+      type: object
+      properties:
+        updatedAt: { type: string, format: date-time }
+        totalErrorsLastHour: { type: integer }
+        totalErrorsLast24Hours: { type: integer }
+        errorSeries:
+          type: array
+          description: >-
+            Hourly time-bucketed series, bounded by the query window — not
+            cursor-paginated like a record list (see Pagination in the
+            top-level description).
+          items:
+            type: object
+            description: One hourly bucket, count per ErrorLogEntry category.
+            properties:
+              bucket: { type: string, format: date-time }
+            additionalProperties: { type: integer }
+
+    HealthSnapshot:
+      type: object
+      properties:
+        updatedAt: { type: string, format: date-time }
+        queues:
+          type: object
+          properties:
+            identityResolution: { $ref: '#/components/schemas/QueueDepth' }
+            eventDeliveries: { $ref: '#/components/schemas/QueueDepth' }
+            profileRefresh: { $ref: '#/components/schemas/QueueDepth' }
+            profileDeliveries: { $ref: '#/components/schemas/QueueDepth' }
+        heartbeat:
+          type: object
+          description: >-
+            Cursor-paginated log of the async worker's health-check runs —
+            paged via the heartbeatCursor/heartbeatLimit query params on
+            GET /v1/health (not the top-level cursor/limit, since health
+            itself is a snapshot, not a list — see that endpoint's
+            description).
+          properties:
+            items:
+              type: array
+              items:
+                type: object
+                properties:
+                  id: { type: string }
+                  status: { type: string, enum: [success, failure] }
+                  model: { type: string }
+                  startedAt: { type: string, format: date-time }
+            nextCursor: { type: [string, 'null'] }
+            hasMore: { type: boolean }
+
+    QueueDepth:
+      type: object
+      properties:
+        count: { type: integer }
+        oldestAt: { type: [string, 'null'], format: date-time }
+        processedLastMinute: { type: integer }
+
+    # ------------------------------------------------------------- Profiles
+    Profile:
+      type: object
+      properties:
+        id: { type: string }
+        displayName: { type: string }
+        primaryEmail: { type: [string, 'null'], format: email }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+        lastSeenAt: { type: string, format: date-time }
+        identifiers:
+          type: array
+          items:
+            type: object
+            properties:
+              typeId: { type: string }
+              type: { type: string }
+              value: { type: string }
+              firstSeenAt: { type: string, format: date-time }
+        attributes:
+          type: object
+          description: Free-form key/value fan attributes (spend, tier, consent, ...).
+          additionalProperties: true
+        audiences:
+          type: array
+          items: { type: string }
+        eventCountLast30Days: { type: integer }
+
+    ProfileList:
+      allOf:
+        - type: object
+          required: [items]
+          properties:
+            items:
+              type: array
+              items: { $ref: '#/components/schemas/Profile' }
+        - $ref: '#/components/schemas/PageMeta'
+
+    IdentifierType:
+      type: object
+      properties:
+        id: { type: string }
+        name: { type: string }
+        displayName: { type: string }
+        maxIdentifiers: { type: integer }
+        priority: { type: integer }
+        version: { type: integer }
+        deletedAt: { type: [string, 'null'], format: date-time }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+        eventTypes:
+          type: array
+          items:
+            type: object
+            properties:
+              eventTypeId: { type: string }
+              eventTypeName: { type: string }
+              sourceId: { type: string }
+              sourceName: { type: string }
+              sourceType: { type: string }
+
+    IdentifierTypeList:
+      allOf:
+        - type: object
+          required: [items]
+          properties:
+            items:
+              type: array
+              items: { $ref: '#/components/schemas/IdentifierType' }
+        - $ref: '#/components/schemas/PageMeta'
+
+    # --------------------------------------------------------------- Secrets
+    Secret:
+      type: object
+      properties:
+        id: { type: string }
+        key: { type: string }
+        description: { type: [string, 'null'] }
+        valuePreview:
+          type: string
+          description: e.g. "EAAG…9f2c" — never the full value.
+        usedByCount: { type: integer }
+        usedBy:
+          type: array
+          items:
+            type: object
+            properties:
+              type: { type: string, enum: [event_destination, source] }
+              id: { type: string }
+              name: { type: string }
+        lastUsedAt: { type: [string, 'null'], format: date-time }
+        version: { type: integer }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+
+    SecretList:
+      allOf:
+        - type: object
+          required: [items]
+          properties:
+            items:
+              type: array
+              items: { $ref: '#/components/schemas/Secret' }
+        - $ref: '#/components/schemas/PageMeta'
+
+    # --------------------------------------------------------- Authorizations
+    OAuthProvider:
+      type: object
+      properties:
+        id: { type: string }
+        displayName: { type: string }
+        scopes:
+          type: array
+          items: { type: string }
+
+    OAuthProviderList:
+      allOf:
+        - type: object
+          required: [items]
+          properties:
+            items:
+              type: array
+              items: { $ref: '#/components/schemas/OAuthProvider' }
+        - $ref: '#/components/schemas/PageMeta'
+
+    OAuthAuthorization:
+      type: object
+      properties:
+        id: { type: string }
+        providerId: { type: string }
+        providerName: { type: string }
+        accountLabel: { type: string }
+        scopes:
+          type: array
+          items: { type: string }
+        status: { type: string, enum: [active, expired, revoked] }
+        authorizedBy: { type: string }
+        authorizedByName: { type: string }
+        authorizedAt: { type: string, format: date-time }
+        expiresAt: { type: [string, 'null'], format: date-time }
+        lastUsedAt: { type: [string, 'null'], format: date-time }
+        usedByCount: { type: integer }
+
+    OAuthAuthorizationList:
+      allOf:
+        - type: object
+          required: [items]
+          properties:
+            items:
+              type: array
+              items: { $ref: '#/components/schemas/OAuthAuthorization' }
+        - $ref: '#/components/schemas/PageMeta'

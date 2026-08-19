@@ -32,8 +32,8 @@
  * output and that file must agree; a surviving hit with no TODO entry is a bug
  * in this script.
  *
- * Lives in tools/ rather than scripts/ because scripts/ is a frozen path
- * (see CLAUDE.md).
+ * Lives in tools/ rather than scripts/: scripts/ holds what the build and the
+ * gates run, tools/ holds one-off maintenance like this.
  */
 
 import { readdirSync, readFileSync, statSync, writeFileSync } from 'node:fs'

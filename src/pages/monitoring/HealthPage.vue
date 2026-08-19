@@ -63,7 +63,7 @@
            on screen is a banner nobody reads. -->
       <NoticeBanner
         v-if="notice"
-        :variant="notice.variant"
+        :tone="notice.variant"
         :title="notice.title"
         :message="notice.message"
       />

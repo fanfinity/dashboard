@@ -24,7 +24,7 @@
 
     <NoticeBanner
       v-if="expiredCount"
-      variant="warn"
+      tone="warn"
       title="Some of these are past their retention window"
       :message="expiredMessage"
       class="mb-5"

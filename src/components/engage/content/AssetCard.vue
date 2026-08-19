@@ -24,7 +24,7 @@
       <StatusBadge
         v-for="tag in asset.tags"
         :key="tag"
-        variant="neutral"
+        tone="neutral"
         :label="tag"
       />
     </div>

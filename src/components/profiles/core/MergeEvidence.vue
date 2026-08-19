@@ -11,8 +11,8 @@
           >
         </div>
         <div class="flex items-center gap-2">
-          <StatusBadge :variant="merge.methodVariant" :label="merge.method" />
-          <StatusBadge :variant="merge.verdictVariant" :label="merge.verdict" />
+          <StatusBadge :tone="merge.methodVariant" :label="merge.method" />
+          <StatusBadge :tone="merge.verdictVariant" :label="merge.verdict" />
         </div>
       </div>
     </template>
@@ -60,9 +60,10 @@
       </div>
     </div>
 
-    <!-- Signal breakdown. There is no meter/progress primitive in
-         src/components/ui, so the bars are composed here rather than by
-         editing a frozen file — see the report on this branch. -->
+    <!-- Signal breakdown. These bars predate SfereProgress landing in
+         src/components/ui/ and could move onto it; they are composed here for
+         now because a per-signal bar is a different shape from a single
+         determinate meter. -->
     <div class="mt-5 grid grid-cols-1 gap-x-6 gap-y-4 sm:grid-cols-2">
       <div v-for="s in merge.signals" :key="s.key">
         <div class="mb-1 flex items-baseline justify-between gap-2 text-xs">

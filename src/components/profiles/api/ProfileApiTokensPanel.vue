@@ -2,7 +2,7 @@
   <CardPanel>
     <template #header>
       <span class="text-sm font-semibold text-ink">Authorized tokens</span>
-      <StatusBadge variant="neutral" :label="String(tokens.length)" />
+      <StatusBadge tone="neutral" :label="String(tokens.length)" />
     </template>
 
     <LoadingState v-if="loading" variant="form" :rows="3" />

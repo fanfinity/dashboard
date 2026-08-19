@@ -32,7 +32,7 @@
         </div>
 
         <div class="flex items-center gap-2">
-          <SfereBadge tone="neutral" :label="`v${VERSION}`" />
+          <StatusBadge tone="neutral" :label="`v${VERSION}`" />
           <SfereButton variant="secondary" size="sm" to="/">
             Back to dashboard
           </SfereButton>
@@ -88,19 +88,19 @@
           </p>
 
           <div class="mt-8 grid gap-4 sm:grid-cols-3">
-            <SfereStat
+            <StatCard
               bare
               label="Design tokens"
               value="71"
               hint="colour, type, shape, motion"
             />
-            <SfereStat
+            <StatCard
               bare
               label="Components"
-              value="30"
-              hint="src/components/sfere/"
+              value="39"
+              hint="src/components/ui/"
             />
-            <SfereStat
+            <StatCard
               bare
               label="Screens on the tokens"
               value="54"
@@ -120,6 +120,7 @@
           <ComponentsForms />
           <ComponentsData />
           <ComponentsFeedback />
+          <ComponentsScreens />
           <PatternsGallery />
         </div>
 
@@ -130,7 +131,7 @@
               >src/css/sfere.css</code
             >, components in
             <code class="font-sfere-mono text-sfere-xs text-sfere-fg"
-              >src/components/sfere/</code
+              >src/components/ui/</code
             >, and the written spec in
             <code class="font-sfere-mono text-sfere-xs text-sfere-fg"
               >docs/sfere-design-system.md</code
@@ -144,11 +145,11 @@
 
 <script setup>
 import { onBeforeUnmount, onMounted, ref } from 'vue'
-import SfereBadge from '@/components/sfere/SfereBadge.vue'
-import SfereButton from '@/components/sfere/SfereButton.vue'
-import SfereEyebrow from '@/components/sfere/SfereEyebrow.vue'
-import SfereLogo from '@/components/sfere/SfereLogo.vue'
-import SfereStat from '@/components/sfere/SfereStat.vue'
+import StatusBadge from '@/components/ui/StatusBadge.vue'
+import SfereButton from '@/components/ui/SfereButton.vue'
+import SfereEyebrow from '@/components/ui/SfereEyebrow.vue'
+import SfereLogo from '@/components/ui/SfereLogo.vue'
+import StatCard from '@/components/ui/StatCard.vue'
 import FoundationBrand from '@/components/sfere-docs/sections/FoundationBrand.vue'
 import FoundationColor from '@/components/sfere-docs/sections/FoundationColor.vue'
 import FoundationType from '@/components/sfere-docs/sections/FoundationType.vue'
@@ -159,11 +160,12 @@ import ComponentsActions from '@/components/sfere-docs/sections/ComponentsAction
 import ComponentsForms from '@/components/sfere-docs/sections/ComponentsForms.vue'
 import ComponentsData from '@/components/sfere-docs/sections/ComponentsData.vue'
 import ComponentsFeedback from '@/components/sfere-docs/sections/ComponentsFeedback.vue'
+import ComponentsScreens from '@/components/sfere-docs/sections/ComponentsScreens.vue'
 import PatternsGallery from '@/components/sfere-docs/sections/PatternsGallery.vue'
 
 // Bump when the token layer or a component's public props change. It is shown
 // in the header so a screenshot in a ticket says which version it came from.
-const VERSION = '1.0.0'
+const VERSION = '1.1.0'
 
 // Ids must match the DocSection ids the section components render.
 const NAV = [
@@ -177,6 +179,7 @@ const NAV = [
   { id: 'forms', label: 'Forms' },
   { id: 'data', label: 'Surfaces & data' },
   { id: 'feedback', label: 'Navigation & feedback' },
+  { id: 'screens', label: 'Screen primitives' },
   { id: 'patterns', label: 'Composition' }
 ]
 

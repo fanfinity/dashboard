@@ -32,7 +32,7 @@
 
         <!-- The point of the row: what this becomes in the warehouse. -->
         <div class="flex shrink-0 items-center gap-2">
-          <StatusBadge v-if="item.locked" variant="neutral" label="Always" />
+          <StatusBadge v-if="item.locked" tone="neutral" label="Always" />
           <code
             class="rounded bg-fill px-1.5 py-0.5 font-mono text-xs text-muted"
             >{{ item.column }}</code

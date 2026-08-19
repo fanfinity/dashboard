@@ -18,7 +18,7 @@
              working screen, so it is a notice and not an ErrorState. -->
         <NoticeBanner
           v-if="errorMessage"
-          variant="danger"
+          tone="danger"
           class="mb-4"
           title="This connection is not accepting queries"
           :message="errorMessage"
@@ -26,12 +26,12 @@
 
         <DefinitionList :items="facts" :columns="1">
           <template #value-status>
-            <StatusBadge :variant="status.variant" :label="status.label" />
+            <StatusBadge :tone="status.variant" :label="status.label" />
           </template>
 
           <template #value-role>
             <StatusBadge
-              :variant="connection?.isPrimary ? 'brand' : 'neutral'"
+              :tone="connection?.isPrimary ? 'brand' : 'neutral'"
               :label="connection?.isPrimary ? 'Primary' : 'Secondary'"
             />
           </template>
@@ -53,7 +53,7 @@
               <StatusBadge
                 v-for="part in usageParts"
                 :key="part"
-                variant="neutral"
+                tone="neutral"
                 :label="part"
               />
               <span v-if="!usageParts.length" class="text-subtle"
@@ -103,8 +103,7 @@ import {
 // The read-out for one warehouse connection.
 //
 // `/dwh-connections` has no detail route — the manifest ships a list, a create
-// form and a trash — and adding a fourth would mean editing frozen router files.
-// A connection still carries more than a table row can hold (the credentials
+// form and a trash. A connection still carries more than a table row can hold (the credentials
 // shape, the recorded failure, what reads from it), so the row opens this
 // instead. It is a q-dialog wrapping CardPanel, so it is the same white card as
 // everywhere else.

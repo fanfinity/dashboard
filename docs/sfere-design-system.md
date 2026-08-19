@@ -13,22 +13,25 @@ The page is the reference; this file is the part you can grep.
 
 ## How it reaches the app
 
-Two layers, and the distinction matters when you are reading a screen.
+Two layers, and both are now applied everywhere.
 
-**The tokens are applied everywhere.** `src/css/tailwind.css` declares the
-app-side names screens are written against — `--color-brand`, `--color-muted`,
-`--color-line`, `--font-sans` — as aliases pointing at the `sfere-*` values in
-`src/css/sfere.css`. All 54 screens inherit the palette and the typefaces with
-no markup change. `src/css/quasar.variables.scss` sets `$primary` to the same
+**The tokens.** `src/css/tailwind.css` declares the app-side names screens are
+written against — `--color-brand`, `--color-muted`, `--color-line`,
+`--font-sans` — as aliases pointing at the `sfere-*` values in
+`src/css/sfere.css`. A screen written against `text-muted` resolves to Sfere
+without knowing it. `src/css/quasar.variables.scss` sets `$primary` to the same
 purple so Quasar's own controls match.
 
-**The component kit is not.** Screens still use `src/components/ui/`;
-`src/components/sfere/` is the kit for new work. Moving a screen from one to the
-other is a per-screen rewrite, tracked in `todos/brand-rename-todo.md`
-(gitignored working notes).
+**The components.** `src/components/ui/` **is** the Sfere kit. The pre-Sfere
+primitives were replaced in place rather than deprecated alongside it, so there
+is one kit, one import path, and no question about which one a screen should
+use.
 
-So: a screen looks like Sfere today because of the tokens, not because it was
-rewritten.
+The replacement kept the sixteen original filenames — `PageHeader.vue`,
+`DataTable.vue`, `StatusBadge.vue` and the rest — which is what let 104 screen
+files pick up Sfere implementations without rewriting 571 imports. The other
+twenty-three components have no pre-Sfere counterpart and keep their `Sfere*`
+names.
 
 ---
 
@@ -37,19 +40,15 @@ rewritten.
 | Path                         | What                                                           |
 | ---------------------------- | -------------------------------------------------------------- |
 | `src/css/sfere.css`          | The token layer: `@theme` tokens + seven `@utility` treatments |
-| `src/components/sfere/`      | 30 components. The shipped kit                                 |
+| `src/components/ui/`         | 39 components. The kit every screen is built from              |
 | `src/components/sfere-docs/` | Doc-page scaffolding. **Not** part of the kit                  |
 | `src/pages/design-system/`   | The showcase page itself                                       |
 | `public/brand/`              | Logo lockups and the mark, as real SVG files                   |
 
-`src/components/ui/` — the primitives every current screen is built from — takes
-its colour and type from the same tokens, so it renders on-brand without being
-rewritten. It stays the house style until a screen is migrated.
+### Shared files the brand work changed
 
-### Frozen files edited for the brand
-
-All deliberate, all foundation-phase changes rather than story work (see
-`docs/agent-workflow.md`):
+Each of these reaches every screen, so each is recorded rather than left to be
+rediscovered in a diff:
 
 - **`src/router/routes.js`** — one top-level route for this page. A `screens.js`
   entry would nest it under `MainLayout` and put it behind the auth guard.
@@ -77,8 +76,8 @@ All deliberate, all foundation-phase changes rather than story work (see
 only brand strings left in it are live CSP hosts.
 
 `quasar.config.js`'s `css: [...]` array is the normal place to register a
-stylesheet, and it is frozen, so `sfere.css` is still pulled in from
-`src/css/tailwind.css` instead. Same result.
+stylesheet; `sfere.css` is pulled in from `src/css/tailwind.css` instead, which
+keeps the whole token layer reachable from one file. Same result either way.
 
 ---
 
@@ -208,25 +207,89 @@ inexplicably invisible, check for a bare `hidden`.
 
 ## Components
 
-30, in `src/components/sfere/`, imported by path:
+39, in `src/components/ui/`, imported by path:
 
 ```js
-import SfereButton from '@/components/sfere/SfereButton.vue'
+import SfereButton from '@/components/ui/SfereButton.vue'
+import DataTable from '@/components/ui/DataTable.vue'
 ```
 
-They follow the same contract as `src/components/ui/`: props in, slots out, no
-`useRouter`, no `fetch`, no formatting. The one carve-out is a declarative
+Props in, slots out. No `useRouter`, no `fetch`, no formatting — the page owns
+the data and hands down strings. The one carve-out is a declarative
 `<router-link :to>` driven entirely by a prop.
 
-**Actions & markers** — `SfereButton` `SfereLinkArrow` `SfereBadge` `SferePill`
+**Screen primitives** — `PageHeader` `DataTable` `ErrorState` `LoadingState`
+`EmptyState` `FormSection` `FormField` `ConfirmDialog` `DefinitionList`
+`SelectableCard` `ToolbarSearch` `CardPanel` `NoticeBanner` `StatCard`
+`StatusBadge` `TabNav`
+**Actions & markers** — `SfereButton` `SfereLinkArrow` `SferePill`
 `SfereEyebrow` `SfereIconChip` `SfereAvatar` `SfereKbd` `SfereTooltip`
-**Forms** — `SfereField` `SfereInput` `SfereSelect` `SfereTextarea`
-`SfereToggle` `SfereCheckbox`
-**Surfaces & data** — `SfereSection` `SfereSectionHeading` `SfereCard`
-`SfereFeatureCard` `SfereStat` `SfereTable` `SfereCode`
-**Feedback** — `SfereAlert` `SfereEmptyState` `SfereTabs` `SfereBreadcrumbs`
-`SfereProgress` `SfereSkeleton` `SfereSpinner`
+**Forms** — `SfereInput` `SfereSelect` `SfereTextarea` `SfereToggle`
+`SfereCheckbox`
+**Surfaces & data** — `SfereSection` `SfereSectionHeading` `SfereFeatureCard`
+`SfereTable` `SfereCode`
+**Feedback** — `SfereBreadcrumbs` `SfereProgress` `SfereSkeleton`
+`SfereSpinner`
 **Brand** — `SfereLogo`
+
+The first group is the one every screen is built from; the rest came from the
+marketing site and are what the first group is composed out of.
+
+### Screen primitives
+
+Sixteen of the 39 carry the filenames of the components they replaced, so that
+every screen picked up a Sfere implementation without an import changing. What
+each one is underneath:
+
+| File                 | What it is        | Notes                                                     |
+| -------------------- | ----------------- | --------------------------------------------------------- |
+| `PageHeader.vue`     | Sfere page header | Adds `eyebrow`. Renders the literal `<h1>` smoke requires |
+| `DataTable.vue`      | Sfere data table  | Same props and slots as before. `error` is a **string**   |
+| `ErrorState.vue`     | Sfere error state | Adds `retryLabel`                                         |
+| `LoadingState.vue`   | Sfere skeletons   | Three variants — `table`, `grid`, `form`                  |
+| `EmptyState.vue`     | Sfere empty state | Carries `data-smoke="empty"` in both variants             |
+| `FormSection.vue`    | Sfere form group  | Adds an `actions` footer slot                             |
+| `DefinitionList.vue` | Sfere read-out    | Same `value-<slug>` slots                                 |
+| `SelectableCard.vue` | Sfere picker card | Same `selected` / `disabled` / `@select`                  |
+| `ToolbarSearch.vue`  | Sfere search box  | 40px, not the old 36px. Adds `block`                      |
+| `ConfirmDialog.vue`  | Sfere dialog      | Adds `loading`. Wraps `q-dialog` — see above              |
+| `CardPanel.vue`      | `SfereCard`       | A card. The name is inherited, not descriptive            |
+| `NoticeBanner.vue`   | `SfereAlert`      | An alert. Same                                            |
+| `StatCard.vue`       | `SfereStat`       | `direction`, not `delta-direction`                        |
+| `TabNav.vue`         | `SfereTabs`       | Keeps the old bar's `mb-4` on the underline variant       |
+| `FormField.vue`      | `SfereField`      | **`for-id`, not `for`.** Adds `optional`                  |
+| `StatusBadge.vue`    | `SfereBadge`      | **`tone`, not `variant`. No `enabled`** — see below       |
+
+**The two API changes the swap could not avoid.** Everything else kept its
+props; these two did not, and both were rewritten across the repo in the same
+change:
+
+- **`StatusBadge`** takes `tone`, not `variant`. The five palette strings
+  carried over exactly (`success` `warn` `neutral` `danger` `brand`), but there
+  is no `enabled` shorthand — write `:tone="x ? 'success' : 'neutral'"`. That is
+  deliberate: `enabled` reads as on/off next to a prop called `variant`, but next
+  to `tone` it looks like it might tint rather than switch. The default is also
+  `brand` where the old badge defaulted to `neutral`; all 171 call sites pass a
+  tone, but a new bare `<StatusBadge>` comes out purple.
+- **`FormField`** takes `for-id`, not `for`. `for` is a JS keyword, which is why
+  the original had to read it off `props` explicitly in its own template.
+
+`DataTable` sorts, pages and renders all four list states; a sortable column
+header is a real `<button>`, and the `aria-sort` it drives is set on the `<th>` —
+where the ARIA spec puts it, on the columnheader rather than on a control inside
+it. That is why `SfereTable` columns accept an `ariaSort` field it never sets
+itself.
+
+**`DataTable` composes on `SfereTable`, it does not replace it.** `SfereTable`
+carries two slots for that — `head-<key>` (where the sort button goes) and
+`footer` (where pagination goes) — so there is one set of table styles and two
+entry points. Reach for `SfereTable` when the page owns all four states itself;
+reach for `DataTable` on a list screen, which is almost always.
+
+**`PageHeader`, not `SfereSectionHeading`, at the top of a screen.**
+`SfereSectionHeading`'s `level` prop only picks the size ramp — the tag is a
+hard-coded `<h2>`, so `level="h1"` does not satisfy the smoke gate. Its ramp also
+starts at 36px, where a page title wants 24px.
 
 ### The `onDark` prop
 
@@ -249,8 +312,22 @@ They were right the first time and they still apply:
   colour. "37 errors" is a `hint`.
 - **No `<style>` blocks in components.** Tailwind utilities only. Custom CSS goes
   in `src/css/sfere.css` as an `@utility`.
-- **No `data-smoke` attributes.** Nothing in this kit is an error surface, and
-  the smoke gate keys off exactly one selector.
+- **Exactly two `data-smoke` attributes, and they are named.** `ErrorState`
+  carries `data-smoke="error"` and `EmptyState` carries `data-smoke="empty"` —
+  nothing else in the kit carries either, ever.
+
+  This rule used to read "no `data-smoke` attributes", which was right while the
+  kit was a showroom and wrong the moment it had to build a screen:
+  `scripts/smoke.mjs` detects a broken route by looking for exactly one
+  selector, so a kit with no failure surface would have left the only
+  behavioural gate in the repo with nothing to assert on.
+
+- **One Quasar dependency, and it is named too.** `ConfirmDialog` wraps
+  `q-dialog`. A modal owes the user a focus trap, Escape, scroll lock, a
+  backdrop and a teleport out of any `overflow: hidden` ancestor; all five are
+  invisible when they work and all five are subtle to hand-roll. Only the shell
+  is borrowed — the card, the buttons and the type are Sfere. No other component
+  in the kit may reach for a `q-*` element.
 
 ---
 
@@ -283,13 +360,22 @@ both separates from `muted` (`#737373`, 4.7:1) and stays legible; `#a1a1a1` is
 its blue cast, so any screen that leaned on the old `subtle`/`muted` split is
 worth a look.
 
-### Migrating a screen onto the component kit
+### How the kit migration was done
 
-Separate from the tokens, and per-screen. Rewrite one page at a time against
-`src/components/sfere/`, leaving the rest alone; every step is a small
-reviewable diff and both kits coexist while it happens. The screen manifest
-makes this cheap — implementing a screen means rewriting its file in place,
-never adding a route.
+Worth recording, because the shape of it is why no screen needed rewriting.
+
+The Sfere implementations replaced the originals **in place**, keeping the
+sixteen filenames the screens already imported. Only two components' props had
+changed (`StatusBadge`'s `variant`/`enabled`, `FormField`'s `for`), so the whole
+migration was those renames across 104 files plus the file swap — not 54 screen
+rewrites. The alternative, running both kits side by side and moving screens one
+at a time, would have meant every screen carrying an "which kit is this?"
+question for as long as the migration took.
+
+What it did not do is re-examine each screen's layout. A screen that looked
+right against 36px controls and rounded rectangles now renders 40px controls and
+pills; that is the intended look, but it means per-screen polish is still owed
+in places.
 
 ---
 
@@ -303,10 +389,6 @@ pnpm lint:check   # oxfmt --check then oxlint
 `pnpm smoke:dist` does not cover this route (it walks `screens.js`) and needs
 `.env` credentials. `pnpm build` is the gate that matters here.
 
-Note for worktrees: `.env` is gitignored, so `git worktree add` does not carry it
-across and the app will fail to boot with `auth/invalid-api-key`. Use
-`pnpm worktree`, which copies it in.
-
 ---
 
 ## Publishing to claude.ai/design
@@ -317,7 +399,7 @@ the company prompting Claude Design gets the Sfere palette and typefaces by
 default.
 
 **Only the tokens cross over — the component kit does not.** Claude Design's
-agent builds in React; `src/components/sfere/` is 30 Vue SFCs and cannot be
+agent builds in React; `src/components/ui/` is 39 Vue SFCs and cannot be
 imported there. The uploaded `_ds_bundle.js` is an empty namespace and says so.
 Anyone using it composes their own components from the tokens.
 
@@ -326,7 +408,7 @@ node tools/build-design-sync-bundle.mjs      # emit ds-bundle/
 node .ds-sync/package-validate.mjs ./ds-bundle
 ```
 
-The builder lives in `tools/` because `scripts/**` is frozen, and it exists
+The builder lives in `tools/`, where one-off maintenance goes, and it exists
 because the bundled `/design-sync` converter only handles React design systems.
 It emits the same output contract by hand: `styles.css` and its `@import`
 closure (tokens, fonts, the seven `.sfere-*` treatments) plus four foundation

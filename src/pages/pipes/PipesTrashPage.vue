@@ -27,7 +27,7 @@
          a banner in it would shrink to its text and read as a giant chip. -->
     <NoticeBanner
       v-if="cascadeCount"
-      variant="warn"
+      tone="warn"
       class="mb-4"
       title="Some of these cannot be restored on their own"
       :message="`${cascadeCount} of these reference a source or destination that was deleted too.`"
@@ -50,7 +50,7 @@
           <p class="font-medium text-ink">{{ row.name }}</p>
           <StatusBadge
             v-if="row.hasFunctionCode"
-            variant="brand"
+            tone="brand"
             label="Transform"
           />
         </div>
@@ -64,7 +64,7 @@
           </span>
           <StatusBadge
             v-if="row.sourceState !== 'live'"
-            :variant="row.sourceState === 'trashed' ? 'warn' : 'danger'"
+            :tone="row.sourceState === 'trashed' ? 'warn' : 'danger'"
             :label="row.sourceState === 'trashed' ? 'Deleted' : 'Missing'"
           />
           <span class="text-subtle">→</span>
@@ -75,7 +75,7 @@
           </span>
           <StatusBadge
             v-if="row.destinationState !== 'live'"
-            :variant="row.destinationState === 'trashed' ? 'warn' : 'danger'"
+            :tone="row.destinationState === 'trashed' ? 'warn' : 'danger'"
             :label="row.destinationState === 'trashed' ? 'Deleted' : 'Missing'"
           />
         </div>
@@ -127,7 +127,7 @@
         <StatusBadge
           v-for="link in target.cascade"
           :key="link.id"
-          variant="neutral"
+          tone="neutral"
           :label="`${link.name} · ${link.kind}`"
         />
       </div>

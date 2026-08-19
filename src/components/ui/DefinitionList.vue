@@ -1,21 +1,21 @@
 <template>
-  <dl :class="listClass">
-    <div v-for="(item, i) in items" :key="item.label ?? i" :class="rowClass">
-      <dt class="text-xs font-medium text-subtle">{{ item.label }}</dt>
-      <dd :class="valueClass">
-        <!-- `value-<label-slug>` lets a row render a StatusBadge, a router-link
-             or anything else in place of the plain string. -->
+  <dl :class="listClasses">
+    <div v-for="(item, i) in items" :key="item.label ?? i" :class="rowClasses">
+      <dt :class="labelClasses">{{ item.label }}</dt>
+      <dd :class="valueClasses">
+        <!-- `value-<label-slug>` lets one row render a StatusBadge, a link or a
+             copy button in place of the plain string. -->
         <slot
           :name="`value-${slug(item.label)}`"
           :item="item"
           :value="item.value"
           :slug="slug(item.label)"
         >
-          <span :class="isBlank(item.value) ? 'text-subtle' : ''">{{
+          <span :class="isBlank(item.value) ? mutedClass : ''">{{
             display(item.value)
           }}</span>
         </slot>
-        <p v-if="item.hint" class="mt-0.5 text-xs text-subtle">{{
+        <p v-if="item.hint" :class="['mt-0.5 text-sfere-xs', mutedClass]">{{
           item.hint
         }}</p>
       </dd>
@@ -26,53 +26,72 @@
 <script setup>
 import { computed } from 'vue'
 
-// The label -> value read-out every detail screen needs. Before this existed,
-// SourceDetailPage, DestinationDetailPage, PipeDetailPage and PipeParams each
-// carried their own <dl>; the class strings below are lifted verbatim from
-// those, so a converted screen looks byte-identical to what shipped.
+// The label -> value read-out every detail screen needs. The props and the
+// `value-<slug>` slot names are carried over verbatim from the component this
+// replaced, which is why the detail screens did not have to be touched when the
+// kit moved onto the Sfere tokens.
 //
-//   columns=1  the stacked, baseline-aligned, divide-y rows from PipeDetailPage
-//              and PipeParams: label left, value right, one per line.
-//   columns=2  the responsive grid from SourceDetailPage: label above value,
-//              two per row from `sm` up, one per row below it.
+//   columns=1  stacked rows, label left and value right, one per line. For a
+//              narrow column or a card body.
+//   columns=2  label above value, two per row from `sm` up. For the wide
+//              summary block at the top of a detail page.
 //
-// Rows are separated with `divide-line` in both shapes. In the 1-column case
-// that is container-level `divide-y`; in the 2-column case each cell carries its
-// own `border-t` instead, because a grid's last row is not its last child and
+// In the 2-up shape each cell carries its own `border-t` rather than the
+// container carrying `divide-y`: a grid's last row is not its last child, so
 // `divide-y` would strand a border under the second-to-last cell.
+//
+// Values are pre-formatted by the page. This component does no number or date
+// formatting, matching StatCard.
 const props = defineProps({
-  // [{ label, value, hint? }] — `value` is pre-formatted; this component does
-  // no number/date formatting, matching StatCard.
+  // [{ label, value, hint? }]
   items: { type: Array, default: () => [] },
   columns: {
     type: Number,
     default: 2,
     validator: v => v === 1 || v === 2
-  }
+  },
+  onDark: { type: Boolean, default: false }
 })
 
 const twoUp = computed(() => props.columns === 2)
 
-const listClass = computed(() =>
-  twoUp.value
-    ? 'grid grid-cols-1 sm:grid-cols-2 sm:gap-x-8'
-    : 'flex flex-col divide-y divide-line'
+const mutedClass = computed(() =>
+  props.onDark ? 'text-white/50' : 'text-sfere-fg-muted'
 )
 
-const rowClass = computed(() =>
-  twoUp.value
-    ? 'min-w-0 border-t border-line py-2.5 first:border-t-0 first:pt-0 sm:[&:nth-child(2)]:border-t-0 sm:[&:nth-child(2)]:pt-0'
-    : 'flex flex-wrap items-baseline justify-between gap-2 py-2.5 first:pt-0 last:pb-0'
+const divider = computed(() =>
+  props.onDark ? 'border-sfere-hairline' : 'border-sfere-line'
 )
 
-const valueClass = computed(() =>
-  twoUp.value
-    ? 'mt-0.5 min-w-0 break-words text-sm text-ink'
-    : 'min-w-0 break-words text-sm text-ink'
+const listClasses = computed(() =>
+  twoUp.value ? 'grid grid-cols-1 sm:grid-cols-2 sm:gap-x-8' : 'flex flex-col'
 )
 
-// A row with nothing in it still needs to occupy its line — a blank <dd> reads
-// as a rendering bug rather than as "not set". Same em dash PipeParams uses.
+const rowClasses = computed(() =>
+  twoUp.value
+    ? [
+        'min-w-0 border-t py-3 first:border-t-0 first:pt-0 sm:[&:nth-child(2)]:border-t-0 sm:[&:nth-child(2)]:pt-0',
+        divider.value
+      ]
+    : [
+        'flex flex-wrap items-baseline justify-between gap-2 border-t py-3 first:border-t-0 first:pt-0 last:pb-0',
+        divider.value
+      ]
+)
+
+const labelClasses = computed(() => [
+  'font-sfere-mono text-sfere-label uppercase',
+  props.onDark ? 'text-white/45' : 'text-sfere-fg-muted'
+])
+
+const valueClasses = computed(() => [
+  'min-w-0 break-words text-sfere-sm',
+  twoUp.value && 'mt-1',
+  props.onDark ? 'text-white/85' : 'text-sfere-fg'
+])
+
+// A row with nothing in it still has to occupy its line — a blank <dd> reads as
+// a rendering bug rather than as "not set".
 function isBlank(value) {
   return value === null || value === undefined || value === ''
 }
@@ -83,7 +102,7 @@ function display(value) {
   return String(value)
 }
 
-// "Pipe ID" -> "pipe-id", so the slot is `#value-pipe-id`.
+// "Pipe ID" -> "pipe-id", so the slot reads `#value-pipe-id`.
 function slug(label) {
   return String(label ?? '')
     .toLowerCase()

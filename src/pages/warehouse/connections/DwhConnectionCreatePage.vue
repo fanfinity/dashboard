@@ -32,7 +32,7 @@
            EmptyState. -->
       <NoticeBanner
         v-if="!connections.length"
-        variant="info"
+        tone="info"
         title="This will be your first warehouse connection"
         message="It becomes the primary one, so warehouse models and audience snapshots default to it."
       />
@@ -58,7 +58,7 @@
         <FormField
           label="Connection name"
           required
-          for="dwh-name"
+          for-id="dwh-name"
           :error="errors.name"
           hint="Shown in every model, sync and export that reads from it."
         >
@@ -111,7 +111,7 @@
             <FormField
               :label="type.hostLabel"
               required
-              for="dwh-host"
+              for-id="dwh-host"
               :error="errors.host"
             >
               <input
@@ -126,7 +126,7 @@
             <FormField
               label="Port"
               required
-              for="dwh-port"
+              for-id="dwh-port"
               :error="errors.port"
             >
               <input
@@ -144,7 +144,7 @@
           <FormField
             :label="type.databaseLabel"
             required
-            for="dwh-database"
+            for-id="dwh-database"
             :error="errors.database"
           >
             <input
@@ -160,7 +160,7 @@
             <FormField
               :label="type.usernameLabel"
               required
-              for="dwh-username"
+              for-id="dwh-username"
               :error="errors.username"
             >
               <input
@@ -178,7 +178,7 @@
             <FormField
               :label="type.secretLabel"
               required
-              for="dwh-secret"
+              for-id="dwh-secret"
               :error="errors.secret"
               hint="Masked while you type and never displayed again."
             >
@@ -201,7 +201,7 @@
       >
         <FormField
           label="Schema"
-          for="dwh-schema"
+          for-id="dwh-schema"
           :error="errors.schema"
           hint="Leave empty to keep audience snapshots inside Sfere."
         >
@@ -219,7 +219,7 @@
            rather than in a caption the user has to go looking for. -->
       <NoticeBanner
         v-if="testResult"
-        :variant="testResult.ok ? 'info' : 'warn'"
+        :tone="testResult.ok ? 'info' : 'warn'"
         :title="testResult.title"
         :message="testResult.message"
       />

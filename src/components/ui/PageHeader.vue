@@ -1,13 +1,22 @@
 <template>
-  <div class="mb-5 flex flex-wrap items-start justify-between gap-4">
+  <div class="mb-6 flex flex-wrap items-start justify-between gap-4">
     <div class="min-w-0">
-      <h1 class="text-2xl! font-semibold! tracking-[-0.5px]! text-ink">{{
-        title
-      }}</h1>
-      <p v-if="subtitle || $slots.subtitle" class="mt-1 text-sm text-muted">
+      <SfereEyebrow
+        v-if="eyebrow"
+        :label="eyebrow"
+        :on-dark="onDark"
+        class="mb-2.5"
+      />
+
+      <h1 :class="titleClasses">
+        <slot name="title">{{ title }}</slot>
+      </h1>
+
+      <p v-if="subtitle || $slots.subtitle" :class="subtitleClasses">
         <slot name="subtitle">{{ subtitle }}</slot>
       </p>
     </div>
+
     <div v-if="$slots.actions" class="flex flex-wrap items-center gap-2">
       <slot name="actions" />
     </div>
@@ -15,12 +24,40 @@
 </template>
 
 <script setup>
-// Page title block. Class strings are lifted verbatim from the pre-existing
-// ContactsPage/ConnectorsPage headers so new screens match the ones already
-// shipped. Note the Tailwind v4 important *suffix* (`text-2xl!`) — it beats
-// Quasar's own heading CSS; the `!text-2xl` prefix form does not work here.
-defineProps({
-  title: { type: String, required: true },
-  subtitle: { type: String, default: '' }
+import { computed } from 'vue'
+import SfereEyebrow from './SfereEyebrow.vue'
+
+// The top of every screen. This is the component that renders the literal <h1>
+// scripts/smoke.mjs requires on every route, so a page built from this kit uses
+// it rather than a bare <h1> or SfereSectionHeading — that one renders an <h2>
+// whatever its `level` prop says, and its ramp starts at 36px.
+//
+// 24px (text-sfere-h3) in the display face, the same size the header this
+// replaced shipped at. The page title is not the biggest thing on the page: it
+// is a label for somewhere you already navigated to, and 48px of it would
+// out-shout the data underneath. Note the Tailwind v4 important SUFFIX — Quasar's unlayered base
+// stylesheet sets h1 size and weight and beats any layered utility without it
+// (docs/ui-conventions.md rules 2-3).
+//
+// `subtitle` is the purpose line, and it is not optional in practice: every
+// screen owes one plain sentence saying what this section is for. See the page
+// anatomy standard in docs/ui-conventions.md.
+const props = defineProps({
+  title: { type: String, default: '' },
+  subtitle: { type: String, default: '' },
+  // A section label above the title — 'Collect', 'Act', 'Prove'. Says where in
+  // the product you are without a second line of prose.
+  eyebrow: { type: String, default: '' },
+  onDark: { type: Boolean, default: false }
 })
+
+const titleClasses = computed(() => [
+  'font-sfere-display! text-sfere-h3! text-balance',
+  props.onDark ? 'text-white' : 'text-sfere-fg'
+])
+
+const subtitleClasses = computed(() => [
+  'mt-1.5 max-w-2xl text-sfere-sm',
+  props.onDark ? 'text-white/60' : 'text-sfere-fg-muted'
+])
 </script>

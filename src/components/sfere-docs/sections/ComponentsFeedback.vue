@@ -6,14 +6,14 @@
     description="How the system says 'wait', 'nothing here' and 'something you should know'. The distinction that matters most: nothing here is an error surface. An empty result is information; a failed request is not, and it gets a different component."
   >
     <DocSpecimen
-      title="SfereTabs"
+      title="TabNav"
       usage="underline switches a page's primary content; pill filters a list inside a tray. Using both on one screen makes neither read as the control it is."
-      code='<SfereTabs v-model="tab" :tabs="tabs" />
-<SfereTabs v-model="tab" :tabs="tabs" variant="pill" />'
+      code='<TabNav v-model="tab" :tabs="tabs" />
+<TabNav v-model="tab" :tabs="tabs" variant="pill" />'
     >
       <div class="flex flex-col gap-8">
-        <SfereTabs v-model="tab" :tabs="tabs" />
-        <SfereTabs v-model="tab" :tabs="tabs" variant="pill" />
+        <TabNav v-model="tab" :tabs="tabs" />
+        <TabNav v-model="tab" :tabs="tabs" variant="pill" />
       </div>
     </DocSpecimen>
 
@@ -32,27 +32,27 @@
     </DocSpecimen>
 
     <DocSpecimen
-      title="SfereAlert"
+      title="NoticeBanner"
       usage="'The screen worked, but there is something you should know.' A genuine load failure is an error state, not a danger alert — and nothing here carries a data-smoke attribute, so a notice can never trip the repo's smoke gate."
-      code='<SfereAlert tone="warn" title="…" message="…" />'
+      code='<NoticeBanner tone="warn" title="…" message="…" />'
     >
       <div class="flex flex-col gap-3">
-        <SfereAlert
+        <NoticeBanner
           tone="info"
           title="Ingest is running in sandbox"
           message="Events are accepted and resolved, but nothing is forwarded to destinations."
         />
-        <SfereAlert
+        <NoticeBanner
           tone="success"
           title="Backfill complete"
           message="812,405 profiles resolved in 6m 12s."
         />
-        <SfereAlert
+        <NoticeBanner
           tone="warn"
           title="Two sources cannot be restored on their own"
           message="They reference a destination that was deleted in the same operation."
         />
-        <SfereAlert
+        <NoticeBanner
           tone="danger"
           title="Delivery to Meta CAPI is failing"
           message="The access token expired 4 hours ago."
@@ -62,11 +62,11 @@
     </DocSpecimen>
 
     <DocSpecimen
-      title="SfereEmptyState"
+      title="EmptyState"
       usage="Two situations need two states. Filters matched nothing → 'No X match your search' + Clear filters. Nothing exists yet → 'No X yet' + the create action. Offering 'create your first' to someone with forty records and a typo is the failure mode."
     >
       <div class="grid gap-4 lg:grid-cols-2">
-        <SfereEmptyState
+        <EmptyState
           title="No sources match your search"
           description="Nothing matched “turnstile” on the Paused tab."
         >
@@ -86,9 +86,9 @@
               >Clear filters</SfereButton
             >
           </template>
-        </SfereEmptyState>
+        </EmptyState>
 
-        <SfereEmptyState
+        <EmptyState
           title="No sources yet"
           description="Connect a source to start collecting fan signals."
         >
@@ -106,7 +106,7 @@
           <template #cta>
             <SfereButton size="sm">Connect your first source</SfereButton>
           </template>
-        </SfereEmptyState>
+        </EmptyState>
       </div>
     </DocSpecimen>
 
@@ -153,14 +153,14 @@
 import { ref } from 'vue'
 import DocSection from '../DocSection.vue'
 import DocSpecimen from '../DocSpecimen.vue'
-import SfereAlert from '@/components/sfere/SfereAlert.vue'
-import SfereBreadcrumbs from '@/components/sfere/SfereBreadcrumbs.vue'
-import SfereButton from '@/components/sfere/SfereButton.vue'
-import SfereEmptyState from '@/components/sfere/SfereEmptyState.vue'
-import SfereProgress from '@/components/sfere/SfereProgress.vue'
-import SfereSkeleton from '@/components/sfere/SfereSkeleton.vue'
-import SfereSpinner from '@/components/sfere/SfereSpinner.vue'
-import SfereTabs from '@/components/sfere/SfereTabs.vue'
+import NoticeBanner from '@/components/ui/NoticeBanner.vue'
+import SfereBreadcrumbs from '@/components/ui/SfereBreadcrumbs.vue'
+import SfereButton from '@/components/ui/SfereButton.vue'
+import EmptyState from '@/components/ui/EmptyState.vue'
+import SfereProgress from '@/components/ui/SfereProgress.vue'
+import SfereSkeleton from '@/components/ui/SfereSkeleton.vue'
+import SfereSpinner from '@/components/ui/SfereSpinner.vue'
+import TabNav from '@/components/ui/TabNav.vue'
 
 const tab = ref('all')
 

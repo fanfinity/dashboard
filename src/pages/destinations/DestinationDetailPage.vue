@@ -131,7 +131,7 @@
 
             <template #cell-isEnabled="{ value }">
               <StatusBadge
-                :enabled="value"
+                :tone="value ? 'success' : 'neutral'"
                 :label="value ? 'Running' : 'Paused'"
               />
             </template>
@@ -156,7 +156,7 @@
             <DefinitionList :items="details" :columns="1">
               <template #value-status>
                 <StatusBadge
-                  :enabled="destination.isEnabled"
+                  :tone="destination.isEnabled ? 'success' : 'neutral'"
                   :label="destination.isEnabled ? 'Enabled' : 'Paused'"
                 />
               </template>
@@ -176,7 +176,7 @@
               <StatusBadge
                 v-for="w in warehouses"
                 :key="w"
-                variant="brand"
+                tone="brand"
                 :label="w"
               />
             </div>

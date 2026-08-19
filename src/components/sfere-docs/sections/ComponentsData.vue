@@ -6,21 +6,21 @@
     description="Cards, tables and stats. All three are presentation only — no fetching, no sorting, no formatting. The page owns the data and hands down strings; that split is what keeps a component reusable across a marketing page and a dashboard."
   >
     <DocSpecimen
-      title="SfereCard"
+      title="CardPanel"
       usage="Three tones. surface is the default; soft recedes a supporting card; ink belongs inside a dark section and nowhere else."
-      code="<SfereCard>
+      code="<CardPanel>
   <template #header>…</template>
   …
   <template #footer>…</template>
-</SfereCard>"
+</CardPanel>"
     >
       <div class="grid gap-4 lg:grid-cols-3">
-        <SfereCard>
+        <CardPanel>
           <template #header>
             <span class="text-sfere-sm font-semibold text-sfere-fg"
               >Header slot</span
             >
-            <SfereBadge tone="success" label="Live" dot />
+            <StatusBadge tone="success" label="Live" dot />
           </template>
           <p class="text-sfere-sm text-sfere-fg-muted">
             The default surface. No shadow at rest, so a grid of these reads as
@@ -32,29 +32,29 @@
             >
             <SfereLinkArrow label="Open" to="/design-system" />
           </template>
-        </SfereCard>
+        </CardPanel>
 
-        <SfereCard tone="soft">
+        <CardPanel tone="soft">
           <p class="text-sfere-sm font-semibold text-sfere-fg">Soft</p>
           <p class="mt-1 text-sfere-sm text-sfere-fg-muted">
             Same border, filled background. For a card that supports the one
             next to it.
           </p>
-        </SfereCard>
+        </CardPanel>
 
-        <SfereCard interactive>
+        <CardPanel interactive>
           <p class="text-sfere-sm font-semibold text-sfere-fg">Interactive</p>
           <p class="mt-1 text-sfere-sm text-sfere-fg-muted">
             Lifts and warms its border on hover. Only for cards that are
             themselves links.
           </p>
-        </SfereCard>
+        </CardPanel>
       </div>
     </DocSpecimen>
 
     <DocSpecimen
       title="SfereFeatureCard"
-      usage="The repeating unit of every 'what this does' grid. Composed from SfereCard, SfereIconChip and SfereLinkArrow, so a change to the card reaches every grid at once."
+      usage="The repeating unit of every 'what this does' grid. Composed from CardPanel, SfereIconChip and SfereLinkArrow, so a change to the card reaches every grid at once."
       code='<SfereFeatureCard
   title="Identity stitching"
   description="Match identifiers across devices…"
@@ -87,30 +87,26 @@
     </DocSpecimen>
 
     <DocSpecimen
-      title="SfereStat"
+      title="StatCard"
       usage="delta is a trend and always draws an arrow in a trend colour. Anything that is not a trend — '37 errors', '1.65× fan-out' — goes in hint, or it earns a red down-arrow it did not deserve."
-      code='<SfereStat label="Events / hour" value="1.28M" delta="4.2%" />
-<SfereStat label="Error rate" value="0.31%" hint="37 errors" />'
+      code='<StatCard label="Events / hour" value="1.28M" delta="4.2%" />
+<StatCard label="Error rate" value="0.31%" hint="37 errors" />'
     >
       <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <SfereStat label="Events / hour" value="1.28M" delta="4.2%" />
-        <SfereStat
+        <StatCard label="Events / hour" value="1.28M" delta="4.2%" />
+        <StatCard
           label="Resolved profiles"
           value="812,405"
           delta="1.1%"
           direction="down"
         />
-        <SfereStat
+        <StatCard
           label="Match rate"
           value="94.6%"
           delta="0.0%"
           direction="flat"
         />
-        <SfereStat
-          label="Error rate"
-          value="0.31%"
-          hint="37 errors this hour"
-        />
+        <StatCard label="Error rate" value="0.31%" hint="37 errors this hour" />
       </div>
     </DocSpecimen>
 
@@ -119,7 +115,7 @@
       usage="A real <table>, because sorting, screen readers and find-in-page all depend on it. Column headers are mono micro-labels — that is what stops a dense table reading as a wall of same-sized text."
       code='<SfereTable :columns="columns" :rows="rows">
   <template #cell-status="{ value }">
-    <SfereBadge :tone="value" :label="value" dot />
+    <StatusBadge :tone="value" :label="value" dot />
   </template>
 </SfereTable>'
       bleed
@@ -139,7 +135,7 @@
           </template>
 
           <template #cell-status="{ value }">
-            <SfereBadge :tone="STATUS_TONE[value]" :label="value" dot />
+            <StatusBadge :tone="STATUS_TONE[value]" :label="value" dot />
           </template>
 
           <template #cell-events="{ value }">
@@ -169,14 +165,14 @@
 <script setup>
 import DocSection from '../DocSection.vue'
 import DocSpecimen from '../DocSpecimen.vue'
-import SfereAvatar from '@/components/sfere/SfereAvatar.vue'
-import SfereBadge from '@/components/sfere/SfereBadge.vue'
-import SfereCard from '@/components/sfere/SfereCard.vue'
-import SfereCode from '@/components/sfere/SfereCode.vue'
-import SfereFeatureCard from '@/components/sfere/SfereFeatureCard.vue'
-import SfereLinkArrow from '@/components/sfere/SfereLinkArrow.vue'
-import SfereStat from '@/components/sfere/SfereStat.vue'
-import SfereTable from '@/components/sfere/SfereTable.vue'
+import SfereAvatar from '@/components/ui/SfereAvatar.vue'
+import StatusBadge from '@/components/ui/StatusBadge.vue'
+import CardPanel from '@/components/ui/CardPanel.vue'
+import SfereCode from '@/components/ui/SfereCode.vue'
+import SfereFeatureCard from '@/components/ui/SfereFeatureCard.vue'
+import SfereLinkArrow from '@/components/ui/SfereLinkArrow.vue'
+import StatCard from '@/components/ui/StatCard.vue'
+import SfereTable from '@/components/ui/SfereTable.vue'
 
 // Phosphor duotone glyphs, kept as path data rather than markup strings so the
 // template can render them with v-for — no v-html, nothing for a reviewer to

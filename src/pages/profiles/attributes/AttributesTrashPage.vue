@@ -39,7 +39,7 @@
 
       <template #cell-type="{ row }">
         <StatusBadge
-          :variant="row.type === 'realtime' ? 'success' : 'neutral'"
+          :tone="row.type === 'realtime' ? 'success' : 'neutral'"
           :label="attributeTypeLabel(row.type)"
         />
       </template>

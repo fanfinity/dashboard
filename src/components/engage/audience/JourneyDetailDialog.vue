@@ -16,7 +16,7 @@
       <div class="max-h-[70vh] overflow-y-auto px-5 py-4">
         <NoticeBanner
           v-if="notice"
-          :variant="notice.variant"
+          :tone="notice.variant"
           class="mb-4"
           :title="notice.title"
           :message="notice.message"
@@ -58,7 +58,7 @@
 
         <DefinitionList :items="facts" :columns="1">
           <template #value-status>
-            <StatusBadge :variant="status.variant" :label="status.label" />
+            <StatusBadge :tone="status.variant" :label="status.label" />
           </template>
 
           <template #value-goal="{ value }">

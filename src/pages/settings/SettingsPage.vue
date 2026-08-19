@@ -7,7 +7,7 @@
       <template #actions>
         <StatusBadge
           v-if="workspace"
-          variant="neutral"
+          tone="neutral"
           :label="workspace.regionLabel"
         />
       </template>
@@ -22,18 +22,30 @@
       @retry="load"
     />
 
-    <!-- The load succeeded and there is no workspace record. That is an answer,
-         not a failure, so it must not render ErrorState. -->
-    <EmptyState
-      v-else-if="!workspace"
-      title="No workspace settings"
-      description="This account is not attached to a workspace yet. Ask an admin to add you to one."
-    />
-
     <template v-else>
+      <!-- The tab bar itself must not depend on `workspace` loading: Your
+           role / Feature activation / Data source are per-browser
+           preferences, not workspace data, and Data source is the one screen
+           that must stay reachable even when everything workspace-shaped is
+           empty — it is the way back to demo data. -->
       <TabNav v-model="tab" :tabs="tabs" />
 
-      <div v-if="tab === 'general'" class="flex max-w-3xl flex-col gap-4">
+      <SettingsPersonaPanel v-if="tab === 'persona'" />
+
+      <SettingsFeaturePanel v-else-if="tab === 'features'" />
+
+      <SettingsDataSourcePanel v-else-if="tab === 'data-source'" />
+
+      <!-- The load succeeded and there is no workspace record. That is an
+           answer, not a failure, so it must not render ErrorState — and it
+           only applies to the tabs below, which are actually workspace data. -->
+      <EmptyState
+        v-else-if="!workspace"
+        title="No workspace settings"
+        description="This account is not attached to a workspace yet. Ask an admin to add you to one."
+      />
+
+      <div v-else-if="tab === 'general'" class="flex max-w-3xl flex-col gap-4">
         <form class="flex flex-col gap-4" @submit.prevent="save">
           <FormSection
             title="Workspace"
@@ -42,7 +54,7 @@
             <FormField
               label="Name"
               required
-              for="workspace-name"
+              for-id="workspace-name"
               :error="errors.name"
               hint="Shown in the sidebar and on every export."
             >
@@ -67,7 +79,7 @@
               :key="field.key"
               :label="field.label"
               required
-              :for="`retention-${field.key}`"
+              :for-id="`retention-${field.key}`"
               :error="errors[field.key]"
               :hint="retentionHint(field)"
             >
@@ -115,10 +127,7 @@
         <CardPanel>
           <template #header>
             <span class="text-sm font-semibold text-ink">Error alerts</span>
-            <StatusBadge
-              variant="neutral"
-              :label="String(alertChannels.length)"
-            />
+            <StatusBadge tone="neutral" :label="String(alertChannels.length)" />
           </template>
 
           <EmptyState
@@ -139,9 +148,9 @@
                   <p class="truncate text-sm font-medium text-ink">{{
                     channel.label
                   }}</p>
-                  <StatusBadge variant="neutral" :label="channel.kind" />
+                  <StatusBadge tone="neutral" :label="channel.kind" />
                   <StatusBadge
-                    :enabled="channel.isEnabled"
+                    :tone="channel.isEnabled ? 'success' : 'neutral'"
                     :label="channel.isEnabled ? 'Enabled' : 'Paused'"
                   />
                 </div>
@@ -151,7 +160,7 @@
                 >
               </div>
 
-              <StatusBadge variant="warn" :label="`≥ ${channel.minSeverity}`" />
+              <StatusBadge tone="warn" :label="`≥ ${channel.minSeverity}`" />
             </li>
           </ul>
 
@@ -225,6 +234,11 @@ import ConfirmDialog from '@/components/ui/ConfirmDialog.vue'
 import SettingsMembersPanel from '@/components/settings/SettingsMembersPanel.vue'
 import SettingsApiTokensPanel from '@/components/settings/SettingsApiTokensPanel.vue'
 import SettingsDangerZone from '@/components/settings/SettingsDangerZone.vue'
+import SettingsFeaturePanel from '@/components/settings/SettingsFeaturePanel.vue'
+import SettingsPersonaPanel from '@/components/settings/SettingsPersonaPanel.vue'
+import SettingsDataSourcePanel from '@/components/settings/SettingsDataSourcePanel.vue'
+import { useFeatures } from '@/composables/useFeatures'
+import { useDataSource } from '@/composables/useDataSource'
 import { formatDate, formatDays } from '@/composables/useSettingsFormat'
 import {
   RETENTION_MAX_DAYS,
@@ -327,8 +341,27 @@ const dirty = computed(() => {
   )
 })
 
+// Only the count is needed here — the panel itself reads the registry.
+const { activeCount } = useFeatures()
+const { isReal } = useDataSource()
+
 const tabs = computed(() => [
   { key: 'general', label: 'General' },
+  // Two per-person preferences sit next to each other on purpose: this one and
+  // Feature activation are the only tabs here that are about you and this
+  // browser rather than about the workspace everyone shares.
+  { key: 'persona', label: 'Your role' },
+  // Counted so the tab reads "6 of 16 on" at a glance — this is the panel you
+  // come here to check, and the number is the answer to the question.
+  {
+    key: 'features',
+    label: 'Feature activation',
+    count: activeCount.value
+  },
+  {
+    key: 'data-source',
+    label: isReal.value ? 'Data source (Real)' : 'Data source (Demo)'
+  },
   {
     key: 'members',
     label: 'Members',

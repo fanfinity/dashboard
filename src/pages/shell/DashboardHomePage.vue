@@ -81,7 +81,7 @@
           :label="stat.label"
           :value="stat.value"
           :delta="stat.delta"
-          :delta-direction="stat.deltaDirection"
+          :direction="stat.deltaDirection"
           :hint="stat.hint ?? ''"
         />
       </div>
@@ -90,11 +90,7 @@
            immediately, so it sits directly under the headline numbers.
            NoticeBanner's layout was lifted from this block — use it, don't
            re-hand-roll it. -->
-      <NoticeBanner
-        v-if="attention.length"
-        variant="warn"
-        title="Needs attention"
-      >
+      <NoticeBanner v-if="attention.length" tone="warn" title="Needs attention">
         <ul class="flex flex-col gap-1">
           <li
             v-for="item in attention"

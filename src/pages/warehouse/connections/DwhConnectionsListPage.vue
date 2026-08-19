@@ -55,7 +55,7 @@
          notice; only a failed load escalates to an ErrorState. -->
     <NoticeBanner
       v-if="!loading && !error && failingCount"
-      variant="warn"
+      tone="warn"
       class="mb-4"
       title="Some warehouses are not accepting queries"
       :message="failingMessage"
@@ -65,7 +65,7 @@
          degrades in place with its own retry. -->
     <NoticeBanner
       v-else-if="usageError"
-      variant="info"
+      tone="info"
       class="mb-4"
       title="Couldn't count what reads from these connections"
       :message="usageError"
@@ -93,7 +93,7 @@
       <template #cell-name="{ row }">
         <div class="flex items-center gap-2">
           <p class="font-medium text-ink">{{ row.name }}</p>
-          <StatusBadge v-if="row.isPrimary" variant="brand" label="Primary" />
+          <StatusBadge v-if="row.isPrimary" tone="brand" label="Primary" />
         </div>
         <code class="font-mono text-xs text-subtle"
           >{{ row.host }}:{{ row.port }}</code
@@ -101,14 +101,14 @@
       </template>
 
       <template #cell-type="{ row }">
-        <StatusBadge variant="neutral" :label="connectionTypeLabel(row.type)" />
+        <StatusBadge tone="neutral" :label="connectionTypeLabel(row.type)" />
         <p class="mt-1 font-mono text-xs text-subtle">{{ schemaPath(row) }}</p>
       </template>
 
       <template #cell-status="{ row }">
         <div class="flex items-center gap-2">
           <StatusBadge
-            :variant="statusMeta(row.status).variant"
+            :tone="statusMeta(row.status).variant"
             :label="statusMeta(row.status).label"
           />
           <span class="text-xs text-subtle">{{

@@ -2,7 +2,7 @@
   <SelectableCard :selected="selected" @select="emit('select', template)">
     <div class="flex w-full items-start justify-between gap-2">
       <p class="text-sm font-medium text-ink">{{ template.name }}</p>
-      <StatusBadge variant="neutral" :label="template.version" />
+      <StatusBadge tone="neutral" :label="template.version" />
     </div>
     <p v-if="template.description" class="mt-1.5 text-xs text-muted">{{
       template.description
@@ -11,7 +11,7 @@
       <StatusBadge
         v-for="tag in template.tags"
         :key="tag"
-        variant="neutral"
+        tone="neutral"
         :label="tag"
       />
     </div>

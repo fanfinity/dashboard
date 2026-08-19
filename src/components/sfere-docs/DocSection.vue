@@ -23,7 +23,7 @@
 </template>
 
 <script setup>
-import SfereEyebrow from '@/components/sfere/SfereEyebrow.vue'
+import SfereEyebrow from '@/components/ui/SfereEyebrow.vue'
 
 // One documented area of the system. `scroll-mt-24` keeps the heading clear of
 // the sticky header when the table of contents jumps here.

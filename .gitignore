@@ -23,7 +23,7 @@ node_modules
 /src-capacitor/www
 /src-capacitor/node_modules
 
-# Parallel-agent worktrees (see docs/agent-workflow.md)
+# Worktrees created by `pnpm worktree`
 .claude/worktrees/
 
 # Smoke-test artifacts

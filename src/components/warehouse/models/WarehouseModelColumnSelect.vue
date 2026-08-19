@@ -4,7 +4,7 @@
     :required="required"
     :error="error"
     :hint="hint"
-    :for="options.length ? '' : id"
+    :for-id="options.length ? '' : id"
   >
     <q-select
       v-if="options.length"

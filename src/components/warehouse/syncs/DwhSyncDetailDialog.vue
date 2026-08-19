@@ -16,7 +16,7 @@
              notice and not an ErrorState — nothing here carries data-smoke. -->
         <NoticeBanner
           v-if="sync?.lastRunMessage"
-          :variant="sync.lastRunStatus === 'failed' ? 'danger' : 'warn'"
+          :tone="sync.lastRunStatus === 'failed' ? 'danger' : 'warn'"
           class="mb-4"
           :title="
             sync.lastRunStatus === 'failed'
@@ -28,7 +28,7 @@
 
         <NoticeBanner
           v-if="connection && !isConnectionHealthy(connection)"
-          variant="warn"
+          tone="warn"
           class="mb-4"
           :title="`${connection.name} is not accepting connections`"
           :message="
@@ -40,13 +40,13 @@
         <DefinitionList :items="facts" :columns="1">
           <template #value-status>
             <StatusBadge
-              :enabled="Boolean(sync?.isEnabled)"
+              :tone="Boolean(sync?.isEnabled) ? 'success' : 'neutral'"
               :label="sync?.isEnabled ? 'Enabled' : 'Paused'"
             />
           </template>
 
           <template #value-direction="{ value }">
-            <StatusBadge variant="neutral" :label="value" />
+            <StatusBadge tone="neutral" :label="value" />
           </template>
 
           <template #value-reads-from="{ value }">
@@ -59,7 +59,7 @@
 
           <template #value-last-run="{ value }">
             <div class="flex flex-wrap items-center justify-end gap-2">
-              <StatusBadge :variant="lastRun.variant" :label="lastRun.label" />
+              <StatusBadge :tone="lastRun.variant" :label="lastRun.label" />
               <span>{{ value }}</span>
             </div>
           </template>
@@ -99,8 +99,7 @@ import {
 // The read-out for one DWH sync.
 //
 // `/dwh-syncs` has no detail route — the manifest ships a list, a create form
-// and a trash, and adding a fourth would mean editing frozen router files. A
-// sync still carries more than a table row can hold (both ends of the copy, the
+// and a trash. A sync still carries more than a table row can hold (both ends of the copy, the
 // cron behind the friendly label, the last run's message), so the row opens
 // this instead. Same q-dialog-wrapping-CardPanel shape as the profile packet's
 // dialog, so the two read as one product.

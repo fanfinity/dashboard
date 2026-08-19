@@ -20,7 +20,7 @@
 
     <NoticeBanner
       class="mb-5"
-      variant="info"
+      tone="info"
       title="Uploads are disabled in this preview"
       message="Nothing you do here is stored: files are not uploaded, and deleting or restoring an asset only changes what this session shows."
     />

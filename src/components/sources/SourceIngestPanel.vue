@@ -3,7 +3,7 @@
     <template #header>
       <span class="text-sm font-semibold text-ink">Ingest</span>
       <StatusBadge
-        :variant="source.writeKey ? 'brand' : 'neutral'"
+        :tone="source.writeKey ? 'brand' : 'neutral'"
         :label="source.writeKey ? 'Push' : 'Pull'"
       />
     </template>

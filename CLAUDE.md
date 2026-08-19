@@ -18,10 +18,24 @@ Linting/formatting is **oxlint + oxfmt**, not ESLint/Prettier. oxfmt style: no s
 single quotes, printWidth 80, `arrowParens: avoid`, no trailing commas. oxlint runs only the
 `correctness` category as errors (max 10 warnings).
 
+**Pass oxfmt no path.** `oxfmt --check src/` covers only `src/`, but the scripts above run it
+over the whole repo — `CLAUDE.md`, `docs/**`, `public/data/*.json` and `scripts/` included.
+Linting only `src/` is how a green local run turns into a red CI run.
+
 There is **no unit-test runner**. The behavioural gate is `pnpm smoke:dist`, which builds,
 serves `dist/spa`, signs in for real, walks every route in the screen manifest, and fails on any
 console error, uncaught error, rendered `ErrorState`, unresolved route, or missing `<h1>`.
-It needs `SMOKE_EMAIL`/`SMOKE_PASSWORD` in `.env` (see `.env.example`).
+It needs `SMOKE_EMAIL`/`SMOKE_PASSWORD` in `.env` (see `.env.example`) — but **`smoke.mjs` never
+loads `.env` itself**, it only reads `process.env`, so bare `pnpm smoke:dist` exits 2 unless those
+two are already exported in the shell. The form that works from a clean shell is
+`pnpm build && node --env-file=.env scripts/smoke.mjs --serve`, and that is what
+`.vscode/tasks.json` runs. Teaching `smoke.mjs` to call `process.loadEnvFile()` itself would fix
+it properly and nobody has done it yet.
+
+`SMOKE_ROUTES` narrows the walk while iterating —
+`SMOKE_ROUTES=/pipes,/sources node --env-file=.env scripts/smoke.mjs --serve` — then run it
+unfiltered once to confirm nothing else broke. A route named there that is not in the manifest
+is an error, not a silent skip.
 
 `pnpm build` is the other gate worth leaning on: it hard-fails on unresolved `@/` imports,
 unimported components and malformed templates.
@@ -29,6 +43,19 @@ unimported components and malformed templates.
 **Never run `pnpm dev` (or `quasar dev`) yourself.** The user always runs the dev server
 themselves in watch mode, in a separate terminal. It's already running with HMR — edits to
 source files apply automatically, so there's no need to start, stop, or restart it.
+
+**Use `pnpm worktree <name>` to create a worktree**, never bare `git worktree add`. `.env` is
+gitignored, so `git worktree add` copies tracked files only and leaves the new tree with no
+Firebase config — sign-in then fails and the auth guard bounces every route to `/login`, which
+looks like a broken app rather than a missing file. The script copies `.env` across and runs
+`pnpm install`, which is needed because `postinstall` runs `quasar prepare`. Each worktree gets
+its own `dist/`, so concurrent builds do not race.
+
+`.vscode/tasks.json` is committed and wraps each of the commands above as a VS Code task
+(command palette → "Tasks: Run Task"). Two things about it: `options.shell` forces a **login**
+zsh (`zsh -l -c`) because VS Code otherwise runs a non-login shell that never sources
+`.zprofile`, so `nvm`/`pnpm` don't resolve; and its "Dev server" task exists for the user, not
+for you — the rule above still holds.
 
 ## Stack
 
@@ -44,10 +71,11 @@ Hash mode has one consequence worth internalising: the whole route lives after t
 so an in-page `href="#some-id"` **replaces the route** instead of scrolling. Anchor navigation
 has to go through `scrollIntoView` — see `src/pages/design-system/DesignSystemPage.vue`.
 
-### Two Quasar/Tailwind cascade collisions
+### Three Quasar/Tailwind cascade collisions
 
 Tailwind v4 emits utilities into `@layer utilities`; Quasar's base stylesheet is **unlayered**,
-and unlayered CSS beats layered CSS regardless of specificity. Both of these have cost real time:
+and unlayered CSS beats layered CSS regardless of specificity. All three of these have cost real
+time:
 
 1. **Headings need the important _suffix_** — `text-2xl!`, never `!text-2xl`. Covered at length
    in `docs/ui-conventions.md` rules 2–3.
@@ -55,6 +83,11 @@ and unlayered CSS beats layered CSS regardless of specificity. Both of these hav
    `.hidden { display: none !important }`, so `class="hidden lg:block"` is permanently hidden at
    every width. Use the inverse variant — `class="max-lg:hidden"` — which generates a class name
    Quasar does not define. If an element is inexplicably invisible, look for a bare `hidden`.
+3. **A `q-dialog` child is capped at 560px, and `mt-auto` does nothing on a bare block.** Quasar
+   ships `.q-dialog__inner--minimized > div { max-width: 560px }` and margins on unclassed block
+   elements, both unlayered. A three-column picker in a dialog silently renders as
+   two-and-a-bit columns, and auto margins are ignored, until the suffix goes on:
+   `w-[820px]!`, `mt-auto!`. `PersonaQuestion.vue` needs both.
 
 ## Screen manifest — routes are generated, not hand-written
 
@@ -64,18 +97,126 @@ preserved) and **must not be hand-edited**. A manifest entry whose page file is 
 at module load rather than 404-ing silently.
 
 `screens.js` is deliberately import-free — no Vue, no `@/` aliases — so plain Node can read it.
-`scripts/smoke.mjs` walks every route from it.
+`scripts/smoke.mjs` walks every route from it — every route in `screens`, that is, not in
+`legacyScreens`. That split is load-bearing for `/live-events`, which reads the events backend
+through the `/japi` dev proxy that a production build does not have.
+
+A screen's **`group` field does three jobs**, so it has to be accurate: it picks the sidebar
+section, and it is the feature-activation key that decides whether the route renders its real
+page or `ComingSoonPanel`. `routes.js` throws at module load if a `group` has no entry in
+`src/config/features.js`.
 
 The product backlog (54 screens, GitHub issues #16–#69) is scaffolded: every screen already
 exists as a stub page at its final path. Implementing one means **rewriting that file in place**,
 never creating a file and registering a route.
 
+One place the nav deliberately departs from one-row-per-route: **Connectors is a tab on
+`/sources`**, not a screen. Browsing connector _types_ is a step in adding a source, so it lives
+in `src/components/sources/ConnectorCatalog.vue` behind `/sources?tab=connectors`, and the old
+`/connectors` URL redirects there from `routes.js`. Tab state is a query rather than a child route
+because both halves are the same screen with the same `<h1>` — a child route would put Connectors
+back in the sidebar, which is exactly what this undid.
+
+## Feature activation — most of the sidebar is switched off
+
+`enabled: true` in `features.js` today covers **Dashboard, Live events, Sources, Destinations,
+Pipes, Settings, Warehouse, Monitoring, Profiles, Secrets** and **Authorizations** — eleven
+top-level keys, not six. Two of those are partly on: Warehouse and Profiles each gate their own
+children by a separate key (`dwh-syncs`, `warehouse-models`, `identity-resolution`, `attributes`,
+`profile-api`, `live-profile-syncs`, `profile-dwh-syncs`), so switching the parent on only exposes
+the child screens whose own key is _also_ `true` — right now that's just Warehouse connections and
+Profile search, everything else under those two stays a `Soon` row. Audiences, Campaigns, Engage,
+Reporting and Demo lab remain fully dark and get switched on one at a time as they become real.
+
+`src/config/features.js` is the registry — pure data, one entry per module, `enabled` being the
+shipped default. `src/composables/useFeatures.js` layers per-browser overrides from
+`localStorage` (`sfere_feature_activation`) on top, and **Settings → Feature activation** is the
+UI for those overrides. That panel (`SettingsFeaturePanel.vue`) splits the registry into two
+cards — "CDP core" and "Backlog modules" — by a hardcoded `CORE_KEYS` list, not by each feature's
+`active` state, so toggling a core module off locally doesn't bounce it into the backlog card.
+**`CORE_KEYS` has to be kept manually in step with the shipped-active top-level keys** — flipping
+a module's `enabled` default in `features.js` and forgetting the matching edit in `CORE_KEYS`
+leaves a live module stranded under "Backlog modules".
+
+- **To ship a module to everyone**: flip `enabled` in `features.js`. That is the permanent change.
+- **To try one out yourself**: use the toggle. It writes only the keys you touched, so a later
+  default flip still reaches you.
+- `settings` carries `locked: true` because it hosts the panel — switching it off would take every
+  other switch with it. `useFeatures().setActive()` refuses locked keys, not just the UI.
+
+**This is not `useEntitlements`, and the two must not be merged.** An entitlement asks "did this
+account buy the module?" and defaults optimistically **on**; activation asks "is it built yet?"
+and defaults **off**. They also fail differently in the nav: an entitlement you lack removes the
+row, while an inactive module renders an inert row with a `Soon` pill, because a missing row says
+"does not exist" and a dimmed one says "not yet". Engage is subject to both.
+
+The gate is in `MainLayout.vue`'s `q-page-container`, which renders `ComingSoonPanel` **instead
+of** `<router-view>` when `route.meta.group` is inactive. Deliberately not a `beforeEach` guard: a
+guard can only redirect, which throws away the URL you asked for. This way the address survives,
+the real page component never mounts (so nothing it fetches on mount runs), and
+`ComingSoonPanel` renders the screen's own title as a real `<h1>` — which is what lets
+`pnpm smoke:dist` keep walking **all 54 routes** instead of being narrowed to the active few.
+Any new gating must preserve that; a redirect would silently drop the gate to ~6 routes.
+
+## Onboarding — one question, asked once
+
+First sign-in asks **"Before we start — what do you do?"** and offers three personas:
+engineer ("I build the pipes"), marketer ("I run the campaigns"), analyst ("I answer for the
+numbers"). `src/config/personas.js` is the registry — pure data, no imports, same idiom as
+`features.js` and `screens.js`.
+
+**The question is an overlay over a fully-rendered Home, never a route.** A `/welcome` route
+would replace `MainLayout`, so `[data-smoke="nav"]` would never appear and `pnpm smoke:dist`
+would fail at sign-in for all 54 routes rather than on one screen. Three consequences that any
+change here has to preserve: the page beneath stays mounted and visible, the overlay renders
+**no `<h1>`** (smoke asserts on the first one, which belongs to the page), and it opens **only on
+`/`** — a deep link to `/errors` from Slack must not be met by a modal demanding a role.
+`MainLayout` binds it to `route.path`, not to a one-shot flag, which is also what closes it on
+navigation.
+
+State is `src/composables/useOnboarding.js` — module singleton, `localStorage` key
+`sfere_onboarding`, the shape `{ v, uid, persona, askedAt, skipped, completedAt, chapters, runs }`:
+
+- **`uid` is what makes it "first login" rather than "once per browser".** A record whose uid is
+  not the signed-in user's reads as unanswered, so a shared machine asks the second person instead
+  of handing them the first person's answer. Nothing is persisted while signed out.
+- A `persona` that is not a key in `personas.js` reads as unanswered too — a renamed key or a
+  hand-edited store must not resolve to a truthy persona nothing can render.
+- Skipping is a real answer (`skipped: true`), not a deferral. The way back is Settings.
+- `chapters` and `runs` are written empty on purpose. The tour itself — stepper, progress strip,
+  completion card — is a later phase (`todos/site-overhaul-plan.md` §5.3–5.8), and it should find
+  a record it can extend rather than inventing a second key.
+
+**The persona picks emphasis, never contents.** It is allowed to choose which onboarding script
+runs, what Home leads with, and which nav section starts expanded. It must never remove a sidebar
+row: support and handover docs have to be able to say "click Pipes" and be right. Removal is
+entitlements' job, and that mechanism stays separate — as does feature activation, which answers
+"is it built yet?".
+
+**Settings → Your role** (`SettingsPersonaPanel.vue`) is the other surface, so changing the answer
+never means re-running a tour, and `Ask me again` clears it. Both surfaces render the same three
+cards and the same marks from `PersonaIcon.vue` — drawn there rather than reused from
+`src/assets/dashboard/`, because those are `<img>` with brand purple baked into a `stroke`
+attribute and cannot take the colour of the chip they sit in.
+
 ## UI primitives
 
-`src/components/ui/` holds the shared building blocks — `PageHeader`, `DataTable`, `EmptyState`,
-`ErrorState`, `LoadingState`, `StatusBadge` and friends. **Use them; do not re-implement their
-markup and do not copy their class strings into a page.** Read `docs/ui-conventions.md` before
-writing any new screen.
+`src/components/ui/` is **the** component kit — 39 components, all built on the Sfere token
+layer. **Use them; do not re-implement their markup and do not copy their class strings into a
+page.** Read `docs/ui-conventions.md` before writing any new screen.
+
+Two naming schemes live in the folder, for a reason worth knowing:
+
+- **16 screen primitives keep the names the screens already imported** — `PageHeader`,
+  `DataTable`, `EmptyState`, `ErrorState`, `LoadingState`, `StatusBadge`, `CardPanel`,
+  `NoticeBanner`, `StatCard`, `TabNav`, `FormField`, `FormSection`, `ConfirmDialog`,
+  `DefinitionList`, `SelectableCard`, `ToolbarSearch`. Keeping the filenames is what let the
+  Sfere implementations replace the originals across 104 files without rewriting 571 imports.
+  A few of those names are now worse than what they hold (`CardPanel` is a card, `NoticeBanner`
+  is an alert); that was the price of the swap.
+- **23 keep their `Sfere*` names** — `SfereButton`, `SfereInput`, `SfereTable`, `SfereSection`,
+  `SfereFeatureCard` and friends. These have no pre-Sfere counterpart, and the prefix keeps
+  `SfereTable` distinguishable from a bare `<table>` and from `QTable`.
 
 This is not only about consistency: `scripts/smoke.mjs` detects a broken screen by looking for
 the single `[data-smoke="error"]` selector that `ErrorState` renders. Hand-rolled error blocks
@@ -84,26 +225,29 @@ would leave the only behavioural gate in the repo with nothing to assert on.
 ## The Sfere design system
 
 `src/css/sfere.css` holds the token layer, measured off the live marketing site
-(<https://sfere.io>) rather than eyeballed, and `src/components/sfere/` holds a 30-component
-kit built on it. Browse the whole thing at **`#/design-system`** (hash mode — not
-`/design-system`); no sign-in required.
+(<https://sfere.io>) rather than eyeballed, and `src/components/ui/` holds the 39-component kit
+built on it. Browse the whole thing at **`#/design-system`** (hash mode — not `/design-system`);
+no sign-in required.
 
-**The tokens apply to the whole app; the component kit does not.** `src/css/tailwind.css`
-declares `--color-brand`, `--color-muted`, `--color-line`, `--font-sans` and friends as aliases
-pointing at the `sfere-*` values, so all 54 screens inherit the palette and typefaces with no
-markup change. `src/css/quasar.variables.scss` sets `$primary` to the same purple so Quasar's
-own controls match. **Never hardcode a hex in a screen** — that is what broke when the brand
-changed, and the alias layer only works if nothing bypasses it.
+`src/css/tailwind.css` declares `--color-brand`, `--color-muted`, `--color-line`, `--font-sans`
+and friends as aliases pointing at the `sfere-*` values, so a screen written against the app-side
+names still resolves to Sfere. `src/css/quasar.variables.scss` sets `$primary` to the same purple
+so Quasar's own controls match. **Never hardcode a hex in a screen** — that is what broke when the
+brand changed, and the alias layer only works if nothing bypasses it.
 
-Screens still use `src/components/ui/`. Moving one onto `src/components/sfere/` is a per-screen
-rewrite, tracked in `todos/brand-rename-todo.md`.
+**There is one kit.** The pre-Sfere primitives were replaced in place, not deprecated alongside
+it: all 54 screens now render Sfere components.
 
 Rules for touching it:
 
-- `src/components/ui/` and `src/components/sfere/` are **separate kits** sharing one token
-  layer. Current screens use `ui/`. Do not mix them in one screen.
-- `sfere.css` is imported from `src/css/tailwind.css`, not registered in `quasar.config.js`'s
-  `css: [...]` array — that file is frozen and this achieves the same thing.
+- The kit has exactly **two `data-smoke` attributes** — `ErrorState` (`error`) and `EmptyState`
+  (`empty`) — and exactly **one Quasar dependency**, `ConfirmDialog` wrapping `q-dialog`. Both
+  are named carve-outs in `docs/sfere-design-system.md`; neither is licence to add a third.
+- `sfere.css` is imported from `src/css/tailwind.css` rather than registered in
+  `quasar.config.js`'s `css: [...]` array. Either works; the import keeps the whole token layer
+  reachable from one stylesheet.
+- `StatusBadge` takes `tone`, not `variant`, and there is no `enabled` shorthand — write
+  `:tone="x ? 'success' : 'neutral'"`. `FormField` takes `for-id`, not `for`.
 - The three brand faces (Bricolage Grotesque, Inter, Geist Mono) are self-hosted `@fontsource`
   packages. The CSP is `default-src 'self'`, so the Google Fonts CDN is blocked; any new face
   must be added the same way.
@@ -116,7 +260,7 @@ Read `docs/sfere-design-system.md` before adding a component or changing a token
 
 The token layer is published as a company-wide design system at
 `https://claude.ai/design/p/51046f6e-0f11-47c7-9d1e-66a183ec2ac7`. **Only the tokens and
-fonts cross over — `src/components/sfere/` does not.** Claude Design's agent builds in React;
+fonts cross over — `src/components/ui/` does not.** Claude Design's agent builds in React;
 the kit is Vue, so the uploaded `_ds_bundle.js` is a deliberately empty namespace. Anyone
 designing there composes their own components from the Sfere tokens.
 
@@ -127,7 +271,7 @@ node tools/build-design-sync-bundle.mjs        # emits ds-bundle/ (gitignored)
 node .ds-sync/package-validate.mjs ./ds-bundle # the real gate — must exit 0
 ```
 
-The builder is hand-written (in `tools/`, since `scripts/**` is frozen) because the bundled
+The builder is hand-written (in `tools/`, where one-off maintenance lives) because the bundled
 `/design-sync` converter only supports React design systems. **Never ship `src/css/sfere.css`
 raw** — it is Tailwind v4 source (`@theme`, `@utility`, bare `@fontsource` imports) and a
 browser silently ignores all three, producing designs with no tokens and no fonts.
@@ -146,24 +290,26 @@ wrong for these screens** — there is no backend behind any of them. Data comes
 `{ data, loading, error, load() }` contract as everything else. `src/api/` remains reserved for
 the real accounts/RBAC backend.
 
-## Frozen files
+## Files that reach every screen
 
-These are owned by the foundation phase. If a task seems to require editing one, that is a
-blocker to report, not an edit to make — see `docs/agent-workflow.md`.
+Nothing in this repo is off-limits to edit. But a handful of files are load-bearing enough that
+changing one changes every screen at once, so they are worth a moment's thought and a line in the
+commit message rather than a drive-by edit mid-task:
 
-`src/router/**` · `src/layouts/**` · `src/components/ui/**` ·
-`src/composables/{useMockResource,useEntitlements,useDiagram,useTemplates}.js` ·
-`package.json` · `quasar.config.js` · `index.html` · `scripts/**` · this file
+`src/router/**` (the manifest generates all 54 routes) · `src/layouts/MainLayout.vue` (the nav
+is the IA, and the feature gate lives in its `q-page-container`) · `src/components/ui/**` (the
+kit) · `src/config/features.js` + `src/composables/useFeatures.js` (which modules are switched
+on at all) · `src/composables/{useMockResource,useEntitlements,useDiagram,useTemplates}.js` (the
+`{ data, loading, error, apiMissing, load() }` contract every page is written against —
+`apiMissing` is real-mode-only, see Data architecture below) · `quasar.config.js`
+and `index.html` (build config and the CSP).
 
-Four have been edited on purpose, all as foundation-phase changes rather than story work:
-`routes.js` (one top-level route, three font packages), `package.json` (fonts plus the brand
-name fields), `MainLayout.vue` (the sidebar logo) and `quasar.config.js` (`appId`). Each is
-recorded in `docs/sfere-design-system.md` under "Frozen files edited for the brand". That is the
-bar: an explicit, user-directed decision written down, not a convenient workaround discovered
-mid-story.
+The bar is the same one that applies anywhere: if the change is right, make it and say why. If
+you are reaching for one of these to work around a problem somewhere else, that is the signal to
+stop and fix the actual problem.
 
-`tools/` exists because `scripts/**` is frozen — one-off maintenance scripts like
-`tools/brand-rename.mjs` and `tools/make-favicons.mjs` go there.
+`scripts/` holds what the build and the gates run; `tools/` holds one-off maintenance like
+`tools/brand-rename.mjs` and `tools/make-favicons.mjs`.
 
 `todos/` is gitignored working notes — planning docs and handover drafts that should not enter
 shared history. `todos/brand-rename-todo.md` is the live record of what the rebrand still owes.
@@ -178,6 +324,30 @@ all follow the same `{ data, loading, error, load() }` contract (`src/composable
 1. **Static mock JSON** in `public/data/*.json`, fetched via `import.meta.env.BASE_URL`
    (e.g. `ContactDetailPage.vue` loads `data/contacts.json` + `data/contact-details.json`).
    Most pages also define inline mock arrays for demo content.
+
+   The fixtures are cross-referentially consistent — `pipes[].sourceId` resolves in
+   `sources.json`, and so on. Adding fields and records is fine; **renaming or renumbering an
+   existing `id` is not.** `screens.js`'s `smokeParams` point at those ids by value, and a
+   broken lookup renders `undefined` silently rather than failing.
+
+   **Settings → Data source is a global mock/real switch** (`useDataSource.js`, `localStorage`
+   key `sfere_data_source_mode`, default `mock`), and a `DemoModeBanner` `q-footer` stays up in
+   `MainLayout.vue` for as long as it is on. Flipping it does not, by itself, change what a
+   screen shows — `useMockResource()` only calls the real endpoint for a resource whose
+   composable passes an `options.api = { path, select? }` (mirroring `cdp-api-draft.yaml`); a
+   resource with no `api` wired reports `apiMissing: true` with **no network attempt** the
+   moment real mode is on, and `DataTable`'s `api-missing` prop renders that as "No API yet"
+   rather than as an empty list. Today only `useSources()` is wired (`/v1/sources`), as the
+   worked example — the same three-line change (`api: { path }`, forward `apiMissing`, pass
+   `:api-missing` to `DataTable`) rolls out to the rest of the active-11 domains once their
+   composables are checked against the draft spec's `200` schema, per-domain (a mock file's
+   `select` does **not** carry over automatically — several are wrapped, e.g. `trash.json`'s
+   `payload.pipes`, in a way the drafted real endpoint is not). A 404, a CORS block and a
+   connection refused (no local backend running) all read the same as "not built yet"; only a
+   real non-404 response escalates to `ErrorState`. Any page whose empty state depends on a
+   _different_ composable (e.g. `SettingsPage.vue`'s workspace record) needs its own check that
+   flipping to real mode doesn't strand the user — the tab bar there now renders regardless of
+   `workspace`, specifically so the Data source tab that undoes the switch never disappears.
 
 2. **The Jitsu events backend** (`console.fanfinity.io`):
    - **Read** incoming events (`useLiveEvents.js`) through a same-origin dev proxy: the browser

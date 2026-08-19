@@ -22,7 +22,7 @@
     v-if="isCustom"
     label="Cron expression"
     required
-    for="sync-cron"
+    for-id="sync-cron"
     :error="error"
     hint="Five fields: minute, hour, day of month, month, day of week."
   >

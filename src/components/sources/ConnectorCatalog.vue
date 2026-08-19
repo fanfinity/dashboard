@@ -1,63 +1,44 @@
 <template>
-  <q-page class="p-6">
-    <!-- Header -->
-    <div class="mb-6 flex flex-wrap items-start justify-between gap-4">
-      <div>
-        <h1 class="text-2xl! font-semibold! tracking-[-0.5px]! text-ink"
-          >Connectors</h1
-        >
-        <p class="mt-2 text-sm text-muted">
-          Browse the connector catalog. Pick a source to start syncing data into
-          Sfere.
-        </p>
-      </div>
-
-      <!-- Search -->
-      <div
-        class="flex h-9 w-full max-w-[320px] items-center gap-2 rounded-lg border border-line2 bg-white px-2.5 shadow-sm"
-      >
-        <img :src="icSearch" alt="" class="size-4 shrink-0" />
-        <input
-          v-model="query"
-          type="text"
-          placeholder="Search connectors..."
-          class="min-w-0 flex-1 border-0 bg-transparent text-sm text-ink outline-none placeholder:text-subtle"
-        />
-      </div>
+  <div class="flex flex-col gap-4">
+    <!-- The catalog has its own search: it filters a few hundred connector
+         *types* fetched from the events backend, which has nothing to do with the
+         search over this account's configured sources on the sibling tab. Two
+         boxes for two haystacks. -->
+    <div class="flex flex-wrap items-center justify-between gap-3">
+      <!-- max-w keeps the copy from claiming the whole row and pushing the
+           search box onto a line of its own. -->
+      <p class="max-w-xl text-sm text-muted">
+        Browse the connector catalog and pick what to pull into Sfere. This is
+        the list of connector types the events backend supports — not the
+        streams this account has configured.
+      </p>
+      <ToolbarSearch v-model="query" placeholder="Search connectors..." />
     </div>
 
-    <!-- Loading -->
-    <div
-      v-if="loading"
-      class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
-    >
-      <q-skeleton v-for="n in 12" :key="n" height="74px" class="rounded-xl!" />
-    </div>
+    <LoadingState v-if="loading" variant="grid" :rows="8" />
 
-    <!-- Error -->
-    <div
+    <ErrorState
       v-else-if="error"
-      class="flex flex-col items-start gap-3 rounded-xl border border-line2 bg-white p-6"
-    >
-      <p class="text-sm text-ink">Couldn't load the connector catalog.</p>
-      <p class="text-xs text-muted">{{ error }}</p>
-      <button
-        class="rounded-lg border border-line2 bg-white px-3 py-1.5 text-sm font-medium text-brand hover:bg-fill"
-        @click="load"
-      >
-        Retry
-      </button>
-    </div>
+      title="Couldn't load the connector catalog."
+      :message="error"
+      @retry="load"
+    />
 
-    <!-- Empty -->
-    <div
+    <EmptyState
       v-else-if="!filteredGroups.length"
-      class="rounded-xl border border-line2 bg-white p-6 text-sm text-muted"
+      :title="emptyTitle"
+      :description="emptyDescription"
     >
-      No connectors match "{{ query }}".
-    </div>
+      <template v-if="query" #cta>
+        <button
+          class="rounded-lg border border-line2 bg-white px-3 py-1.5 text-sm font-medium text-brand hover:bg-fill"
+          @click="query = ''"
+        >
+          Clear search
+        </button>
+      </template>
+    </EmptyState>
 
-    <!-- Grouped grid -->
     <div v-else class="flex flex-col gap-8">
       <section v-for="group in filteredGroups" :key="group.key">
         <h2
@@ -78,7 +59,7 @@
         </div>
       </section>
     </div>
-  </q-page>
+  </div>
 </template>
 
 <script setup>
@@ -86,9 +67,21 @@ import { computed, onMounted, ref } from 'vue'
 import { useQuasar } from 'quasar'
 
 import ConnectorCard from '@/components/ConnectorCard.vue'
+import ToolbarSearch from '@/components/ui/ToolbarSearch.vue'
+import LoadingState from '@/components/ui/LoadingState.vue'
+import ErrorState from '@/components/ui/ErrorState.vue'
+import EmptyState from '@/components/ui/EmptyState.vue'
 import { useConnectorCatalog } from '@/composables/useConnectorCatalog'
-import icSearch from '@/assets/dashboard/ic-search.svg'
 
+// Was src/pages/ConnectorsPage.vue and a sidebar entry of its own. Browsing
+// connector types is a step in adding a source, not a separate destination, so it
+// became the second tab on /sources and the page shell went with it: no q-page,
+// no <h1>, because SourcesListPage already owns both.
+//
+// The hand-rolled skeleton/error/empty blocks it used to carry are gone in favour
+// of LoadingState/ErrorState/EmptyState. That also closes a gate blind spot —
+// ErrorState is the only thing that renders [data-smoke="error"], so a failed
+// catalog load used to be invisible to scripts/smoke.mjs.
 const $q = useQuasar()
 const { connectors, loading, error, load } = useConnectorCatalog()
 const query = ref('')
@@ -129,6 +122,18 @@ const filteredGroups = computed(() => {
     items: byKey.get(key).sort(sortBySalience)
   }))
 })
+
+// Two different "nothing here" cases, same as the sources table: a search that
+// matched nothing, versus a catalog that came back empty.
+const emptyTitle = computed(() =>
+  query.value ? 'No connectors match your search' : 'No connectors available'
+)
+
+const emptyDescription = computed(() =>
+  query.value
+    ? `Nothing in the catalog matches “${query.value}”.`
+    : 'The events backend returned an empty catalog. Retry in a moment.'
+)
 
 // Popular connectors carry a higher sortIndex; fall back to alphabetical.
 function sortBySalience(a, b) {

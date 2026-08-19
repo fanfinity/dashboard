@@ -26,7 +26,7 @@
     <!-- The reason this screen is empty on every tenant, said plainly. The
          collection loaded fine, so this is a notice and not an ErrorState. -->
     <NoticeBanner
-      variant="info"
+      tone="info"
       class="mb-4"
       title="The fan-facing survey widget is still in design"
       message="The data layer that would store responses is live; the widget that collects them is not built yet, so no workspace has surveys today."
@@ -43,7 +43,7 @@
     >
       <template #cell-status="{ value }">
         <StatusBadge
-          :variant="surveyStatusMeta(value).variant"
+          :tone="surveyStatusMeta(value).variant"
           :label="surveyStatusMeta(value).label"
         />
       </template>

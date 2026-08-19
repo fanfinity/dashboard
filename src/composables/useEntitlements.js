@@ -1,13 +1,14 @@
-import { ref } from 'vue'
+import { useMockResource } from '@/composables/useMockResource'
 
 // Which product modules this account may use. In the reference product this is
 // GET /api/entitlements returning [{ key, name, enabled }]; here it is mock data
 // until there is a backend to ask.
 //
 // Module-level state so the nav and every gated page agree without refetching.
-const entitlements = ref([])
-const loading = ref(false)
-const error = ref(null)
+// A single shared useMockResource instance gives every caller the same
+// data/loading/error refs; `loaded` is the extra guard useMockResource itself
+// doesn't have, so a second caller's load() is a no-op instead of a refetch.
+const resource = useMockResource('entitlements', { initial: [] })
 let loaded = false
 
 // Optimistic default: gates are for hiding modules an account hasn't bought, and
@@ -18,32 +19,24 @@ const DEFAULT_ENABLED = true
 export function useEntitlements() {
   async function load() {
     if (loaded) return
-    loading.value = true
-    error.value = null
-    try {
-      const res = await fetch(
-        `${import.meta.env.BASE_URL}data/entitlements.json`,
-        { headers: { Accept: 'application/json' } }
-      )
-      if (!res.ok) {
-        throw new Error(`Request failed (${res.status})`)
-      }
-      const data = await res.json()
-      entitlements.value = Array.isArray(data) ? data : []
-      loaded = true
-    } catch (e) {
-      error.value = e instanceof Error ? e.message : String(e)
-      entitlements.value = []
-    } finally {
-      loading.value = false
-    }
+    await resource.load()
+    // Only latch on success, mirroring the original fetch-based guard: a
+    // failed load must stay retriable on the next call rather than freezing
+    // every gate at the optimistic default for the rest of the session.
+    if (!resource.error.value) loaded = true
   }
 
   function isEnabled(key) {
     if (!key) return true
-    const hit = entitlements.value.find(e => e.key === key)
+    const hit = resource.data.value.find(e => e.key === key)
     return hit ? Boolean(hit.enabled) : DEFAULT_ENABLED
   }
 
-  return { entitlements, loading, error, load, isEnabled }
+  return {
+    entitlements: resource.data,
+    loading: resource.loading,
+    error: resource.error,
+    load,
+    isEnabled
+  }
 }

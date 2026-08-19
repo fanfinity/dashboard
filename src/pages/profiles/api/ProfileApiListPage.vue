@@ -60,7 +60,7 @@
       </template>
 
       <template #cell-identifierTypeName="{ value }">
-        <StatusBadge variant="neutral" :label="value" />
+        <StatusBadge tone="neutral" :label="value" />
       </template>
 
       <template #cell-attributes="{ row }">
@@ -71,7 +71,10 @@
       </template>
 
       <template #cell-isEnabled="{ value }">
-        <StatusBadge :enabled="value" :label="value ? 'Live' : 'Paused'" />
+        <StatusBadge
+          :tone="value ? 'success' : 'neutral'"
+          :label="value ? 'Live' : 'Paused'"
+        />
       </template>
 
       <template #cell-requestCountLastHour="{ value }">

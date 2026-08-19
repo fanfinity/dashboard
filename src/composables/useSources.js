@@ -105,6 +105,7 @@ export function slugify(value) {
  *   sources: import('vue').Ref<Array>,
  *   loading: import('vue').Ref<boolean>,
  *   error: import('vue').Ref<string|null>,
+ *   apiMissing: import('vue').Ref<boolean>,
  *   load: () => Promise<void>,
  *   findById: (id: string) => object|null,
  *   setEnabled: (id: string, isEnabled: boolean) => void,
@@ -117,7 +118,13 @@ export function slugify(value) {
  * onMounted(load)
  */
 export function useSources() {
-  const { data: sources, loading, error, load } = useMockResource('sources')
+  const {
+    data: sources,
+    loading,
+    error,
+    apiMissing,
+    load
+  } = useMockResource('sources', { api: { path: '/v1/sources' } })
 
   function findById(id) {
     return sources.value.find(s => s.id === id) ?? null
@@ -151,7 +158,17 @@ export function useSources() {
     return record
   }
 
-  return { sources, loading, error, load, findById, setEnabled, remove, add }
+  return {
+    sources,
+    loading,
+    error,
+    apiMissing,
+    load,
+    findById,
+    setEnabled,
+    remove,
+    add
+  }
 }
 
 /**

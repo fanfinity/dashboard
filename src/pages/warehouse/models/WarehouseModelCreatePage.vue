@@ -48,7 +48,7 @@
       >
         <NoticeBanner
           v-if="unreachable.length"
-          variant="warn"
+          tone="warn"
           title="Some connections cannot be used right now"
           :message="unreachableMessage"
         />
@@ -88,7 +88,7 @@
         <FormField
           label="Name"
           required
-          for="model-name"
+          for-id="model-name"
           :error="errors.name"
           :hint="idHint"
         >
@@ -104,7 +104,7 @@
 
         <FormField
           label="Description"
-          for="model-description"
+          for-id="model-description"
           hint="Optional. One line on what a row means — whoever writes the next attribute reads this."
         >
           <textarea
@@ -127,7 +127,7 @@
 
         <NoticeBanner
           v-if="check"
-          :variant="checkVariant"
+          :tone="checkVariant"
           :title="checkTitle"
           :message="checkMessage"
         />

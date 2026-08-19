@@ -5,9 +5,9 @@
         <span class="font-mono text-xs text-subtle">{{
           formatClock(entry.occurredAt)
         }}</span>
-        <StatusBadge :variant="kind.variant" :label="kind.label" />
-        <StatusBadge :variant="status.variant" :label="status.label" />
-        <StatusBadge :variant="risk.variant" :label="risk.label" />
+        <StatusBadge :tone="kind.variant" :label="kind.label" />
+        <StatusBadge :tone="status.variant" :label="status.label" />
+        <StatusBadge :tone="risk.variant" :label="risk.label" />
       </div>
       <span class="shrink-0 text-xs text-subtle">{{ entry.actorName }}</span>
     </template>
@@ -34,7 +34,7 @@
     <NoticeBanner
       v-if="entry.status === 'rejected'"
       class="mt-4"
-      variant="warn"
+      tone="warn"
       :title="`Rejected by ${entry.rejectedByName ?? 'a reviewer'}`"
       :message="entry.rejectionReason || 'No reason was recorded.'"
     />

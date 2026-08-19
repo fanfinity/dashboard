@@ -55,7 +55,7 @@
       <template #cell-name="{ row }">
         <div class="flex items-center gap-2">
           <p class="font-medium text-ink">{{ row.name }}</p>
-          <StatusBadge variant="neutral" :label="modeLabel(row.mode)" />
+          <StatusBadge tone="neutral" :label="modeLabel(row.mode)" />
         </div>
         <p class="text-xs text-subtle">{{ row.id }}</p>
       </template>
@@ -66,7 +66,10 @@
       </template>
 
       <template #cell-isEnabled="{ value }">
-        <StatusBadge :enabled="value" :label="value ? 'Live' : 'Paused'" />
+        <StatusBadge
+          :tone="value ? 'success' : 'neutral'"
+          :label="value ? 'Live' : 'Paused'"
+        />
       </template>
 
       <template #cell-profileCountLastHour="{ row }">

@@ -12,7 +12,7 @@
         }}</span>
         <StatusBadge
           v-if="modelValue.includes(type.id)"
-          variant="brand"
+          tone="brand"
           label="Accepted"
         />
       </div>
@@ -20,8 +20,8 @@
       <p class="mt-2 font-mono text-xs text-subtle">{{ type.name }}</p>
 
       <div class="mt-2 flex flex-wrap items-center gap-1.5">
-        <StatusBadge variant="neutral" :label="sourceLabel(type)" />
-        <StatusBadge variant="neutral" :label="limitLabel(type)" />
+        <StatusBadge tone="neutral" :label="sourceLabel(type)" />
+        <StatusBadge tone="neutral" :label="limitLabel(type)" />
       </div>
     </SelectableCard>
   </div>

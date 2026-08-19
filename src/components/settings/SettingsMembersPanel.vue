@@ -19,14 +19,14 @@
 
       <template #cell-role="{ value }">
         <StatusBadge
-          :variant="memberRole(value).variant"
+          :tone="memberRole(value).variant"
           :label="memberRole(value).label"
         />
       </template>
 
       <template #cell-isActive="{ value }">
         <StatusBadge
-          :enabled="value"
+          :tone="value ? 'success' : 'neutral'"
           :label="value ? 'Active' : 'Deactivated'"
         />
       </template>
@@ -41,7 +41,7 @@
                leave the workspace with nobody who can grant access back. -->
           <StatusBadge
             v-if="row.role === 'owner'"
-            variant="neutral"
+            tone="neutral"
             label="Cannot be removed"
           />
           <button
@@ -79,7 +79,7 @@
     <CardPanel>
       <template #header>
         <span class="text-sm font-semibold text-ink">Pending invitations</span>
-        <StatusBadge variant="neutral" :label="String(pending.length)" />
+        <StatusBadge tone="neutral" :label="String(pending.length)" />
       </template>
 
       <EmptyState
@@ -101,7 +101,7 @@
                 invite.email
               }}</p>
               <StatusBadge
-                :variant="memberRole(invite.role).variant"
+                :tone="memberRole(invite.role).variant"
                 :label="memberRole(invite.role).label"
               />
             </div>
