@@ -43,3 +43,10 @@ ds-bundle/
 .design-sync/.cache/
 .design-sync/learnings/
 .design-sync/node_modules
+
+# Firebase Hosting deploy cache + CLI logs. `firebase deploy` writes
+# .firebase/hosting.dist-spa.cache (the hash manifest that makes re-deploys
+# incremental) into the repo root on every local deploy.
+.firebase/
+firebase-debug.log*
+firebase-debug.*.log

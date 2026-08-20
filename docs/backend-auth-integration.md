@@ -18,8 +18,10 @@ screens). Deviations from the plan below:
      dashboard's email/password sign-up never sends a verification email, so
      self-signed-up users can't call the API until that flow exists (or the backend
      relaxes the check).
-  2. Staging `CORS_ALLOW_ORIGINS` allows only `https://dashboard-staging.fanfinity.io` —
-     add `http://localhost:9000` to it if local dev should hit staging directly.
+  2. ~~Staging `CORS_ALLOW_ORIGINS` allows only `https://dashboard-staging.fanfinity.io`~~
+     Fixed. Staging now allows `https://app-staging.sfere.io`, the retired
+     `https://app-dev.fanfinity.io`, and `http://localhost:9000` — plus PR preview
+     channels by pattern. See `docs/deployment.md`.
 
 ## Context
 
@@ -38,7 +40,7 @@ be built on top. We are **not** wiring existing composables (`useLiveEvents`, `u
 ## Backend prerequisite — CORS ✅ DONE
 
 The dashboard runs on a different origin than the API (e.g. `localhost:9000` → the
-backend on `localhost:8080` in dev; `app.fanfinity.io` → `api.fanfinity.io` in prod),
+backend on `localhost:8080` in dev; `app.sfere.io` → `api.sfere.io` in prod),
 so browser `fetch` with an `Authorization` header needs CORS.
 
 **Implemented in the backend** (branch `feat/cors-middleware`): FastAPI `CORSMiddleware`
@@ -46,7 +48,9 @@ in `create_app()`, driven by the `CORS_ALLOW_ORIGINS` setting (comma-separated;
 defaults to `http://localhost:9000`, empty disables). It allows the `Authorization` and
 `X-Support-Token` headers and methods `GET, POST, DELETE, OPTIONS`. **For each deployed
 environment, set `CORS_ALLOW_ORIGINS` to the dashboard's real origin** (e.g.
-`https://app.fanfinity.io`) — the dashboard side needs no CORS work.
+`https://app.sfere.io`) — the dashboard side needs no CORS work. Firebase Hosting PR
+preview channels get a fresh origin per PR and so cannot be listed; staging admits
+them through `CORS_ALLOW_ORIGIN_REGEX` instead, production deliberately does not.
 
 ## Dashboard changes
 
@@ -60,8 +64,9 @@ Add to `.env` (and document alongside the existing keys):
 VITE_API_BASE=http://localhost:8080
 ```
 
-Deployed builds set `VITE_API_BASE=https://api-staging.fanfinity.io` (staging) or
-`https://api.fanfinity.io` (prod).
+Deployed builds set `VITE_API_BASE=https://api-staging.sfere.io` (staging and PR
+previews) or `https://api.sfere.io` (prod). The `api*.fanfinity.io` hosts remain
+attached to the same ingress as aliases.
 
 ### 2. New API client — `src/composables/useApi.js`
 
@@ -138,7 +143,8 @@ memberships.value = data.memberships` (each item is `{ account, role }`).
 
 `index.html` line 16, `connect-src`. Add the API origins:
 
-- always: `https://api.fanfinity.io https://api-staging.fanfinity.io`
+- always: `https://api.sfere.io https://api-staging.sfere.io` (plus the
+  `api*.fanfinity.io` aliases while they live)
 - dev only (inside the existing `<% if (ctx.dev) { %>` block): `http://localhost:8080`
 
 Current `connect-src`:
@@ -150,7 +156,7 @@ connect-src 'self' https://console.fanfinity.io https://identitytoolkit.googleap
 Becomes (API origins added):
 
 ```
-connect-src 'self' https://console.fanfinity.io https://api.fanfinity.io https://api-staging.fanfinity.io https://identitytoolkit.googleapis.com https://securetoken.googleapis.com<% if (ctx.dev) { %> ws://localhost:* http://localhost:8080<% } %>
+connect-src 'self' https://console.fanfinity.io https://api.sfere.io https://api-staging.sfere.io https://api.fanfinity.io https://api-staging.fanfinity.io https://identitytoolkit.googleapis.com https://securetoken.googleapis.com<% if (ctx.dev) { %> ws://localhost:* http://localhost:8080<% } %>
 ```
 
 ## Explicitly out of scope (future work)

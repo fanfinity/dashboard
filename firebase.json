@@ -1,0 +1,115 @@
+{
+  // Two Hosting sites, one repo, one build config:
+  //   sfere-app  -> app.sfere.io          (tag vX.Y.Z, deploy-production.yml)
+  //   sfere-stg  -> app-staging.sfere.io  (push main,  deploy-staging.yml)
+  //                 and every PR preview channel (deploy-preview.yml)
+  //
+  // `site:` keys rather than hosting targets in .firebaserc: targets are mutable
+  // local state (`firebase target:apply`) that CI would have to re-establish on
+  // every run. firebase-tools resolves an --only filter against `target` first and
+  // `site` second, so the site key alone is enough:
+  //   firebase deploy --only hosting:sfere-stg
+  //   firebase hosting:channel:deploy pr-7 --only sfere-stg   <- BARE site id here
+  // The --only is not optional. Without it both sites are released at once.
+  //
+  // The site ids are short on purpose. A preview channel is served from
+  // <site>--<channel>-<hash>.web.app and Firebase TRUNCATES the site id when that
+  // label passes 30 characters — which would silently stop matching the staging
+  // backend's CORS_ALLOW_ORIGIN_REGEX. The .web.app names are only ever visible in
+  // preview URLs; the custom domains carry the real names.
+  "hosting": [
+    {
+      "site": "sfere-app",
+      "public": "dist/spa",
+      "ignore": ["firebase.json", "**/.*", "**/node_modules/**"],
+
+      // NO catch-all rewrite to /index.html, and this is deliberate. The router
+      // runs in hash mode (quasar.config.js), so every deep link is `/#/pipes` and
+      // the server only ever sees `/` — scripts/serve-dist.mjs explains the same
+      // thing at length. A `**` -> /index.html rewrite would answer a mistyped
+      // /data/*.json, and the dev-only /japi/* proxy paths, with a 200 text/html
+      // body, turning a loud 404 into a silent JSON.parse failure. Add one only if
+      // vueRouterMode ever flips to 'history'.
+
+      // ORDER IS LOAD-BEARING — same rule as marketing/website/firebase.json.
+      // Firebase applies every matching rule and, for a given header key, the LAST
+      // match wins. The "**" catch-all must stay FIRST so /assets/** can override
+      // Cache-Control. The catch-all is also what protects everything Vite copies
+      // verbatim out of public/ (favicon.*, brand/**, icons/**, data/*.json) —
+      // those keep their names across builds and must never be cached immutably.
+      "headers": [
+        {
+          "source": "**",
+          "headers": [
+            {
+              "key": "Cache-Control",
+              "value": "no-cache, max-age=0, must-revalidate"
+            },
+            { "key": "X-Content-Type-Options", "value": "nosniff" },
+            { "key": "X-Frame-Options", "value": "DENY" },
+            {
+              "key": "Referrer-Policy",
+              "value": "strict-origin-when-cross-origin"
+            },
+            {
+              "key": "Strict-Transport-Security",
+              "value": "max-age=31536000; includeSubDomains"
+            }
+          ]
+        },
+        {
+          // Vite writes content-hashed filenames here — JS, CSS, and (because
+          // quasar.config.js forces assetsInlineLimit to 0 for the CSP) every image
+          // and @fontsource woff2 too. Hashed name => safe to freeze for a year.
+          "source": "/assets/**",
+          "headers": [
+            {
+              "key": "Cache-Control",
+              "value": "public, max-age=31536000, immutable"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      // Identical to the production entry apart from `site` and the noindex header.
+      // Keep the two in sync: a header added to one and not the other is invisible
+      // until it shows up as a caching bug on the site you did not test.
+      "site": "sfere-stg",
+      "public": "dist/spa",
+      "ignore": ["firebase.json", "**/.*", "**/node_modules/**"],
+      "headers": [
+        {
+          "source": "**",
+          "headers": [
+            {
+              "key": "Cache-Control",
+              "value": "no-cache, max-age=0, must-revalidate"
+            },
+            { "key": "X-Content-Type-Options", "value": "nosniff" },
+            { "key": "X-Frame-Options", "value": "DENY" },
+            {
+              "key": "Referrer-Policy",
+              "value": "strict-origin-when-cross-origin"
+            },
+            {
+              "key": "Strict-Transport-Security",
+              "value": "max-age=31536000; includeSubDomains"
+            },
+            // Staging and every PR preview channel must never be indexed.
+            { "key": "X-Robots-Tag", "value": "noindex, nofollow" }
+          ]
+        },
+        {
+          "source": "/assets/**",
+          "headers": [
+            {
+              "key": "Cache-Control",
+              "value": "public, max-age=31536000, immutable"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

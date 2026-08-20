@@ -52,7 +52,9 @@ export default defineConfig((/* ctx */) => {
       vueRouterMode: 'hash', // available values: 'hash', 'history'
       // vueRouterBase, // defaults to publicPath, which is enough for hash mode
 
-      // publicPath: '/', // served from the app-dev.fanfinity.io custom domain root — no repo subpath needed
+      // publicPath: '/', // Firebase Hosting serves app.sfere.io, app-staging.sfere.io
+      // and every preview channel from the root, so the default '/' is right everywhere.
+      // (It was commented out for GitHub Pages too — a repo-subpath deploy would need it.)
       // define: {},
       // defineEnv: {}
       // ignorePublicFolder: true,

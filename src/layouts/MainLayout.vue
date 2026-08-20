@@ -326,6 +326,9 @@
                       class="capitalize"
                       >{{ currentRole }}</q-item-label
                     >
+                    <q-item-label caption class="font-mono opacity-70">{{
+                      appVersion
+                    }}</q-item-label>
                   </q-item-section>
                 </q-item>
                 <q-separator />
@@ -410,6 +413,13 @@ const router = useRouter()
 const route = useRoute()
 const { user, logOut } = useAuth()
 const { currentAccount, currentRole } = useMe()
+
+// Stamped by the deploy workflows — staging `sha-<short>`, production `vX.Y.Z`,
+// PR previews `pr-<N>` — and "dev" locally, matching the backend's app_version
+// default. This is the only place a user can answer "which build am I looking
+// at?". It sits in the account menu rather than on a page so it adds no <h1> and
+// no route, which keeps scripts/smoke.mjs unaffected.
+const appVersion = import.meta.env.VITE_APP_VERSION || 'dev'
 
 // Badge vocabulary, borrowed from the marketing site's Live/Preview pills so the
 // dashboard tells the same story with the same honesty: `live` = backed by real
