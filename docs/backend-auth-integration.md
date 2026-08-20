@@ -19,9 +19,10 @@ screens). Deviations from the plan below:
      self-signed-up users can't call the API until that flow exists (or the backend
      relaxes the check).
   2. ~~Staging `CORS_ALLOW_ORIGINS` allows only `https://dashboard-staging.fanfinity.io`~~
-     Fixed. Staging now allows `https://app-staging.sfere.io`, the retired
-     `https://app-dev.fanfinity.io`, and `http://localhost:9000` — plus PR preview
-     channels by pattern. See `docs/deployment.md`.
+     Fixed. Staging allows `https://app-staging.sfere.io` and `http://localhost:9000`,
+     plus PR preview channels by pattern. See `docs/deployment.md`.
+     (`app-dev.fanfinity.io` is still in that list but the host is gone — the
+     backend overlay should drop it.)
 
 ## Context
 

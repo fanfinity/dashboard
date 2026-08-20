@@ -88,19 +88,11 @@ const PRESERVED_SPANS = [
   },
   {
     span: 'api-staging.fanfinity.io',
-    why: 'live accounts/RBAC API on staging — CSP host and CI default'
-  },
-  {
-    span: 'app-dev.fanfinity.io',
-    why: 'live custom domain this app deploys to'
-  },
-  {
-    span: 'dashboard-staging.fanfinity.io',
-    why: "the origin the backend's CORS_ALLOW_ORIGINS actually whitelists today"
+    why: 'still an ingress alias for api-staging.sfere.io — CSP host'
   },
   {
     span: 'api.fanfinity.io',
-    why: 'live profile API host'
+    why: 'ingress alias for api.sfere.io — CSP host'
   },
   {
     span: 'fanfinity/merio',
