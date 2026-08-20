@@ -1,17 +1,34 @@
 name: CI
 
-# Nothing gated pull requests before this: deploy-pages.yml only fires on push to
-# main, so a broken PR was only discovered after merge. With many agents opening
+# Nothing gated pull requests before this: the deploy workflow only fires on push
+# to main, so a broken PR was only discovered after merge. With many agents opening
 # work in parallel that is not survivable.
+#
+# This job runs with NO secrets on purpose — that is what lets it gate fork PRs.
+# The PR preview deploy needs secrets and id-token, so it lives in its own file
+# (deploy-preview.yml) rather than being folded in here.
 on:
   pull_request:
   workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
 
 jobs:
   check:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+
+      # The dashboard left GitHub Pages for Firebase Hosting. Both of these are
+      # Pages artifacts that would quietly half-work if they came back: a CNAME
+      # file would ship as a stray /CNAME asset, and a second deploy workflow
+      # would race the Firebase one on every push to main.
+      - name: Guard — GitHub Pages artifacts stay deleted
+        run: |
+          test ! -e public/CNAME || { echo "::error::public/CNAME is back. Deploys are Firebase Hosting; see docs/deployment.md."; exit 1; }
+          test ! -e .github/workflows/deploy-pages.yml || { echo "::error::deploy-pages.yml is back. Deploys are deploy-staging.yml / deploy-production.yml."; exit 1; }
 
       - uses: pnpm/action-setup@v4
         with:
@@ -33,6 +50,7 @@ jobs:
       #
       # No secrets needed: VITE_* are read at runtime, so their absence does not
       # break the build. The smoke test is not run here because it needs real
-      # sign-in credentials; it runs locally and in the merge queue instead.
+      # sign-in credentials; it runs against the deployed staging site in
+      # deploy-staging.yml, and locally.
       - name: Build
         run: pnpm build

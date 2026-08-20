@@ -101,15 +101,23 @@ const page = await context.newPage()
 // Environmental noise, not page defects. Keep this list SHORT and specific —
 // every entry is a class of real bug the gate can no longer see.
 //
-// The accounts backend's CORS_ALLOW_ORIGINS does not include localhost (see
-// CLAUDE.md), so useMe()'s GET /v1/me always fails from a smoke run. It fires
-// asynchronously on auth-state-change, so it lands at sign-in on some runs and
-// during the first route on others — which made the whole suite flaky, passing
-// or failing on timing rather than on code.
-const IGNORED_CONSOLE = [
-  /Access to fetch at '[^']*\/v1\/me'.*blocked by CORS/i,
-  /Failed to load resource.*ERR_FAILED/i
-]
+// The accounts backend allows the deployed dashboard origins but not the local
+// static server this script spins up, so useMe()'s GET /v1/me is CORS-blocked
+// from a LOCAL run. It fires asynchronously on auth-state-change, landing at
+// sign-in on some runs and during the first route on others, which made the
+// suite flaky — passing or failing on timing rather than on code.
+//
+// Gated on the base URL, deliberately. Against a deployed origin
+// (SMOKE_BASE=https://app-staging.sfere.io, which deploy-staging.yml uses) that
+// origin IS allowed, so a CORS failure there is a real regression in the
+// backend's CORS_ALLOW_ORIGINS and must not be swallowed.
+const IS_LOCAL = /^https?:\/\/localhost[:/]/.test(BASE)
+const IGNORED_CONSOLE = IS_LOCAL
+  ? [
+      /Access to fetch at '[^']*\/v1\/me'.*blocked by CORS/i,
+      /Failed to load resource.*ERR_FAILED/i
+    ]
+  : []
 const ignored = text => IGNORED_CONSOLE.some(re => re.test(text))
 
 let bucket = []

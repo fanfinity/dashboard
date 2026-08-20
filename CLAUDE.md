@@ -12,6 +12,7 @@ pnpm dev           # quasar dev — HMR dev server, opens browser, runs the /jap
 pnpm build         # quasar build — static SPA into dist/spa
 pnpm lint          # oxfmt (format) then oxlint --fix
 pnpm lint:check    # oxfmt --check then oxlint (CI-style, no writes)
+pnpm release <x>   # bump package.json, commit, tag vX.Y.Z (patch|minor|major|X.Y.Z)
 ```
 
 Linting/formatting is **oxlint + oxfmt**, not ESLint/Prettier. oxfmt style: no semicolons,
@@ -56,6 +57,34 @@ its own `dist/`, so concurrent builds do not race.
 zsh (`zsh -l -c`) because VS Code otherwise runs a non-login shell that never sources
 `.zprofile`, so `nvm`/`pnpm` don't resolve; and its "Dev server" task exists for the user, not
 for you — the rule above still holds.
+
+## Deployment — Firebase Hosting, not GitHub Pages
+
+Full detail in `docs/deployment.md`. The short version, because it changes how you
+think about a merge:
+
+- **Push to `main` deploys**, to <https://app-staging.sfere.io> (Firebase Hosting
+  site `sfere-stg` in `koratona-9791a`), and then runs `scripts/smoke.mjs` against
+  the deployed origin. **A tag `vX.Y.Z` deploys production** to
+  <https://app.sfere.io> (site `sfere-app`), behind a required reviewer.
+  **Every PR gets its own preview channel** and a bot comment with the URL.
+- **Each environment builds its own bundle.** Vite inlines `VITE_API_BASE` at build
+  time, so staging and production are different bytes. Do not collapse the three
+  workflows into a shared build job — that ships the staging API host to production.
+- **Cut releases with `pnpm release patch|minor|major`, never by hand.**
+  `deploy-production.yml` refuses a tag that disagrees with `package.json`.
+- **The CSP gates new API hosts.** Adding a deployed origin means editing
+  `index.html`'s `connect-src` _and_ the backend's `CORS_ALLOW_ORIGINS`. A missing
+  CSP entry fails in the console looking exactly like a CORS error.
+- **`firebase.json` has no catch-all rewrite, deliberately** — the router is hash
+  mode, and a `**` -> `/index.html` rewrite would answer a mistyped `/data/*.json`
+  or a `/japi/*` call with a 200 HTML body instead of an honest 404.
+- Deploy auth is keyless WIF (`gh-deployer-dashboard`); there is no service-account
+  JSON anywhere. The CLI is `npx --yes firebase-tools@15.24.0` — the `firebase` npm
+  dependency in this repo is the **Auth SDK** and ships no binary.
+
+`public/CNAME` and `.github/workflows/deploy-pages.yml` are gone, and `ci.yml` fails
+the build if either reappears.
 
 ## Stack
 

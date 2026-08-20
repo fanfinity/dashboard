@@ -1,0 +1,99 @@
+name: Deploy PR preview
+
+# Pull requests -> a self-expiring preview channel on the STAGING site,
+# https://sfere-stg--pr-<N>-<hash>.web.app. Never touches a live site.
+#
+# That origin is different for every PR and unguessable, so it cannot be listed in
+# the backend's CORS_ALLOW_ORIGINS. The staging backend admits it by pattern
+# instead — CORS_ALLOW_ORIGIN_REGEX in k8s/overlays/staging/patch-env.yaml, anchored
+# to this site id. Production sets no regex at all, by design, so no preview channel
+# can ever reach the production API.
+#
+# This is a separate file from ci.yml on purpose. ci.yml documents that it runs with
+# NO secrets, which is what lets it gate fork PRs; a preview deploy needs
+# id-token: write plus the real VITE_FIREBASE_* values (without them the preview
+# just bounces to /login and is useless). Those requirements contradict, so they
+# live in two files.
+
+on:
+  pull_request:
+
+permissions:
+  contents: read
+  id-token: write
+  pull-requests: write # to comment the preview URL
+
+concurrency:
+  group: firebase-hosting-preview-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  preview:
+    # A fork PR gets neither an id-token nor environment secrets, so this job would
+    # fail confusingly at the auth step. Skip it — ci.yml still gates the code.
+    if: github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    environment:
+      name: preview
+      url: ${{ steps.preview.outputs.url }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Build
+        run: pnpm build
+        env:
+          VITE_API_BASE: ${{ vars.VITE_API_BASE }} # https://api-staging.sfere.io
+          VITE_FIREBASE_API_KEY: ${{ secrets.VITE_FIREBASE_API_KEY }}
+          VITE_FIREBASE_AUTH_DOMAIN: ${{ vars.VITE_FIREBASE_AUTH_DOMAIN }}
+          VITE_FIREBASE_DEFAULT_TENANT_ID: ${{ vars.VITE_FIREBASE_DEFAULT_TENANT_ID }}
+          VITE_JITSU_HOST: ${{ vars.VITE_JITSU_HOST }}
+          VITE_JITSU_WRITE_KEY: ${{ secrets.VITE_JITSU_WRITE_KEY }}
+          VITE_EVENTS_WORKSPACE_ID: ${{ vars.VITE_EVENTS_WORKSPACE_ID }}
+          VITE_EVENTS_ACTOR_ID: ${{ vars.VITE_EVENTS_ACTOR_ID }}
+          VITE_APP_VERSION: pr-${{ github.event.pull_request.number }}
+          VITE_GIT_SHA: ${{ github.event.pull_request.head.sha }}
+
+      - name: Authenticate to Google Cloud (WIF, keyless)
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ vars.WIF_PROVIDER }}
+          service_account: ${{ vars.DEPLOY_SA }}
+
+      - name: Deploy preview channel
+        id: preview
+        # `--only` here takes a BARE site id — the `hosting:<site>` form is only for
+        # `deploy`. Omitting it opens a channel on EVERY site in firebase.json,
+        # production included.
+        run: |
+          npx --yes firebase-tools@15.24.0 hosting:channel:deploy \
+            "pr-${{ github.event.pull_request.number }}" \
+            --only "${{ vars.FIREBASE_SITE_STAGING }}" \
+            --project "${{ vars.GCP_PROJECT_ID }}" \
+            --expires 7d \
+            --non-interactive \
+            --json > channel.json
+          # The --json result is keyed by SITE id. (marketing/website reads
+          # result[<project>] only because its site name equals the project id.)
+          url=$(node -p "JSON.parse(require('fs').readFileSync('channel.json','utf8')).result['${{ vars.FIREBASE_SITE_STAGING }}'].url")
+          echo "url=$url" >> "$GITHUB_OUTPUT"
+          echo "Preview URL: $url"
+
+      - name: Comment the preview URL on the PR
+        if: steps.preview.outputs.url != ''
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh pr comment "${{ github.event.pull_request.number }}" \
+            --repo "${{ github.repository }}" \
+            --body "🚀 **Preview deployed** — ${{ steps.preview.outputs.url }} (expires in 7 days, points at \`${{ vars.VITE_API_BASE }}\`)"

@@ -34,7 +34,8 @@ Create the key in the console under **Settings → API Keys** (format `keyId:sec
 
 > Note: this proxy only runs in development (`pnpm dev`). A static production build
 > has no proxy, so the real events API requires an equivalent reverse proxy in front
-> of it.
+> of it — which means `/live-events` does not work on app.sfere.io or
+> app-staging.sfere.io. See `docs/deployment.md`.
 
 ### Build the app for production
 
