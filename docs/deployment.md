@@ -46,6 +46,34 @@ Federation mints a short-lived token for `gh-deployer-dashboard`:
 One pool per repo is the house convention — `fanfinity/website` and
 `fanfinity/sfere-demo-store` have their own.
 
+## Production is deliberately not live yet (2026-08-20)
+
+`app.sfere.io` exists as a Hosting site with an attached domain and a valid
+certificate, and it has **zero releases**. That is on purpose, not an unfinished
+step.
+
+The blocker is the backend, not the dashboard: `../../backend/k8s/overlays/production/`
+has never been applied and still carries three `REPLACE_` placeholders. Production
+needs a database, and the two available options were both judged wrong for now — a
+Cloud SQL instance would add recurring spend to a billing account nobody at Sfere
+can currently administer, and the in-cluster Postgres that staging borrows is a
+single unbacked pod in a cluster that scales to zero overnight.
+
+So `deploy-production.yml` **preflights `${VITE_API_BASE}/healthz` and hard-fails**
+if it does not answer. Running `pnpm release` today will tag correctly, pause for
+review, and then stop at that check with a message naming the overlay. That is the
+intended behaviour — it is much better than shipping a dashboard that renders fine
+and whose every screen is silently empty.
+
+To bring production up, in order: settle the database, fill the overlay, create the
+`fanfinity-api-prod` namespace and its `backend-secrets`, tag the backend `vX.Y.Z`,
+confirm `https://api.sfere.io/healthz` answers, then `pnpm release` here.
+
+**Do not "unblock" this by pointing production's `VITE_API_BASE` at
+`api-staging.sfere.io`.** A public production dashboard silently reading and writing
+the staging database is the worst of the available outcomes, and it would not be
+noticed for months.
+
 ## Releasing
 
 ```bash
