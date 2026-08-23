@@ -495,8 +495,16 @@ function statusTagClass(status) {
   }
 }
 
-onMounted(() => {
-  loadSites()
-  refresh()
+onMounted(async () => {
+  // Load the account workspace's streams first, then read events for one of
+  // them. The seed `actorId` (DEFAULT_ACTOR_ID) belongs to the shared fallback
+  // workspace and won't exist in an account's own, so switch to a real stream
+  // when the list has one. Changing `actorId` triggers the debounced watcher,
+  // which does the events load; only load directly when it stays put.
+  await loadSites()
+  if (!sites.value.length) return
+  const ids = sites.value.map(s => s.id)
+  if (ids.includes(actorId.value)) refresh()
+  else actorId.value = sites.value[0].id
 })
 </script>

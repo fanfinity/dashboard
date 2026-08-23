@@ -178,9 +178,9 @@
         </button>
       </div>
 
-      <p class="text-xs text-subtle"
-        >No backend is connected to this screen yet — creating a destination
-        updates this session only and is gone on reload.</p
+      <p v-if="!isReal" class="text-xs text-subtle"
+        >Local preview — switch Settings → Data source to “real” to provision a
+        ClickHouse destination on the backend.</p
       >
     </form>
   </q-page>
@@ -203,10 +203,15 @@ import {
   useDestinationTemplates,
   useDestinationToasts
 } from '@/composables/useDestinations'
+import { slugify } from '@/composables/useSources'
+import { useDestinationsAPI } from '@/composables/useDestinationsAPI'
+import { useDataSource } from '@/composables/useDataSource'
 
 const router = useRouter()
 const { templates, loading, error, load } = useDestinationTemplates()
 const { toast } = useDestinationToasts()
+const { isReal } = useDataSource()
+const { create: createDestinationReal } = useDestinationsAPI()
 
 const query = ref('')
 const selected = ref(null)
@@ -295,11 +300,33 @@ function validate() {
   )
 }
 
-function submit() {
+async function submit() {
   if (!validate()) return
   saving.value = true
-  // No backend to await, and writing back to public/data would be a lie in a
-  // file other packets read — so the toast says what actually happened.
+
+  // Real mode: the backend provisions the ClickHouse database + credentials, so
+  // name + slug + type are enough. The template's params/secrets are a mock
+  // concept and aren't sent.
+  if (isReal.value) {
+    try {
+      const name = form.value.name.trim()
+      const created = await createDestinationReal({
+        name,
+        slug: slugify(name),
+        destinationType: selected.value?.destinationType || 'clickhouse'
+      })
+      toast(`“${name}” created`)
+      router.push({ name: 'destinations-detail', params: { id: created.id } })
+    } catch (e) {
+      toast(`Couldn't create destination: ${e.message || 'request failed'}`)
+    } finally {
+      saving.value = false
+    }
+    return
+  }
+
+  // Mock mode: writing back to public/data would be a lie in a file other
+  // packets read — so the toast says what actually happened.
   toast(
     `“${form.value.name}” created from ${selected.value.name} — demo data, nothing was saved.`
   )

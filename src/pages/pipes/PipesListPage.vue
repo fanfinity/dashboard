@@ -42,6 +42,7 @@
       :rows="filteredPipes"
       :loading="loading"
       :error="error"
+      :api-missing="apiMissing"
       row-key="id"
       clickable-rows
       @retry="load"
@@ -192,6 +193,7 @@ const {
   pipes,
   loading: pipesLoading,
   error: pipesError,
+  apiMissing,
   load: loadPipes,
   enabledCount,
   transformCount,

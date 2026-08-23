@@ -1,4 +1,6 @@
 import { useMockResource } from '@/composables/useMockResource'
+import { currentAccount } from '@/composables/useMe'
+import { pageItems } from '@/lib/apiShape'
 
 /**
  * Sources = configured event streams and cloud apps that feed the fan graph.
@@ -124,7 +126,14 @@ export function useSources() {
     error,
     apiMissing,
     load
-  } = useMockResource('sources', { api: { path: '/v1/sources' } })
+  } = useMockResource('sources', {
+    api: {
+      path: () =>
+        currentAccount.value &&
+        `/v1/accounts/${currentAccount.value.id}/sources`,
+      select: pageItems
+    }
+  })
 
   function findById(id) {
     return sources.value.find(s => s.id === id) ?? null
@@ -196,7 +205,7 @@ export function useSourceTemplates() {
     loading,
     error,
     load
-  } = useMockResource('source-templates')
+  } = useMockResource('source-templates', { mockOnly: true })
 
   function findById(id) {
     return templates.value.find(t => t.id === id) ?? null

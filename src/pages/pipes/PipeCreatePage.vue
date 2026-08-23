@@ -235,25 +235,33 @@ import FormSection from '@/components/ui/FormSection.vue'
 import LoadingState from '@/components/ui/LoadingState.vue'
 import StatusBadge from '@/components/ui/StatusBadge.vue'
 import PipeFlow from '@/components/pipes/PipeFlow.vue'
-import { useMockResource } from '@/composables/useMockResource'
 import { makePipeId, usePipes } from '@/composables/usePipes'
+import { useSources } from '@/composables/useSources'
+import { useDestinations } from '@/composables/useDestinations'
+import { usePipelinesAPI } from '@/composables/usePipelinesAPI'
+import { useDataSource } from '@/composables/useDataSource'
 
 const router = useRouter()
 const $q = useQuasar()
 
+// The wired composables, so the source/destination pickers show real records
+// in real mode (and mock JSON otherwise) — a pipe must join two real ends.
 const {
-  data: sources,
+  sources,
   loading: sourcesLoading,
   error: sourcesError,
   load: loadSources
-} = useMockResource('sources')
+} = useSources()
 
 const {
-  data: destinations,
+  destinations,
   loading: destinationsLoading,
   error: destinationsError,
   load: loadDestinations
-} = useMockResource('destinations')
+} = useDestinations()
+
+const { isReal } = useDataSource()
+const { create: createPipelineReal } = usePipelinesAPI()
 
 // Loaded for one reason only: to refuse a duplicate route before the user
 // submits one.
@@ -395,6 +403,35 @@ async function submit() {
 
   const source = selectedSource.value
   const destination = selectedDestination.value
+
+  // Real mode: create the pipeline (the Jitsu link) on the backend and open it.
+  if (isReal.value) {
+    try {
+      const created = await createPipelineReal({
+        name: form.name.trim(),
+        sourceId: source.id,
+        destinationId: destination.id
+      })
+      $q.notify({
+        message: `“${form.name.trim()}” created`,
+        color: 'positive',
+        position: 'bottom',
+        timeout: 2500
+      })
+      router.push({ name: 'pipes-detail', params: { id: created.id } })
+    } catch (e) {
+      $q.notify({
+        message: `Couldn't create pipe: ${e.message || 'request failed'}`,
+        color: 'negative',
+        position: 'bottom',
+        timeout: 4000
+      })
+    } finally {
+      saving.value = false
+    }
+    return
+  }
+
   const now = new Date().toISOString()
 
   const pipe = {

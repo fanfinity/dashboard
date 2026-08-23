@@ -1,5 +1,7 @@
 import { computed } from 'vue'
 import { useMockResource } from '@/composables/useMockResource'
+import { currentAccount } from '@/composables/useMe'
+import { pageItems } from '@/lib/apiShape'
 
 /**
  * The pipe collection — `public/data/pipes.json` — plus the derived counters and
@@ -34,7 +36,27 @@ import { useMockResource } from '@/composables/useMockResource'
  * onMounted(load)
  */
 export function usePipes() {
-  const { data: pipes, loading, error, load } = useMockResource('pipes')
+  const {
+    data: pipes,
+    loading,
+    error,
+    apiMissing,
+    load
+  } = useMockResource('pipes', {
+    api: {
+      path: () =>
+        currentAccount.value &&
+        `/v1/accounts/${currentAccount.value.id}/pipelines`,
+      // The backend calls the field `destination_id`; every Pipes screen reads
+      // `eventDestinationId` (a pipe delivers to an *event* destination). Alias
+      // it here so a live pipe still resolves its destination link.
+      select: payload =>
+        pageItems(payload).map(p => ({
+          ...p,
+          eventDestinationId: p.destinationId
+        }))
+    }
+  })
 
   const enabledCount = computed(
     () => pipes.value.filter(p => p.isEnabled).length
@@ -84,6 +106,7 @@ export function usePipes() {
     pipes,
     loading,
     error,
+    apiMissing,
     load,
     enabledCount,
     transformCount,

@@ -2,7 +2,6 @@ import { ref } from 'vue'
 import { Notify } from 'quasar'
 import {
   createUserWithEmailAndPassword,
-  sendEmailVerification,
   signInWithEmailAndPassword,
   signOut,
   onAuthStateChanged
@@ -80,22 +79,14 @@ async function run(fn) {
 export function useAuth() {
   ensureListener()
 
+  // v0.1: email + password only, no verification step. Firebase signs the user
+  // in on creation, so onAuthStateChanged fires and the backend JIT-provisions
+  // their account + Jitsu workspace on the first getMe. That provisioning skips
+  // the email-verified check only when the backend runs with ENV in
+  // {local,test,dev,ci} — so unverified sign-up works locally but a deployed
+  // backend on another ENV would still reject it until verification returns.
   const signUp = (email, password) =>
-    run(async () => {
-      const cred = await createUserWithEmailAndPassword(auth, email, password)
-      // The backend API rejects unverified emails (its JIT user provisioning
-      // trusts the email claim), so kick off verification immediately.
-      // Best-effort: a failed send shouldn't fail the whole sign-up.
-      try {
-        await sendEmailVerification(cred.user)
-        Notify.create({
-          type: 'info',
-          message: `Verification email sent to ${email}.`
-        })
-      } catch {
-        /* user can be re-sent one later */
-      }
-    })
+    run(() => createUserWithEmailAndPassword(auth, email, password))
 
   const signIn = (email, password) =>
     run(() => signInWithEmailAndPassword(auth, email, password))

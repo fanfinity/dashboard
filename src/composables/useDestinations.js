@@ -1,5 +1,7 @@
 import { useQuasar } from 'quasar'
 import { useMockResource } from '@/composables/useMockResource'
+import { currentAccount } from '@/composables/useMe'
+import { pageItems } from '@/lib/apiShape'
 
 /**
  * Destinations domain data access.
@@ -25,8 +27,18 @@ import { useMockResource } from '@/composables/useMockResource'
  * onMounted(load)
  */
 export function useDestinations() {
-  const { data, loading, error, load } = useMockResource('destinations')
-  return { destinations: data, loading, error, load }
+  const { data, loading, error, apiMissing, load } = useMockResource(
+    'destinations',
+    {
+      api: {
+        path: () =>
+          currentAccount.value &&
+          `/v1/accounts/${currentAccount.value.id}/destinations`,
+        select: pageItems
+      }
+    }
+  )
+  return { destinations: data, loading, error, apiMissing, load }
 }
 
 /**
@@ -36,7 +48,8 @@ export function useDestinations() {
  */
 export function useDestinationTemplates() {
   const { data, loading, error, load } = useMockResource(
-    'destination-templates'
+    'destination-templates',
+    { mockOnly: true }
   )
   return { templates: data, loading, error, load }
 }
