@@ -1,54 +1,30 @@
-import { ref } from 'vue'
-
-// Base URL of the backend that serves the public connector catalog.
-// The /api/sources endpoint is public (auth: false, CORS open) — no key needed to browse.
-// Configurable for later (self-hosted / staging); keep in sync with the CSP host in index.html.
-const BASE = (
-  import.meta.env.VITE_EVENTS_BASE || 'https://console.fanfinity.io'
-).replace(/\/$/, '')
+import { useMockResource } from '@/composables/useMockResource'
 
 /**
- * Per-connector logo. mode=meta omits logos, so each card points at this SVG endpoint,
- * which returns image/svg+xml (with its own built-in fallback icon).
- */
-export function logoUrl(item) {
-  const type = encodeURIComponent(item.packageType)
-  const pkg = encodeURIComponent(item.packageId)
-  return `${BASE}/api/sources/logo?type=${type}&package=${pkg}`
-}
-
-/**
- * Fetches the connector catalog from {BASE}/api/sources?mode=meta.
- * Returns reactive { connectors, loading, error } and a load() action.
+ * The browsable catalog of connector *types* — what could be connected — behind
+ * `/sources?tab=connectors`.
  *
- * This is the browse-only catalog of connector *types* the upstream events
- * backend supports — not the event streams configured for this account. Those
- * live under /sources and are a different concept entirely.
+ * NOT the sources at `/sources` (that is `useSources`, the streams already
+ * configured for this account) and not `useSourceTemplates()` either, which
+ * backs the create screen's picker with workspace-shaped defaults.
+ *
+ * This used to fetch a third-party vendor's public catalog endpoint directly,
+ * including per-connector logo images from that host — which is why the CSP
+ * had to whitelist it under both `connect-src` and `img-src`. It now reads
+ * `GET /v1/connectors` like every other screen: the dashboard talks to the
+ * Sfere backend and to nothing else, and the backend owns whichever upstream
+ * catalog it aggregates.
  */
 export function useConnectorCatalog() {
-  const connectors = ref([])
-  const loading = ref(false)
-  const error = ref(null)
+  const {
+    data: connectors,
+    loading,
+    error,
+    apiMissing,
+    load
+  } = useMockResource('connectors', {
+    api: { path: '/v1/connectors', select: payload => payload.items }
+  })
 
-  async function load() {
-    loading.value = true
-    error.value = null
-    try {
-      const res = await fetch(`${BASE}/api/sources?mode=meta`, {
-        headers: { Accept: 'application/json' }
-      })
-      if (!res.ok) {
-        throw new Error(`Catalog request failed (${res.status})`)
-      }
-      const data = await res.json()
-      connectors.value = Array.isArray(data?.sources) ? data.sources : []
-    } catch (e) {
-      error.value = e instanceof Error ? e.message : String(e)
-      connectors.value = []
-    } finally {
-      loading.value = false
-    }
-  }
-
-  return { connectors, loading, error, load }
+  return { connectors, loading, error, apiMissing, load }
 }

@@ -38,6 +38,15 @@ backend and populate the signed-in user's accounts/role on login, so future scre
 be built on top. We are **not** wiring existing composables (`useLiveEvents`, `useJitsu`,
 `useConnectorCatalog`) to the new backend — those keep hitting `console.fanfinity.io`.
 
+> **Superseded, 2026-08-25.** This document is the record of a change that shipped; the
+> two paragraphs above describe the world as it was when it was written. Since then the
+> dashboard has been cut over to the backend completely: `useLiveEvents` reads
+> `GET /v1/events`, `useConnectorCatalog` reads `GET /v1/connectors`, `useJitsu` and the
+> `/japi` dev proxy were deleted outright, and `console.fanfinity.io` is no longer in the
+> CSP at all. **The dashboard now connects to the Fanfinity backend and to nothing else.**
+> See "Data architecture" in `CLAUDE.md` for the current picture; read what follows as
+> history, not as instructions.
+
 ## Backend prerequisite — CORS ✅ DONE
 
 The dashboard runs on a different origin than the API (e.g. `localhost:9000` → the
@@ -148,17 +157,21 @@ memberships.value = data.memberships` (each item is `{ account, role }`).
   `api*.fanfinity.io` aliases while they live)
 - dev only (inside the existing `<% if (ctx.dev) { %>` block): `http://localhost:8080`
 
-Current `connect-src`:
+`connect-src` at the time of this change:
 
 ```
 connect-src 'self' https://console.fanfinity.io https://identitytoolkit.googleapis.com https://securetoken.googleapis.com<% if (ctx.dev) { %> ws://localhost:*<% } %>
 ```
 
-Becomes (API origins added):
+Became (API origins added):
 
 ```
 connect-src 'self' https://console.fanfinity.io https://api.sfere.io https://api-staging.sfere.io https://api.fanfinity.io https://api-staging.fanfinity.io https://identitytoolkit.googleapis.com https://securetoken.googleapis.com<% if (ctx.dev) { %> ws://localhost:* http://localhost:8080<% } %>
 ```
+
+Both are now out of date — `console.fanfinity.io` was removed from `connect-src` and
+`img-src` when the events cutover landed. `index.html` is the source of truth; see the
+CSP section in `CLAUDE.md`.
 
 ## Explicitly out of scope (future work)
 
@@ -167,7 +180,8 @@ connect-src 'self' https://console.fanfinity.io https://api.sfere.io https://api
   "active account" store, and thread `account_id` into `apiGet`/`apiPost` calls.
 - **Staff support console.** The staff impersonation flow (`X-Support-Token`) is a
   separate internal tool, not part of this customer dashboard.
-- Migrating existing `console.fanfinity.io` composables to the new backend.
+- ~~Migrating existing `console.fanfinity.io` composables to the new backend.~~ Done
+  on 2026-08-25 — see the superseded note at the top.
 
 ## Verification (manual — the dashboard has no unit tests)
 

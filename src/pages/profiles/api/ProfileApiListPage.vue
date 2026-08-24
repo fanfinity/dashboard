@@ -317,7 +317,6 @@ function notifyLocal(message) {
     message,
     caption: 'Local preview only — no backend is connected yet.',
     color: 'dark',
-    position: 'bottom',
     timeout: 2500
   })
 }
@@ -355,7 +354,7 @@ async function copyValue({ label, value }) {
   } catch {
     message = `Couldn't copy the ${label.toLowerCase()} — select it and copy by hand.`
   }
-  $q.notify({ message, color: 'dark', position: 'bottom', timeout: 2500 })
+  $q.notify({ message, color: 'dark', timeout: 2500 })
 }
 
 onMounted(() => {

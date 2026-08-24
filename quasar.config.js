@@ -4,10 +4,12 @@
 import { defineConfig } from '#q-app'
 import { existsSync } from 'node:fs'
 
-// The build tooling loads .env for client code only — it does NOT populate
-// process.env, which the devServer proxy below reads for the EVENTS_API_KEY (kept
-// server-side). Load it here so the dev server works from .env without exporting
-// the var in the shell.
+// Load .env into process.env at config time. Despite what the comment here used
+// to claim, this is NOT only for server-side secrets: the build reads the
+// client-exposed VITE_* vars off process.env too, so without this the Firebase
+// values come through empty and every build fails at sign-in with
+// `auth/invalid-api-key`. It survived the removal of the /japi dev proxy (the
+// server-side EVENTS_API_KEY it was originally added for) for that reason.
 if (existsSync('.env')) {
   process.loadEnvFile('.env')
 }
@@ -73,40 +75,29 @@ export default defineConfig((/* ctx */) => {
     },
 
     // https://v2.quasar.dev/quasar-cli-vite/quasar-config-file#devserver
+    // There is deliberately no `proxy` here. This used to forward /japi/* to a
+    // third-party events console with a server-side API key attached, because
+    // that host needed auth and was not CORS-enabled. The dashboard now talks
+    // to the Sfere backend and to nothing else, so there is nothing left to
+    // proxy — and nothing that works in `pnpm dev` but not in a production
+    // build, which is what the proxy's absence in `dist/spa` used to cost.
     devServer: {
       // https: true,
-      open: true, // opens browser window automatically
-
-      // Same-origin proxy to the events backend (console.fanfinity.io). The Live
-      // Events page calls /japi/... (same origin → no CORS), and this proxy forwards
-      // to https://console.fanfinity.io/api/... while injecting an API key as a
-      // Bearer token. The key (format `keyId:secret`, created in the console under
-      // Settings → API Keys) is read from the EVENTS_API_KEY env var at config time
-      // (Node side) so it never ends up in the client bundle. The events endpoint
-      // requires auth + is not CORS-enabled, so this proxy is the only way to reach
-      // it from the browser in development.
-      proxy: {
-        '/japi': {
-          target: 'https://console.fanfinity.io',
-          changeOrigin: true,
-          rewrite: path => path.replace(/^\/japi/, '/api'),
-          configure: proxy => {
-            proxy.on('proxyReq', proxyReq => {
-              if (process.env.EVENTS_API_KEY) {
-                proxyReq.setHeader(
-                  'authorization',
-                  `Bearer ${process.env.EVENTS_API_KEY}`
-                )
-              }
-            })
-          }
-        }
-      }
+      open: true // opens browser window automatically
     },
 
     // https://v2.quasar.dev/quasar-cli-vite/quasar-config-file#framework
     framework: {
-      config: {},
+      // Every $q.notify() call in the app used to set position: 'bottom'
+      // itself; that's been stripped from all of them so this default
+      // (top-right, stacked, Sfere-styled via sfere-toast in sfere.css)
+      // takes over everywhere without touching every call site again.
+      config: {
+        notify: {
+          position: 'top-right',
+          classes: 'sfere-toast'
+        }
+      },
 
       // iconSet: 'material-icons', // Quasar icon set
       // lang: 'en-US', // Quasar language pack

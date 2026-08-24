@@ -24,12 +24,13 @@ bytes — there is no "build once, deploy twice" artifact to share, and folding 
 three workflows into one build job would ship the staging API host to production.
 
 `VITE_API_BASE` is the **only** value that differs between environments; it lives as
-an Environment variable. Everything else (`VITE_FIREBASE_*`, `VITE_JITSU_*`,
-`VITE_EVENTS_*`) is identical everywhere and lives at repository level — there is one
-Identity Platform tenant and one Jitsu workspace.
+an Environment variable. Everything else (`VITE_FIREBASE_*`) is identical everywhere
+and lives at repository level — there is one Identity Platform tenant.
 
-`EVENTS_API_KEY` is deliberately **not** in CI. It is read server-side by
-`quasar.config.js` for the `/japi` dev proxy and belongs in a local `.env` only.
+There are no event-collector credentials in CI, and none in `.env` either. The
+dashboard reads events from the backend (`GET /v1/events`) like every other screen,
+so there is no ingest host, no write key, and no server-side key for a dev proxy to
+inject.
 
 ## Auth is keyless
 
@@ -125,8 +126,12 @@ npx --yes firebase-tools@15.24.0 hosting:clone sfere-stg:<versionId> sfere-stg:l
 
 ## What the deployed build cannot do
 
-There is no `/japi` proxy outside `pnpm dev`, so the Jitsu console read path
-(`/live-events`) does not work on any deployed host. It never did on GitHub Pages
-either. That is also why `firebase.json` has **no** catch-all rewrite to
-`index.html`: a rewrite would answer `/japi/*` with a 200 HTML body and turn a loud
-404 into a silent parse failure. Fixing it needs a real reverse proxy.
+Nothing, as far as data goes: every screen reads the same `VITE_API_BASE` host in a
+deployed build as it does in `pnpm dev`, and there is no dev-only proxy any more.
+`/live-events` used to be the exception — it read a third-party console through a
+`/japi` proxy that only existed in `pnpm dev` — and is not any more.
+
+`firebase.json` still has **no** catch-all rewrite to `index.html`, for the reason it
+always did: the router is in hash mode, so a rewrite buys nothing and would answer a
+mistyped `/data/*.json` with a 200 HTML body, turning a loud 404 into a silent parse
+failure.

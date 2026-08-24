@@ -83,10 +83,6 @@ const SKIPPED_PATHS = [
    -------------------------------------------------------------------------- */
 const PRESERVED_SPANS = [
   {
-    span: 'console.fanfinity.io',
-    why: 'live Jitsu events backend — the dev proxy target and a CSP host'
-  },
-  {
     span: 'api-staging.fanfinity.io',
     why: 'still an ingress alias for api-staging.sfere.io — CSP host'
   },
@@ -97,10 +93,6 @@ const PRESERVED_SPANS = [
   {
     span: 'fanfinity/merio',
     why: 'path of an existing capture harness in another repo'
-  },
-  {
-    span: 'fanfinity_jitsu_consent',
-    why: 'localStorage key holding an existing consent decision; renaming it re-prompts every user'
   },
   {
     span: 'fanfinity-api.json',

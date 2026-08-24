@@ -115,7 +115,10 @@ export function useDashboardHome() {
     loading: dashboardLoading,
     error: dashboardError,
     load: loadDashboard
-  } = useMockResource('dashboard', { initial: {} })
+  } = useMockResource('dashboard', {
+    initial: {},
+    api: { path: '/v1/dashboard' }
+  })
 
   const {
     nodes,
@@ -129,7 +132,10 @@ export function useDashboardHome() {
     loading: errorsLoading,
     error: errorsError,
     load: loadErrors
-  } = useMockResource('error-logs', { select: payload => payload.errors })
+  } = useMockResource('error-logs', {
+    select: payload => payload.errors,
+    api: { path: '/v1/errors', select: payload => payload.items }
+  })
 
   const loading = computed(
     () => dashboardLoading.value || diagramLoading.value || errorsLoading.value

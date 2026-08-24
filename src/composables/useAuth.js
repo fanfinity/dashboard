@@ -10,7 +10,7 @@ import { auth } from '@/firebase'
 import { loadMe, clearMe } from '@/composables/useMe'
 
 // Module-scoped singletons so every useAuth() call shares one reactive view
-// of the signed-in user, mirroring the pattern in useJitsu.js.
+// of the signed-in user, mirroring the pattern in useFeatures.js.
 export const user = ref(null)
 const loading = ref(false)
 const error = ref(null)

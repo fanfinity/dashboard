@@ -159,7 +159,6 @@ export function useMonitoringToasts() {
       message,
       caption: 'Local preview only — no backend is connected yet.',
       color: 'dark',
-      position: 'bottom',
       timeout: 2500
     })
   }

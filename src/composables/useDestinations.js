@@ -1,7 +1,7 @@
 import { useQuasar } from 'quasar'
-import { useMockResource } from '@/composables/useMockResource'
+import { useMockResource, sendMutation } from '@/composables/useMockResource'
 import { currentAccount } from '@/composables/useMe'
-import { pageItems } from '@/lib/apiShape'
+import { pageItems, camelizeKeys } from '@/lib/apiShape'
 
 /**
  * Destinations domain data access.
@@ -12,18 +12,32 @@ import { pageItems } from '@/lib/apiShape'
  * `{ data, loading, error, load() }` contract and the shared formatting live in
  * one place rather than being re-derived per page.
  *
- * There is no backend behind any of this. Enable/disable, create, restore and
- * delete mutate the loaded array in place and raise a toast; nothing persists,
- * and a reload puts the mock JSON back. The copy on screen says so.
+ * `setEnabled`/`remove` send their write via `sendMutation()` — a local-only
+ * no-op in "Demo data" mode, `PATCH`/`DELETE
+ * /v1/accounts/{account}/destinations/{id}` in real mode — and only apply the
+ * local mutation once it comes back `ok`; see `notifyMutationResult()` in
+ * `useMutationFeedback.js`. Creating a destination is NOT here: it goes
+ * through `useDestinationsAPI().create()`, because the backend provisions a
+ * per-account ClickHouse database as part of that call. Trash restore/purge
+ * has no read wired yet, so `useDestinationsTrash()` stays local-only.
  */
 
 /**
- * All destinations, newest field set as authored in `public/data/destinations.json`.
+ * All destinations, newest field set as authored in `public/data/destinations.json`,
+ * plus the mutations the four Destinations screens perform.
  *
- * @returns {{ destinations: import('vue').Ref<object[]>, loading: import('vue').Ref<boolean>, error: import('vue').Ref<string|null>, load: () => Promise<void> }}
+ * @returns {{
+ *   destinations: import('vue').Ref<object[]>,
+ *   loading: import('vue').Ref<boolean>,
+ *   error: import('vue').Ref<string|null>,
+ *   apiMissing: import('vue').Ref<boolean>,
+ *   load: () => Promise<void>,
+ *   setEnabled: (id: string, isEnabled: boolean) => Promise<object>,
+ *   remove: (id: string) => Promise<object>
+ * }}
  *
  * @example
- * const { destinations, loading, error, load } = useDestinations()
+ * const { destinations, loading, error, apiMissing, load } = useDestinations()
  * onMounted(load)
  */
 export function useDestinations() {
@@ -38,7 +52,53 @@ export function useDestinations() {
       }
     }
   )
-  return { destinations: data, loading, error, apiMissing, load }
+
+  // The acting account's path for one destination; null before GET /v1/me
+  // settles, which sendMutation reports as apiMissing rather than calling
+  // `/v1/accounts//destinations/…`.
+  function destinationPath(id) {
+    return () =>
+      currentAccount.value &&
+      `/v1/accounts/${currentAccount.value.id}/destinations/${id}`
+  }
+
+  async function setEnabled(id, isEnabled) {
+    const res = await sendMutation({
+      method: 'PATCH',
+      path: destinationPath(id),
+      // DestinationUpdate is snake_case, and so is the record that comes back.
+      body: { is_enabled: isEnabled }
+    })
+    if (!res.ok) return res
+    data.value = data.value.map(d =>
+      d.id === id
+        ? res.skipped
+          ? { ...d, isEnabled }
+          : { ...d, ...camelizeKeys(res.data) }
+        : d
+    )
+    return res
+  }
+
+  async function remove(id) {
+    const res = await sendMutation({
+      method: 'DELETE',
+      path: destinationPath(id)
+    })
+    if (!res.ok) return res
+    data.value = data.value.filter(d => d.id !== id)
+    return res
+  }
+
+  return {
+    destinations: data,
+    loading,
+    error,
+    apiMissing,
+    load,
+    setEnabled,
+    remove
+  }
 }
 
 /**
@@ -91,7 +151,7 @@ export function useDestinationsTrash() {
 export function useDestinationToasts() {
   const $q = useQuasar()
   function toast(message) {
-    $q.notify({ message, color: 'dark', position: 'bottom', timeout: 2000 })
+    $q.notify({ message, color: 'dark', timeout: 2000 })
   }
   return { toast }
 }

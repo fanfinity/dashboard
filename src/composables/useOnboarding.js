@@ -5,13 +5,13 @@ import { user } from '@/composables/useAuth'
 // What we know about the person using the dashboard, and how far through
 // onboarding they are.
 //
-// Module-level state, the same pattern as useAuth/useJitsu/useFeatures and for
+// Module-level state, the same pattern as useAuth/useFeatures and for
 // the same reason: the question overlay in MainLayout and the "Your role" control
 // in Settings are two components that must read and write one object, so a toggle
 // in either is true in the other in the same tick without a bus or a refetch.
 //
 // There is no backend to store this in (see CLAUDE.md, "Data architecture"), so
-// it is localStorage — the precedent set by useSegments.js and the Jitsu consent
+// it is localStorage — the precedent set by the feature-activation overrides
 // key. One key holds the whole record.
 const STORAGE_KEY = 'sfere_onboarding'
 

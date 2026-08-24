@@ -98,6 +98,37 @@ const context = await browser.newContext({
 })
 const page = await context.newPage()
 
+const IS_LOCAL = /^https?:\/\/localhost[:/]/.test(BASE)
+
+// Which data source the walk runs against. The app defaults to 'real'
+// (useDataSource.js), and that is the right default for a run against a
+// DEPLOYED origin: the backend allows it, the wired domains return real rows,
+// and an unwired one renders "No API yet" — a true picture of the deployed app.
+//
+// Locally it is the wrong one, for two independent reasons. The backend's
+// CORS_ALLOW_ORIGINS does not include this script's static server, so every
+// live read is blocked before it leaves the browser — and a blocked read logs a
+// console error, which this gate fails on. And even if it were reachable, only
+// Sources/Destinations/Pipes have endpoints today, so ~45 of the 54 screens
+// would render "No API yet" and the gate would stop exercising the screens it
+// exists to check. Mock mode is the only mode where all 54 have data.
+//
+// Same IS_LOCAL split as IGNORED_CONSOLE below, and preferred over adding
+// /v1/dashboard and /v1/errors to that list: an ignore entry is permanent
+// blindness to a class of error, this just picks a mode a user could pick too.
+// Override with SMOKE_DATA_SOURCE=real to reproduce a real-mode failure
+// locally (expect CORS noise), or =mock against a deployed origin.
+const DATA_SOURCE =
+  process.env.SMOKE_DATA_SOURCE || (IS_LOCAL ? 'mock' : 'real')
+await context.addInitScript(mode => {
+  try {
+    localStorage.setItem('sfere_data_source_mode', mode)
+  } catch {
+    // Private mode / storage disabled — useDataSource falls back to its own
+    // default, which is the pre-existing behaviour, not a new failure.
+  }
+}, DATA_SOURCE)
+
 // Environmental noise, not page defects. Keep this list SHORT and specific —
 // every entry is a class of real bug the gate can no longer see.
 //
@@ -111,7 +142,6 @@ const page = await context.newPage()
 // (SMOKE_BASE=https://app-staging.sfere.io, which deploy-staging.yml uses) that
 // origin IS allowed, so a CORS failure there is a real regression in the
 // backend's CORS_ALLOW_ORIGINS and must not be swallowed.
-const IS_LOCAL = /^https?:\/\/localhost[:/]/.test(BASE)
 const IGNORED_CONSOLE = IS_LOCAL
   ? [
       /Access to fetch at '[^']*\/v1\/me'.*blocked by CORS/i,

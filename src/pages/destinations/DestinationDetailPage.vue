@@ -203,6 +203,7 @@
 <script setup>
 import { computed, onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import { useQuasar } from 'quasar'
 import PageHeader from '@/components/ui/PageHeader.vue'
 import CardPanel from '@/components/ui/CardPanel.vue'
 import DataTable from '@/components/ui/DataTable.vue'
@@ -223,9 +224,11 @@ import {
   useDestinationPipes,
   useDestinationToasts
 } from '@/composables/useDestinations'
+import { notifyMutationResult } from '@/composables/useMutationFeedback'
 
 const route = useRoute()
 const router = useRouter()
+const $q = useQuasar()
 const { hasUpgrade, upgradeLabel } = useTemplates()
 const { toast } = useDestinationToasts()
 
@@ -233,7 +236,9 @@ const {
   destinations,
   loading,
   error,
-  load: loadDestinations
+  load: loadDestinations,
+  setEnabled,
+  remove: removeDestination
 } = useDestinations()
 const {
   pipes,
@@ -302,12 +307,14 @@ function load() {
   loadPipes()
 }
 
-function toggle() {
+async function toggle() {
   const d = destination.value
-  d.isEnabled = !d.isEnabled
-  toast(
-    `“${d.name}” ${d.isEnabled ? 'enabled' : 'paused'} — demo data, nothing was saved.`
-  )
+  const next = !d.isEnabled
+  const res = await setEnabled(d.id, next)
+  notifyMutationResult($q, res, {
+    success: `“${d.name}” ${next ? 'enabled' : 'paused'}`,
+    apiMissing: `Can't ${next ? 'enable' : 'pause'} “${d.name}” yet.`
+  })
 }
 
 function upgrade() {
@@ -318,12 +325,14 @@ function upgrade() {
   )
 }
 
-function remove() {
+async function remove() {
   const name = destination.value.name
-  const i = destinations.value.findIndex(d => d.id === id.value)
-  if (i !== -1) destinations.value.splice(i, 1)
-  toast(`“${name}” deleted — demo data, nothing was saved.`)
-  router.push({ name: 'destinations' })
+  const res = await removeDestination(id.value)
+  notifyMutationResult($q, res, {
+    success: `“${name}” deleted`,
+    apiMissing: `Can't delete “${name}” yet.`
+  })
+  if (res.ok) router.push({ name: 'destinations' })
 }
 
 function openPipe(row) {

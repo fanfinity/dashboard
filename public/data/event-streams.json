@@ -1,0 +1,30 @@
+[
+  {
+    "id": "str_web_storefront",
+    "name": "Web storefront",
+    "domains": ["shop.sfere.io"],
+    "isEnabled": true,
+    "eventCountLastHour": 18420
+  },
+  {
+    "id": "str_mobile_app",
+    "name": "Mobile app",
+    "domains": ["app.sfere.io"],
+    "isEnabled": true,
+    "eventCountLastHour": 6215
+  },
+  {
+    "id": "str_stadium_wifi",
+    "name": "Stadium Wi-Fi portal",
+    "domains": ["wifi.sfere.io"],
+    "isEnabled": false,
+    "eventCountLastHour": 0
+  },
+  {
+    "id": "str_ticketing",
+    "name": "Ticketing checkout",
+    "domains": ["tickets.sfere.io"],
+    "isEnabled": true,
+    "eventCountLastHour": 1103
+  }
+]

@@ -386,3 +386,44 @@
     animation: none !important;
   }
 }
+
+/* ------------------------------------------------------------------
+   TOASTS — every $q.notify()/Notify.create() in the app carries this
+   class via the global `notify.classes` default in quasar.config.js, so
+   restyling it here reaches all ~55 call sites without touching each one.
+   Quasar's own Notify.sass ships a generic dark card with a neutral
+   shadow and a 1s translateY drop-in; this swaps that for the Sfere
+   ink surface, plum-tinted elevation and a right-edge slide that reads
+   as "arriving from the corner" rather than "falling from the sky".
+   Two classes (`.q-notification.sfere-toast`) outrank Quasar's
+   single-class rules on specificity, so no !important is needed.
+   ------------------------------------------------------------------ */
+.q-notification.sfere-toast {
+  background: var(--color-sfere-ink);
+  border-radius: var(--radius-sfere-xl);
+  box-shadow: var(--shadow-sfere-pop);
+  transition:
+    transform 220ms var(--ease-sfere),
+    opacity 220ms var(--ease-sfere);
+}
+
+.q-notification--top-right-leave-active.sfere-toast {
+  transition-duration: 160ms; /* exits read faster than entrances */
+}
+
+.q-notification--top-right-enter-from.sfere-toast,
+.q-notification--top-right-leave-to.sfere-toast {
+  opacity: 0;
+  transform: translateX(24px) scale(0.98);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .q-notification.sfere-toast {
+    transition: opacity 120ms linear !important;
+  }
+
+  .q-notification--top-right-enter-from.sfere-toast,
+  .q-notification--top-right-leave-to.sfere-toast {
+    transform: none;
+  }
+}

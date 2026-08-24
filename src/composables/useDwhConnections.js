@@ -302,7 +302,6 @@ export function useDwhConnectionToasts() {
       message,
       caption,
       color: 'dark',
-      position: 'bottom',
       timeout: 2500
     })
   }

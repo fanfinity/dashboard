@@ -185,6 +185,7 @@ import ToolbarSearch from '@/components/ui/ToolbarSearch.vue'
 import PipeTopology from '@/components/pipes/PipeTopology.vue'
 import { useDiagram } from '@/composables/useDiagram'
 import { formatCount, formatDate, usePipes } from '@/composables/usePipes'
+import { notifyMutationResult } from '@/composables/useMutationFeedback'
 
 const router = useRouter()
 const $q = useQuasar()
@@ -267,19 +268,18 @@ function open(pipe) {
   router.push({ name: 'pipes-detail', params: { id: pipe.id } })
 }
 
-function toggle(pipe) {
+async function toggle(pipe) {
   const next = !pipe.isEnabled
-  setEnabled(pipe.id, next)
+  const res = await setEnabled(pipe.id, next)
+  notifyMutationResult($q, res, {
+    success: `“${pipe.name}” ${next ? 'enabled' : 'paused'}`,
+    apiMissing: `Can't ${next ? 'enable' : 'pause'} “${pipe.name}” yet.`
+  })
+  if (!res.ok) return
   // The topology tab renders the diagram's own copy of the pipe, so it has to
   // move with the table or the two tabs disagree about the same record.
   const mirrored = diagram.value.pipes.find(p => p.id === pipe.id)
   if (mirrored) mirrored.isEnabled = next
-  $q.notify({
-    message: `“${pipe.name}” ${next ? 'enabled' : 'paused'} — nothing was saved, this preview has no backend.`,
-    color: 'dark',
-    position: 'bottom',
-    timeout: 2500
-  })
 }
 
 onMounted(load)

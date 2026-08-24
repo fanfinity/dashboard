@@ -1,7 +1,7 @@
 <template>
   <div class="flex flex-col gap-4">
     <!-- The catalog has its own search: it filters a few hundred connector
-         *types* fetched from the events backend, which has nothing to do with the
+         *types* served by GET /v1/connectors, which has nothing to do with the
          search over this account's configured sources on the sibling tab. Two
          boxes for two haystacks. -->
     <div class="flex flex-wrap items-center justify-between gap-3">
@@ -9,8 +9,8 @@
            search box onto a line of its own. -->
       <p class="max-w-xl text-sm text-muted">
         Browse the connector catalog and pick what to pull into Sfere. This is
-        the list of connector types the events backend supports — not the
-        streams this account has configured.
+        the list of connector types Sfere supports — not the streams this
+        account has configured.
       </p>
       <ToolbarSearch v-model="query" placeholder="Search connectors..." />
     </div>
@@ -29,7 +29,7 @@
       :title="emptyTitle"
       :description="emptyDescription"
     >
-      <template v-if="query" #cta>
+      <template v-if="query && !apiMissing" #cta>
         <button
           class="rounded-lg border border-line2 bg-white px-3 py-1.5 text-sm font-medium text-brand hover:bg-fill"
           @click="query = ''"
@@ -83,7 +83,7 @@ import { useConnectorCatalog } from '@/composables/useConnectorCatalog'
 // ErrorState is the only thing that renders [data-smoke="error"], so a failed
 // catalog load used to be invisible to scripts/smoke.mjs.
 const $q = useQuasar()
-const { connectors, loading, error, load } = useConnectorCatalog()
+const { connectors, loading, error, apiMissing, load } = useConnectorCatalog()
 const query = ref('')
 
 // Order + human labels for connectorSubtype values returned by the API.
@@ -125,15 +125,21 @@ const filteredGroups = computed(() => {
 
 // Two different "nothing here" cases, same as the sources table: a search that
 // matched nothing, versus a catalog that came back empty.
-const emptyTitle = computed(() =>
-  query.value ? 'No connectors match your search' : 'No connectors available'
-)
+const emptyTitle = computed(() => {
+  if (apiMissing.value) return 'No API yet'
+  return query.value
+    ? 'No connectors match your search'
+    : 'No connectors available'
+})
 
-const emptyDescription = computed(() =>
-  query.value
+const emptyDescription = computed(() => {
+  if (apiMissing.value) {
+    return 'GET /v1/connectors is not built yet. Switch Settings → Data source back to Demo data to browse the catalog.'
+  }
+  return query.value
     ? `Nothing in the catalog matches “${query.value}”.`
-    : 'The events backend returned an empty catalog. Retry in a moment.'
-)
+    : 'The catalog came back empty. Retry in a moment.'
+})
 
 // Popular connectors carry a higher sortIndex; fall back to alphabetical.
 function sortBySalience(a, b) {
@@ -155,7 +161,6 @@ function onSelect(connector) {
   $q.notify({
     message: `${connector.meta?.name || connector.packageId} — connecting sources is coming soon`,
     color: 'dark',
-    position: 'bottom',
     timeout: 2000
   })
 }

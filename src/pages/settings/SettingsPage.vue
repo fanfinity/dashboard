@@ -344,6 +344,10 @@ const dirty = computed(() => {
 // Only the count is needed here — the panel itself reads the registry.
 const { activeCount } = useFeatures()
 const { isReal } = useDataSource()
+const dataSourceLabel = computed(() => {
+  if (isReal.value) return 'Data source (Real)'
+  return 'Data source (Demo)'
+})
 
 const tabs = computed(() => [
   { key: 'general', label: 'General' },
@@ -360,7 +364,7 @@ const tabs = computed(() => [
   },
   {
     key: 'data-source',
-    label: isReal.value ? 'Data source (Real)' : 'Data source (Demo)'
+    label: dataSourceLabel.value
   },
   {
     key: 'members',
@@ -419,7 +423,6 @@ function notifyLocal(message) {
     message,
     caption: 'Local preview only — no backend is connected yet.',
     color: 'dark',
-    position: 'bottom',
     timeout: 2500
   })
 }

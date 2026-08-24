@@ -27,8 +27,8 @@
       // runs in hash mode (quasar.config.js), so every deep link is `/#/pipes` and
       // the server only ever sees `/` — scripts/serve-dist.mjs explains the same
       // thing at length. A `**` -> /index.html rewrite would answer a mistyped
-      // /data/*.json, and the dev-only /japi/* proxy paths, with a 200 text/html
-      // body, turning a loud 404 into a silent JSON.parse failure. Add one only if
+      // /data/*.json with a 200 text/html body, turning a loud 404 into a silent
+      // JSON.parse failure. Add one only if
       // vueRouterMode ever flips to 'history'.
 
       // ORDER IS LOAD-BEARING — same rule as marketing/website/firebase.json.

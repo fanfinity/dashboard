@@ -1,154 +1,101 @@
-import { computed, ref } from 'vue'
-import { currentAccount, waitForAccount } from '@/composables/useMe'
-
-// The Live Events page reads incoming events from the events backend
-// (console.fanfinity.io). Unlike the public connector catalog (see
-// useConnectorCatalog.js), the events endpoint requires authentication and is NOT
-// CORS-enabled, so we go through a same-origin dev proxy: the browser calls
-// /japi/... and the dev server (see devServer.proxy in the build config)
-// forwards to the backend with an API key attached.
-const BASE = (import.meta.env.VITE_EVENTS_API_BASE || '/japi').replace(
-  /\/$/,
-  ''
-)
-
-// Internal workspace id (cuid), NOT the slug — the API rejects the slug.
-// Resolve via GET /japi/workspace; this is the fallback for the shared sfere
-// workspace, used when the signed-in account has no Jitsu workspace of its own
-// (dev, or an account still provisioning). The account's own workspace, when
-// present, always wins — see `workspaceId` below.
-export const WORKSPACE_ID =
-  import.meta.env.VITE_EVENTS_WORKSPACE_ID || 'cmqgzfe6n0007ws09k1wa8qnb'
-
-// Default "site"/stream (actorId) — the one from the shared console URL.
-export const DEFAULT_ACTOR_ID =
-  import.meta.env.VITE_EVENTS_ACTOR_ID || 'cmqh00pk60000356nau41wpp1'
+import { ref } from 'vue'
+import { fetchCollection } from '@/composables/useMockResource'
 
 /**
- * Parses a gzipped-NDJSON response body (one JSON object per line). The browser
- * transparently gunzips the proxied response, so we only deal with text here.
+ * The Live Events feed — incoming events for one stream.
+ *
+ * This reads the Sfere CDP backend (`GET /v1/events`) and nothing else. Where
+ * the events are actually collected is the backend's business: the dashboard
+ * has no connection to any collection vendor, no ingest key, and no knowledge
+ * of anyone's wire format. `LiveEvent` in `openapi/cdp-api-draft.yaml` is
+ * specified as an already-flattened record precisely so that stays true —
+ * unwrapping nested ingest envelopes, redacting credential headers and
+ * masking write keys all happen server-side now.
+ *
+ * It composes `fetchCollection()` rather than `useMockResource()` because the
+ * toolbar filters have to reach the request, and `useMockResource().load()`
+ * takes no arguments. Everything else is the same contract every other screen
+ * is written against — `{ events, loading, error, apiMissing, load }`, never
+ * throwing, `apiMissing` meaning "no endpoint here yet" rather than "broken".
+ *
+ * In "Demo data" mode the filters are applied locally against
+ * `public/data/live-events.json`, so the toolbar visibly works in the default
+ * mode; in the two API modes the same filters go out as query parameters and
+ * the backend does the narrowing.
  */
-function parseNdjson(text) {
-  return text
-    .split('\n')
-    .map(line => line.trim())
-    .filter(Boolean)
-    .map(line => {
-      try {
-        return JSON.parse(line)
-      } catch {
-        return null
-      }
-    })
-    .filter(Boolean)
-}
 
-/**
- * Flattens a raw events-log record { date, level, content } into the shape the
- * incoming-events table/drawer renders. Ported from the upstream events browser
- * (the incoming-events table mapper).
- */
-function mapIncomingEvent(raw, index) {
-  const content = raw.content || {}
-  let ingestPayload = {}
-  let unparsedPayload = ''
-  if (typeof content.body === 'string' && content.body.length > 0) {
-    unparsedPayload = content.body
-    try {
-      ingestPayload = JSON.parse(content.body)
-    } catch {
-      ingestPayload = {}
-    }
-  } else if (content.body && typeof content.body === 'object') {
-    ingestPayload = content.body
-  }
+/** Matches a fixture event against the same filters the API takes. */
+function matchesFilters(ev, { level, start, end, search }) {
+  if (level && level !== 'all' && ev.level !== level) return false
 
-  const event = ingestPayload.httpPayload || undefined
-  const context = event?.context
+  const at = new Date(ev.date).getTime()
+  if (start && at < start.getTime()) return false
+  // `end` is exclusive — it doubles as the "load previous" cursor, and an
+  // inclusive bound would re-return the event the page paginated from.
+  if (end && at >= end.getTime()) return false
 
-  return {
-    id: `${raw.date}_${index}`,
-    date: raw.date,
-    level: raw.level,
-    ingestType: ingestPayload.ingestType,
-
-    status: content.status,
-    error: content.error,
-
-    ingestPayload,
-    unparsedPayload,
-
-    messageId: ingestPayload.messageId,
-    type: ingestPayload.type,
-    originDomain:
-      ingestPayload.origin?.domain ||
-      ingestPayload.httpHeaders?.['x-forwarded-host'],
-    writeKey: ingestPayload.writeKey,
-    httpHeaders: ingestPayload.httpHeaders,
-
-    event,
-    context,
-
-    host: context?.page?.host,
-    pageURL: context?.page?.url,
-    pagePath: context?.page?.path,
-    pageTitle: context?.page?.title,
-    userId: event?.userId,
-    email: context?.traits?.email || event?.traits?.email,
-    anonymousId: event?.anonymousId,
-    referringDomain: context?.page?.referring_domain,
-
-    destinations: [
-      ...(content.asyncDestinations ?? []),
-      ...(content.tags ?? [])
+  if (search) {
+    const needle = search.toLowerCase()
+    const haystack = [
+      ev.pageURL,
+      ev.pagePath,
+      ev.pageTitle,
+      ev.userId,
+      ev.email,
+      ev.anonymousId,
+      ev.type,
+      ev.payload?.event,
+      ev.error
     ]
+      .filter(Boolean)
+      .join(' ')
+      .toLowerCase()
+    if (!haystack.includes(needle)) return false
   }
+
+  return true
 }
 
 /**
- * Builds the events-log query string for the backend's events-log endpoint.
- * `levels` is omitted when "all"; start/end are ISO strings.
- */
-function buildQuery({ limit = 100, start, end, level, search }) {
-  const params = [`limit=${limit}`]
-  if (start) params.push(`start=${encodeURIComponent(start.toISOString())}`)
-  if (end) params.push(`end=${encodeURIComponent(end.toISOString())}`)
-  if (level && level !== 'all') params.push(`levels=${level}`)
-  if (search) params.push(`search=${encodeURIComponent(search)}`)
-  return params.join('&')
-}
-
-/**
- * Reactive hook for the Live Events (incoming) view. Mirrors useConnectorCatalog's
- * { data, loading, error, load } contract, plus site listing and pagination.
+ * @returns {{
+ *   events: import('vue').Ref<Array>,
+ *   streams: import('vue').Ref<Array>,
+ *   loading: import('vue').Ref<boolean>,
+ *   error: import('vue').Ref<string|null>,
+ *   apiMissing: import('vue').Ref<boolean>,
+ *   load: (opts?: object) => Promise<void>,
+ *   loadStreams: () => Promise<void>
+ * }}
+ *
+ * @example
+ * const { events, streams, load, loadStreams } = useLiveEvents()
+ * onMounted(async () => {
+ *   await loadStreams()
+ *   load({ streamId: streams.value[0]?.id })
+ * })
  */
 export function useLiveEvents() {
   const events = ref([])
-  const sites = ref([])
+  const streams = ref([])
   const loading = ref(false)
   const error = ref(null)
-
-  // The workspace whose event log we read: the signed-in account's own Jitsu
-  // workspace when it has one, else the shared fallback. The account record
-  // comes straight off GET /v1/me (snake_case, not camelized), so it is
-  // `jitsu_workspace_id`, not `jitsuWorkspaceId`.
-  const workspaceId = computed(
-    () => currentAccount.value?.jitsu_workspace_id || WORKSPACE_ID
-  )
+  const apiMissing = ref(false)
 
   /**
-   * Loads incoming events for a site.
-   * @param opts.actorId  site/stream id
-   * @param opts.level    'all' | 'error'
-   * @param opts.start    Date | undefined
-   * @param opts.end      Date | undefined  (also used as the pagination cursor)
-   * @param opts.search   string | undefined
-   * @param opts.limit    number
-   * @param opts.append   when true, appends to existing events (load-previous)
+   * Loads events for one stream.
+   *
+   * @param {object} opts
+   * @param {string}  opts.streamId  Which stream to read (see `loadStreams`).
+   * @param {'all'|'error'} [opts.level]
+   * @param {Date}   [opts.start]
+   * @param {Date}   [opts.end]      Also the "load previous" cursor.
+   * @param {string} [opts.search]
+   * @param {number} [opts.limit]
+   * @param {boolean} [opts.append]  Append rather than replace (load-previous).
    */
   async function load(opts = {}) {
     const {
-      actorId,
+      streamId,
       level = 'all',
       start,
       end,
@@ -156,49 +103,57 @@ export function useLiveEvents() {
       limit = 100,
       append = false
     } = opts
-    if (!actorId) return
+    if (!streamId) return
+
     loading.value = true
     error.value = null
-    try {
-      // Settle the account first so the very first load already targets the
-      // account's workspace rather than the fallback.
-      await waitForAccount()
-      const qs = buildQuery({ limit, start, end, level, search })
-      const url = `${BASE}/${workspaceId.value}/log/incoming/${actorId}?${qs}`
-      const res = await fetch(url, {
-        headers: { Accept: 'application/x-ndjson' }
-      })
-      if (!res.ok) {
-        throw new Error(`Events request failed (${res.status})`)
-      }
-      const text = await res.text()
-      const mapped = parseNdjson(text).map(mapIncomingEvent)
+    apiMissing.value = false
+
+    const res = await fetchCollection('live-events', {
+      api: { path: '/v1/events', select: payload => payload.items },
+      query: { streamId, level, start, end, search, limit }
+    })
+
+    if (res.ok) {
+      const all = Array.isArray(res.data) ? res.data : []
+      // Demo data is one whole file, so narrow it here; the API modes come
+      // back already narrowed and re-filtering is a harmless no-op.
+      const mapped = all
+        .filter(ev => ev.streamId === streamId)
+        .filter(ev => matchesFilters(ev, { level, start, end, search }))
+        .slice(0, limit)
       events.value = append ? [...events.value, ...mapped] : mapped
-    } catch (e) {
-      error.value = e instanceof Error ? e.message : String(e)
+    } else {
+      if (res.apiMissing) apiMissing.value = true
+      else error.value = res.error
       if (!append) events.value = []
-    } finally {
-      loading.value = false
     }
+
+    loading.value = false
   }
 
   /**
-   * Loads the list of sites (streams) for the workspace, used by the Site selector.
-   * Endpoint returns { objects: [...] }.
+   * The streams (sites) the workspace collects from — backs the site selector.
+   *
+   * This reports into the same `apiMissing` / `error` refs as `load()` on
+   * purpose. `load()` needs a `streamId` and bails without one, so on a backend
+   * where nothing is built the stream list fails first and the event request is
+   * never attempted — leaving the page to render an empty table under "no
+   * events match your filters", which is a lie. Surfacing it here is what makes
+   * the screen say "no API yet" instead.
    */
-  async function loadSites() {
-    try {
-      await waitForAccount()
-      const res = await fetch(`${BASE}/${workspaceId.value}/config/stream`, {
-        headers: { Accept: 'application/json' }
-      })
-      if (!res.ok) return
-      const data = await res.json()
-      sites.value = Array.isArray(data?.objects) ? data.objects : []
-    } catch {
-      sites.value = []
+  async function loadStreams() {
+    const res = await fetchCollection('event-streams', {
+      api: { path: '/v1/event-streams', select: payload => payload.items }
+    })
+    if (res.ok) {
+      streams.value = Array.isArray(res.data) ? res.data : []
+      return
     }
+    streams.value = []
+    if (res.apiMissing) apiMissing.value = true
+    else error.value = res.error
   }
 
-  return { events, sites, loading, error, workspaceId, load, loadSites }
+  return { events, streams, loading, error, apiMissing, load, loadStreams }
 }

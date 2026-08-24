@@ -1,40 +1,42 @@
 <template>
   <div class="flex max-w-3xl flex-col gap-4">
     <NoticeBanner
-      :tone="isReal ? 'warn' : 'info'"
-      :title="isReal ? 'Real API data is on' : 'You are viewing demo data'"
-      :message="noticeMessage"
+      :tone="notice.tone"
+      :title="notice.title"
+      :message="notice.message"
     />
 
     <CardPanel>
       <template #header>
         <span class="text-sm font-semibold text-ink">Data source</span>
         <StatusBadge
-          :tone="isReal ? 'warn' : 'neutral'"
-          :label="isReal ? 'Real API' : 'Demo data'"
+          :tone="notice.tone === 'warn' ? 'warn' : 'neutral'"
+          :label="activeOption.label"
         />
       </template>
 
-      <ul class="flex flex-col divide-y divide-line">
-        <li class="flex flex-wrap items-start justify-between gap-3 py-3">
-          <div class="min-w-0">
-            <p class="text-sm font-medium text-ink">Use real API data</p>
-            <p class="mt-1 text-xs text-subtle">
-              Off reads every screen from the bundled mock JSON in
-              <code class="font-mono">public/data/</code>, same as today. On
-              calls the real backend instead — most modules don't have one yet,
-              so those screens will show a load error until their endpoint
-              ships.
-            </p>
+      <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
+        <SelectableCard
+          v-for="option in options"
+          :key="option.mode"
+          :selected="mode === option.mode"
+          @select="onSelect(option)"
+        >
+          <div class="flex w-full items-start justify-between gap-2">
+            <span class="text-sm font-semibold text-ink">{{
+              option.label
+            }}</span>
+            <StatusBadge
+              v-if="mode === option.mode"
+              tone="brand"
+              label="Active"
+            />
           </div>
-
-          <SfereToggle
-            :model-value="isReal"
-            :label="`Switch to ${isReal ? 'demo' : 'real'} data`"
-            @update:model-value="onToggle"
-          />
-        </li>
-      </ul>
+          <p class="mt-1.5 text-xs leading-5 text-muted">{{
+            option.description
+          }}</p>
+        </SelectableCard>
+      </div>
     </CardPanel>
   </div>
 </template>
@@ -44,31 +46,59 @@ import { computed } from 'vue'
 import { useQuasar } from 'quasar'
 import CardPanel from '@/components/ui/CardPanel.vue'
 import NoticeBanner from '@/components/ui/NoticeBanner.vue'
+import SelectableCard from '@/components/ui/SelectableCard.vue'
 import StatusBadge from '@/components/ui/StatusBadge.vue'
-import SfereToggle from '@/components/ui/SfereToggle.vue'
 import { useDataSource } from '@/composables/useDataSource'
 
-// One global switch, not per-module like Feature activation — no domain has a
-// real backend yet, so there is nothing for per-module granularity to control.
-// The footer banner (DemoModeBanner) reads the same isMock this panel writes.
+// Two states — see useDataSource.js. The footer banner (DemoModeBanner) and
+// SettingsPage's tab label read the same `mode` this panel writes. "Real" is
+// listed first because it is the default.
 const $q = useQuasar()
-const { isReal, setMode } = useDataSource()
+const { mode, setMode } = useDataSource()
 
-const noticeMessage = computed(() =>
-  isReal.value
-    ? 'Screens without a real endpoint yet will show a load error instead of silently falling back to mock data — that is deliberate, so a missing backend is never mistaken for a working one.'
-    : 'Nothing you do here is saved to a server. Switch this on once a screen has a real backend behind it.'
+const options = [
+  {
+    mode: 'real',
+    label: 'Real API',
+    description:
+      'Calls the Fanfinity backend with your account. Screens whose endpoint is still drafted show “No API yet”. The default.'
+  },
+  {
+    mode: 'mock',
+    label: 'Demo data',
+    description:
+      'Every screen reads the bundled mock JSON in public/data/ instead. Nothing is saved to a server, and every screen has data — which is what makes this the mode to demo in.'
+  }
+]
+
+const activeOption = computed(
+  () => options.find(o => o.mode === mode.value) ?? options[0]
 )
 
-function onToggle(value) {
-  setMode(value ? 'real' : 'mock')
+const notice = computed(() => {
+  if (mode.value === 'real')
+    return {
+      tone: 'info',
+      title: 'Reading your real account',
+      message:
+        'The default. A screen whose endpoint is still drafted shows "No API yet" rather than silently falling back to mock data — that is deliberate, so a missing backend is never mistaken for a working one.'
+    }
+  return {
+    // The unusual state now that real is the default, so it gets the badge.
+    tone: 'warn',
+    title: 'You are viewing demo data',
+    message:
+      'Nothing you do here is saved to a server, and what you see is the same fixture for everyone. Switch back to Real API to work with your own account.'
+  }
+})
+
+function onSelect(option) {
+  if (mode.value === option.mode) return
+  setMode(option.mode)
   $q.notify({
-    message: value ? 'Switched to real API data' : 'Switched to demo data',
-    caption: value
-      ? 'Screens without a live endpoint will show an error.'
-      : 'Every screen reads from the bundled mock JSON again.',
+    message: `Switched to ${option.label}`,
+    caption: option.description,
     color: 'dark',
-    position: 'bottom',
     timeout: 2500
   })
 }

@@ -2,7 +2,7 @@ import { auth } from '@/firebase'
 
 // Custom fetch used by every generated operation in src/api/fanfinity.ts
 // (wired via orval.config.js). Talks to the Fanfinity backend (accounts/RBAC
-// API — NOT the console.fanfinity.io events system).
+// API), which is the only host this app calls besides Identity Platform.
 //
 // Dev default is the local backend (`make run` in ../backend); deployed
 // builds set VITE_API_BASE to the staging/prod host
@@ -38,6 +38,15 @@ async function send(url, options, forceRefresh) {
   })
 }
 
+/**
+ * There is deliberately no base-URL override: every call from this app —
+ * generated client, `useMockResource`, `sendMutation` — goes to the one
+ * `VITE_API_BASE` host. A second base briefly existed for a local mock server
+ * and was removed with it (see useDataSource.js).
+ *
+ * @param {string} url
+ * @param {object} [options]
+ */
 export async function customFetch(url, options) {
   let res = await send(url, options, false)
   if (res.status === 401 && auth.currentUser)

@@ -19,11 +19,11 @@
 </template>
 
 <script setup>
-// Standing state indicator, not a one-time consent prompt like
-// JitsuConsentBanner — it stays up for as long as useDataSource().isMock is
-// true, which today is effectively always (no domain has a real backend yet).
-// A q-footer rather than a hand-rolled fixed bar: MainLayout's
-// view="lHh Lpr lFf" already reserves footer space, so page content gets the
-// right bottom padding for free instead of needing z-index/padding bookkeeping
-// here.
+// Standing state indicator, not a one-time prompt — it is not dismissed by
+// answering it. MainLayout renders it while useDataSource().isReal is false,
+// i.e. only when someone has deliberately switched to demo data; real is the
+// default, so most sessions never see this bar. A q-footer rather than a
+// hand-rolled fixed bar: MainLayout's view="lHh Lpr lFf" already reserves
+// footer space, so page content gets the right bottom padding for free instead
+// of needing z-index/padding bookkeeping here.
 </script>

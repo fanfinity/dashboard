@@ -109,7 +109,6 @@ function onSelect(option) {
     message: `Your role is now “${option.label}”`,
     caption: 'This browser only — nothing in the workspace changed.',
     color: 'dark',
-    position: 'bottom',
     timeout: 2500
   })
 }
@@ -120,7 +119,6 @@ function onAskAgain() {
     message: 'Role cleared',
     caption: 'You will be asked again on the dashboard home.',
     color: 'dark',
-    position: 'bottom',
     timeout: 2500
   })
 }

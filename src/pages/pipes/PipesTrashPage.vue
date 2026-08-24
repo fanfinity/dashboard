@@ -200,7 +200,6 @@ function notify(message) {
   $q.notify({
     message,
     color: 'dark',
-    position: 'bottom',
     timeout: 2500
   })
 }

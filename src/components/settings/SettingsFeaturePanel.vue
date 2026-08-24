@@ -138,7 +138,6 @@ function onToggle(feature, value) {
     message: `${feature.label} ${value ? 'activated' : 'switched off'}`,
     caption: 'This browser only — edit src/config/features.js to ship it.',
     color: 'dark',
-    position: 'bottom',
     timeout: 2500
   })
 }
@@ -148,7 +147,6 @@ function onReset() {
   $q.notify({
     message: 'Feature activation reset to shipped defaults',
     color: 'dark',
-    position: 'bottom',
     timeout: 2500
   })
 }

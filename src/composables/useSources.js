@@ -1,6 +1,6 @@
-import { useMockResource } from '@/composables/useMockResource'
+import { useMockResource, sendMutation } from '@/composables/useMockResource'
 import { currentAccount } from '@/composables/useMe'
-import { pageItems } from '@/lib/apiShape'
+import { pageItems, camelizeKeys } from '@/lib/apiShape'
 
 /**
  * Sources = configured event streams and cloud apps that feed the fan graph.
@@ -14,11 +14,15 @@ import { pageItems } from '@/lib/apiShape'
  * `useMockResource`, so this file inherits the repo-wide
  * `{ data, loading, error, load() }` contract and never throws.
  *
- * Writes have no backend. `setEnabled` / `remove` / `add` mutate the loaded
- * array in place and nothing else — a reload re-reads the JSON and the change
- * is gone. That is deliberate: the screens must not pretend to persist. Pages
- * own the user feedback (a `useQuasar().notify()` toast); these functions stay
- * side-effect free so they can be called from anywhere.
+ * `setEnabled` / `remove` send their write through `sendMutation()` — a
+ * local-only no-op in "Demo data" mode (a reload re-reads the JSON and the
+ * change is gone, deliberately: mock mode must never pretend to persist), and
+ * `PATCH`/`DELETE /v1/accounts/{account}/sources/{id}` in real mode. Creating
+ * a source is NOT here: it goes through `useSourcesAPI().create()`, because
+ * the backend provisions a Jitsu site and write key as part of the call and
+ * the typed client is the honest way to express that. Pages own the user
+ * feedback (`notifyMutationResult()` in `useMutationFeedback.js`); these
+ * functions stay side-effect-free beyond the write itself.
  */
 
 const TYPE_LABELS = {
@@ -103,6 +107,12 @@ export function slugify(value) {
 /**
  * The configured sources, plus local-only mutations.
  *
+ * `setEnabled`/`remove` are async: each sends the matching write via
+ * `sendMutation()` (mock mode = local-only, real mode = the account-scoped
+ * endpoint) and only applies the local mutation once it comes back `ok`, so a
+ * page must `await` and check the result rather than assume success — see
+ * `notifyMutationResult()` in `useMutationFeedback.js`.
+ *
  * @returns {{
  *   sources: import('vue').Ref<Array>,
  *   loading: import('vue').Ref<boolean>,
@@ -110,9 +120,8 @@ export function slugify(value) {
  *   apiMissing: import('vue').Ref<boolean>,
  *   load: () => Promise<void>,
  *   findById: (id: string) => object|null,
- *   setEnabled: (id: string, isEnabled: boolean) => void,
- *   remove: (id: string) => void,
- *   add: (source: object) => object
+ *   setEnabled: (id: string, isEnabled: boolean) => Promise<object>,
+ *   remove: (id: string) => Promise<object>
  * }}
  *
  * @example
@@ -139,32 +148,38 @@ export function useSources() {
     return sources.value.find(s => s.id === id) ?? null
   }
 
-  function setEnabled(id, isEnabled) {
+  // The acting account's collection path; null before GET /v1/me settles, in
+  // which case sendMutation reports apiMissing rather than calling `/v1/accounts//…`.
+  function sourcePath(id) {
+    return () =>
+      currentAccount.value &&
+      `/v1/accounts/${currentAccount.value.id}/sources/${id}`
+  }
+
+  async function setEnabled(id, isEnabled) {
+    const res = await sendMutation({
+      method: 'PATCH',
+      path: sourcePath(id),
+      // SourceUpdate is snake_case; the response is too, hence camelizeKeys on
+      // the way back in — the screens are written against camelCase.
+      body: { is_enabled: isEnabled }
+    })
+    if (!res.ok) return res
     sources.value = sources.value.map(s =>
-      s.id === id ? { ...s, isEnabled } : s
+      s.id === id
+        ? res.skipped
+          ? { ...s, isEnabled }
+          : { ...s, ...camelizeKeys(res.data) }
+        : s
     )
+    return res
   }
 
-  function remove(id) {
+  async function remove(id) {
+    const res = await sendMutation({ method: 'DELETE', path: sourcePath(id) })
+    if (!res.ok) return res
     sources.value = sources.value.filter(s => s.id !== id)
-  }
-
-  function add(source) {
-    const record = {
-      id: `src_${slugify(source.slug || source.name) || Date.now()}`,
-      sourceType: 'event_stream',
-      isEnabled: true,
-      version: 1,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-      eventCountLastHour: 0,
-      eventTypeCount: 0,
-      pipeCount: 0,
-      writeKey: null,
-      ...source
-    }
-    sources.value = [...sources.value, record]
-    return record
+    return res
   }
 
   return {
@@ -175,8 +190,7 @@ export function useSources() {
     load,
     findById,
     setEnabled,
-    remove,
-    add
+    remove
   }
 }
 

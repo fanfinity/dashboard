@@ -17,7 +17,7 @@
       <div class="flex flex-col gap-1">
         <span class="text-xs font-medium text-subtle">Site</span>
         <q-select
-          v-model="actorId"
+          v-model="streamId"
           dense
           outlined
           emit-value
@@ -86,9 +86,19 @@
       </button>
     </div>
 
+    <!-- No endpoint yet. Distinct from an error: nothing broke, GET /v1/events
+         simply is not built on the backend the Data source switch points at. -->
+    <NoticeBanner
+      v-if="apiMissing"
+      class="mb-4"
+      tone="info"
+      title="No API yet"
+      message="GET /v1/events is not built on this backend yet. Switch Settings → Data source back to Demo data to see the feed."
+    />
+
     <!-- Error -->
     <div
-      v-if="error"
+      v-else-if="error"
       class="mb-4 flex flex-col items-start gap-2 rounded-xl border border-line2 bg-white p-4"
     >
       <p class="text-sm text-ink">Couldn't load events.</p>
@@ -130,7 +140,11 @@
           <!-- Empty -->
           <tr v-else-if="!events.length">
             <td colspan="5" class="px-3 py-10 text-center text-sm text-muted">
-              No events found for this site and filters.
+              {{
+                apiMissing
+                  ? 'No API yet — nothing to read on this backend.'
+                  : 'No events found for this site and filters.'
+              }}
             </td>
           </tr>
 
@@ -326,12 +340,17 @@
 </template>
 
 <script setup>
-import { computed, onMounted, ref, watch } from 'vue'
-import { useLiveEvents, DEFAULT_ACTOR_ID } from '@/composables/useLiveEvents'
+import { computed, nextTick, onMounted, ref, watch } from 'vue'
+import NoticeBanner from '@/components/ui/NoticeBanner.vue'
+import { useLiveEvents } from '@/composables/useLiveEvents'
 
-const { events, sites, loading, error, load, loadSites } = useLiveEvents()
+// Reads GET /v1/events through the Sfere backend and nothing else. There is no
+// vendor id, no ingest key and no proxy in this page any more — see the header
+// comment in useLiveEvents.js.
+const { events, streams, loading, error, apiMissing, load, loadStreams } =
+  useLiveEvents()
 
-const actorId = ref(DEFAULT_ACTOR_ID)
+const streamId = ref('')
 const level = ref('all')
 const startInput = ref('')
 const endInput = ref('')
@@ -343,10 +362,11 @@ const levelOptions = [
 ]
 
 const siteOptions = computed(() => {
-  const opts = sites.value.map(s => ({ label: s.name || s.id, value: s.id }))
-  // Ensure the default/current actorId is always selectable even before sites load.
-  if (!opts.some(o => o.value === actorId.value)) {
-    opts.unshift({ label: actorId.value, value: actorId.value })
+  const opts = streams.value.map(s => ({ label: s.name || s.id, value: s.id }))
+  // Keep whatever is selected addressable even before the stream list lands,
+  // otherwise the q-select renders a blank while the two requests race.
+  if (streamId.value && !opts.some(o => o.value === streamId.value)) {
+    opts.unshift({ label: streamId.value, value: streamId.value })
   }
   return opts
 })
@@ -360,7 +380,7 @@ function parseUTCInput(value) {
 
 function currentFilters(extra = {}) {
   return {
-    actorId: actorId.value,
+    streamId: streamId.value,
     level: level.value,
     start: parseUTCInput(startInput.value),
     end: parseUTCInput(endInput.value),
@@ -381,9 +401,13 @@ function loadPrevious() {
   load(currentFilters({ end: before, append: true }))
 }
 
-// Debounced reactive reload when filters change.
+// Debounced reactive reload when filters change. `ready` keeps the watcher
+// quiet for the initial streamId assignment in onMounted, which would
+// otherwise queue a second, identical request 400ms behind the first.
 let debounceTimer = null
-watch([actorId, level, startInput, endInput, searchInput], () => {
+let ready = false
+watch([streamId, level, startInput, endInput, searchInput], () => {
+  if (!ready) return
   clearTimeout(debounceTimer)
   debounceTimer = setTimeout(refresh, 400)
 })
@@ -418,31 +442,25 @@ const drawerRows = computed(() => {
     { name: 'Origin Domain', value: ev.originDomain },
     { name: 'Write Key', value: ev.writeKey }
   )
-  return rows
-    .filter(r => r.value !== undefined && r.value !== null && r.value !== '')
-    .map(r => ({ ...r, value: maskJitsu(r.value) }))
+  return rows.filter(
+    r => r.value !== undefined && r.value !== null && r.value !== ''
+  )
 })
 
-// Replaces any occurrence of "jitsu" (case-insensitive) with ****.
-function maskJitsu(value) {
-  return typeof value === 'string' ? value.replace(/jitsu/gi, '****') : value
-}
-
+// The backend redacts credential headers and masks write keys before they
+// leave the API (see the LiveEvent schema in openapi/cdp-api-draft.yaml), so
+// this renders what it is given. The page used to scrub the upstream vendor's
+// name out of every string it displayed; there is no upstream vendor in this
+// page's world any more, so there is nothing to scrub.
 const headersText = computed(() => {
   const h = selected.value?.httpHeaders
   if (!h) return '—'
-  const masked = Object.fromEntries(
-    Object.entries(h).map(([k, v]) => [
-      k,
-      k.toLowerCase() === 'authorization' ? '*** MASKED ***' : v
-    ])
-  )
-  return maskJitsu(JSON.stringify(masked, null, 2))
+  return JSON.stringify(h, null, 2)
 })
 
 const payloadText = computed(() =>
-  selected.value?.event
-    ? maskJitsu(JSON.stringify(selected.value.event, null, 2))
+  selected.value?.payload
+    ? JSON.stringify(selected.value.payload, null, 2)
     : '—'
 )
 
@@ -458,7 +476,7 @@ function formatUTC(date) {
 }
 
 function typeLabel(ev) {
-  const name = ev.type === 'track' ? ev.event?.event || ev.type : ev.type
+  const name = ev.type === 'track' ? ev.payload?.event || ev.type : ev.type
   return name || '—'
 }
 
@@ -496,15 +514,13 @@ function statusTagClass(status) {
 }
 
 onMounted(async () => {
-  // Load the account workspace's streams first, then read events for one of
-  // them. The seed `actorId` (DEFAULT_ACTOR_ID) belongs to the shared fallback
-  // workspace and won't exist in an account's own, so switch to a real stream
-  // when the list has one. Changing `actorId` triggers the debounced watcher,
-  // which does the events load; only load directly when it stays put.
-  await loadSites()
-  if (!sites.value.length) return
-  const ids = sites.value.map(s => s.id)
-  if (ids.includes(actorId.value)) refresh()
-  else actorId.value = sites.value[0].id
+  // The stream list has to land first: `streamId` is a required query
+  // parameter, so there is no sensible default to fire a request with. This is
+  // what the hardcoded vendor cuid used to stand in for.
+  await loadStreams()
+  if (!streamId.value) streamId.value = streams.value[0]?.id || ''
+  await nextTick()
+  ready = true
+  refresh()
 })
 </script>

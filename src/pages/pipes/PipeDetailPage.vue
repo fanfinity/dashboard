@@ -231,6 +231,7 @@ import {
   formatDateTime,
   usePipes
 } from '@/composables/usePipes'
+import { notifyMutationResult } from '@/composables/useMutationFeedback'
 
 const route = useRoute()
 const router = useRouter()
@@ -336,27 +337,23 @@ const tabs = computed(() => [
   { key: 'related', label: 'Related', count: related.value.length }
 ])
 
-function toggle() {
+async function toggle() {
   const next = !pipe.value.isEnabled
-  setEnabled(pipe.value.id, next)
-  $q.notify({
-    message: `“${pipe.value.name}” ${next ? 'enabled' : 'paused'} — nothing was saved, this preview has no backend.`,
-    color: 'dark',
-    position: 'bottom',
-    timeout: 2500
+  const res = await setEnabled(pipe.value.id, next)
+  notifyMutationResult($q, res, {
+    success: `“${pipe.value.name}” ${next ? 'enabled' : 'paused'}`,
+    apiMissing: `Can't ${next ? 'enable' : 'pause'} “${pipe.value.name}” yet.`
   })
 }
 
-function remove() {
+async function remove() {
   const name = pipe.value?.name
-  removePipe(routeId.value)
-  $q.notify({
-    message: `“${name}” deleted — nothing was saved, this preview has no backend.`,
-    color: 'dark',
-    position: 'bottom',
-    timeout: 2500
+  const res = await removePipe(routeId.value)
+  notifyMutationResult($q, res, {
+    success: `“${name}” deleted`,
+    apiMissing: `Can't delete “${name}” yet.`
   })
-  router.push({ name: 'pipes' })
+  if (res.ok) router.push({ name: 'pipes' })
 }
 
 // Related pipes navigate within the same route, which reuses this component

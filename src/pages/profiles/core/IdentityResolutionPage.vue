@@ -181,7 +181,7 @@ import { useProfilesIdentityResolution } from '@/composables/useProfilesIdentity
 // evidence behind each merge they produced.
 //
 // NOT /identity-resolution (src/pages/IdentityResolutionPage.vue), which scores
-// pairs of live Jitsu contacts against each other to guess that two anonymous
+// pairs of live event contacts against each other to guess that two anonymous
 // visitors are one person. This screen explains the identifier-type rules a
 // *resolved* profile was actually built with. Same idea, different subject —
 // see the header comment on useProfilesIdentityResolution.js.

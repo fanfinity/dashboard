@@ -212,7 +212,6 @@ export function useEngageContentToasts() {
       message,
       caption: 'Local preview only — nothing is stored.',
       color: 'dark',
-      position: 'bottom',
       timeout: 2500
     })
   }

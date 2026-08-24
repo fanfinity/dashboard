@@ -13,29 +13,26 @@ pnpm install
 pnpm dev
 ```
 
-### Live Events page
+### What this app connects to
 
-The **Live Events** page reads incoming events from the backend
-(`console.fanfinity.io`). That endpoint requires authentication and is not
-CORS-enabled, so the dev server proxies `/japi/*` → `https://console.fanfinity.io/api/*`
-and attaches an API key as a Bearer token. Configure the key in a `.env` file at the
-project root (gitignored):
+**The Fanfinity backend, and nothing else.** Every live call goes to that API
+(`VITE_API_BASE`), plus Google Identity Platform for sign-in. There are no direct
+connections to event collectors, vendor consoles or third-party catalogs, and no dev-only
+proxy standing in for one — `pnpm dev` and a production build reach exactly the same hosts.
 
-```bash
-# .env
-EVENTS_API_KEY=<keyId>:<secret>
+That includes the **Live Events** page, which reads `GET /v1/events` like every other
+screen. Where events are actually collected is the backend's concern; this app never holds
+an ingest key and cannot send an event. The CSP in `index.html` enforces it: `img-src` is
+`'self'` and `connect-src` names only the API hosts and Identity Platform, so a call to
+anywhere else is blocked by the browser rather than caught in review.
 
-# optional non-secret overrides
-VITE_EVENTS_WORKSPACE_ID=<workspaceId>
-VITE_EVENTS_ACTOR_ID=<siteId>
-```
+Configuration lives in a gitignored `.env` — see `.env.example`. If a feature seems to need
+a credential for an outside system, that credential belongs in the backend.
 
-Create the key in the console under **Settings → API Keys** (format `keyId:secret`).
-
-> Note: this proxy only runs in development (`pnpm dev`). A static production build
-> has no proxy, so the real events API requires an equivalent reverse proxy in front
-> of it — which means `/live-events` does not work on app.sfere.io or
-> app-staging.sfere.io. See `docs/deployment.md`.
+Parts of that API are still drafted rather than built (`openapi/cdp-api-draft.yaml`), so a
+screen whose endpoint does not exist yet renders "No API yet" rather than an empty list.
+**Settings → Data source** switches the whole app between the real API (the default) and the
+mock JSON in `public/data/`, which is what makes a backend-free demo possible.
 
 ### Build the app for production
 

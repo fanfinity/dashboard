@@ -45,10 +45,9 @@ import { assetTypeMeta, fileExtension } from '@/composables/useEngageContent'
 
 // A typed placeholder tile, deliberately NOT a thumbnail of the file.
 //
-// The app's CSP is `default-src 'self'` with `img-src` limited to
-// console.fanfinity.io and no `data:` URIs, so an asset hosted on
-// assets.sfere.io cannot be rendered and a broken <img> is worse than no
-// image at all. This draws an inline SVG glyph keyed on the asset's type plus
+// The app's CSP is `default-src 'self'` with `img-src 'self'` and no `data:`
+// URIs, so an asset hosted on assets.sfere.io cannot be rendered and a broken
+// <img> is worse than no image at all. This draws an inline SVG glyph keyed on the asset's type plus
 // the file extension, entirely from design tokens — no network, no data URI.
 const props = defineProps({
   asset: { type: Object, required: true },

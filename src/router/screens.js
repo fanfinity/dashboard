@@ -476,15 +476,26 @@ export const screens = [
 // them; there are deliberately no redirects.
 //
 // These are routed exactly like `screens` but are NOT walked by
-// scripts/smoke.mjs, which imports `screens` alone. That is load-bearing for
-// /live-events: it reads the events backend through the /japi dev proxy, and
-// `pnpm smoke:dist` serves a production build where no proxy exists, so the
-// failed request would fail the gate for a reason that has nothing to do with
-// the screen. Promoting it into `screens` needs the dist-proxy story solved
-// first (see "Data architecture" in CLAUDE.md).
+// scripts/smoke.mjs, which imports `screens` alone.
+//
+// /live-events used to be excluded for a concrete reason: it read a third-party
+// events console through the /japi dev proxy, and `pnpm smoke:dist` serves a
+// production build where no proxy exists, so the failed request would fail the
+// gate for a reason that had nothing to do with the screen. That reason is
+// gone — it now reads GET /v1/events through the same data-source gate as
+// every other screen, and mock mode serves public/data/live-events.json, so
+// nothing about it is dev-only any more. Promoting it into `screens` is a
+// deliberate, separate change (it adds a route to the gate's walk); it is
+// left here only because nobody has made that call yet, not because it
+// cannot be made.
 //
 // /connectors used to live here. It is now a tab inside /sources rather than a
 // route of its own — routes.js redirects the old URL to /sources?tab=connectors.
+//
+// /events-demo used to live here too. It drove a third-party ingestion SDK
+// straight from the browser behind a consent banner; the dashboard has no
+// ingestion path any more, so the page, its banner and the SDK were deleted
+// rather than rewired. There is deliberately no redirect.
 export const legacyScreens = [
   {
     path: '/live-events',
@@ -492,13 +503,6 @@ export const legacyScreens = [
     component: 'LiveEventsPage.vue',
     title: 'Live Events',
     group: 'live-events'
-  },
-  {
-    path: '/events-demo',
-    name: 'events-demo',
-    component: 'JitsuDemoPage.vue',
-    title: 'Events Demo',
-    group: 'demo'
   }
 ]
 
