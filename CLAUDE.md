@@ -73,6 +73,11 @@ think about a merge:
   workflows into a shared build job — that ships the staging API host to production.
 - **Cut releases with `pnpm release patch|minor|major`, never by hand.**
   `deploy-production.yml` refuses a tag that disagrees with `package.json`.
+- **Production is not live yet, deliberately.** `app.sfere.io` is an empty site with
+  a valid cert; the backend's production overlay has never been applied. The release
+  workflow preflights `api.sfere.io/healthz` and hard-fails, which is the intended
+  behaviour — see `docs/deployment.md`. Do not point production at the staging API
+  to work around it.
 - **The CSP gates new API hosts.** Adding a deployed origin means editing
   `index.html`'s `connect-src` _and_ the backend's `CORS_ALLOW_ORIGINS`. A missing
   CSP entry fails in the console looking exactly like a CORS error.
