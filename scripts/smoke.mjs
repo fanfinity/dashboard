@@ -129,8 +129,9 @@ page.on('console', m => {
   bucket.push(`console.error: ${text.slice(0, 200)}`)
 })
 
-// Firebase persists its session to IndexedDB, which Playwright's storageState
-// does NOT capture — so there is no way to inject a session; we sign in for real.
+// Sign in for real through the backend login form (POST /v1/auth/token) — the
+// session token lives in localStorage, but exercising the real login is the
+// point of the smoke test, so we drive the form rather than inject a token.
 console.log(`smoke: signing in at ${BASE}`)
 await page.goto(`${BASE}/#/login`, { waitUntil: 'domcontentloaded' })
 await page.fill('input[type=email]', EMAIL)
@@ -141,7 +142,7 @@ try {
 } catch {
   console.error(
     'smoke: sign-in did not reach the app shell.\n' +
-      `       Check SMOKE_EMAIL/SMOKE_PASSWORD and VITE_FIREBASE_* in .env.\n` +
+      `       Check SMOKE_EMAIL/SMOKE_PASSWORD and VITE_API_BASE in .env.\n` +
       `       Console so far:\n       ${bucket.join('\n       ') || '(nothing)'}`
   )
   await browser.close()

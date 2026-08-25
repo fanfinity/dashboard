@@ -400,6 +400,151 @@
         }
       }
     },
+    "/v1/auth/refresh": {
+      "post": {
+        "tags": ["identity"],
+        "summary": "Refresh Route",
+        "operationId": "refresh",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/RefreshRequest" }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/TokenResponse" }
+              }
+            }
+          },
+          "400": {
+            "description": "Malformed request body",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "properties": {
+                    "type": {
+                      "anyOf": [{ "type": "string" }, { "type": "null" }],
+                      "title": "Type",
+                      "default": "about:blank"
+                    },
+                    "title": { "type": "string", "title": "Title" },
+                    "status": { "type": "integer", "title": "Status" },
+                    "detail": {
+                      "anyOf": [{ "type": "string" }, { "type": "null" }],
+                      "title": "Detail"
+                    },
+                    "instance": {
+                      "anyOf": [{ "type": "string" }, { "type": "null" }],
+                      "title": "Instance"
+                    }
+                  },
+                  "type": "object",
+                  "required": ["title", "status"],
+                  "title": "Problem",
+                  "description": "RFC 9457 problem details."
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid credentials",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "properties": {
+                    "type": {
+                      "anyOf": [{ "type": "string" }, { "type": "null" }],
+                      "title": "Type",
+                      "default": "about:blank"
+                    },
+                    "title": { "type": "string", "title": "Title" },
+                    "status": { "type": "integer", "title": "Status" },
+                    "detail": {
+                      "anyOf": [{ "type": "string" }, { "type": "null" }],
+                      "title": "Detail"
+                    },
+                    "instance": {
+                      "anyOf": [{ "type": "string" }, { "type": "null" }],
+                      "title": "Instance"
+                    }
+                  },
+                  "type": "object",
+                  "required": ["title", "status"],
+                  "title": "Problem",
+                  "description": "RFC 9457 problem details."
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Request failed validation",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "properties": {
+                    "type": {
+                      "anyOf": [{ "type": "string" }, { "type": "null" }],
+                      "title": "Type",
+                      "default": "about:blank"
+                    },
+                    "title": { "type": "string", "title": "Title" },
+                    "status": { "type": "integer", "title": "Status" },
+                    "detail": {
+                      "anyOf": [{ "type": "string" }, { "type": "null" }],
+                      "title": "Detail"
+                    },
+                    "instance": {
+                      "anyOf": [{ "type": "string" }, { "type": "null" }],
+                      "title": "Instance"
+                    }
+                  },
+                  "type": "object",
+                  "required": ["title", "status"],
+                  "title": "Problem",
+                  "description": "RFC 9457 problem details."
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limit exceeded",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "properties": {
+                    "type": {
+                      "anyOf": [{ "type": "string" }, { "type": "null" }],
+                      "title": "Type",
+                      "default": "about:blank"
+                    },
+                    "title": { "type": "string", "title": "Title" },
+                    "status": { "type": "integer", "title": "Status" },
+                    "detail": {
+                      "anyOf": [{ "type": "string" }, { "type": "null" }],
+                      "title": "Detail"
+                    },
+                    "instance": {
+                      "anyOf": [{ "type": "string" }, { "type": "null" }],
+                      "title": "Instance"
+                    }
+                  },
+                  "type": "object",
+                  "required": ["title", "status"],
+                  "title": "Problem",
+                  "description": "RFC 9457 problem details."
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/v1/accounts": {
       "post": {
         "tags": ["accounts"],
@@ -8053,11 +8198,28 @@
             "anyOf": [{ "type": "integer" }, { "type": "null" }],
             "title": "Expires In",
             "description": "Token lifetime in seconds"
+          },
+          "refresh_token": {
+            "anyOf": [{ "type": "string" }, { "type": "null" }],
+            "title": "Refresh Token",
+            "description": "Firebase refresh token. Exchange it at /v1/auth/refresh for a new access token when the current one expires.\n"
           }
         },
         "type": "object",
         "required": ["access_token", "token_type"],
         "title": "TokenResponse"
+      },
+      "RefreshRequest": {
+        "properties": {
+          "refresh_token": {
+            "type": "string",
+            "title": "Refresh Token",
+            "description": "The refresh_token returned by /v1/auth/token or /v1/register."
+          }
+        },
+        "type": "object",
+        "required": ["refresh_token"],
+        "title": "RefreshRequest"
       },
       "TokenType": {
         "type": "string",

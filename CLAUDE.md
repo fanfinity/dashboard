@@ -403,12 +403,13 @@ all follow the same `{ data, loading, error, load() }` contract (`src/composable
      `useGetMe()`; vue-query is registered in `src/boot/vue-query.js`). Never edit
      `src/api/fanfinity.ts` or `src/api/model/` by hand.
    - Auth lives in `src/api/mutator.js` (`customFetch`): prefixes `VITE_API_BASE`
-     (fallback `http://localhost:8080`), attaches the Identity Platform ID token as
-     a Bearer header, retries once with a force-refreshed token on 401, and throws
-     `ApiError` (status + RFC 9457 problem+json body) on non-2xx.
-   - `useMe.js` bootstraps the session: `useAuth.js`'s `onAuthStateChanged` calls
-     `loadMe()`/`clearMe()`, populating `me` + `memberships` from `GET /v1/me`
-     (best-effort — errors never block routing).
+     (fallback `http://localhost:8080`), attaches the access token from `useSession`
+     as a Bearer header, refreshes once via `POST /v1/auth/refresh` on 401, and throws
+     `ApiError` (status + RFC 9457 problem+json body) on non-2xx. See "Authentication".
+   - `useMe.js` bootstraps the session: `useAuth.js` calls `loadMe()` after sign-in and
+     `clearMe()` on sign-out (the router also calls `loadMe()` on cold load into an authed
+     route), populating `me` + `memberships` from `GET /v1/me` (best-effort — errors never
+     block routing).
    - The backend **requires a verified email** (`401 Email is not verified`), and its
      `CORS_ALLOW_ORIGINS` must include the dashboard origin (staging currently allows
      only `https://dashboard-staging.fanfinity.io`, so browser calls from
@@ -434,33 +435,38 @@ decisions and will break new code that ignores it:
   URI (which the CSP would block). Prefer real asset files / SVG endpoints over data URIs.
 - Third-party JS must be bundled via npm (first-party `script-src 'self'`), not loaded from a CDN.
 
-## Authentication & multi-tenancy
+## Authentication
 
-Sign-in is Google Cloud Identity Platform (the Firebase Auth JS SDK) email/password auth,
-gated by [multi-tenancy](https://docs.cloud.google.com/identity-platform/docs/multi-tenancy):
+Sign-in goes through the **Fanfinity backend**, not the Firebase SDK. The browser no longer
+talks to Identity Platform directly (there is no `firebase` dependency and no `src/firebase.js`).
+This was a deliberate switch: `/v1/register` creates users at the Identity Platform **project**
+level (`koratona-9791a`), but the old client-side Firebase sign-in was **tenant**-scoped
+(`fanfinity-app-fcsgt`), so it couldn't find those users and failed with `EMAIL_NOT_FOUND`.
+Routing sign-in through the backend (which authenticates at project level, matching register)
+removes the mismatch and makes the backend the single source of truth for the Firebase project.
 
-- `src/firebase.js` calls `initializeApp`/`getAuth`, then pins `auth.tenantId` from
-  `VITE_FIREBASE_DEFAULT_TENANT_ID` at module init. `auth.tenantId` is an in-memory-only
-  SDK property (never persisted), so it must be re-set on every full page load — which
-  happens naturally here since this module's top-level code reruns each load.
-- `src/composables/useAuth.js` follows the same module-singleton pattern as `useJitsu.js`:
-  a lazily-attached `onAuthStateChanged` listener backing reactive `user`/`loading`/`error`,
-  exposed via `useAuth()` returning `{ user, loading, error, signUp, signIn, logOut,
-tenantId }`. It also exports `waitForAuthReady()`, a promise resolved on the _first_
-  auth-state callback — needed because that callback is async, so anything deciding access
-  on page load (like the router guard) must await it rather than read `user.value`
-  immediately.
-- `src/router/routes.js` tags the top-level `/` (`MainLayout`) route with
-  `meta: { requiresAuth: true }`; `src/router/index.js`'s `beforeEach` awaits
-  `waitForAuthReady()` and redirects to `/login?redirect=<path>` if signed out. `/login`
-  itself carries no such meta.
-- **Only one tenant exists today** (`fanfinity-app-fcsgt` / display name `fanfinity-app`,
-  in the `koratona-9791a` project), so every user authenticates into it via the env var
-  above — there is no per-user or per-email-domain tenant selection. Building that requires
-  a lookup mechanism backed by a database/backend (Identity Platform's client SDK has no
-  tenant-discovery API), and this repo has no owned backend (see "Data architecture" above).
-  That's intentionally deferred until a second tenant exists to justify it — don't add a
-  static domain→tenant mapping as a substitute; it won't scale past one real lookup case.
+- `src/composables/useSession.js` is the token store (leaf module): `accessToken`/`refreshToken`
+  refs hydrated **synchronously** from `localStorage` (`sfere_access_token` /
+  `sfere_refresh_token`) at import, plus `setTokens`/`clearTokens`/`isAuthenticated`. This
+  replaces Firebase's IndexedDB session persistence.
+- `src/composables/useAuth.js` (module-singleton, like `useJitsu.js`) exposes
+  `{ isAuthenticated, loading, error, signUp, signIn, logOut }`. `signIn` calls the generated
+  `login()` (`POST /v1/auth/token`, OAuth2 password grant), stores the returned tokens, then
+  `loadMe()`. `signUp` registers via `POST /v1/register` then signs in. `waitForAuthReady()` is
+  kept but now resolves immediately (token hydration is synchronous — no async first callback to
+  await like `onAuthStateChanged` had). The signed-in user's identity comes from `useMe`'s `me`
+  (backend `/v1/me`), not a Firebase user object.
+- `src/api/mutator.js` attaches `accessToken` as the Bearer header when present. On a `401` with
+  a refresh token it trades it at `POST /v1/auth/refresh` (via a plain fetch, not the generated
+  `refresh()`, to avoid recursing through `customFetch`), stores the new tokens, and retries once;
+  a failed refresh clears the session so the guard bounces to `/login`.
+- `src/router/index.js`'s `beforeEach` gates `requiresAuth` routes on `isAuthenticated`
+  (token presence), then confirms a backend account via `waitForAccount()`; a missing account
+  clears tokens and redirects to `/login`. `/login` carries no `requiresAuth` meta.
+
+The access token is a short-lived (~1h) Firebase ID token; the backend also returns a refresh
+token so sessions survive past that. **Multi-tenancy is now a backend concern** — the dashboard
+sends no `tenantId` and needs no `VITE_FIREBASE_*` config.
 
 ## Environment / secrets
 

@@ -195,6 +195,11 @@ import type {
   PipelineFunctionUpdate,
   PipelineUpdate,
   ReadyzReadyzGet200,
+  Refresh400,
+  Refresh401,
+  Refresh422,
+  Refresh429,
+  RefreshRequest,
   Register400,
   Register409,
   Register422,
@@ -638,6 +643,138 @@ export const useLogin = <
   TContext
 > => {
   return useMutation(getLoginMutationOptions(options), queryClient)
+}
+
+export type refreshResponse200 = {
+  data: TokenResponse
+  status: 200
+}
+
+export type refreshResponse400 = {
+  data: Refresh400
+  status: 400
+}
+
+export type refreshResponse401 = {
+  data: Refresh401
+  status: 401
+}
+
+export type refreshResponse422 = {
+  data: Refresh422
+  status: 422
+}
+
+export type refreshResponse429 = {
+  data: Refresh429
+  status: 429
+}
+
+export type refreshResponseSuccess = refreshResponse200 & {
+  headers: Headers
+}
+export type refreshResponseError = (
+  | refreshResponse400
+  | refreshResponse401
+  | refreshResponse422
+  | refreshResponse429
+) & {
+  headers: Headers
+}
+
+export type refreshResponse = refreshResponseSuccess | refreshResponseError
+
+export const getRefreshUrl = () => {
+  return `/v1/auth/refresh`
+}
+
+/**
+ * @summary Refresh Route
+ */
+export const refresh = async (
+  refreshRequest: RefreshRequest,
+  options?: RequestInit
+): Promise<refreshResponse> => {
+  return customFetch<refreshResponse>(getRefreshUrl(), {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(refreshRequest)
+  })
+}
+
+export const getRefreshMutationOptions = <
+  TError = Refresh400 | Refresh401 | Refresh422 | Refresh429,
+  TContext = unknown
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof refresh>>,
+    TError,
+    { data: RefreshRequest },
+    TContext
+  >
+  request?: SecondParameter<typeof customFetch>
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof refresh>>,
+  TError,
+  { data: RefreshRequest },
+  TContext
+> => {
+  const mutationKey = ['refresh']
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      'mutationKey' in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined }
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof refresh>>,
+    { data: RefreshRequest }
+  > = props => {
+    const { data } = props ?? {}
+
+    return refresh(data, requestOptions)
+  }
+
+  return { mutationFn, ...mutationOptions }
+}
+
+export type RefreshMutationResult = NonNullable<
+  Awaited<ReturnType<typeof refresh>>
+>
+export type RefreshMutationBody = RefreshRequest
+export type RefreshMutationError =
+  | Refresh400
+  | Refresh401
+  | Refresh422
+  | Refresh429
+
+/**
+ * @summary Refresh Route
+ */
+export const useRefresh = <
+  TError = Refresh400 | Refresh401 | Refresh422 | Refresh429,
+  TContext = unknown
+>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof refresh>>,
+      TError,
+      { data: RefreshRequest },
+      TContext
+    >
+    request?: SecondParameter<typeof customFetch>
+  },
+  queryClient?: QueryClient
+): UseMutationReturnType<
+  Awaited<ReturnType<typeof refresh>>,
+  TError,
+  { data: RefreshRequest },
+  TContext
+> => {
+  return useMutation(getRefreshMutationOptions(options), queryClient)
 }
 
 export type createAccountResponse201 = {

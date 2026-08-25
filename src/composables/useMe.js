@@ -3,10 +3,11 @@ import { getMe } from '@/api/fanfinity'
 import { waitForAuthReady } from '@/composables/useAuth'
 
 // Session bootstrap: the signed-in user's backend record + account
-// memberships from GET /v1/me, loaded once auth is ready (useAuth.js calls
-// loadMe/clearMe from its onAuthStateChanged listener). Module-scoped
-// singletons, same pattern as useAuth.js — future account-scoped screens
-// read `memberships` to drive an account picker.
+// memberships from GET /v1/me. useAuth.js calls loadMe() after a successful
+// sign-in and clearMe() on sign-out; the router also calls loadMe() (via
+// waitForAccount) on cold load into an authed route. Module-scoped singletons,
+// same pattern as useAuth.js — future account-scoped screens read `memberships`
+// to drive an account picker.
 export const me = ref(null)
 export const memberships = ref([])
 const loading = ref(false)

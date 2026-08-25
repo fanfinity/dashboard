@@ -6,11 +6,9 @@ import {
   createWebHistory
 } from 'vue-router'
 
-import { signOut } from 'firebase/auth'
-
 import routes from './routes.js'
-import { auth } from '@/firebase'
-import { user, waitForAuthReady } from '@/composables/useAuth'
+import { waitForAuthReady } from '@/composables/useAuth'
+import { clearTokens, isAuthenticated } from '@/composables/useSession'
 import { waitForAccount, accountMissing } from '@/composables/useMe'
 
 /*
@@ -39,21 +37,22 @@ export default defineRouter((/* { store, ssrContext } */) => {
     history: createHistory(import.meta.env.QUASAR_VUE_ROUTER_BASE)
   })
 
-  // Gate routes tagged requiresAuth (see routes.js) behind sign-in. Firebase's
-  // first auth-state callback is async, so wait for it before deciding —
-  // otherwise a signed-in user would be bounced to /login on cold load.
+  // Gate routes tagged requiresAuth (see routes.js) behind sign-in. The access
+  // token is hydrated synchronously from localStorage, so waitForAuthReady()
+  // resolves immediately — kept for symmetry with useMe's account bootstrap.
   Router.beforeEach(async to => {
     if (!to.matched.some(record => record.meta.requiresAuth)) return true
     await waitForAuthReady()
-    if (!user.value) return { path: '/login', query: { redirect: to.fullPath } }
-    // Signed into Firebase but the backend may hold no account for this identity
+    if (!isAuthenticated.value)
+      return { path: '/login', query: { redirect: to.fullPath } }
+    // Signed in, but the backend may hold no account for this identity
     // (self-provisioning is disabled — accounts come only from registration or
     // invitation). Confirm before entering the app; otherwise every API call
     // 403s and the shell looks broken. Transient /v1/me errors don't set
     // accountMissing, so a backend hiccup won't bounce a real user.
     await waitForAccount()
     if (accountMissing.value) {
-      await signOut(auth)
+      clearTokens()
       return { path: '/login', query: { redirect: to.fullPath } }
     }
     return true
