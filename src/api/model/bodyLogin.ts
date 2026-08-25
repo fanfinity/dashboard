@@ -6,7 +6,9 @@
  */
 
 export interface BodyLogin {
-  grant_type?: string;
-  username?: string;
-  password?: string;
+  grant_type?: 'password'
+  /** @minLength 1 */
+  username: string
+  /** @minLength 1 */
+  password: string
 }

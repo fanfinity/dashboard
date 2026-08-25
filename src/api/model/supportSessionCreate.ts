@@ -6,13 +6,13 @@
  */
 
 export interface SupportSessionCreate {
-  account_id: string;
+  account_id: string
   /**
-     * @minLength 1
-     * @maxLength 500
-     */
-  reason: string;
-  target_user_id?: string | null;
+   * @minLength 1
+   * @maxLength 500
+   */
+  reason: string
+  target_user_id?: string | null
   /** Requested permissions; capped to the support-allowed set. */
-  scopes?: string[] | null;
+  scopes?: string[] | null
 }

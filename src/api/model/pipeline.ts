@@ -6,13 +6,13 @@
  */
 
 export interface Pipeline {
-  id: string;
-  account_id: string;
-  name: string;
-  source_id: string;
-  destination_id: string;
-  jitsu_link_id?: string | null;
-  is_enabled: boolean;
-  created_at: string;
-  updated_at: string;
+  id: string
+  account_id: string
+  name: string
+  source_id: string
+  destination_id: string
+  jitsu_link_id?: string | null
+  is_enabled: boolean
+  created_at: string
+  updated_at: string
 }

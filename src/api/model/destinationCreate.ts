@@ -4,20 +4,20 @@
  * Sfere Backend
  * OpenAPI spec version: 0.1.0
  */
-import type { DestinationConfig } from './destinationConfig';
+import type { DestinationConfig } from './destinationConfig'
 
 export interface DestinationCreate {
   /**
-     * @minLength 1
-     * @maxLength 255
-     */
-  name: string;
+   * @minLength 1
+   * @maxLength 255
+   */
+  name: string
   /**
-     * @minLength 1
-     * @maxLength 255
-     * @pattern ^[a-z0-9][a-z0-9-]*$
-     */
-  slug: string;
-  destination_type?: string | null;
-  config?: DestinationConfig | null;
+   * @minLength 1
+   * @maxLength 255
+   * @pattern ^[a-z0-9][a-z0-9-]*$
+   */
+  slug: string
+  destination_type?: string | null
+  config?: DestinationConfig | null
 }

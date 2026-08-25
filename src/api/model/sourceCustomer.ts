@@ -9,11 +9,11 @@
  * A customer record from the Zid Airbyte connector sync.
  */
 export interface SourceCustomer {
-  id: number;
-  name?: string | null;
-  email?: string | null;
-  mobile?: string | null;
-  created_at?: string | null;
-  updated_at?: string | null;
-  [key: string]: unknown;
- }
+  id: number
+  name?: string | null
+  email?: string | null
+  mobile?: string | null
+  created_at?: string | null
+  updated_at?: string | null
+  [key: string]: unknown
+}

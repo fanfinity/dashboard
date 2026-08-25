@@ -4,10 +4,10 @@
  * Sfere Backend
  * OpenAPI spec version: 0.1.0
  */
-import type { Account } from './account';
-import type { Role } from './role';
+import type { Account } from './account'
+import type { Role } from './role'
 
 export interface AccountMembership {
-  account: Account;
-  role: Role;
+  account: Account
+  role: Role
 }

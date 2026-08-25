@@ -4,19 +4,19 @@
  * Sfere Backend
  * OpenAPI spec version: 0.1.0
  */
-import type { SourceOrder } from './sourceOrder';
+import type { SourceOrder } from './sourceOrder'
 
 /**
  * One page of per-source orders.
  */
 export interface SourceOrderPage {
-  items: SourceOrder[];
+  items: SourceOrder[]
   /** @minimum 0 */
-  total: number;
+  total: number
   /** @minimum 1 */
-  page: number;
+  page: number
   /** @minimum 1 */
-  size: number;
+  size: number
   /** @minimum 0 */
-  pages: number;
+  pages: number
 }

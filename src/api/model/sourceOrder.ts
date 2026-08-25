@@ -9,10 +9,10 @@
  * An order record from the Zid Airbyte connector sync.
  */
 export interface SourceOrder {
-  id: number;
-  status?: string | null;
-  payment_status?: string | null;
-  created_at?: string | null;
-  updated_at?: string | null;
-  [key: string]: unknown;
- }
+  id: number
+  status?: string | null
+  payment_status?: string | null
+  created_at?: string | null
+  updated_at?: string | null
+  [key: string]: unknown
+}

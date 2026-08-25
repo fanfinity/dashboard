@@ -7,10 +7,9 @@ import { auth } from '@/firebase'
 // Dev default is the local backend (`make run` in ../backend); deployed
 // builds set VITE_API_BASE to the staging/prod host
 // (docs/backend-auth-integration.md).
-const BASE = (import.meta.env.VITE_API_BASE || 'http://localhost:8080').replace(
-  /\/$/,
-  ''
-)
+export const API_BASE = (
+  import.meta.env.VITE_API_BASE || 'http://localhost:8080'
+).replace(/\/$/, '')
 
 export class ApiError extends Error {
   constructor(message, status, problem) {
@@ -28,7 +27,7 @@ export class ApiError extends Error {
 async function send(url, options, forceRefresh) {
   if (!auth.currentUser) throw new ApiError('Not signed in', 401)
   const token = await auth.currentUser.getIdToken(forceRefresh)
-  return fetch(`${BASE}${url}`, {
+  return fetch(`${API_BASE}${url}`, {
     ...options,
     headers: {
       ...options?.headers,

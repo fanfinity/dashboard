@@ -6,8 +6,12 @@ import {
   createWebHistory
 } from 'vue-router'
 
+import { signOut } from 'firebase/auth'
+
 import routes from './routes.js'
+import { auth } from '@/firebase'
 import { user, waitForAuthReady } from '@/composables/useAuth'
+import { waitForAccount, accountMissing } from '@/composables/useMe'
 
 /*
  * If not building with SSR mode, you can
@@ -42,6 +46,16 @@ export default defineRouter((/* { store, ssrContext } */) => {
     if (!to.matched.some(record => record.meta.requiresAuth)) return true
     await waitForAuthReady()
     if (!user.value) return { path: '/login', query: { redirect: to.fullPath } }
+    // Signed into Firebase but the backend may hold no account for this identity
+    // (self-provisioning is disabled — accounts come only from registration or
+    // invitation). Confirm before entering the app; otherwise every API call
+    // 403s and the shell looks broken. Transient /v1/me errors don't set
+    // accountMissing, so a backend hiccup won't bounce a real user.
+    await waitForAccount()
+    if (accountMissing.value) {
+      await signOut(auth)
+      return { path: '/login', query: { redirect: to.fullPath } }
+    }
     return true
   })
 

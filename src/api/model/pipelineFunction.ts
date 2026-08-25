@@ -9,14 +9,14 @@
  * A Jitsu function attached to a pipeline, with its current code.
  */
 export interface PipelineFunction {
-  function_id: string;
-  name: string;
+  function_id: string
+  name: string
   /** Key of the default template this function was seeded from. */
-  template: string;
+  template: string
   /** Template version the code was seeded/reset to. */
-  template_version: number;
+  template_version: number
   /** Newest available template version; reset upgrades to it. */
-  latest_template_version: number;
+  latest_template_version: number
   /** Current function code as stored in Jitsu. */
-  code: string;
+  code: string
 }

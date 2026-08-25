@@ -1,12 +1,12 @@
 import { ref } from 'vue'
 import { Notify } from 'quasar'
 import {
-  createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
   signOut,
   onAuthStateChanged
 } from 'firebase/auth'
 import { auth } from '@/firebase'
+import { API_BASE } from '@/api/mutator'
 import { loadMe, clearMe } from '@/composables/useMe'
 
 // Module-scoped singletons so every useAuth() call shares one reactive view
@@ -60,6 +60,35 @@ function messageFor(e) {
   return ERROR_MESSAGES[e?.code] || e?.message || 'Something went wrong.'
 }
 
+// Registration goes through the backend (POST /v1/register), which is the only
+// path that creates an account: it signs the user up in Identity Platform AND
+// provisions their backend user + workspace in one step. Client-side Firebase
+// sign-up is deliberately not used — it would create an auth user with no
+// backend account, which the API now rejects with 403. Unauthenticated, so it
+// bypasses the auth-required orval mutator with a plain fetch.
+async function registerViaBackend(email, password, displayName) {
+  const res = await fetch(`${API_BASE}/v1/register`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+    // No name field on the login form yet, so default display_name to the email.
+    body: JSON.stringify({
+      email,
+      password,
+      display_name: displayName || email
+    })
+  })
+  const body = await res.json().catch(() => null)
+  if (!res.ok) {
+    // RFC 9457 problem+json ({ detail, title, ... }).
+    const err = new Error(
+      body?.detail || body?.title || `Registration failed (${res.status})`
+    )
+    if (res.status === 409) err.code = 'auth/email-already-in-use'
+    throw err
+  }
+  return body
+}
+
 async function run(fn) {
   loading.value = true
   error.value = null
@@ -79,14 +108,14 @@ async function run(fn) {
 export function useAuth() {
   ensureListener()
 
-  // v0.1: email + password only, no verification step. Firebase signs the user
-  // in on creation, so onAuthStateChanged fires and the backend JIT-provisions
-  // their account + Jitsu workspace on the first getMe. That provisioning skips
-  // the email-verified check only when the backend runs with ENV in
-  // {local,test,dev,ci} — so unverified sign-up works locally but a deployed
-  // backend on another ENV would still reject it until verification returns.
-  const signUp = (email, password) =>
-    run(() => createUserWithEmailAndPassword(auth, email, password))
+  // v0.1: email + password only, no verification step. Registration provisions
+  // the backend account first (POST /v1/register), then signs the user in via
+  // Firebase so onAuthStateChanged fires and loadMe() finds a real account.
+  const signUp = (email, password, displayName) =>
+    run(async () => {
+      await registerViaBackend(email, password, displayName)
+      await signInWithEmailAndPassword(auth, email, password)
+    })
 
   const signIn = (email, password) =>
     run(() => signInWithEmailAndPassword(auth, email, password))

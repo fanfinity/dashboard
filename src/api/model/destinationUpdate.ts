@@ -6,5 +6,5 @@
  */
 
 export interface DestinationUpdate {
-  is_enabled: boolean;
+  is_enabled: boolean
 }

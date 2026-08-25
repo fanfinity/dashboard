@@ -5,11 +5,11 @@
  * OpenAPI spec version: 0.1.0
  */
 
-export type SupportSessionStatus = typeof SupportSessionStatus[keyof typeof SupportSessionStatus];
-
+export type SupportSessionStatus =
+  (typeof SupportSessionStatus)[keyof typeof SupportSessionStatus]
 
 export const SupportSessionStatus = {
   active: 'active',
   ended: 'ended',
-  expired: 'expired',
-} as const;
+  expired: 'expired'
+} as const

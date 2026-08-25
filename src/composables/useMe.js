@@ -12,6 +12,13 @@ export const memberships = ref([])
 const loading = ref(false)
 const error = ref(null)
 
+// True when GET /v1/me was rejected because no backend account exists for this
+// identity (403 — self-provisioning is disabled server-side; accounts are made
+// only via registration or invitation). Distinct from a transient backend error:
+// the login flow and router guard sign such a user out instead of stranding them
+// in a shell that 403s every call.
+export const accountMissing = ref(false)
+
 // The account the user acts in: prefer one they own, else their first
 // membership. Every signed-up user now has at least one (the backend
 // auto-provisions a personal account + owner role on first login), so this is
@@ -37,6 +44,7 @@ export async function loadMe() {
   if (inflight) return inflight
   loading.value = true
   error.value = null
+  accountMissing.value = false
   inflight = (async () => {
     try {
       const { data } = await getMe()
@@ -44,6 +52,9 @@ export async function loadMe() {
       memberships.value = data.memberships
     } catch (e) {
       error.value = e.message || 'Failed to load profile.'
+      // 403 (and 404) mean "no account for this identity", not a transient
+      // outage — surface it so the caller can sign the user out.
+      accountMissing.value = e?.status === 403 || e?.status === 404
     } finally {
       loading.value = false
       inflight = null
@@ -67,6 +78,7 @@ export function clearMe() {
   me.value = null
   memberships.value = []
   error.value = null
+  accountMissing.value = false
 }
 
 export function useMe() {

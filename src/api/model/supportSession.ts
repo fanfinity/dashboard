@@ -4,17 +4,17 @@
  * Sfere Backend
  * OpenAPI spec version: 0.1.0
  */
-import type { SupportSessionStatus } from './supportSessionStatus';
+import type { SupportSessionStatus } from './supportSessionStatus'
 
 export interface SupportSession {
-  id: string;
-  account_id: string;
-  staff_id: string;
-  target_user_id?: string | null;
-  reason: string;
-  scopes: string[];
-  status: SupportSessionStatus;
-  expires_at: string;
-  ended_at?: string | null;
-  created_at: string;
+  id: string
+  account_id: string
+  staff_id: string
+  target_user_id?: string | null
+  reason: string
+  scopes: string[]
+  status: SupportSessionStatus
+  expires_at: string
+  ended_at?: string | null
+  created_at: string
 }

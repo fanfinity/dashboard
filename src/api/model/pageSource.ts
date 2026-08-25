@@ -4,16 +4,16 @@
  * Sfere Backend
  * OpenAPI spec version: 0.1.0
  */
-import type { Source } from './source';
+import type { Source } from './source'
 
 export interface PageSource {
-  items: Source[];
+  items: Source[]
   /** @minimum 0 */
-  total: number;
+  total: number
   /** @minimum 1 */
-  page: number;
+  page: number
   /** @minimum 1 */
-  size: number;
+  size: number
   /** @minimum 0 */
-  pages: number;
+  pages: number
 }

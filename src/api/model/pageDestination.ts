@@ -4,16 +4,16 @@
  * Sfere Backend
  * OpenAPI spec version: 0.1.0
  */
-import type { Destination } from './destination';
+import type { Destination } from './destination'
 
 export interface PageDestination {
-  items: Destination[];
+  items: Destination[]
   /** @minimum 0 */
-  total: number;
+  total: number
   /** @minimum 1 */
-  page: number;
+  page: number
   /** @minimum 1 */
-  size: number;
+  size: number
   /** @minimum 0 */
-  pages: number;
+  pages: number
 }

@@ -5,12 +5,11 @@
  * OpenAPI spec version: 0.1.0
  */
 
-export type Protocol = typeof Protocol[keyof typeof Protocol];
-
+export type Protocol = (typeof Protocol)[keyof typeof Protocol]
 
 export const Protocol = {
   http: 'http',
   https: 'https',
   clickhouse: 'clickhouse',
-  'clickhouse-secure': 'clickhouse-secure',
-} as const;
+  'clickhouse-secure': 'clickhouse-secure'
+} as const

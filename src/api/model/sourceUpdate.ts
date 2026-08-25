@@ -6,5 +6,5 @@
  */
 
 export interface SourceUpdate {
-  is_enabled: boolean;
+  is_enabled: boolean
 }

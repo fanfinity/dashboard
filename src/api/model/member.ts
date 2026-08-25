@@ -4,10 +4,10 @@
  * Sfere Backend
  * OpenAPI spec version: 0.1.0
  */
-import type { Role } from './role';
-import type { User } from './user';
+import type { Role } from './role'
+import type { User } from './user'
 
 export interface Member {
-  user: User;
-  role: Role;
+  user: User
+  role: Role
 }

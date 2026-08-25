@@ -4,19 +4,19 @@
  * Sfere Backend
  * OpenAPI spec version: 0.1.0
  */
-import type { EventSummary } from './eventSummary';
+import type { EventSummary } from './eventSummary'
 
 /**
  * One page of event summaries.
  */
 export interface EventSummaryPage {
-  items: EventSummary[];
+  items: EventSummary[]
   /** @minimum 0 */
-  total: number;
+  total: number
   /** @minimum 1 */
-  page: number;
+  page: number
   /** @minimum 1 */
-  size: number;
+  size: number
   /** @minimum 0 */
-  pages: number;
+  pages: number
 }

@@ -4,10 +4,10 @@
  * Sfere Backend
  * OpenAPI spec version: 0.1.0
  */
-import type { AccountMembership } from './accountMembership';
-import type { User } from './user';
+import type { AccountMembership } from './accountMembership'
+import type { User } from './user'
 
 export interface Me {
-  user: User;
-  memberships: AccountMembership[];
+  user: User
+  memberships: AccountMembership[]
 }

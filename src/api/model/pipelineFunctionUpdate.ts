@@ -7,8 +7,8 @@
 
 export interface PipelineFunctionUpdate {
   /**
-     * @minLength 1
-     * @maxLength 65536
-     */
-  code: string;
+   * @minLength 1
+   * @maxLength 65536
+   */
+  code: string
 }

@@ -4,14 +4,14 @@
  * Sfere Backend
  * OpenAPI spec version: 0.1.0
  */
-import type { Protocol } from './protocol';
+import type { Protocol } from './protocol'
 
 export interface DestinationConfig {
   /** host:port pairs, e.g. ['my-ch.example.com:443'] */
-  hosts: string[];
-  protocol?: Protocol | null;
-  database?: string | null;
-  username?: string | null;
+  hosts: string[]
+  protocol?: Protocol | null
+  database?: string | null
+  username?: string | null
   /** Always "***" in API responses */
-  password?: string | null;
+  password?: string | null
 }
