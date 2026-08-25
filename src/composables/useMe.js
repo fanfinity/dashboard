@@ -1,5 +1,6 @@
 import { ref, computed } from 'vue'
 import { getMe } from '@/api/fanfinity'
+import { waitForAuthReady } from '@/composables/useAuth'
 
 // Session bootstrap: the signed-in user's backend record + account
 // memberships from GET /v1/me, loaded once auth is ready (useAuth.js calls
@@ -27,18 +28,39 @@ export const currentRole = computed(() => currentMembership.value?.role ?? null)
 
 // Best-effort: errors land in `error` instead of throwing, so a backend
 // hiccup never blocks routing (the router guard only awaits Firebase auth).
+//
+// De-duped: the auth listener kicks this off fire-and-forget, and
+// `waitForAccount()` may call it again before that first request resolves. A
+// single in-flight promise means both await the same GET rather than racing two.
+let inflight = null
 export async function loadMe() {
+  if (inflight) return inflight
   loading.value = true
   error.value = null
-  try {
-    const { data } = await getMe()
-    me.value = data.user
-    memberships.value = data.memberships
-  } catch (e) {
-    error.value = e.message || 'Failed to load profile.'
-  } finally {
-    loading.value = false
-  }
+  inflight = (async () => {
+    try {
+      const { data } = await getMe()
+      me.value = data.user
+      memberships.value = data.memberships
+    } catch (e) {
+      error.value = e.message || 'Failed to load profile.'
+    } finally {
+      loading.value = false
+      inflight = null
+    }
+  })()
+  return inflight
+}
+
+// Resolves once the acting account is known, or null if the user has none / the
+// profile load failed. Account-scoped data (`/v1/accounts/{id}/...`) awaits this
+// rather than `waitForAuthReady()` alone, because the auth listener starts
+// `loadMe()` without awaiting it, so `currentAccount` is usually still null the
+// instant auth becomes ready.
+export async function waitForAccount() {
+  await waitForAuthReady()
+  if (!currentAccount.value) await loadMe()
+  return currentAccount.value
 }
 
 export function clearMe() {

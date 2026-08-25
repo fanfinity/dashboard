@@ -28,6 +28,7 @@
       :rows="filtered"
       :loading="loading"
       :error="error"
+      :api-missing="apiMissing"
       row-key="id"
       clickable-rows
       @retry="load"
@@ -125,7 +126,7 @@ import {
 } from '@/composables/useDestinations'
 
 const router = useRouter()
-const { destinations, loading, error, load } = useDestinations()
+const { destinations, loading, error, apiMissing, load } = useDestinations()
 const { toast } = useDestinationToasts()
 
 const query = ref('')

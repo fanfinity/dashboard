@@ -1,8 +1,13 @@
 import { computed, ref } from 'vue'
 
 // Whether the app is reading mock JSON or a real backend. One global switch —
-// not per-module like useFeatures — because no domain has a real endpoint yet;
-// there is nothing for per-module granularity to control until one ships.
+// not per-module like useFeatures — flipped through Settings → Data source.
+//
+// Default is REAL: the app is wired to the accounts backend, so a signed-in
+// user should see their own data without touching Settings. Only the wired
+// domains (sources, destinations, pipelines, live/per-source events) actually
+// call the backend; the rest report `apiMissing` ("No API yet"). Switch to mock
+// for a backend-free demo. `smoke` runs against whatever this default is.
 //
 // Same module-singleton pattern as useAuth/useJitsu/useFeatures: one ref, so
 // the Settings toggle and the footer banner agree without a bus or a refetch.
@@ -15,10 +20,12 @@ const mode = ref(readMode())
 function readMode() {
   try {
     const stored = localStorage.getItem(STORAGE_KEY)
-    return stored === REAL ? REAL : MOCK
+    // Only an explicit stored 'mock' opts out; everything else (unset,
+    // garbage, 'real') resolves to real.
+    return stored === MOCK ? MOCK : REAL
   } catch {
-    // Private mode or a disabled store — mock is always the safe default.
-    return MOCK
+    // Private mode or a disabled store — fall back to the real default.
+    return REAL
   }
 }
 

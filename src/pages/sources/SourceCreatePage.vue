@@ -107,6 +107,20 @@
         </FormField>
 
         <FormField
+          label="Zid store ID"
+          for-id="source-store-id"
+          hint="Required to connect a Zid store. Leave blank for a template-based source."
+        >
+          <input
+            id="source-store-id"
+            v-model="form.storeId"
+            type="text"
+            placeholder="e.g. 12345678"
+            class="h-9 rounded-lg border border-line2 bg-white px-2.5 text-sm text-ink outline-none placeholder:text-subtle"
+          />
+        </FormField>
+
+        <FormField
           label="State on creation"
           hint="A paused source keeps its configuration but accepts no events."
         >
@@ -144,8 +158,9 @@
         >
           Cancel
         </button>
-        <p class="text-xs text-subtle"
-          >Nothing is persisted yet — there is no backend behind this form.</p
+        <p v-if="!isReal" class="text-xs text-subtle"
+          >Local preview — switch Settings → Data source to “real” to persist to
+          the backend.</p
         >
       </div>
     </form>
@@ -165,10 +180,14 @@ import ErrorState from '@/components/ui/ErrorState.vue'
 import EmptyState from '@/components/ui/EmptyState.vue'
 import SourceTemplatePicker from '@/components/sources/SourceTemplatePicker.vue'
 import { slugify, useSourceTemplates } from '@/composables/useSources'
+import { useSourcesAPI } from '@/composables/useSourcesAPI'
+import { useDataSource } from '@/composables/useDataSource'
 
 const router = useRouter()
 const $q = useQuasar()
 const { templates, loading, error, load, findById } = useSourceTemplates()
+const { isReal } = useDataSource()
+const { create: createSourceReal } = useSourcesAPI()
 
 const STATE_OPTIONS = [
   { label: 'Enabled', value: true },
@@ -185,8 +204,14 @@ const form = reactive({
   name: '',
   slug: '',
   description: '',
+  storeId: '',
   isEnabled: true
 })
+
+// A Zid store is identified by its store id; entering one makes this a Zid
+// source, for which the template pick is optional (the backend provisions the
+// ingest site itself).
+const isZid = computed(() => form.storeId.trim().length > 0)
 
 const errors = reactive({ templateId: '', name: '', slug: '' })
 
@@ -234,7 +259,9 @@ watch(
 )
 
 function validate() {
-  errors.templateId = form.templateId ? '' : 'Pick a source template.'
+  // A Zid source needs no template — its store id stands in for one.
+  errors.templateId =
+    form.templateId || isZid.value ? '' : 'Pick a source template.'
   errors.name = form.name.trim() ? '' : 'A source name is required.'
 
   if (!form.slug.trim()) {
@@ -248,16 +275,50 @@ function validate() {
   return !errors.templateId && !errors.name && !errors.slug
 }
 
-function submit() {
+async function submit() {
   if (!validate()) return
   saving.value = true
 
-  // No POST to make. The record is announced and the user is returned to the
-  // list, which re-reads the mock JSON — so the new source is deliberately not
-  // there. Pretending otherwise would be the dishonest option.
+  // Real mode: POST to the backend, then open the created source so the Zid
+  // go-live steps (connect webhooks, first sync) are one click away.
+  if (isReal.value) {
+    try {
+      const sourceType = isZid.value
+        ? 'zid'
+        : (findById(form.templateId)?.sourceType ?? null)
+      const created = await createSourceReal({
+        name: form.name.trim(),
+        slug: form.slug.trim(),
+        sourceType,
+        templateId: form.templateId || null,
+        storeId: form.storeId.trim() || null
+      })
+      $q.notify({
+        message: `“${form.name.trim()}” created`,
+        color: 'positive',
+        position: 'bottom',
+        timeout: 2500
+      })
+      router.push({ name: 'sources-detail', params: { id: created.id } })
+    } catch (e) {
+      $q.notify({
+        message: `Couldn't create source: ${e.message || 'request failed'}`,
+        color: 'negative',
+        position: 'bottom',
+        timeout: 4000
+      })
+    } finally {
+      saving.value = false
+    }
+    return
+  }
+
+  // Mock mode: nothing to persist. The list re-reads the mock JSON, so the new
+  // source is deliberately not there — pretending otherwise would be dishonest.
   $q.notify({
     message: `“${form.name.trim()}” configured`,
-    caption: 'Local preview only — no backend is connected yet.',
+    caption:
+      'Local preview only — switch Settings → Data source to “real” to persist.',
     color: 'dark',
     position: 'bottom',
     timeout: 2500

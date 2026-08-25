@@ -75,6 +75,13 @@
         </button>
       </div>
 
+      <ZidSetupWizard
+        v-if="showZidWizard"
+        :source="source"
+        :zid-app-url="zidAppUrl"
+        @complete="load"
+      />
+
       <TabNav v-model="tab" :tabs="tabs" />
 
       <CardPanel v-if="tab === 'overview'">
@@ -94,6 +101,10 @@
         :source="source"
         @copy="copyValue"
       />
+
+      <SourceEventsPanel v-else-if="tab === 'events'" :source="source" />
+
+      <SourceSyncPanel v-else-if="tab === 'sync'" :source="source" />
 
       <template v-else>
         <LoadingState v-if="templatesLoading" variant="form" :rows="3" />
@@ -164,6 +175,10 @@ import ErrorState from '@/components/ui/ErrorState.vue'
 import EmptyState from '@/components/ui/EmptyState.vue'
 import ConfirmDialog from '@/components/ui/ConfirmDialog.vue'
 import SourceIngestPanel from '@/components/sources/SourceIngestPanel.vue'
+import SourceEventsPanel from '@/components/sources/SourceEventsPanel.vue'
+import SourceSyncPanel from '@/components/sources/SourceSyncPanel.vue'
+import ZidSetupWizard from '@/components/sources/ZidSetupWizard.vue'
+import { useDataSource } from '@/composables/useDataSource'
 import { useTemplates } from '@/composables/useTemplates'
 import {
   formatCount,
@@ -197,14 +212,31 @@ const {
   findById: findTemplate
 } = useSourceTemplates()
 
+const { isReal } = useDataSource()
+
+// Passed to the Zid wizard so its "Authorize with Zid" button can open the
+// zid-app OAuth page. Empty in envs where the zid-app isn't exposed.
+const zidAppUrl = import.meta.env.VITE_ZID_APP_URL || ''
+
 const tab = ref('overview')
 const confirmDelete = ref(false)
 
 const tabs = [
   { key: 'overview', label: 'Overview' },
   { key: 'ingest', label: 'Ingest' },
+  { key: 'events', label: 'Events' },
+  { key: 'sync', label: 'Syncs' },
   { key: 'template', label: 'Template' }
 ]
+
+// The Zid go-live steps (authorize → connect webhooks → first sync) hit the
+// real backend, so only offer them in real mode for an unsynced Zid source.
+const showZidWizard = computed(
+  () =>
+    isReal.value &&
+    source.value?.sourceType === 'zid' &&
+    !source.value?.lastSyncedAt
+)
 
 // Resolved off the loaded list rather than a per-id fetch: the mock layer is one
 // JSON file, and a list already in memory is the same data.

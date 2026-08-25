@@ -1,4 +1,5 @@
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
+import { currentAccount, waitForAccount } from '@/composables/useMe'
 
 // The Live Events page reads incoming events from the events backend
 // (console.fanfinity.io). Unlike the public connector catalog (see
@@ -12,7 +13,10 @@ const BASE = (import.meta.env.VITE_EVENTS_API_BASE || '/japi').replace(
 )
 
 // Internal workspace id (cuid), NOT the slug — the API rejects the slug.
-// Resolve via GET /japi/workspace; this is just the default for the sfere ws.
+// Resolve via GET /japi/workspace; this is the fallback for the shared sfere
+// workspace, used when the signed-in account has no Jitsu workspace of its own
+// (dev, or an account still provisioning). The account's own workspace, when
+// present, always wins — see `workspaceId` below.
 export const WORKSPACE_ID =
   import.meta.env.VITE_EVENTS_WORKSPACE_ID || 'cmqgzfe6n0007ws09k1wa8qnb'
 
@@ -124,6 +128,14 @@ export function useLiveEvents() {
   const loading = ref(false)
   const error = ref(null)
 
+  // The workspace whose event log we read: the signed-in account's own Jitsu
+  // workspace when it has one, else the shared fallback. The account record
+  // comes straight off GET /v1/me (snake_case, not camelized), so it is
+  // `jitsu_workspace_id`, not `jitsuWorkspaceId`.
+  const workspaceId = computed(
+    () => currentAccount.value?.jitsu_workspace_id || WORKSPACE_ID
+  )
+
   /**
    * Loads incoming events for a site.
    * @param opts.actorId  site/stream id
@@ -148,8 +160,11 @@ export function useLiveEvents() {
     loading.value = true
     error.value = null
     try {
+      // Settle the account first so the very first load already targets the
+      // account's workspace rather than the fallback.
+      await waitForAccount()
       const qs = buildQuery({ limit, start, end, level, search })
-      const url = `${BASE}/${WORKSPACE_ID}/log/incoming/${actorId}?${qs}`
+      const url = `${BASE}/${workspaceId.value}/log/incoming/${actorId}?${qs}`
       const res = await fetch(url, {
         headers: { Accept: 'application/x-ndjson' }
       })
@@ -173,7 +188,8 @@ export function useLiveEvents() {
    */
   async function loadSites() {
     try {
-      const res = await fetch(`${BASE}/${WORKSPACE_ID}/config/stream`, {
+      await waitForAccount()
+      const res = await fetch(`${BASE}/${workspaceId.value}/config/stream`, {
         headers: { Accept: 'application/json' }
       })
       if (!res.ok) return
@@ -184,5 +200,5 @@ export function useLiveEvents() {
     }
   }
 
-  return { events, sites, loading, error, load, loadSites }
+  return { events, sites, loading, error, workspaceId, load, loadSites }
 }

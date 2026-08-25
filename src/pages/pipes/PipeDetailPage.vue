@@ -147,6 +147,10 @@
             empty-text="This pipe passes no parameters to its destination — the destination's own defaults apply."
           />
         </CardPanel>
+
+        <!-- The Jitsu transform functions attached to this pipe's connection.
+             Self-hides unless real mode: functions live only on the backend. -->
+        <PipeFunctionsPanel :pipeline-id="pipe.id" :api-available="isReal" />
       </template>
 
       <CardPanel v-else :padded="false">
@@ -218,7 +222,9 @@ import StatusBadge from '@/components/ui/StatusBadge.vue'
 import TabNav from '@/components/ui/TabNav.vue'
 import PipeFlow from '@/components/pipes/PipeFlow.vue'
 import PipeParams from '@/components/pipes/PipeParams.vue'
+import PipeFunctionsPanel from '@/components/pipes/PipeFunctionsPanel.vue'
 import { useDiagram } from '@/composables/useDiagram'
+import { useDataSource } from '@/composables/useDataSource'
 import {
   formatCount,
   formatDate,
@@ -229,6 +235,7 @@ import {
 const route = useRoute()
 const router = useRouter()
 const $q = useQuasar()
+const { isReal } = useDataSource()
 
 const {
   pipes,

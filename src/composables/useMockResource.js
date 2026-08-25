@@ -1,6 +1,6 @@
 import { ref } from 'vue'
 import { useDataSource } from '@/composables/useDataSource'
-import { waitForAuthReady } from '@/composables/useAuth'
+import { waitForAccount } from '@/composables/useMe'
 import { customFetch, ApiError } from '@/api/mutator'
 
 /**
@@ -36,9 +36,14 @@ import { customFetch, ApiError } from '@/api/mutator'
  *   identity rather than falling back to `options.select`, because several
  *   mock files are wrapped (e.g. `trash.json`'s `payload.pipes`) in a way the
  *   drafted real endpoint is not.
- * @param {string} options.api.path
- *   e.g. `'/v1/sources'` — appended to the same `VITE_API_BASE` the generated
- *   accounts/RBAC client uses (`src/api/mutator.js`).
+ * @param {string|(() => string|null)} options.api.path
+ *   The live endpoint, appended to the same `VITE_API_BASE` the generated
+ *   accounts/RBAC client uses (`src/api/mutator.js`). Either a static string
+ *   (`'/v1/customers'`) or a function evaluated at load time — the latter for
+ *   account-scoped routes that need the acting account id, e.g.
+ *   `() => account.value && '/v1/accounts/' + account.value.id + '/sources'`.
+ *   A function returning null (no account yet) reads as `apiMissing`, no
+ *   request made. The account is awaited before the function runs.
  * @param {(payload: any) => any} [options.api.select]
  * @returns {{ data: import('vue').Ref, loading: import('vue').Ref<boolean>, error: import('vue').Ref<string|null>, apiMissing: import('vue').Ref<boolean>, load: () => Promise<void> }}
  *
@@ -57,7 +62,7 @@ import { customFetch, ApiError } from '@/api/mutator'
  * })
  */
 export function useMockResource(name, options = {}) {
-  const { initial = [], select = null, api = null } = options
+  const { initial = [], select = null, api = null, mockOnly = false } = options
   const { isReal } = useDataSource()
 
   // A fresh copy every time, so a screen that mutates `data` in place cannot
@@ -110,8 +115,19 @@ export function useMockResource(name, options = {}) {
     loading.value = true
     error.value = null
     try {
-      await waitForAuthReady()
-      const { data: payload } = await customFetch(api.path, { method: 'GET' })
+      // waitForAccount() subsumes waitForAuthReady() and additionally settles
+      // the acting account, so a function `api.path` (account-scoped route) has
+      // the id it needs on the first load rather than resolving to null.
+      await waitForAccount()
+      const path = typeof api.path === 'function' ? api.path() : api.path
+      // A path function with no account to build from means "nothing to call
+      // yet" — same contract as an unwired resource, no request attempted.
+      if (!path) {
+        apiMissing.value = true
+        data.value = blank()
+        return
+      }
+      const { data: payload } = await customFetch(path, { method: 'GET' })
       const picked = api.select ? api.select(payload) : payload
       data.value = picked === undefined || picked === null ? blank() : picked
     } catch (e) {
@@ -132,7 +148,11 @@ export function useMockResource(name, options = {}) {
 
   async function load() {
     apiMissing.value = false
-    if (isReal.value) {
+    // `mockOnly` resources are static catalogs with no backend equivalent
+    // (e.g. the source/destination template lists), so they always read the
+    // bundled JSON — otherwise real mode would report `apiMissing` and leave a
+    // create form with nothing to pick.
+    if (isReal.value && !mockOnly) {
       await loadReal()
     } else {
       await loadMock()

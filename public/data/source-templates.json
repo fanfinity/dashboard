@@ -1,5 +1,17 @@
 [
   {
+    "id": "zid",
+    "name": "Zid",
+    "description": "Connect a Zid store to sync its customers, orders and events. Enter your Zid store ID below after picking this template.",
+    "sourceType": "cloud_app",
+    "version": "2026-08-22",
+    "icon": "shopify",
+    "tags": ["zid", "e-commerce", "store"],
+    "defaults": { "name": "Zid store" },
+    "eventTypeCount": 0,
+    "realtimeAttributeCount": 0
+  },
+  {
     "id": "web-sdk",
     "name": "Web SDK",
     "description": "Drop a script tag on your site and capture page views, clicks and custom events from the browser.",
