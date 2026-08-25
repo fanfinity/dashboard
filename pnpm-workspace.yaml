@@ -1,6 +1,13 @@
 # https://pnpm.io/settings
 
 allowBuilds:
+  # Denied on purpose, not merely unapproved. @scarf/scarf arrives via
+  # @scalar/cli (the `pnpm docs:cdp` reference server) and its install script
+  # posts telemetry about the machine it ran on. pnpm 10 exits non-zero on any
+  # build script that is neither allowed nor explicitly refused, so leaving it
+  # undeclared fails `pnpm install --frozen-lockfile` in CI on a clean checkout
+  # — which is how it surfaced. `false` is the declaration; nothing runs.
+  '@scarf/scarf': false
   '@firebase/util': true
   '@parcel/watcher': true
   core-js: true
