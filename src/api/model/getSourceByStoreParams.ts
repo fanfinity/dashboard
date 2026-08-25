@@ -6,8 +6,8 @@
  */
 
 export type GetSourceByStoreParams = {
-/**
- * The Zid store ID
- */
-store_id: string;
-};
+  /**
+   * The Zid store ID
+   */
+  store_id: string
+}

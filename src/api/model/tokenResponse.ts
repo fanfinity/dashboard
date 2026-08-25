@@ -4,12 +4,12 @@
  * Sfere Backend
  * OpenAPI spec version: 0.1.0
  */
-import type { TokenType } from './tokenType';
+import type { TokenType } from './tokenType'
 
 export interface TokenResponse {
   /** Firebase ID token for use as Bearer token */
-  access_token: string;
-  token_type: TokenType;
+  access_token: string
+  token_type: TokenType
   /** Token lifetime in seconds */
-  expires_in?: number | null;
+  expires_in?: number | null
 }

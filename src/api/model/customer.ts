@@ -6,33 +6,33 @@
  */
 
 export interface Customer {
-  id: number;
-  name: string;
-  email: string;
-  mobile: string;
-  verified: boolean;
-  is_active: boolean;
-  is_cod_enabled: boolean;
-  type: string;
-  order_total_payments: string;
-  created_at: string;
-  updated_at: string;
-  nickname?: string | null;
-  pivot_email?: string | null;
-  pivot_mobile?: string | null;
-  order_counts: number;
-  tags?: string | null;
-  gender?: string | null;
-  birth_date?: string | null;
-  last_order_date?: string | null;
-  city_id: number;
-  city_national_id: number;
-  city_name?: string | null;
-  city_priority: number;
-  city_country_id: number;
-  city_country_name?: string | null;
-  city_country_code?: string | null;
-  city_ar_name?: string | null;
-  city_en_name?: string | null;
-  points: number;
+  id: number
+  name: string
+  email: string
+  mobile: string
+  verified: boolean
+  is_active: boolean
+  is_cod_enabled: boolean
+  type: string
+  order_total_payments: string
+  created_at: string
+  updated_at: string
+  nickname?: string | null
+  pivot_email?: string | null
+  pivot_mobile?: string | null
+  order_counts: number
+  tags?: string | null
+  gender?: string | null
+  birth_date?: string | null
+  last_order_date?: string | null
+  city_id: number
+  city_national_id: number
+  city_name?: string | null
+  city_priority: number
+  city_country_id: number
+  city_country_name?: string | null
+  city_country_code?: string | null
+  city_ar_name?: string | null
+  city_en_name?: string | null
+  points: number
 }

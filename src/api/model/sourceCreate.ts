@@ -7,18 +7,18 @@
 
 export interface SourceCreate {
   /**
-     * @minLength 1
-     * @maxLength 255
-     */
-  name: string;
+   * @minLength 1
+   * @maxLength 255
+   */
+  name: string
   /**
-     * @minLength 1
-     * @maxLength 255
-     * @pattern ^[a-z0-9][a-z0-9-]*$
-     */
-  slug: string;
-  source_type?: string | null;
-  template_id?: string | null;
+   * @minLength 1
+   * @maxLength 255
+   * @pattern ^[a-z0-9][a-z0-9-]*$
+   */
+  slug: string
+  source_type?: string | null
+  template_id?: string | null
   /** The Zid store id (required when source_type is "zid"). */
-  store_id?: string | null;
+  store_id?: string | null
 }

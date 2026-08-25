@@ -4,17 +4,17 @@
  * Sfere Backend
  * OpenAPI spec version: 0.1.0
  */
-import type { Mode } from './mode';
+import type { Mode } from './mode'
 
 /**
  * Request body to trigger a source sync.
  */
 export interface SyncTriggerRequest {
-  mode: Mode;
+  mode: Mode
   /** Start of the window (required for date_range; ignored for full). */
-  date_from?: string | null;
+  date_from?: string | null
   /** End of the window (optional; defaults to now for date_range/incremental). */
-  date_to?: string | null;
+  date_to?: string | null
   /** Optional subset of entity keys to sync; defaults to all available. */
-  entities?: string[] | null;
+  entities?: string[] | null
 }

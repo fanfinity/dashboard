@@ -8,11 +8,10 @@
 /**
  * full pulls everything; incremental syncs since the last watermark; date_range uses date_from/date_to.
  */
-export type Mode = typeof Mode[keyof typeof Mode];
-
+export type Mode = (typeof Mode)[keyof typeof Mode]
 
 export const Mode = {
   full: 'full',
   incremental: 'incremental',
-  date_range: 'date_range',
-} as const;
+  date_range: 'date_range'
+} as const

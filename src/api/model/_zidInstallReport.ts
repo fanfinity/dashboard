@@ -6,8 +6,8 @@
  */
 
 export interface _ZidInstallReport {
-  store_id: string;
-  store_uuid?: string | null;
-  domain?: string | null;
-  frontend_store_id?: string | null;
+  store_id: string
+  store_uuid?: string | null
+  domain?: string | null
+  frontend_store_id?: string | null
 }

@@ -4,9 +4,9 @@
  * Sfere Backend
  * OpenAPI spec version: 0.1.0
  */
-import type { Role } from './role';
+import type { Role } from './role'
 
 export interface MemberInvite {
-  email: string;
-  role: Role;
+  email: string
+  role: Role
 }

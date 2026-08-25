@@ -4,19 +4,19 @@
  * Sfere Backend
  * OpenAPI spec version: 0.1.0
  */
-import type { SourceCustomer } from './sourceCustomer';
+import type { SourceCustomer } from './sourceCustomer'
 
 /**
  * One page of per-source customers.
  */
 export interface SourceCustomerPage {
-  items: SourceCustomer[];
+  items: SourceCustomer[]
   /** @minimum 0 */
-  total: number;
+  total: number
   /** @minimum 1 */
-  page: number;
+  page: number
   /** @minimum 1 */
-  size: number;
+  size: number
   /** @minimum 0 */
-  pages: number;
+  pages: number
 }

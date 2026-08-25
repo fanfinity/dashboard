@@ -6,5 +6,5 @@
  */
 
 export interface PipelineUpdate {
-  is_enabled: boolean;
+  is_enabled: boolean
 }

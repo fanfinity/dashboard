@@ -6,15 +6,15 @@
  */
 
 export type ListSourceEventsParams = {
-/**
- * Page number
- * @minimum 1
- */
-page?: number;
-/**
- * Page size
- * @minimum 1
- * @maximum 100
- */
-size?: number;
-};
+  /**
+   * Page number
+   * @minimum 1
+   */
+  page?: number
+  /**
+   * Page size
+   * @minimum 1
+   * @maximum 100
+   */
+  size?: number
+}

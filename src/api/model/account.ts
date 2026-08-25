@@ -6,9 +6,9 @@
  */
 
 export interface Account {
-  id: string;
-  name: string;
-  slug: string;
-  created_at: string;
-  jitsu_workspace_id?: string | null;
+  id: string
+  name: string
+  slug: string
+  created_at: string
+  jitsu_workspace_id?: string | null
 }

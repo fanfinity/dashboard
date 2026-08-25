@@ -5,9 +5,8 @@
  * OpenAPI spec version: 0.1.0
  */
 
-export type TokenType = typeof TokenType[keyof typeof TokenType];
-
+export type TokenType = (typeof TokenType)[keyof typeof TokenType]
 
 export const TokenType = {
-  bearer: 'bearer',
-} as const;
+  bearer: 'bearer'
+} as const

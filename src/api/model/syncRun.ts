@@ -4,25 +4,25 @@
  * Sfere Backend
  * OpenAPI spec version: 0.1.0
  */
-import type { SyncRunCounts } from './syncRunCounts';
+import type { SyncRunCounts } from './syncRunCounts'
 
 /**
  * A record of one source sync and its outcome.
  */
 export interface SyncRun {
-  id: string;
-  account_id: string;
-  source_id: string;
-  mode: string;
+  id: string
+  account_id: string
+  source_id: string
+  mode: string
   /** pending | running | success | failed */
-  status: string;
-  date_from?: string | null;
-  date_to?: string | null;
+  status: string
+  date_from?: string | null
+  date_to?: string | null
   /** Per-entity record counts returned by the connector. */
-  counts?: SyncRunCounts;
-  error?: string | null;
-  started_at?: string | null;
-  completed_at?: string | null;
-  created_at: string;
-  updated_at: string;
+  counts?: SyncRunCounts
+  error?: string | null
+  started_at?: string | null
+  completed_at?: string | null
+  created_at: string
+  updated_at: string
 }

@@ -4,11 +4,11 @@
  * Sfere Backend
  * OpenAPI spec version: 0.1.0
  */
-import type { AccountMembership } from './accountMembership';
-import type { User } from './user';
+import type { AccountMembership } from './accountMembership'
+import type { User } from './user'
 
 export interface RegisterResponse {
-  token: string;
-  user: User;
-  memberships: AccountMembership[];
+  token: string
+  user: User
+  memberships: AccountMembership[]
 }

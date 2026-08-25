@@ -4,19 +4,19 @@
  * Sfere Backend
  * OpenAPI spec version: 0.1.0
  */
-import type { DestinationConfig } from './destinationConfig';
+import type { DestinationConfig } from './destinationConfig'
 
 export interface Destination {
-  id: string;
-  account_id: string;
-  name: string;
-  slug: string;
-  destination_type: string;
-  jitsu_destination_id?: string | null;
-  is_enabled: boolean;
-  created_at: string;
-  updated_at: string;
-  config?: DestinationConfig | null;
+  id: string
+  account_id: string
+  name: string
+  slug: string
+  destination_type: string
+  jitsu_destination_id?: string | null
+  is_enabled: boolean
+  created_at: string
+  updated_at: string
+  config?: DestinationConfig | null
   /** Auto-provisioned ClickHouse database name. Null while provisioning is pending. */
-  clickhouse_database?: string | null;
+  clickhouse_database?: string | null
 }

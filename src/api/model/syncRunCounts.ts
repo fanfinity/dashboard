@@ -8,4 +8,4 @@
 /**
  * Per-entity record counts returned by the connector.
  */
-export type SyncRunCounts = { [key: string]: unknown } | null;
+export type SyncRunCounts = { [key: string]: unknown } | null

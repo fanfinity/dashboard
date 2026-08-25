@@ -4,8 +4,8 @@
  * Sfere Backend
  * OpenAPI spec version: 0.1.0
  */
-import type { PipelineFunction } from './pipelineFunction';
+import type { PipelineFunction } from './pipelineFunction'
 
 export interface PipelineFunctionList {
-  items: PipelineFunction[];
+  items: PipelineFunction[]
 }

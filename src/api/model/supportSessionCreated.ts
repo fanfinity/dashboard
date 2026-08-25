@@ -4,10 +4,10 @@
  * Sfere Backend
  * OpenAPI spec version: 0.1.0
  */
-import type { SupportSession } from './supportSession';
+import type { SupportSession } from './supportSession'
 
 export interface SupportSessionCreated {
-  session: SupportSession;
+  session: SupportSession
   /** The short-lived support token — send as the X-Support-Token header. Valid until the session expires or is ended. */
-  token: string;
+  token: string
 }

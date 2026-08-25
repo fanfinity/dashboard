@@ -4,13 +4,13 @@
  * Sfere Backend
  * OpenAPI spec version: 0.1.0
  */
-import type { ZidSourceConnectResultSnippet } from './zidSourceConnectResultSnippet';
-import type { ZidSourceConnectResultWebhooks } from './zidSourceConnectResultWebhooks';
+import type { ZidSourceConnectResultSnippet } from './zidSourceConnectResultSnippet'
+import type { ZidSourceConnectResultWebhooks } from './zidSourceConnectResultWebhooks'
 
 export interface ZidSourceConnectResult {
-  status: string;
-  source_id: string;
-  store_id: string;
-  webhooks?: ZidSourceConnectResultWebhooks;
-  snippet?: ZidSourceConnectResultSnippet;
+  status: string
+  source_id: string
+  store_id: string
+  webhooks?: ZidSourceConnectResultWebhooks
+  snippet?: ZidSourceConnectResultSnippet
 }

@@ -6,7 +6,7 @@
  */
 
 export interface EventSummary {
-  event_name: string | null;
-  event_type: string | null;
-  event_timestamp: string | null;
+  event_name: string | null
+  event_type: string | null
+  event_timestamp: string | null
 }

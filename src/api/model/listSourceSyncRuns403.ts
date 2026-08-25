@@ -9,9 +9,9 @@
  * RFC 9457 problem details.
  */
 export type ListSourceSyncRuns403 = {
-  type?: string | null;
-  title: string;
-  status: number;
-  detail?: string | null;
-  instance?: string | null;
-};
+  type?: string | null
+  title: string
+  status: number
+  detail?: string | null
+  instance?: string | null
+}

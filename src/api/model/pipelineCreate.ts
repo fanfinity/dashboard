@@ -7,10 +7,10 @@
 
 export interface PipelineCreate {
   /**
-     * @minLength 1
-     * @maxLength 255
-     */
-  name: string;
-  source_id: string;
-  destination_id: string;
+   * @minLength 1
+   * @maxLength 255
+   */
+  name: string
+  source_id: string
+  destination_id: string
 }

@@ -4,10 +4,7 @@
  * Sfere Backend
  * OpenAPI spec version: 0.1.0
  */
-import {
-  useMutation,
-  useQuery
-} from '@tanstack/vue-query';
+import { useMutation, useQuery } from '@tanstack/vue-query'
 import type {
   DataTag,
   MutationFunction,
@@ -18,16 +15,10 @@ import type {
   UseMutationReturnType,
   UseQueryOptions,
   UseQueryReturnType
-} from '@tanstack/vue-query';
+} from '@tanstack/vue-query'
 
-import {
-  computed,
-  toValue,
-  unref
-} from 'vue';
-import type {
-  MaybeRefOrGetter
-} from 'vue';
+import { computed, toValue, unref } from 'vue'
+import type { MaybeRefOrGetter } from 'vue'
 
 import type {
   Account,
@@ -251,17 +242,14 @@ import type {
   VersionVersionGet200,
   ZidSourceConnectResult,
   _ZidInstallReport
-} from './model';
+} from './model'
 
-import { customFetch } from './mutator.js';
-type AwaitedInput<T> = PromiseLike<T> | T;
+import { customFetch } from './mutator.js'
+type AwaitedInput<T> = PromiseLike<T> | T
 
-      type Awaited<O> = O extends AwaitedInput<infer T> ? T : never;
+type Awaited<O> = O extends AwaitedInput<infer T> ? T : never
 
-
-type SecondParameter<T extends (...args: never) => unknown> = Parameters<T>[1];
-
-
+type SecondParameter<T extends (...args: never) => unknown> = Parameters<T>[1]
 
 export type getMeResponse200 = {
   data: Me
@@ -278,93 +266,93 @@ export type getMeResponse422 = {
   status: 422
 }
 
-export type getMeResponseSuccess = (getMeResponse200) & {
-  headers: Headers;
-};
+export type getMeResponseSuccess = getMeResponse200 & {
+  headers: Headers
+}
 export type getMeResponseError = (getMeResponse401 | getMeResponse422) & {
-  headers: Headers;
-};
+  headers: Headers
+}
 
-export type getMeResponse = (getMeResponseSuccess | getMeResponseError)
+export type getMeResponse = getMeResponseSuccess | getMeResponseError
 
 export const getGetMeUrl = () => {
-
-
-
-
   return `/v1/me`
 }
 
 /**
  * @summary Get Me
  */
-export const getMe = async ( options?: RequestInit): Promise<getMeResponse> => {
-
-  return customFetch<getMeResponse>(getGetMeUrl(),
-  {
+export const getMe = async (options?: RequestInit): Promise<getMeResponse> => {
+  return customFetch<getMeResponse>(getGetMeUrl(), {
     ...options,
     method: 'GET'
-
-
-  }
-);}
-
-
-
-
+  })
+}
 
 export const getGetMeQueryKey = () => {
-    return [
-    'v1','me'
-    ] as const;
-    }
+  return ['v1', 'me'] as const
+}
 
+export const getGetMeQueryOptions = <
+  TData = Awaited<ReturnType<typeof getMe>>,
+  TError = GetMe401 | GetMe422
+>(options?: {
+  query?: Partial<
+    UseQueryOptions<Awaited<ReturnType<typeof getMe>>, TError, TData>
+  >
+  request?: SecondParameter<typeof customFetch>
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {}
 
-export const getGetMeQueryOptions = <TData = Awaited<ReturnType<typeof getMe>>, TError = GetMe401 | GetMe422>( options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getMe>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
-) => {
+  const queryKey = getGetMeQueryKey()
 
-const {query: queryOptions, request: requestOptions} = options ?? {};
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof getMe>>> = ({
+    signal
+  }) => getMe({ signal, ...requestOptions })
 
-  const queryKey =  getGetMeQueryKey();
-
-
-
-    const queryFn: QueryFunction<Awaited<ReturnType<typeof getMe>>> = ({ signal }) => getMe({ signal, ...requestOptions });
-
-
-
-
-
-   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getMe>>, TError, TData>
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof getMe>>,
+    TError,
+    TData
+  >
 }
 
 export type GetMeQueryResult = NonNullable<Awaited<ReturnType<typeof getMe>>>
 export type GetMeQueryError = GetMe401 | GetMe422
 
-
 /**
  * @summary Get Me
  */
 
-export function useGetMe<TData = Awaited<ReturnType<typeof getMe>>, TError = GetMe401 | GetMe422>(
-  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getMe>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
- , queryClient?: QueryClient
- ): UseQueryReturnType<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
-
+export function useGetMe<
+  TData = Awaited<ReturnType<typeof getMe>>,
+  TError = GetMe401 | GetMe422
+>(
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof getMe>>, TError, TData>
+    >
+    request?: SecondParameter<typeof customFetch>
+  },
+  queryClient?: QueryClient
+): UseQueryReturnType<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>
+} {
   const queryOptions = getGetMeQueryOptions(options)
 
-  const query = useQuery(queryOptions, queryClient) as UseQueryReturnType<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+  const query = useQuery(queryOptions, queryClient) as UseQueryReturnType<
+    TData,
+    TError
+  > & { queryKey: DataTag<QueryKey, TData, TError> }
 
-  query.queryKey = unref(queryOptions).queryKey as DataTag<QueryKey, TData, TError>;
+  query.queryKey = unref(queryOptions).queryKey as DataTag<
+    QueryKey,
+    TData,
+    TError
+  >
 
-  return query;
+  return query
 }
-
-
-
-
-
-
 
 export type registerResponse201 = {
   data: RegisterResponse
@@ -396,85 +384,114 @@ export type registerResponse502 = {
   status: 502
 }
 
-export type registerResponseSuccess = (registerResponse201) & {
-  headers: Headers;
-};
-export type registerResponseError = (registerResponse400 | registerResponse409 | registerResponse422 | registerResponse429 | registerResponse502) & {
-  headers: Headers;
-};
+export type registerResponseSuccess = registerResponse201 & {
+  headers: Headers
+}
+export type registerResponseError = (
+  | registerResponse400
+  | registerResponse409
+  | registerResponse422
+  | registerResponse429
+  | registerResponse502
+) & {
+  headers: Headers
+}
 
-export type registerResponse = (registerResponseSuccess | registerResponseError)
+export type registerResponse = registerResponseSuccess | registerResponseError
 
 export const getRegisterUrl = () => {
-
-
-
-
   return `/v1/register`
 }
 
 /**
  * @summary Register Route
  */
-export const register = async (registerRequest: RegisterRequest, options?: RequestInit): Promise<registerResponse> => {
-
-  return customFetch<registerResponse>(getRegisterUrl(),
-  {
+export const register = async (
+  registerRequest: RegisterRequest,
+  options?: RequestInit
+): Promise<registerResponse> => {
+  return customFetch<registerResponse>(getRegisterUrl(), {
     ...options,
     method: 'POST',
     headers: { 'Content-Type': 'application/json', ...options?.headers },
     body: JSON.stringify(registerRequest)
+  })
+}
+
+export const getRegisterMutationOptions = <
+  TError = Register400 | Register409 | Register422 | Register429 | Register502,
+  TContext = unknown
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof register>>,
+    TError,
+    { data: RegisterRequest },
+    TContext
+  >
+  request?: SecondParameter<typeof customFetch>
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof register>>,
+  TError,
+  { data: RegisterRequest },
+  TContext
+> => {
+  const mutationKey = ['register']
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      'mutationKey' in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined }
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof register>>,
+    { data: RegisterRequest }
+  > = props => {
+    const { data } = props ?? {}
+
+    return register(data, requestOptions)
   }
-);}
 
+  return { mutationFn, ...mutationOptions }
+}
 
+export type RegisterMutationResult = NonNullable<
+  Awaited<ReturnType<typeof register>>
+>
+export type RegisterMutationBody = RegisterRequest
+export type RegisterMutationError =
+  | Register400
+  | Register409
+  | Register422
+  | Register429
+  | Register502
 
-
-
-export const getRegisterMutationOptions = <TError = Register400 | Register409 | Register422 | Register429 | Register502,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof register>>, TError,{data: RegisterRequest}, TContext>, request?: SecondParameter<typeof customFetch>}
-): UseMutationOptions<Awaited<ReturnType<typeof register>>, TError,{data: RegisterRequest}, TContext> => {
-
-const mutationKey = ['register'];
-const {mutation: mutationOptions, request: requestOptions} = options ?
-      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
-      options
-      : {...options, mutation: {...options.mutation, mutationKey}}
-      : {mutation: { mutationKey, }, request: undefined};
-
-
-
-
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof register>>, {data: RegisterRequest}> = (props) => {
-          const {data} = props ?? {};
-
-          return  register(data,requestOptions)
-        }
-
-
-
-
-
-
-  return  { mutationFn, ...mutationOptions }}
-
-    export type RegisterMutationResult = NonNullable<Awaited<ReturnType<typeof register>>>
-    export type RegisterMutationBody = RegisterRequest
-    export type RegisterMutationError = Register400 | Register409 | Register422 | Register429 | Register502
-
-    /**
+/**
  * @summary Register Route
  */
-export const useRegister = <TError = Register400 | Register409 | Register422 | Register429 | Register502,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof register>>, TError,{data: RegisterRequest}, TContext>, request?: SecondParameter<typeof customFetch>}
- , queryClient?: QueryClient): UseMutationReturnType<
-        Awaited<ReturnType<typeof register>>,
-        TError,
-        {data: RegisterRequest},
-        TContext
-      > => {
-      return useMutation(getRegisterMutationOptions(options), queryClient);
-    }
+export const useRegister = <
+  TError = Register400 | Register409 | Register422 | Register429 | Register502,
+  TContext = unknown
+>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof register>>,
+      TError,
+      { data: RegisterRequest },
+      TContext
+    >
+    request?: SecondParameter<typeof customFetch>
+  },
+  queryClient?: QueryClient
+): UseMutationReturnType<
+  Awaited<ReturnType<typeof register>>,
+  TError,
+  { data: RegisterRequest },
+  TContext
+> => {
+  return useMutation(getRegisterMutationOptions(options), queryClient)
+}
 
 export type loginResponse200 = {
   data: TokenResponse
@@ -501,95 +518,120 @@ export type loginResponse429 = {
   status: 429
 }
 
-export type loginResponseSuccess = (loginResponse200) & {
-  headers: Headers;
-};
-export type loginResponseError = (loginResponse400 | loginResponse401 | loginResponse422 | loginResponse429) & {
-  headers: Headers;
-};
+export type loginResponseSuccess = loginResponse200 & {
+  headers: Headers
+}
+export type loginResponseError = (
+  | loginResponse400
+  | loginResponse401
+  | loginResponse422
+  | loginResponse429
+) & {
+  headers: Headers
+}
 
-export type loginResponse = (loginResponseSuccess | loginResponseError)
+export type loginResponse = loginResponseSuccess | loginResponseError
 
 export const getLoginUrl = () => {
-
-
-
-
   return `/v1/auth/token`
 }
 
 /**
  * @summary Login Route
  */
-export const login = async (bodyLogin?: BodyLogin, options?: RequestInit): Promise<loginResponse> => {
-    const formUrlEncoded = new URLSearchParams();
-if(bodyLogin?.grant_type !== undefined) {
- formUrlEncoded.append(`grant_type`, bodyLogin.grant_type);
- }
-if(bodyLogin?.username !== undefined) {
- formUrlEncoded.append(`username`, bodyLogin.username);
- }
-if(bodyLogin?.password !== undefined) {
- formUrlEncoded.append(`password`, bodyLogin.password);
- }
+export const login = async (
+  bodyLogin?: BodyLogin,
+  options?: RequestInit
+): Promise<loginResponse> => {
+  const formUrlEncoded = new URLSearchParams()
+  if (bodyLogin?.grant_type !== undefined) {
+    formUrlEncoded.append(`grant_type`, bodyLogin.grant_type)
+  }
+  if (bodyLogin?.username !== undefined) {
+    formUrlEncoded.append(`username`, bodyLogin.username)
+  }
+  if (bodyLogin?.password !== undefined) {
+    formUrlEncoded.append(`password`, bodyLogin.password)
+  }
 
-  return customFetch<loginResponse>(getLoginUrl(),
-  {
+  return customFetch<loginResponse>(getLoginUrl(), {
     ...options,
     method: 'POST',
-    headers: { 'Content-Type': 'application/x-www-form-urlencoded', ...options?.headers },
+    headers: {
+      'Content-Type': 'application/x-www-form-urlencoded',
+      ...options?.headers
+    },
     body: formUrlEncoded
+  })
+}
+
+export const getLoginMutationOptions = <
+  TError = Login400 | Login401 | Login422 | Login429,
+  TContext = unknown
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof login>>,
+    TError,
+    { data?: BodyLogin },
+    TContext
+  >
+  request?: SecondParameter<typeof customFetch>
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof login>>,
+  TError,
+  { data?: BodyLogin },
+  TContext
+> => {
+  const mutationKey = ['login']
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      'mutationKey' in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined }
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof login>>,
+    { data?: BodyLogin }
+  > = props => {
+    const { data } = props ?? {}
+
+    return login(data, requestOptions)
   }
-);}
 
+  return { mutationFn, ...mutationOptions }
+}
 
+export type LoginMutationResult = NonNullable<Awaited<ReturnType<typeof login>>>
+export type LoginMutationBody = BodyLogin | undefined
+export type LoginMutationError = Login400 | Login401 | Login422 | Login429
 
-
-
-export const getLoginMutationOptions = <TError = Login400 | Login401 | Login422 | Login429,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof login>>, TError,{data?: BodyLogin}, TContext>, request?: SecondParameter<typeof customFetch>}
-): UseMutationOptions<Awaited<ReturnType<typeof login>>, TError,{data?: BodyLogin}, TContext> => {
-
-const mutationKey = ['login'];
-const {mutation: mutationOptions, request: requestOptions} = options ?
-      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
-      options
-      : {...options, mutation: {...options.mutation, mutationKey}}
-      : {mutation: { mutationKey, }, request: undefined};
-
-
-
-
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof login>>, {data?: BodyLogin}> = (props) => {
-          const {data} = props ?? {};
-
-          return  login(data,requestOptions)
-        }
-
-
-
-
-
-
-  return  { mutationFn, ...mutationOptions }}
-
-    export type LoginMutationResult = NonNullable<Awaited<ReturnType<typeof login>>>
-    export type LoginMutationBody = BodyLogin | undefined
-    export type LoginMutationError = Login400 | Login401 | Login422 | Login429
-
-    /**
+/**
  * @summary Login Route
  */
-export const useLogin = <TError = Login400 | Login401 | Login422 | Login429,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof login>>, TError,{data?: BodyLogin}, TContext>, request?: SecondParameter<typeof customFetch>}
- , queryClient?: QueryClient): UseMutationReturnType<
-        Awaited<ReturnType<typeof login>>,
-        TError,
-        {data?: BodyLogin},
-        TContext
-      > => {
-      return useMutation(getLoginMutationOptions(options), queryClient);
-    }
+export const useLogin = <
+  TError = Login400 | Login401 | Login422 | Login429,
+  TContext = unknown
+>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof login>>,
+      TError,
+      { data?: BodyLogin },
+      TContext
+    >
+    request?: SecondParameter<typeof customFetch>
+  },
+  queryClient?: QueryClient
+): UseMutationReturnType<
+  Awaited<ReturnType<typeof login>>,
+  TError,
+  { data?: BodyLogin },
+  TContext
+> => {
+  return useMutation(getLoginMutationOptions(options), queryClient)
+}
 
 export type createAccountResponse201 = {
   data: Account
@@ -616,85 +658,122 @@ export type createAccountResponse422 = {
   status: 422
 }
 
-export type createAccountResponseSuccess = (createAccountResponse201) & {
-  headers: Headers;
-};
-export type createAccountResponseError = (createAccountResponse400 | createAccountResponse401 | createAccountResponse409 | createAccountResponse422) & {
-  headers: Headers;
-};
+export type createAccountResponseSuccess = createAccountResponse201 & {
+  headers: Headers
+}
+export type createAccountResponseError = (
+  | createAccountResponse400
+  | createAccountResponse401
+  | createAccountResponse409
+  | createAccountResponse422
+) & {
+  headers: Headers
+}
 
-export type createAccountResponse = (createAccountResponseSuccess | createAccountResponseError)
+export type createAccountResponse =
+  | createAccountResponseSuccess
+  | createAccountResponseError
 
 export const getCreateAccountUrl = () => {
-
-
-
-
   return `/v1/accounts`
 }
 
 /**
  * @summary Create Account Route
  */
-export const createAccount = async (accountCreate: AccountCreate, options?: RequestInit): Promise<createAccountResponse> => {
-
-  return customFetch<createAccountResponse>(getCreateAccountUrl(),
-  {
+export const createAccount = async (
+  accountCreate: AccountCreate,
+  options?: RequestInit
+): Promise<createAccountResponse> => {
+  return customFetch<createAccountResponse>(getCreateAccountUrl(), {
     ...options,
     method: 'POST',
     headers: { 'Content-Type': 'application/json', ...options?.headers },
     body: JSON.stringify(accountCreate)
+  })
+}
+
+export const getCreateAccountMutationOptions = <
+  TError =
+    | CreateAccount400
+    | CreateAccount401
+    | CreateAccount409
+    | CreateAccount422,
+  TContext = unknown
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createAccount>>,
+    TError,
+    { data: AccountCreate },
+    TContext
+  >
+  request?: SecondParameter<typeof customFetch>
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof createAccount>>,
+  TError,
+  { data: AccountCreate },
+  TContext
+> => {
+  const mutationKey = ['createAccount']
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      'mutationKey' in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined }
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof createAccount>>,
+    { data: AccountCreate }
+  > = props => {
+    const { data } = props ?? {}
+
+    return createAccount(data, requestOptions)
   }
-);}
 
+  return { mutationFn, ...mutationOptions }
+}
 
+export type CreateAccountMutationResult = NonNullable<
+  Awaited<ReturnType<typeof createAccount>>
+>
+export type CreateAccountMutationBody = AccountCreate
+export type CreateAccountMutationError =
+  | CreateAccount400
+  | CreateAccount401
+  | CreateAccount409
+  | CreateAccount422
 
-
-
-export const getCreateAccountMutationOptions = <TError = CreateAccount400 | CreateAccount401 | CreateAccount409 | CreateAccount422,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createAccount>>, TError,{data: AccountCreate}, TContext>, request?: SecondParameter<typeof customFetch>}
-): UseMutationOptions<Awaited<ReturnType<typeof createAccount>>, TError,{data: AccountCreate}, TContext> => {
-
-const mutationKey = ['createAccount'];
-const {mutation: mutationOptions, request: requestOptions} = options ?
-      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
-      options
-      : {...options, mutation: {...options.mutation, mutationKey}}
-      : {mutation: { mutationKey, }, request: undefined};
-
-
-
-
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createAccount>>, {data: AccountCreate}> = (props) => {
-          const {data} = props ?? {};
-
-          return  createAccount(data,requestOptions)
-        }
-
-
-
-
-
-
-  return  { mutationFn, ...mutationOptions }}
-
-    export type CreateAccountMutationResult = NonNullable<Awaited<ReturnType<typeof createAccount>>>
-    export type CreateAccountMutationBody = AccountCreate
-    export type CreateAccountMutationError = CreateAccount400 | CreateAccount401 | CreateAccount409 | CreateAccount422
-
-    /**
+/**
  * @summary Create Account Route
  */
-export const useCreateAccount = <TError = CreateAccount400 | CreateAccount401 | CreateAccount409 | CreateAccount422,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createAccount>>, TError,{data: AccountCreate}, TContext>, request?: SecondParameter<typeof customFetch>}
- , queryClient?: QueryClient): UseMutationReturnType<
-        Awaited<ReturnType<typeof createAccount>>,
-        TError,
-        {data: AccountCreate},
-        TContext
-      > => {
-      return useMutation(getCreateAccountMutationOptions(options), queryClient);
-    }
+export const useCreateAccount = <
+  TError =
+    | CreateAccount400
+    | CreateAccount401
+    | CreateAccount409
+    | CreateAccount422,
+  TContext = unknown
+>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof createAccount>>,
+      TError,
+      { data: AccountCreate },
+      TContext
+    >
+    request?: SecondParameter<typeof customFetch>
+  },
+  queryClient?: QueryClient
+): UseMutationReturnType<
+  Awaited<ReturnType<typeof createAccount>>,
+  TError,
+  { data: AccountCreate },
+  TContext
+> => {
+  return useMutation(getCreateAccountMutationOptions(options), queryClient)
+}
 
 export type listAccountsResponse200 = {
   data: PageAccount
@@ -711,100 +790,121 @@ export type listAccountsResponse422 = {
   status: 422
 }
 
-export type listAccountsResponseSuccess = (listAccountsResponse200) & {
-  headers: Headers;
-};
-export type listAccountsResponseError = (listAccountsResponse401 | listAccountsResponse422) & {
-  headers: Headers;
-};
+export type listAccountsResponseSuccess = listAccountsResponse200 & {
+  headers: Headers
+}
+export type listAccountsResponseError = (
+  | listAccountsResponse401
+  | listAccountsResponse422
+) & {
+  headers: Headers
+}
 
-export type listAccountsResponse = (listAccountsResponseSuccess | listAccountsResponseError)
+export type listAccountsResponse =
+  | listAccountsResponseSuccess
+  | listAccountsResponseError
 
-export const getListAccountsUrl = (params?: ListAccountsParams,) => {
-  const normalizedParams = new URLSearchParams();
+export const getListAccountsUrl = (params?: ListAccountsParams) => {
+  const normalizedParams = new URLSearchParams()
 
   Object.entries(params || {}).forEach(([key, value]) => {
-
     if (value !== undefined) {
       normalizedParams.append(key, value === null ? 'null' : String(value))
     }
-  });
+  })
 
-  const stringifiedParams = normalizedParams.toString();
+  const stringifiedParams = normalizedParams.toString()
 
-  return stringifiedParams.length > 0 ? `/v1/accounts?${stringifiedParams}` : `/v1/accounts`
+  return stringifiedParams.length > 0
+    ? `/v1/accounts?${stringifiedParams}`
+    : `/v1/accounts`
 }
 
 /**
  * @summary List Accounts Route
  */
-export const listAccounts = async (params?: ListAccountsParams, options?: RequestInit): Promise<listAccountsResponse> => {
-
-  return customFetch<listAccountsResponse>(getListAccountsUrl(params),
-  {
+export const listAccounts = async (
+  params?: ListAccountsParams,
+  options?: RequestInit
+): Promise<listAccountsResponse> => {
+  return customFetch<listAccountsResponse>(getListAccountsUrl(params), {
     ...options,
     method: 'GET'
-
-
-  }
-);}
-
-
-
-
-
-export const getListAccountsQueryKey = (params?: MaybeRefOrGetter<ListAccountsParams>,) => {
-    return [
-    'v1','accounts', ...(params ? [params] : [])
-    ] as const;
-    }
-
-
-export const getListAccountsQueryOptions = <TData = Awaited<ReturnType<typeof listAccounts>>, TError = ListAccounts401 | ListAccounts422>(params?: MaybeRefOrGetter<ListAccountsParams>, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listAccounts>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
-) => {
-
-const {query: queryOptions, request: requestOptions} = options ?? {};
-
-  const queryKey =  getListAccountsQueryKey(params);
-
-
-
-    const queryFn: QueryFunction<Awaited<ReturnType<typeof listAccounts>>> = ({ signal }) => listAccounts(toValue(params), { signal, ...requestOptions });
-
-
-
-
-
-   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listAccounts>>, TError, TData>
+  })
 }
 
-export type ListAccountsQueryResult = NonNullable<Awaited<ReturnType<typeof listAccounts>>>
-export type ListAccountsQueryError = ListAccounts401 | ListAccounts422
+export const getListAccountsQueryKey = (
+  params?: MaybeRefOrGetter<ListAccountsParams>
+) => {
+  return ['v1', 'accounts', ...(params ? [params] : [])] as const
+}
 
+export const getListAccountsQueryOptions = <
+  TData = Awaited<ReturnType<typeof listAccounts>>,
+  TError = ListAccounts401 | ListAccounts422
+>(
+  params?: MaybeRefOrGetter<ListAccountsParams>,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof listAccounts>>, TError, TData>
+    >
+    request?: SecondParameter<typeof customFetch>
+  }
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {}
+
+  const queryKey = getListAccountsQueryKey(params)
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof listAccounts>>> = ({
+    signal
+  }) => listAccounts(toValue(params), { signal, ...requestOptions })
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof listAccounts>>,
+    TError,
+    TData
+  >
+}
+
+export type ListAccountsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listAccounts>>
+>
+export type ListAccountsQueryError = ListAccounts401 | ListAccounts422
 
 /**
  * @summary List Accounts Route
  */
 
-export function useListAccounts<TData = Awaited<ReturnType<typeof listAccounts>>, TError = ListAccounts401 | ListAccounts422>(
- params?: MaybeRefOrGetter<ListAccountsParams>, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listAccounts>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
- , queryClient?: QueryClient
- ): UseQueryReturnType<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+export function useListAccounts<
+  TData = Awaited<ReturnType<typeof listAccounts>>,
+  TError = ListAccounts401 | ListAccounts422
+>(
+  params?: MaybeRefOrGetter<ListAccountsParams>,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof listAccounts>>, TError, TData>
+    >
+    request?: SecondParameter<typeof customFetch>
+  },
+  queryClient?: QueryClient
+): UseQueryReturnType<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>
+} {
+  const queryOptions = getListAccountsQueryOptions(params, options)
 
-  const queryOptions = getListAccountsQueryOptions(params,options)
+  const query = useQuery(queryOptions, queryClient) as UseQueryReturnType<
+    TData,
+    TError
+  > & { queryKey: DataTag<QueryKey, TData, TError> }
 
-  const query = useQuery(queryOptions, queryClient) as UseQueryReturnType<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+  query.queryKey = unref(queryOptions).queryKey as DataTag<
+    QueryKey,
+    TData,
+    TError
+  >
 
-  query.queryKey = unref(queryOptions).queryKey as DataTag<QueryKey, TData, TError>;
-
-  return query;
+  return query
 }
-
-
-
-
-
-
 
 export type getAccountResponse200 = {
   data: Account
@@ -831,93 +931,116 @@ export type getAccountResponse422 = {
   status: 422
 }
 
-export type getAccountResponseSuccess = (getAccountResponse200) & {
-  headers: Headers;
-};
-export type getAccountResponseError = (getAccountResponse401 | getAccountResponse403 | getAccountResponse404 | getAccountResponse422) & {
-  headers: Headers;
-};
+export type getAccountResponseSuccess = getAccountResponse200 & {
+  headers: Headers
+}
+export type getAccountResponseError = (
+  | getAccountResponse401
+  | getAccountResponse403
+  | getAccountResponse404
+  | getAccountResponse422
+) & {
+  headers: Headers
+}
 
-export type getAccountResponse = (getAccountResponseSuccess | getAccountResponseError)
+export type getAccountResponse =
+  | getAccountResponseSuccess
+  | getAccountResponseError
 
-export const getGetAccountUrl = (accountId: string,) => {
-
-
-
-
+export const getGetAccountUrl = (accountId: string) => {
   return `/v1/accounts/${accountId}`
 }
 
 /**
  * @summary Get Account Route
  */
-export const getAccount = async (accountId: string, options?: RequestInit): Promise<getAccountResponse> => {
-
-  return customFetch<getAccountResponse>(getGetAccountUrl(accountId),
-  {
+export const getAccount = async (
+  accountId: string,
+  options?: RequestInit
+): Promise<getAccountResponse> => {
+  return customFetch<getAccountResponse>(getGetAccountUrl(accountId), {
     ...options,
     method: 'GET'
-
-
-  }
-);}
-
-
-
-
-
-export const getGetAccountQueryKey = (accountId: MaybeRefOrGetter<string>,) => {
-    return [
-    'v1','accounts',accountId
-    ] as const;
-    }
-
-
-export const getGetAccountQueryOptions = <TData = Awaited<ReturnType<typeof getAccount>>, TError = GetAccount401 | GetAccount403 | GetAccount404 | GetAccount422>(accountId: MaybeRefOrGetter<string>, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getAccount>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
-) => {
-
-const {query: queryOptions, request: requestOptions} = options ?? {};
-
-  const queryKey =  getGetAccountQueryKey(accountId);
-
-
-
-    const queryFn: QueryFunction<Awaited<ReturnType<typeof getAccount>>> = ({ signal }) => getAccount(toValue(accountId), { signal, ...requestOptions });
-
-
-
-
-
-   return  { queryKey, queryFn, enabled: computed(() => toValue(accountId) !== null && toValue(accountId) !== undefined), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getAccount>>, TError, TData>
+  })
 }
 
-export type GetAccountQueryResult = NonNullable<Awaited<ReturnType<typeof getAccount>>>
-export type GetAccountQueryError = GetAccount401 | GetAccount403 | GetAccount404 | GetAccount422
+export const getGetAccountQueryKey = (accountId: MaybeRefOrGetter<string>) => {
+  return ['v1', 'accounts', accountId] as const
+}
 
+export const getGetAccountQueryOptions = <
+  TData = Awaited<ReturnType<typeof getAccount>>,
+  TError = GetAccount401 | GetAccount403 | GetAccount404 | GetAccount422
+>(
+  accountId: MaybeRefOrGetter<string>,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof getAccount>>, TError, TData>
+    >
+    request?: SecondParameter<typeof customFetch>
+  }
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {}
+
+  const queryKey = getGetAccountQueryKey(accountId)
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof getAccount>>> = ({
+    signal
+  }) => getAccount(toValue(accountId), { signal, ...requestOptions })
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: computed(
+      () => toValue(accountId) !== null && toValue(accountId) !== undefined
+    ),
+    ...queryOptions
+  } as UseQueryOptions<Awaited<ReturnType<typeof getAccount>>, TError, TData>
+}
+
+export type GetAccountQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getAccount>>
+>
+export type GetAccountQueryError =
+  | GetAccount401
+  | GetAccount403
+  | GetAccount404
+  | GetAccount422
 
 /**
  * @summary Get Account Route
  */
 
-export function useGetAccount<TData = Awaited<ReturnType<typeof getAccount>>, TError = GetAccount401 | GetAccount403 | GetAccount404 | GetAccount422>(
- accountId: MaybeRefOrGetter<string>, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getAccount>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
- , queryClient?: QueryClient
- ): UseQueryReturnType<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+export function useGetAccount<
+  TData = Awaited<ReturnType<typeof getAccount>>,
+  TError = GetAccount401 | GetAccount403 | GetAccount404 | GetAccount422
+>(
+  accountId: MaybeRefOrGetter<string>,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof getAccount>>, TError, TData>
+    >
+    request?: SecondParameter<typeof customFetch>
+  },
+  queryClient?: QueryClient
+): UseQueryReturnType<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>
+} {
+  const queryOptions = getGetAccountQueryOptions(accountId, options)
 
-  const queryOptions = getGetAccountQueryOptions(accountId,options)
+  const query = useQuery(queryOptions, queryClient) as UseQueryReturnType<
+    TData,
+    TError
+  > & { queryKey: DataTag<QueryKey, TData, TError> }
 
-  const query = useQuery(queryOptions, queryClient) as UseQueryReturnType<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+  query.queryKey = unref(queryOptions).queryKey as DataTag<
+    QueryKey,
+    TData,
+    TError
+  >
 
-  query.queryKey = unref(queryOptions).queryKey as DataTag<QueryKey, TData, TError>;
-
-  return query;
+  return query
 }
-
-
-
-
-
-
 
 export type listCustomersResponse200 = {
   data: CustomerPage
@@ -929,101 +1052,119 @@ export type listCustomersResponse422 = {
   status: 422
 }
 
-export type listCustomersResponseSuccess = (listCustomersResponse200) & {
-  headers: Headers;
-};
-export type listCustomersResponseError = (listCustomersResponse422) & {
-  headers: Headers;
-};
+export type listCustomersResponseSuccess = listCustomersResponse200 & {
+  headers: Headers
+}
+export type listCustomersResponseError = listCustomersResponse422 & {
+  headers: Headers
+}
 
-export type listCustomersResponse = (listCustomersResponseSuccess | listCustomersResponseError)
+export type listCustomersResponse =
+  | listCustomersResponseSuccess
+  | listCustomersResponseError
 
-export const getListCustomersUrl = (params?: ListCustomersParams,) => {
-  const normalizedParams = new URLSearchParams();
+export const getListCustomersUrl = (params?: ListCustomersParams) => {
+  const normalizedParams = new URLSearchParams()
 
   Object.entries(params || {}).forEach(([key, value]) => {
-
     if (value !== undefined) {
       normalizedParams.append(key, value === null ? 'null' : String(value))
     }
-  });
+  })
 
-  const stringifiedParams = normalizedParams.toString();
+  const stringifiedParams = normalizedParams.toString()
 
-  return stringifiedParams.length > 0 ? `/v1/customers?${stringifiedParams}` : `/v1/customers`
+  return stringifiedParams.length > 0
+    ? `/v1/customers?${stringifiedParams}`
+    : `/v1/customers`
 }
 
 /**
  * Paginated list of customers from the analytics store.
  * @summary List Customers Route
  */
-export const listCustomers = async (params?: ListCustomersParams, options?: RequestInit): Promise<listCustomersResponse> => {
-
-  return customFetch<listCustomersResponse>(getListCustomersUrl(params),
-  {
+export const listCustomers = async (
+  params?: ListCustomersParams,
+  options?: RequestInit
+): Promise<listCustomersResponse> => {
+  return customFetch<listCustomersResponse>(getListCustomersUrl(params), {
     ...options,
     method: 'GET'
-
-
-  }
-);}
-
-
-
-
-
-export const getListCustomersQueryKey = (params?: MaybeRefOrGetter<ListCustomersParams>,) => {
-    return [
-    'v1','customers', ...(params ? [params] : [])
-    ] as const;
-    }
-
-
-export const getListCustomersQueryOptions = <TData = Awaited<ReturnType<typeof listCustomers>>, TError = ListCustomers422>(params?: MaybeRefOrGetter<ListCustomersParams>, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listCustomers>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
-) => {
-
-const {query: queryOptions, request: requestOptions} = options ?? {};
-
-  const queryKey =  getListCustomersQueryKey(params);
-
-
-
-    const queryFn: QueryFunction<Awaited<ReturnType<typeof listCustomers>>> = ({ signal }) => listCustomers(toValue(params), { signal, ...requestOptions });
-
-
-
-
-
-   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listCustomers>>, TError, TData>
+  })
 }
 
-export type ListCustomersQueryResult = NonNullable<Awaited<ReturnType<typeof listCustomers>>>
-export type ListCustomersQueryError = ListCustomers422
+export const getListCustomersQueryKey = (
+  params?: MaybeRefOrGetter<ListCustomersParams>
+) => {
+  return ['v1', 'customers', ...(params ? [params] : [])] as const
+}
 
+export const getListCustomersQueryOptions = <
+  TData = Awaited<ReturnType<typeof listCustomers>>,
+  TError = ListCustomers422
+>(
+  params?: MaybeRefOrGetter<ListCustomersParams>,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof listCustomers>>, TError, TData>
+    >
+    request?: SecondParameter<typeof customFetch>
+  }
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {}
+
+  const queryKey = getListCustomersQueryKey(params)
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof listCustomers>>> = ({
+    signal
+  }) => listCustomers(toValue(params), { signal, ...requestOptions })
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof listCustomers>>,
+    TError,
+    TData
+  >
+}
+
+export type ListCustomersQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listCustomers>>
+>
+export type ListCustomersQueryError = ListCustomers422
 
 /**
  * @summary List Customers Route
  */
 
-export function useListCustomers<TData = Awaited<ReturnType<typeof listCustomers>>, TError = ListCustomers422>(
- params?: MaybeRefOrGetter<ListCustomersParams>, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listCustomers>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
- , queryClient?: QueryClient
- ): UseQueryReturnType<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+export function useListCustomers<
+  TData = Awaited<ReturnType<typeof listCustomers>>,
+  TError = ListCustomers422
+>(
+  params?: MaybeRefOrGetter<ListCustomersParams>,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof listCustomers>>, TError, TData>
+    >
+    request?: SecondParameter<typeof customFetch>
+  },
+  queryClient?: QueryClient
+): UseQueryReturnType<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>
+} {
+  const queryOptions = getListCustomersQueryOptions(params, options)
 
-  const queryOptions = getListCustomersQueryOptions(params,options)
+  const query = useQuery(queryOptions, queryClient) as UseQueryReturnType<
+    TData,
+    TError
+  > & { queryKey: DataTag<QueryKey, TData, TError> }
 
-  const query = useQuery(queryOptions, queryClient) as UseQueryReturnType<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+  query.queryKey = unref(queryOptions).queryKey as DataTag<
+    QueryKey,
+    TData,
+    TError
+  >
 
-  query.queryKey = unref(queryOptions).queryKey as DataTag<QueryKey, TData, TError>;
-
-  return query;
+  return query
 }
-
-
-
-
-
-
 
 export type getCustomerResponse200 = {
   data: Customer
@@ -1040,20 +1181,21 @@ export type getCustomerResponse422 = {
   status: 422
 }
 
-export type getCustomerResponseSuccess = (getCustomerResponse200) & {
-  headers: Headers;
-};
-export type getCustomerResponseError = (getCustomerResponse404 | getCustomerResponse422) & {
-  headers: Headers;
-};
+export type getCustomerResponseSuccess = getCustomerResponse200 & {
+  headers: Headers
+}
+export type getCustomerResponseError = (
+  | getCustomerResponse404
+  | getCustomerResponse422
+) & {
+  headers: Headers
+}
 
-export type getCustomerResponse = (getCustomerResponseSuccess | getCustomerResponseError)
+export type getCustomerResponse =
+  | getCustomerResponseSuccess
+  | getCustomerResponseError
 
-export const getGetCustomerUrl = (customerId: number,) => {
-
-
-
-
+export const getGetCustomerUrl = (customerId: number) => {
   return `/v1/customers/${customerId}`
 }
 
@@ -1061,73 +1203,91 @@ export const getGetCustomerUrl = (customerId: number,) => {
  * Fetch a single customer by ID.
  * @summary Get Customer Route
  */
-export const getCustomer = async (customerId: number, options?: RequestInit): Promise<getCustomerResponse> => {
-
-  return customFetch<getCustomerResponse>(getGetCustomerUrl(customerId),
-  {
+export const getCustomer = async (
+  customerId: number,
+  options?: RequestInit
+): Promise<getCustomerResponse> => {
+  return customFetch<getCustomerResponse>(getGetCustomerUrl(customerId), {
     ...options,
     method: 'GET'
-
-
-  }
-);}
-
-
-
-
-
-export const getGetCustomerQueryKey = (customerId: MaybeRefOrGetter<number>,) => {
-    return [
-    'v1','customers',customerId
-    ] as const;
-    }
-
-
-export const getGetCustomerQueryOptions = <TData = Awaited<ReturnType<typeof getCustomer>>, TError = GetCustomer404 | GetCustomer422>(customerId: MaybeRefOrGetter<number>, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getCustomer>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
-) => {
-
-const {query: queryOptions, request: requestOptions} = options ?? {};
-
-  const queryKey =  getGetCustomerQueryKey(customerId);
-
-
-
-    const queryFn: QueryFunction<Awaited<ReturnType<typeof getCustomer>>> = ({ signal }) => getCustomer(toValue(customerId), { signal, ...requestOptions });
-
-
-
-
-
-   return  { queryKey, queryFn, enabled: computed(() => toValue(customerId) !== null && toValue(customerId) !== undefined), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getCustomer>>, TError, TData>
+  })
 }
 
-export type GetCustomerQueryResult = NonNullable<Awaited<ReturnType<typeof getCustomer>>>
-export type GetCustomerQueryError = GetCustomer404 | GetCustomer422
+export const getGetCustomerQueryKey = (
+  customerId: MaybeRefOrGetter<number>
+) => {
+  return ['v1', 'customers', customerId] as const
+}
 
+export const getGetCustomerQueryOptions = <
+  TData = Awaited<ReturnType<typeof getCustomer>>,
+  TError = GetCustomer404 | GetCustomer422
+>(
+  customerId: MaybeRefOrGetter<number>,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof getCustomer>>, TError, TData>
+    >
+    request?: SecondParameter<typeof customFetch>
+  }
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {}
+
+  const queryKey = getGetCustomerQueryKey(customerId)
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof getCustomer>>> = ({
+    signal
+  }) => getCustomer(toValue(customerId), { signal, ...requestOptions })
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: computed(
+      () => toValue(customerId) !== null && toValue(customerId) !== undefined
+    ),
+    ...queryOptions
+  } as UseQueryOptions<Awaited<ReturnType<typeof getCustomer>>, TError, TData>
+}
+
+export type GetCustomerQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getCustomer>>
+>
+export type GetCustomerQueryError = GetCustomer404 | GetCustomer422
 
 /**
  * @summary Get Customer Route
  */
 
-export function useGetCustomer<TData = Awaited<ReturnType<typeof getCustomer>>, TError = GetCustomer404 | GetCustomer422>(
- customerId: MaybeRefOrGetter<number>, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getCustomer>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
- , queryClient?: QueryClient
- ): UseQueryReturnType<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+export function useGetCustomer<
+  TData = Awaited<ReturnType<typeof getCustomer>>,
+  TError = GetCustomer404 | GetCustomer422
+>(
+  customerId: MaybeRefOrGetter<number>,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof getCustomer>>, TError, TData>
+    >
+    request?: SecondParameter<typeof customFetch>
+  },
+  queryClient?: QueryClient
+): UseQueryReturnType<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>
+} {
+  const queryOptions = getGetCustomerQueryOptions(customerId, options)
 
-  const queryOptions = getGetCustomerQueryOptions(customerId,options)
+  const query = useQuery(queryOptions, queryClient) as UseQueryReturnType<
+    TData,
+    TError
+  > & { queryKey: DataTag<QueryKey, TData, TError> }
 
-  const query = useQuery(queryOptions, queryClient) as UseQueryReturnType<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+  query.queryKey = unref(queryOptions).queryKey as DataTag<
+    QueryKey,
+    TData,
+    TError
+  >
 
-  query.queryKey = unref(queryOptions).queryKey as DataTag<QueryKey, TData, TError>;
-
-  return query;
+  return query
 }
-
-
-
-
-
-
 
 export type listCustomerEventsResponse200 = {
   data: EventSummaryPage
@@ -1139,29 +1299,35 @@ export type listCustomerEventsResponse422 = {
   status: 422
 }
 
-export type listCustomerEventsResponseSuccess = (listCustomerEventsResponse200) & {
-  headers: Headers;
-};
-export type listCustomerEventsResponseError = (listCustomerEventsResponse422) & {
-  headers: Headers;
-};
+export type listCustomerEventsResponseSuccess =
+  listCustomerEventsResponse200 & {
+    headers: Headers
+  }
+export type listCustomerEventsResponseError = listCustomerEventsResponse422 & {
+  headers: Headers
+}
 
-export type listCustomerEventsResponse = (listCustomerEventsResponseSuccess | listCustomerEventsResponseError)
+export type listCustomerEventsResponse =
+  | listCustomerEventsResponseSuccess
+  | listCustomerEventsResponseError
 
-export const getListCustomerEventsUrl = (customerId: number,
-    params?: ListCustomerEventsParams,) => {
-  const normalizedParams = new URLSearchParams();
+export const getListCustomerEventsUrl = (
+  customerId: number,
+  params?: ListCustomerEventsParams
+) => {
+  const normalizedParams = new URLSearchParams()
 
   Object.entries(params || {}).forEach(([key, value]) => {
-
     if (value !== undefined) {
       normalizedParams.append(key, value === null ? 'null' : String(value))
     }
-  });
+  })
 
-  const stringifiedParams = normalizedParams.toString();
+  const stringifiedParams = normalizedParams.toString()
 
-  return stringifiedParams.length > 0 ? `/v1/customers/${customerId}/events?${stringifiedParams}` : `/v1/customers/${customerId}/events`
+  return stringifiedParams.length > 0
+    ? `/v1/customers/${customerId}/events?${stringifiedParams}`
+    : `/v1/customers/${customerId}/events`
 }
 
 /**
@@ -1173,77 +1339,124 @@ export const getListCustomerEventsUrl = (customerId: number,
  * regardless of which field the analytics pipeline used to associate them.
  * @summary List Customer Events Route
  */
-export const listCustomerEvents = async (customerId: number,
-    params?: ListCustomerEventsParams, options?: RequestInit): Promise<listCustomerEventsResponse> => {
-
-  return customFetch<listCustomerEventsResponse>(getListCustomerEventsUrl(customerId,params),
-  {
-    ...options,
-    method: 'GET'
-
-
-  }
-);}
-
-
-
-
-
-export const getListCustomerEventsQueryKey = (customerId: MaybeRefOrGetter<number>,
-    params?: MaybeRefOrGetter<ListCustomerEventsParams>,) => {
-    return [
-    'v1','customers',customerId,'events', ...(params ? [params] : [])
-    ] as const;
+export const listCustomerEvents = async (
+  customerId: number,
+  params?: ListCustomerEventsParams,
+  options?: RequestInit
+): Promise<listCustomerEventsResponse> => {
+  return customFetch<listCustomerEventsResponse>(
+    getListCustomerEventsUrl(customerId, params),
+    {
+      ...options,
+      method: 'GET'
     }
-
-
-export const getListCustomerEventsQueryOptions = <TData = Awaited<ReturnType<typeof listCustomerEvents>>, TError = ListCustomerEvents422>(customerId: MaybeRefOrGetter<number>,
-    params?: MaybeRefOrGetter<ListCustomerEventsParams>, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listCustomerEvents>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
-) => {
-
-const {query: queryOptions, request: requestOptions} = options ?? {};
-
-  const queryKey =  getListCustomerEventsQueryKey(customerId,params);
-
-
-
-    const queryFn: QueryFunction<Awaited<ReturnType<typeof listCustomerEvents>>> = ({ signal }) => listCustomerEvents(toValue(customerId),toValue(params), { signal, ...requestOptions });
-
-
-
-
-
-   return  { queryKey, queryFn, enabled: computed(() => toValue(customerId) !== null && toValue(customerId) !== undefined), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listCustomerEvents>>, TError, TData>
+  )
 }
 
-export type ListCustomerEventsQueryResult = NonNullable<Awaited<ReturnType<typeof listCustomerEvents>>>
-export type ListCustomerEventsQueryError = ListCustomerEvents422
+export const getListCustomerEventsQueryKey = (
+  customerId: MaybeRefOrGetter<number>,
+  params?: MaybeRefOrGetter<ListCustomerEventsParams>
+) => {
+  return [
+    'v1',
+    'customers',
+    customerId,
+    'events',
+    ...(params ? [params] : [])
+  ] as const
+}
 
+export const getListCustomerEventsQueryOptions = <
+  TData = Awaited<ReturnType<typeof listCustomerEvents>>,
+  TError = ListCustomerEvents422
+>(
+  customerId: MaybeRefOrGetter<number>,
+  params?: MaybeRefOrGetter<ListCustomerEventsParams>,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof listCustomerEvents>>,
+        TError,
+        TData
+      >
+    >
+    request?: SecondParameter<typeof customFetch>
+  }
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {}
+
+  const queryKey = getListCustomerEventsQueryKey(customerId, params)
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof listCustomerEvents>>
+  > = ({ signal }) =>
+    listCustomerEvents(toValue(customerId), toValue(params), {
+      signal,
+      ...requestOptions
+    })
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: computed(
+      () => toValue(customerId) !== null && toValue(customerId) !== undefined
+    ),
+    ...queryOptions
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof listCustomerEvents>>,
+    TError,
+    TData
+  >
+}
+
+export type ListCustomerEventsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listCustomerEvents>>
+>
+export type ListCustomerEventsQueryError = ListCustomerEvents422
 
 /**
  * @summary List Customer Events Route
  */
 
-export function useListCustomerEvents<TData = Awaited<ReturnType<typeof listCustomerEvents>>, TError = ListCustomerEvents422>(
- customerId: MaybeRefOrGetter<number>,
-    params?: MaybeRefOrGetter<ListCustomerEventsParams>, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listCustomerEvents>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
- , queryClient?: QueryClient
- ): UseQueryReturnType<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+export function useListCustomerEvents<
+  TData = Awaited<ReturnType<typeof listCustomerEvents>>,
+  TError = ListCustomerEvents422
+>(
+  customerId: MaybeRefOrGetter<number>,
+  params?: MaybeRefOrGetter<ListCustomerEventsParams>,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof listCustomerEvents>>,
+        TError,
+        TData
+      >
+    >
+    request?: SecondParameter<typeof customFetch>
+  },
+  queryClient?: QueryClient
+): UseQueryReturnType<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>
+} {
+  const queryOptions = getListCustomerEventsQueryOptions(
+    customerId,
+    params,
+    options
+  )
 
-  const queryOptions = getListCustomerEventsQueryOptions(customerId,params,options)
+  const query = useQuery(queryOptions, queryClient) as UseQueryReturnType<
+    TData,
+    TError
+  > & { queryKey: DataTag<QueryKey, TData, TError> }
 
-  const query = useQuery(queryOptions, queryClient) as UseQueryReturnType<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+  query.queryKey = unref(queryOptions).queryKey as DataTag<
+    QueryKey,
+    TData,
+    TError
+  >
 
-  query.queryKey = unref(queryOptions).queryKey as DataTag<QueryKey, TData, TError>;
-
-  return query;
+  return query
 }
-
-
-
-
-
-
 
 export type listMembersResponse200 = {
   data: PageMember
@@ -1270,105 +1483,150 @@ export type listMembersResponse422 = {
   status: 422
 }
 
-export type listMembersResponseSuccess = (listMembersResponse200) & {
-  headers: Headers;
-};
-export type listMembersResponseError = (listMembersResponse401 | listMembersResponse403 | listMembersResponse404 | listMembersResponse422) & {
-  headers: Headers;
-};
+export type listMembersResponseSuccess = listMembersResponse200 & {
+  headers: Headers
+}
+export type listMembersResponseError = (
+  | listMembersResponse401
+  | listMembersResponse403
+  | listMembersResponse404
+  | listMembersResponse422
+) & {
+  headers: Headers
+}
 
-export type listMembersResponse = (listMembersResponseSuccess | listMembersResponseError)
+export type listMembersResponse =
+  | listMembersResponseSuccess
+  | listMembersResponseError
 
-export const getListMembersUrl = (accountId: string,
-    params?: ListMembersParams,) => {
-  const normalizedParams = new URLSearchParams();
+export const getListMembersUrl = (
+  accountId: string,
+  params?: ListMembersParams
+) => {
+  const normalizedParams = new URLSearchParams()
 
   Object.entries(params || {}).forEach(([key, value]) => {
-
     if (value !== undefined) {
       normalizedParams.append(key, value === null ? 'null' : String(value))
     }
-  });
+  })
 
-  const stringifiedParams = normalizedParams.toString();
+  const stringifiedParams = normalizedParams.toString()
 
-  return stringifiedParams.length > 0 ? `/v1/accounts/${accountId}/members?${stringifiedParams}` : `/v1/accounts/${accountId}/members`
+  return stringifiedParams.length > 0
+    ? `/v1/accounts/${accountId}/members?${stringifiedParams}`
+    : `/v1/accounts/${accountId}/members`
 }
 
 /**
  * @summary List Members Route
  */
-export const listMembers = async (accountId: string,
-    params?: ListMembersParams, options?: RequestInit): Promise<listMembersResponse> => {
-
-  return customFetch<listMembersResponse>(getListMembersUrl(accountId,params),
-  {
-    ...options,
-    method: 'GET'
-
-
-  }
-);}
-
-
-
-
-
-export const getListMembersQueryKey = (accountId: MaybeRefOrGetter<string>,
-    params?: MaybeRefOrGetter<ListMembersParams>,) => {
-    return [
-    'v1','accounts',accountId,'members', ...(params ? [params] : [])
-    ] as const;
+export const listMembers = async (
+  accountId: string,
+  params?: ListMembersParams,
+  options?: RequestInit
+): Promise<listMembersResponse> => {
+  return customFetch<listMembersResponse>(
+    getListMembersUrl(accountId, params),
+    {
+      ...options,
+      method: 'GET'
     }
-
-
-export const getListMembersQueryOptions = <TData = Awaited<ReturnType<typeof listMembers>>, TError = ListMembers401 | ListMembers403 | ListMembers404 | ListMembers422>(accountId: MaybeRefOrGetter<string>,
-    params?: MaybeRefOrGetter<ListMembersParams>, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listMembers>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
-) => {
-
-const {query: queryOptions, request: requestOptions} = options ?? {};
-
-  const queryKey =  getListMembersQueryKey(accountId,params);
-
-
-
-    const queryFn: QueryFunction<Awaited<ReturnType<typeof listMembers>>> = ({ signal }) => listMembers(toValue(accountId),toValue(params), { signal, ...requestOptions });
-
-
-
-
-
-   return  { queryKey, queryFn, enabled: computed(() => toValue(accountId) !== null && toValue(accountId) !== undefined), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listMembers>>, TError, TData>
+  )
 }
 
-export type ListMembersQueryResult = NonNullable<Awaited<ReturnType<typeof listMembers>>>
-export type ListMembersQueryError = ListMembers401 | ListMembers403 | ListMembers404 | ListMembers422
+export const getListMembersQueryKey = (
+  accountId: MaybeRefOrGetter<string>,
+  params?: MaybeRefOrGetter<ListMembersParams>
+) => {
+  return [
+    'v1',
+    'accounts',
+    accountId,
+    'members',
+    ...(params ? [params] : [])
+  ] as const
+}
 
+export const getListMembersQueryOptions = <
+  TData = Awaited<ReturnType<typeof listMembers>>,
+  TError = ListMembers401 | ListMembers403 | ListMembers404 | ListMembers422
+>(
+  accountId: MaybeRefOrGetter<string>,
+  params?: MaybeRefOrGetter<ListMembersParams>,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof listMembers>>, TError, TData>
+    >
+    request?: SecondParameter<typeof customFetch>
+  }
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {}
+
+  const queryKey = getListMembersQueryKey(accountId, params)
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof listMembers>>> = ({
+    signal
+  }) =>
+    listMembers(toValue(accountId), toValue(params), {
+      signal,
+      ...requestOptions
+    })
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: computed(
+      () => toValue(accountId) !== null && toValue(accountId) !== undefined
+    ),
+    ...queryOptions
+  } as UseQueryOptions<Awaited<ReturnType<typeof listMembers>>, TError, TData>
+}
+
+export type ListMembersQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listMembers>>
+>
+export type ListMembersQueryError =
+  | ListMembers401
+  | ListMembers403
+  | ListMembers404
+  | ListMembers422
 
 /**
  * @summary List Members Route
  */
 
-export function useListMembers<TData = Awaited<ReturnType<typeof listMembers>>, TError = ListMembers401 | ListMembers403 | ListMembers404 | ListMembers422>(
- accountId: MaybeRefOrGetter<string>,
-    params?: MaybeRefOrGetter<ListMembersParams>, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listMembers>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
- , queryClient?: QueryClient
- ): UseQueryReturnType<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+export function useListMembers<
+  TData = Awaited<ReturnType<typeof listMembers>>,
+  TError = ListMembers401 | ListMembers403 | ListMembers404 | ListMembers422
+>(
+  accountId: MaybeRefOrGetter<string>,
+  params?: MaybeRefOrGetter<ListMembersParams>,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof listMembers>>, TError, TData>
+    >
+    request?: SecondParameter<typeof customFetch>
+  },
+  queryClient?: QueryClient
+): UseQueryReturnType<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>
+} {
+  const queryOptions = getListMembersQueryOptions(accountId, params, options)
 
-  const queryOptions = getListMembersQueryOptions(accountId,params,options)
+  const query = useQuery(queryOptions, queryClient) as UseQueryReturnType<
+    TData,
+    TError
+  > & { queryKey: DataTag<QueryKey, TData, TError> }
 
-  const query = useQuery(queryOptions, queryClient) as UseQueryReturnType<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+  query.queryKey = unref(queryOptions).queryKey as DataTag<
+    QueryKey,
+    TData,
+    TError
+  >
 
-  query.queryKey = unref(queryOptions).queryKey as DataTag<QueryKey, TData, TError>;
-
-  return query;
+  return query
 }
-
-
-
-
-
-
 
 export type inviteMemberResponse201 = {
   data: Member
@@ -1405,86 +1663,131 @@ export type inviteMemberResponse422 = {
   status: 422
 }
 
-export type inviteMemberResponseSuccess = (inviteMemberResponse201) & {
-  headers: Headers;
-};
-export type inviteMemberResponseError = (inviteMemberResponse400 | inviteMemberResponse401 | inviteMemberResponse403 | inviteMemberResponse404 | inviteMemberResponse409 | inviteMemberResponse422) & {
-  headers: Headers;
-};
+export type inviteMemberResponseSuccess = inviteMemberResponse201 & {
+  headers: Headers
+}
+export type inviteMemberResponseError = (
+  | inviteMemberResponse400
+  | inviteMemberResponse401
+  | inviteMemberResponse403
+  | inviteMemberResponse404
+  | inviteMemberResponse409
+  | inviteMemberResponse422
+) & {
+  headers: Headers
+}
 
-export type inviteMemberResponse = (inviteMemberResponseSuccess | inviteMemberResponseError)
+export type inviteMemberResponse =
+  | inviteMemberResponseSuccess
+  | inviteMemberResponseError
 
-export const getInviteMemberUrl = (accountId: string,) => {
-
-
-
-
+export const getInviteMemberUrl = (accountId: string) => {
   return `/v1/accounts/${accountId}/members`
 }
 
 /**
  * @summary Invite Member Route
  */
-export const inviteMember = async (accountId: string,
-    memberInvite: MemberInvite, options?: RequestInit): Promise<inviteMemberResponse> => {
-
-  return customFetch<inviteMemberResponse>(getInviteMemberUrl(accountId),
-  {
+export const inviteMember = async (
+  accountId: string,
+  memberInvite: MemberInvite,
+  options?: RequestInit
+): Promise<inviteMemberResponse> => {
+  return customFetch<inviteMemberResponse>(getInviteMemberUrl(accountId), {
     ...options,
     method: 'POST',
     headers: { 'Content-Type': 'application/json', ...options?.headers },
     body: JSON.stringify(memberInvite)
+  })
+}
+
+export const getInviteMemberMutationOptions = <
+  TError =
+    | InviteMember400
+    | InviteMember401
+    | InviteMember403
+    | InviteMember404
+    | InviteMember409
+    | InviteMember422,
+  TContext = unknown
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof inviteMember>>,
+    TError,
+    { accountId: string; data: MemberInvite },
+    TContext
+  >
+  request?: SecondParameter<typeof customFetch>
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof inviteMember>>,
+  TError,
+  { accountId: string; data: MemberInvite },
+  TContext
+> => {
+  const mutationKey = ['inviteMember']
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      'mutationKey' in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined }
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof inviteMember>>,
+    { accountId: string; data: MemberInvite }
+  > = props => {
+    const { accountId, data } = props ?? {}
+
+    return inviteMember(accountId, data, requestOptions)
   }
-);}
 
+  return { mutationFn, ...mutationOptions }
+}
 
+export type InviteMemberMutationResult = NonNullable<
+  Awaited<ReturnType<typeof inviteMember>>
+>
+export type InviteMemberMutationBody = MemberInvite
+export type InviteMemberMutationError =
+  | InviteMember400
+  | InviteMember401
+  | InviteMember403
+  | InviteMember404
+  | InviteMember409
+  | InviteMember422
 
-
-
-export const getInviteMemberMutationOptions = <TError = InviteMember400 | InviteMember401 | InviteMember403 | InviteMember404 | InviteMember409 | InviteMember422,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof inviteMember>>, TError,{accountId: string;data: MemberInvite}, TContext>, request?: SecondParameter<typeof customFetch>}
-): UseMutationOptions<Awaited<ReturnType<typeof inviteMember>>, TError,{accountId: string;data: MemberInvite}, TContext> => {
-
-const mutationKey = ['inviteMember'];
-const {mutation: mutationOptions, request: requestOptions} = options ?
-      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
-      options
-      : {...options, mutation: {...options.mutation, mutationKey}}
-      : {mutation: { mutationKey, }, request: undefined};
-
-
-
-
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof inviteMember>>, {accountId: string;data: MemberInvite}> = (props) => {
-          const {accountId,data} = props ?? {};
-
-          return  inviteMember(accountId,data,requestOptions)
-        }
-
-
-
-
-
-
-  return  { mutationFn, ...mutationOptions }}
-
-    export type InviteMemberMutationResult = NonNullable<Awaited<ReturnType<typeof inviteMember>>>
-    export type InviteMemberMutationBody = MemberInvite
-    export type InviteMemberMutationError = InviteMember400 | InviteMember401 | InviteMember403 | InviteMember404 | InviteMember409 | InviteMember422
-
-    /**
+/**
  * @summary Invite Member Route
  */
-export const useInviteMember = <TError = InviteMember400 | InviteMember401 | InviteMember403 | InviteMember404 | InviteMember409 | InviteMember422,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof inviteMember>>, TError,{accountId: string;data: MemberInvite}, TContext>, request?: SecondParameter<typeof customFetch>}
- , queryClient?: QueryClient): UseMutationReturnType<
-        Awaited<ReturnType<typeof inviteMember>>,
-        TError,
-        {accountId: string;data: MemberInvite},
-        TContext
-      > => {
-      return useMutation(getInviteMemberMutationOptions(options), queryClient);
-    }
+export const useInviteMember = <
+  TError =
+    | InviteMember400
+    | InviteMember401
+    | InviteMember403
+    | InviteMember404
+    | InviteMember409
+    | InviteMember422,
+  TContext = unknown
+>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof inviteMember>>,
+      TError,
+      { accountId: string; data: MemberInvite },
+      TContext
+    >
+    request?: SecondParameter<typeof customFetch>
+  },
+  queryClient?: QueryClient
+): UseMutationReturnType<
+  Awaited<ReturnType<typeof inviteMember>>,
+  TError,
+  { accountId: string; data: MemberInvite },
+  TContext
+> => {
+  return useMutation(getInviteMemberMutationOptions(options), queryClient)
+}
 
 export type removeMemberResponse204 = {
   data: void
@@ -1511,87 +1814,124 @@ export type removeMemberResponse422 = {
   status: 422
 }
 
-export type removeMemberResponseSuccess = (removeMemberResponse204) & {
-  headers: Headers;
-};
-export type removeMemberResponseError = (removeMemberResponse401 | removeMemberResponse403 | removeMemberResponse404 | removeMemberResponse422) & {
-  headers: Headers;
-};
+export type removeMemberResponseSuccess = removeMemberResponse204 & {
+  headers: Headers
+}
+export type removeMemberResponseError = (
+  | removeMemberResponse401
+  | removeMemberResponse403
+  | removeMemberResponse404
+  | removeMemberResponse422
+) & {
+  headers: Headers
+}
 
-export type removeMemberResponse = (removeMemberResponseSuccess | removeMemberResponseError)
+export type removeMemberResponse =
+  | removeMemberResponseSuccess
+  | removeMemberResponseError
 
-export const getRemoveMemberUrl = (accountId: string,
-    userId: string,) => {
-
-
-
-
+export const getRemoveMemberUrl = (accountId: string, userId: string) => {
   return `/v1/accounts/${accountId}/members/${userId}`
 }
 
 /**
  * @summary Remove Member Route
  */
-export const removeMember = async (accountId: string,
-    userId: string, options?: RequestInit): Promise<removeMemberResponse> => {
+export const removeMember = async (
+  accountId: string,
+  userId: string,
+  options?: RequestInit
+): Promise<removeMemberResponse> => {
+  return customFetch<removeMemberResponse>(
+    getRemoveMemberUrl(accountId, userId),
+    {
+      ...options,
+      method: 'DELETE'
+    }
+  )
+}
 
-  return customFetch<removeMemberResponse>(getRemoveMemberUrl(accountId,userId),
-  {
-    ...options,
-    method: 'DELETE'
+export const getRemoveMemberMutationOptions = <
+  TError =
+    | RemoveMember401
+    | RemoveMember403
+    | RemoveMember404
+    | RemoveMember422,
+  TContext = unknown
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof removeMember>>,
+    TError,
+    { accountId: string; userId: string },
+    TContext
+  >
+  request?: SecondParameter<typeof customFetch>
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof removeMember>>,
+  TError,
+  { accountId: string; userId: string },
+  TContext
+> => {
+  const mutationKey = ['removeMember']
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      'mutationKey' in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined }
 
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof removeMember>>,
+    { accountId: string; userId: string }
+  > = props => {
+    const { accountId, userId } = props ?? {}
 
+    return removeMember(accountId, userId, requestOptions)
   }
-);}
 
+  return { mutationFn, ...mutationOptions }
+}
 
+export type RemoveMemberMutationResult = NonNullable<
+  Awaited<ReturnType<typeof removeMember>>
+>
 
+export type RemoveMemberMutationError =
+  | RemoveMember401
+  | RemoveMember403
+  | RemoveMember404
+  | RemoveMember422
 
-
-export const getRemoveMemberMutationOptions = <TError = RemoveMember401 | RemoveMember403 | RemoveMember404 | RemoveMember422,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof removeMember>>, TError,{accountId: string;userId: string}, TContext>, request?: SecondParameter<typeof customFetch>}
-): UseMutationOptions<Awaited<ReturnType<typeof removeMember>>, TError,{accountId: string;userId: string}, TContext> => {
-
-const mutationKey = ['removeMember'];
-const {mutation: mutationOptions, request: requestOptions} = options ?
-      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
-      options
-      : {...options, mutation: {...options.mutation, mutationKey}}
-      : {mutation: { mutationKey, }, request: undefined};
-
-
-
-
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof removeMember>>, {accountId: string;userId: string}> = (props) => {
-          const {accountId,userId} = props ?? {};
-
-          return  removeMember(accountId,userId,requestOptions)
-        }
-
-
-
-
-
-
-  return  { mutationFn, ...mutationOptions }}
-
-    export type RemoveMemberMutationResult = NonNullable<Awaited<ReturnType<typeof removeMember>>>
-
-    export type RemoveMemberMutationError = RemoveMember401 | RemoveMember403 | RemoveMember404 | RemoveMember422
-
-    /**
+/**
  * @summary Remove Member Route
  */
-export const useRemoveMember = <TError = RemoveMember401 | RemoveMember403 | RemoveMember404 | RemoveMember422,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof removeMember>>, TError,{accountId: string;userId: string}, TContext>, request?: SecondParameter<typeof customFetch>}
- , queryClient?: QueryClient): UseMutationReturnType<
-        Awaited<ReturnType<typeof removeMember>>,
-        TError,
-        {accountId: string;userId: string},
-        TContext
-      > => {
-      return useMutation(getRemoveMemberMutationOptions(options), queryClient);
-    }
+export const useRemoveMember = <
+  TError =
+    | RemoveMember401
+    | RemoveMember403
+    | RemoveMember404
+    | RemoveMember422,
+  TContext = unknown
+>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof removeMember>>,
+      TError,
+      { accountId: string; userId: string },
+      TContext
+    >
+    request?: SecondParameter<typeof customFetch>
+  },
+  queryClient?: QueryClient
+): UseMutationReturnType<
+  Awaited<ReturnType<typeof removeMember>>,
+  TError,
+  { accountId: string; userId: string },
+  TContext
+> => {
+  return useMutation(getRemoveMemberMutationOptions(options), queryClient)
+}
 
 export type createSupportSessionResponse201 = {
   data: SupportSessionCreated
@@ -1623,85 +1963,133 @@ export type createSupportSessionResponse422 = {
   status: 422
 }
 
-export type createSupportSessionResponseSuccess = (createSupportSessionResponse201) & {
-  headers: Headers;
-};
-export type createSupportSessionResponseError = (createSupportSessionResponse400 | createSupportSessionResponse401 | createSupportSessionResponse403 | createSupportSessionResponse404 | createSupportSessionResponse422) & {
-  headers: Headers;
-};
+export type createSupportSessionResponseSuccess =
+  createSupportSessionResponse201 & {
+    headers: Headers
+  }
+export type createSupportSessionResponseError = (
+  | createSupportSessionResponse400
+  | createSupportSessionResponse401
+  | createSupportSessionResponse403
+  | createSupportSessionResponse404
+  | createSupportSessionResponse422
+) & {
+  headers: Headers
+}
 
-export type createSupportSessionResponse = (createSupportSessionResponseSuccess | createSupportSessionResponseError)
+export type createSupportSessionResponse =
+  | createSupportSessionResponseSuccess
+  | createSupportSessionResponseError
 
 export const getCreateSupportSessionUrl = () => {
-
-
-
-
   return `/v1/support-sessions`
 }
 
 /**
  * @summary Create Support Session Route
  */
-export const createSupportSession = async (supportSessionCreate: SupportSessionCreate, options?: RequestInit): Promise<createSupportSessionResponse> => {
+export const createSupportSession = async (
+  supportSessionCreate: SupportSessionCreate,
+  options?: RequestInit
+): Promise<createSupportSessionResponse> => {
+  return customFetch<createSupportSessionResponse>(
+    getCreateSupportSessionUrl(),
+    {
+      ...options,
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', ...options?.headers },
+      body: JSON.stringify(supportSessionCreate)
+    }
+  )
+}
 
-  return customFetch<createSupportSessionResponse>(getCreateSupportSessionUrl(),
-  {
-    ...options,
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', ...options?.headers },
-    body: JSON.stringify(supportSessionCreate)
+export const getCreateSupportSessionMutationOptions = <
+  TError =
+    | CreateSupportSession400
+    | CreateSupportSession401
+    | CreateSupportSession403
+    | CreateSupportSession404
+    | CreateSupportSession422,
+  TContext = unknown
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createSupportSession>>,
+    TError,
+    { data: SupportSessionCreate },
+    TContext
+  >
+  request?: SecondParameter<typeof customFetch>
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof createSupportSession>>,
+  TError,
+  { data: SupportSessionCreate },
+  TContext
+> => {
+  const mutationKey = ['createSupportSession']
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      'mutationKey' in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined }
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof createSupportSession>>,
+    { data: SupportSessionCreate }
+  > = props => {
+    const { data } = props ?? {}
+
+    return createSupportSession(data, requestOptions)
   }
-);}
 
+  return { mutationFn, ...mutationOptions }
+}
 
+export type CreateSupportSessionMutationResult = NonNullable<
+  Awaited<ReturnType<typeof createSupportSession>>
+>
+export type CreateSupportSessionMutationBody = SupportSessionCreate
+export type CreateSupportSessionMutationError =
+  | CreateSupportSession400
+  | CreateSupportSession401
+  | CreateSupportSession403
+  | CreateSupportSession404
+  | CreateSupportSession422
 
-
-
-export const getCreateSupportSessionMutationOptions = <TError = CreateSupportSession400 | CreateSupportSession401 | CreateSupportSession403 | CreateSupportSession404 | CreateSupportSession422,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createSupportSession>>, TError,{data: SupportSessionCreate}, TContext>, request?: SecondParameter<typeof customFetch>}
-): UseMutationOptions<Awaited<ReturnType<typeof createSupportSession>>, TError,{data: SupportSessionCreate}, TContext> => {
-
-const mutationKey = ['createSupportSession'];
-const {mutation: mutationOptions, request: requestOptions} = options ?
-      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
-      options
-      : {...options, mutation: {...options.mutation, mutationKey}}
-      : {mutation: { mutationKey, }, request: undefined};
-
-
-
-
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createSupportSession>>, {data: SupportSessionCreate}> = (props) => {
-          const {data} = props ?? {};
-
-          return  createSupportSession(data,requestOptions)
-        }
-
-
-
-
-
-
-  return  { mutationFn, ...mutationOptions }}
-
-    export type CreateSupportSessionMutationResult = NonNullable<Awaited<ReturnType<typeof createSupportSession>>>
-    export type CreateSupportSessionMutationBody = SupportSessionCreate
-    export type CreateSupportSessionMutationError = CreateSupportSession400 | CreateSupportSession401 | CreateSupportSession403 | CreateSupportSession404 | CreateSupportSession422
-
-    /**
+/**
  * @summary Create Support Session Route
  */
-export const useCreateSupportSession = <TError = CreateSupportSession400 | CreateSupportSession401 | CreateSupportSession403 | CreateSupportSession404 | CreateSupportSession422,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createSupportSession>>, TError,{data: SupportSessionCreate}, TContext>, request?: SecondParameter<typeof customFetch>}
- , queryClient?: QueryClient): UseMutationReturnType<
-        Awaited<ReturnType<typeof createSupportSession>>,
-        TError,
-        {data: SupportSessionCreate},
-        TContext
-      > => {
-      return useMutation(getCreateSupportSessionMutationOptions(options), queryClient);
-    }
+export const useCreateSupportSession = <
+  TError =
+    | CreateSupportSession400
+    | CreateSupportSession401
+    | CreateSupportSession403
+    | CreateSupportSession404
+    | CreateSupportSession422,
+  TContext = unknown
+>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof createSupportSession>>,
+      TError,
+      { data: SupportSessionCreate },
+      TContext
+    >
+    request?: SecondParameter<typeof customFetch>
+  },
+  queryClient?: QueryClient
+): UseMutationReturnType<
+  Awaited<ReturnType<typeof createSupportSession>>,
+  TError,
+  { data: SupportSessionCreate },
+  TContext
+> => {
+  return useMutation(
+    getCreateSupportSessionMutationOptions(options),
+    queryClient
+  )
+}
 
 export type listSupportSessionsResponse200 = {
   data: PageSupportSession
@@ -1723,100 +2111,146 @@ export type listSupportSessionsResponse422 = {
   status: 422
 }
 
-export type listSupportSessionsResponseSuccess = (listSupportSessionsResponse200) & {
-  headers: Headers;
-};
-export type listSupportSessionsResponseError = (listSupportSessionsResponse401 | listSupportSessionsResponse403 | listSupportSessionsResponse422) & {
-  headers: Headers;
-};
+export type listSupportSessionsResponseSuccess =
+  listSupportSessionsResponse200 & {
+    headers: Headers
+  }
+export type listSupportSessionsResponseError = (
+  | listSupportSessionsResponse401
+  | listSupportSessionsResponse403
+  | listSupportSessionsResponse422
+) & {
+  headers: Headers
+}
 
-export type listSupportSessionsResponse = (listSupportSessionsResponseSuccess | listSupportSessionsResponseError)
+export type listSupportSessionsResponse =
+  | listSupportSessionsResponseSuccess
+  | listSupportSessionsResponseError
 
-export const getListSupportSessionsUrl = (params?: ListSupportSessionsParams,) => {
-  const normalizedParams = new URLSearchParams();
+export const getListSupportSessionsUrl = (
+  params?: ListSupportSessionsParams
+) => {
+  const normalizedParams = new URLSearchParams()
 
   Object.entries(params || {}).forEach(([key, value]) => {
-
     if (value !== undefined) {
       normalizedParams.append(key, value === null ? 'null' : String(value))
     }
-  });
+  })
 
-  const stringifiedParams = normalizedParams.toString();
+  const stringifiedParams = normalizedParams.toString()
 
-  return stringifiedParams.length > 0 ? `/v1/support-sessions?${stringifiedParams}` : `/v1/support-sessions`
+  return stringifiedParams.length > 0
+    ? `/v1/support-sessions?${stringifiedParams}`
+    : `/v1/support-sessions`
 }
 
 /**
  * @summary List Support Sessions Route
  */
-export const listSupportSessions = async (params?: ListSupportSessionsParams, options?: RequestInit): Promise<listSupportSessionsResponse> => {
-
-  return customFetch<listSupportSessionsResponse>(getListSupportSessionsUrl(params),
-  {
-    ...options,
-    method: 'GET'
-
-
-  }
-);}
-
-
-
-
-
-export const getListSupportSessionsQueryKey = (params?: MaybeRefOrGetter<ListSupportSessionsParams>,) => {
-    return [
-    'v1','support-sessions', ...(params ? [params] : [])
-    ] as const;
+export const listSupportSessions = async (
+  params?: ListSupportSessionsParams,
+  options?: RequestInit
+): Promise<listSupportSessionsResponse> => {
+  return customFetch<listSupportSessionsResponse>(
+    getListSupportSessionsUrl(params),
+    {
+      ...options,
+      method: 'GET'
     }
-
-
-export const getListSupportSessionsQueryOptions = <TData = Awaited<ReturnType<typeof listSupportSessions>>, TError = ListSupportSessions401 | ListSupportSessions403 | ListSupportSessions422>(params?: MaybeRefOrGetter<ListSupportSessionsParams>, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listSupportSessions>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
-) => {
-
-const {query: queryOptions, request: requestOptions} = options ?? {};
-
-  const queryKey =  getListSupportSessionsQueryKey(params);
-
-
-
-    const queryFn: QueryFunction<Awaited<ReturnType<typeof listSupportSessions>>> = ({ signal }) => listSupportSessions(toValue(params), { signal, ...requestOptions });
-
-
-
-
-
-   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listSupportSessions>>, TError, TData>
+  )
 }
 
-export type ListSupportSessionsQueryResult = NonNullable<Awaited<ReturnType<typeof listSupportSessions>>>
-export type ListSupportSessionsQueryError = ListSupportSessions401 | ListSupportSessions403 | ListSupportSessions422
+export const getListSupportSessionsQueryKey = (
+  params?: MaybeRefOrGetter<ListSupportSessionsParams>
+) => {
+  return ['v1', 'support-sessions', ...(params ? [params] : [])] as const
+}
 
+export const getListSupportSessionsQueryOptions = <
+  TData = Awaited<ReturnType<typeof listSupportSessions>>,
+  TError =
+    | ListSupportSessions401
+    | ListSupportSessions403
+    | ListSupportSessions422
+>(
+  params?: MaybeRefOrGetter<ListSupportSessionsParams>,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof listSupportSessions>>,
+        TError,
+        TData
+      >
+    >
+    request?: SecondParameter<typeof customFetch>
+  }
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {}
+
+  const queryKey = getListSupportSessionsQueryKey(params)
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof listSupportSessions>>
+  > = ({ signal }) =>
+    listSupportSessions(toValue(params), { signal, ...requestOptions })
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof listSupportSessions>>,
+    TError,
+    TData
+  >
+}
+
+export type ListSupportSessionsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listSupportSessions>>
+>
+export type ListSupportSessionsQueryError =
+  | ListSupportSessions401
+  | ListSupportSessions403
+  | ListSupportSessions422
 
 /**
  * @summary List Support Sessions Route
  */
 
-export function useListSupportSessions<TData = Awaited<ReturnType<typeof listSupportSessions>>, TError = ListSupportSessions401 | ListSupportSessions403 | ListSupportSessions422>(
- params?: MaybeRefOrGetter<ListSupportSessionsParams>, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listSupportSessions>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
- , queryClient?: QueryClient
- ): UseQueryReturnType<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+export function useListSupportSessions<
+  TData = Awaited<ReturnType<typeof listSupportSessions>>,
+  TError =
+    | ListSupportSessions401
+    | ListSupportSessions403
+    | ListSupportSessions422
+>(
+  params?: MaybeRefOrGetter<ListSupportSessionsParams>,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof listSupportSessions>>,
+        TError,
+        TData
+      >
+    >
+    request?: SecondParameter<typeof customFetch>
+  },
+  queryClient?: QueryClient
+): UseQueryReturnType<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>
+} {
+  const queryOptions = getListSupportSessionsQueryOptions(params, options)
 
-  const queryOptions = getListSupportSessionsQueryOptions(params,options)
+  const query = useQuery(queryOptions, queryClient) as UseQueryReturnType<
+    TData,
+    TError
+  > & { queryKey: DataTag<QueryKey, TData, TError> }
 
-  const query = useQuery(queryOptions, queryClient) as UseQueryReturnType<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+  query.queryKey = unref(queryOptions).queryKey as DataTag<
+    QueryKey,
+    TData,
+    TError
+  >
 
-  query.queryKey = unref(queryOptions).queryKey as DataTag<QueryKey, TData, TError>;
-
-  return query;
+  return query
 }
-
-
-
-
-
-
 
 export type endSupportSessionResponse204 = {
   data: void
@@ -1843,85 +2277,123 @@ export type endSupportSessionResponse422 = {
   status: 422
 }
 
-export type endSupportSessionResponseSuccess = (endSupportSessionResponse204) & {
-  headers: Headers;
-};
-export type endSupportSessionResponseError = (endSupportSessionResponse401 | endSupportSessionResponse403 | endSupportSessionResponse404 | endSupportSessionResponse422) & {
-  headers: Headers;
-};
+export type endSupportSessionResponseSuccess = endSupportSessionResponse204 & {
+  headers: Headers
+}
+export type endSupportSessionResponseError = (
+  | endSupportSessionResponse401
+  | endSupportSessionResponse403
+  | endSupportSessionResponse404
+  | endSupportSessionResponse422
+) & {
+  headers: Headers
+}
 
-export type endSupportSessionResponse = (endSupportSessionResponseSuccess | endSupportSessionResponseError)
+export type endSupportSessionResponse =
+  | endSupportSessionResponseSuccess
+  | endSupportSessionResponseError
 
-export const getEndSupportSessionUrl = (sessionId: string,) => {
-
-
-
-
+export const getEndSupportSessionUrl = (sessionId: string) => {
   return `/v1/support-sessions/${sessionId}`
 }
 
 /**
  * @summary End Support Session Route
  */
-export const endSupportSession = async (sessionId: string, options?: RequestInit): Promise<endSupportSessionResponse> => {
+export const endSupportSession = async (
+  sessionId: string,
+  options?: RequestInit
+): Promise<endSupportSessionResponse> => {
+  return customFetch<endSupportSessionResponse>(
+    getEndSupportSessionUrl(sessionId),
+    {
+      ...options,
+      method: 'DELETE'
+    }
+  )
+}
 
-  return customFetch<endSupportSessionResponse>(getEndSupportSessionUrl(sessionId),
-  {
-    ...options,
-    method: 'DELETE'
+export const getEndSupportSessionMutationOptions = <
+  TError =
+    | EndSupportSession401
+    | EndSupportSession403
+    | EndSupportSession404
+    | EndSupportSession422,
+  TContext = unknown
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof endSupportSession>>,
+    TError,
+    { sessionId: string },
+    TContext
+  >
+  request?: SecondParameter<typeof customFetch>
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof endSupportSession>>,
+  TError,
+  { sessionId: string },
+  TContext
+> => {
+  const mutationKey = ['endSupportSession']
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      'mutationKey' in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined }
 
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof endSupportSession>>,
+    { sessionId: string }
+  > = props => {
+    const { sessionId } = props ?? {}
 
+    return endSupportSession(sessionId, requestOptions)
   }
-);}
 
+  return { mutationFn, ...mutationOptions }
+}
 
+export type EndSupportSessionMutationResult = NonNullable<
+  Awaited<ReturnType<typeof endSupportSession>>
+>
 
+export type EndSupportSessionMutationError =
+  | EndSupportSession401
+  | EndSupportSession403
+  | EndSupportSession404
+  | EndSupportSession422
 
-
-export const getEndSupportSessionMutationOptions = <TError = EndSupportSession401 | EndSupportSession403 | EndSupportSession404 | EndSupportSession422,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof endSupportSession>>, TError,{sessionId: string}, TContext>, request?: SecondParameter<typeof customFetch>}
-): UseMutationOptions<Awaited<ReturnType<typeof endSupportSession>>, TError,{sessionId: string}, TContext> => {
-
-const mutationKey = ['endSupportSession'];
-const {mutation: mutationOptions, request: requestOptions} = options ?
-      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
-      options
-      : {...options, mutation: {...options.mutation, mutationKey}}
-      : {mutation: { mutationKey, }, request: undefined};
-
-
-
-
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof endSupportSession>>, {sessionId: string}> = (props) => {
-          const {sessionId} = props ?? {};
-
-          return  endSupportSession(sessionId,requestOptions)
-        }
-
-
-
-
-
-
-  return  { mutationFn, ...mutationOptions }}
-
-    export type EndSupportSessionMutationResult = NonNullable<Awaited<ReturnType<typeof endSupportSession>>>
-
-    export type EndSupportSessionMutationError = EndSupportSession401 | EndSupportSession403 | EndSupportSession404 | EndSupportSession422
-
-    /**
+/**
  * @summary End Support Session Route
  */
-export const useEndSupportSession = <TError = EndSupportSession401 | EndSupportSession403 | EndSupportSession404 | EndSupportSession422,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof endSupportSession>>, TError,{sessionId: string}, TContext>, request?: SecondParameter<typeof customFetch>}
- , queryClient?: QueryClient): UseMutationReturnType<
-        Awaited<ReturnType<typeof endSupportSession>>,
-        TError,
-        {sessionId: string},
-        TContext
-      > => {
-      return useMutation(getEndSupportSessionMutationOptions(options), queryClient);
-    }
+export const useEndSupportSession = <
+  TError =
+    | EndSupportSession401
+    | EndSupportSession403
+    | EndSupportSession404
+    | EndSupportSession422,
+  TContext = unknown
+>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof endSupportSession>>,
+      TError,
+      { sessionId: string },
+      TContext
+    >
+    request?: SecondParameter<typeof customFetch>
+  },
+  queryClient?: QueryClient
+): UseMutationReturnType<
+  Awaited<ReturnType<typeof endSupportSession>>,
+  TError,
+  { sessionId: string },
+  TContext
+> => {
+  return useMutation(getEndSupportSessionMutationOptions(options), queryClient)
+}
 
 export type listSourcesResponse200 = {
   data: PageSource
@@ -1948,105 +2420,150 @@ export type listSourcesResponse422 = {
   status: 422
 }
 
-export type listSourcesResponseSuccess = (listSourcesResponse200) & {
-  headers: Headers;
-};
-export type listSourcesResponseError = (listSourcesResponse401 | listSourcesResponse403 | listSourcesResponse404 | listSourcesResponse422) & {
-  headers: Headers;
-};
+export type listSourcesResponseSuccess = listSourcesResponse200 & {
+  headers: Headers
+}
+export type listSourcesResponseError = (
+  | listSourcesResponse401
+  | listSourcesResponse403
+  | listSourcesResponse404
+  | listSourcesResponse422
+) & {
+  headers: Headers
+}
 
-export type listSourcesResponse = (listSourcesResponseSuccess | listSourcesResponseError)
+export type listSourcesResponse =
+  | listSourcesResponseSuccess
+  | listSourcesResponseError
 
-export const getListSourcesUrl = (accountId: string,
-    params?: ListSourcesParams,) => {
-  const normalizedParams = new URLSearchParams();
+export const getListSourcesUrl = (
+  accountId: string,
+  params?: ListSourcesParams
+) => {
+  const normalizedParams = new URLSearchParams()
 
   Object.entries(params || {}).forEach(([key, value]) => {
-
     if (value !== undefined) {
       normalizedParams.append(key, value === null ? 'null' : String(value))
     }
-  });
+  })
 
-  const stringifiedParams = normalizedParams.toString();
+  const stringifiedParams = normalizedParams.toString()
 
-  return stringifiedParams.length > 0 ? `/v1/accounts/${accountId}/sources?${stringifiedParams}` : `/v1/accounts/${accountId}/sources`
+  return stringifiedParams.length > 0
+    ? `/v1/accounts/${accountId}/sources?${stringifiedParams}`
+    : `/v1/accounts/${accountId}/sources`
 }
 
 /**
  * @summary List Sources Route
  */
-export const listSources = async (accountId: string,
-    params?: ListSourcesParams, options?: RequestInit): Promise<listSourcesResponse> => {
-
-  return customFetch<listSourcesResponse>(getListSourcesUrl(accountId,params),
-  {
-    ...options,
-    method: 'GET'
-
-
-  }
-);}
-
-
-
-
-
-export const getListSourcesQueryKey = (accountId: MaybeRefOrGetter<string>,
-    params?: MaybeRefOrGetter<ListSourcesParams>,) => {
-    return [
-    'v1','accounts',accountId,'sources', ...(params ? [params] : [])
-    ] as const;
+export const listSources = async (
+  accountId: string,
+  params?: ListSourcesParams,
+  options?: RequestInit
+): Promise<listSourcesResponse> => {
+  return customFetch<listSourcesResponse>(
+    getListSourcesUrl(accountId, params),
+    {
+      ...options,
+      method: 'GET'
     }
-
-
-export const getListSourcesQueryOptions = <TData = Awaited<ReturnType<typeof listSources>>, TError = ListSources401 | ListSources403 | ListSources404 | ListSources422>(accountId: MaybeRefOrGetter<string>,
-    params?: MaybeRefOrGetter<ListSourcesParams>, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listSources>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
-) => {
-
-const {query: queryOptions, request: requestOptions} = options ?? {};
-
-  const queryKey =  getListSourcesQueryKey(accountId,params);
-
-
-
-    const queryFn: QueryFunction<Awaited<ReturnType<typeof listSources>>> = ({ signal }) => listSources(toValue(accountId),toValue(params), { signal, ...requestOptions });
-
-
-
-
-
-   return  { queryKey, queryFn, enabled: computed(() => toValue(accountId) !== null && toValue(accountId) !== undefined), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listSources>>, TError, TData>
+  )
 }
 
-export type ListSourcesQueryResult = NonNullable<Awaited<ReturnType<typeof listSources>>>
-export type ListSourcesQueryError = ListSources401 | ListSources403 | ListSources404 | ListSources422
+export const getListSourcesQueryKey = (
+  accountId: MaybeRefOrGetter<string>,
+  params?: MaybeRefOrGetter<ListSourcesParams>
+) => {
+  return [
+    'v1',
+    'accounts',
+    accountId,
+    'sources',
+    ...(params ? [params] : [])
+  ] as const
+}
 
+export const getListSourcesQueryOptions = <
+  TData = Awaited<ReturnType<typeof listSources>>,
+  TError = ListSources401 | ListSources403 | ListSources404 | ListSources422
+>(
+  accountId: MaybeRefOrGetter<string>,
+  params?: MaybeRefOrGetter<ListSourcesParams>,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof listSources>>, TError, TData>
+    >
+    request?: SecondParameter<typeof customFetch>
+  }
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {}
+
+  const queryKey = getListSourcesQueryKey(accountId, params)
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof listSources>>> = ({
+    signal
+  }) =>
+    listSources(toValue(accountId), toValue(params), {
+      signal,
+      ...requestOptions
+    })
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: computed(
+      () => toValue(accountId) !== null && toValue(accountId) !== undefined
+    ),
+    ...queryOptions
+  } as UseQueryOptions<Awaited<ReturnType<typeof listSources>>, TError, TData>
+}
+
+export type ListSourcesQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listSources>>
+>
+export type ListSourcesQueryError =
+  | ListSources401
+  | ListSources403
+  | ListSources404
+  | ListSources422
 
 /**
  * @summary List Sources Route
  */
 
-export function useListSources<TData = Awaited<ReturnType<typeof listSources>>, TError = ListSources401 | ListSources403 | ListSources404 | ListSources422>(
- accountId: MaybeRefOrGetter<string>,
-    params?: MaybeRefOrGetter<ListSourcesParams>, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listSources>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
- , queryClient?: QueryClient
- ): UseQueryReturnType<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+export function useListSources<
+  TData = Awaited<ReturnType<typeof listSources>>,
+  TError = ListSources401 | ListSources403 | ListSources404 | ListSources422
+>(
+  accountId: MaybeRefOrGetter<string>,
+  params?: MaybeRefOrGetter<ListSourcesParams>,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof listSources>>, TError, TData>
+    >
+    request?: SecondParameter<typeof customFetch>
+  },
+  queryClient?: QueryClient
+): UseQueryReturnType<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>
+} {
+  const queryOptions = getListSourcesQueryOptions(accountId, params, options)
 
-  const queryOptions = getListSourcesQueryOptions(accountId,params,options)
+  const query = useQuery(queryOptions, queryClient) as UseQueryReturnType<
+    TData,
+    TError
+  > & { queryKey: DataTag<QueryKey, TData, TError> }
 
-  const query = useQuery(queryOptions, queryClient) as UseQueryReturnType<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+  query.queryKey = unref(queryOptions).queryKey as DataTag<
+    QueryKey,
+    TData,
+    TError
+  >
 
-  query.queryKey = unref(queryOptions).queryKey as DataTag<QueryKey, TData, TError>;
-
-  return query;
+  return query
 }
-
-
-
-
-
-
 
 export type createSourceResponse201 = {
   data: Source
@@ -2083,86 +2600,131 @@ export type createSourceResponse422 = {
   status: 422
 }
 
-export type createSourceResponseSuccess = (createSourceResponse201) & {
-  headers: Headers;
-};
-export type createSourceResponseError = (createSourceResponse400 | createSourceResponse401 | createSourceResponse403 | createSourceResponse404 | createSourceResponse409 | createSourceResponse422) & {
-  headers: Headers;
-};
+export type createSourceResponseSuccess = createSourceResponse201 & {
+  headers: Headers
+}
+export type createSourceResponseError = (
+  | createSourceResponse400
+  | createSourceResponse401
+  | createSourceResponse403
+  | createSourceResponse404
+  | createSourceResponse409
+  | createSourceResponse422
+) & {
+  headers: Headers
+}
 
-export type createSourceResponse = (createSourceResponseSuccess | createSourceResponseError)
+export type createSourceResponse =
+  | createSourceResponseSuccess
+  | createSourceResponseError
 
-export const getCreateSourceUrl = (accountId: string,) => {
-
-
-
-
+export const getCreateSourceUrl = (accountId: string) => {
   return `/v1/accounts/${accountId}/sources`
 }
 
 /**
  * @summary Create Source Route
  */
-export const createSource = async (accountId: string,
-    sourceCreate: SourceCreate, options?: RequestInit): Promise<createSourceResponse> => {
-
-  return customFetch<createSourceResponse>(getCreateSourceUrl(accountId),
-  {
+export const createSource = async (
+  accountId: string,
+  sourceCreate: SourceCreate,
+  options?: RequestInit
+): Promise<createSourceResponse> => {
+  return customFetch<createSourceResponse>(getCreateSourceUrl(accountId), {
     ...options,
     method: 'POST',
     headers: { 'Content-Type': 'application/json', ...options?.headers },
     body: JSON.stringify(sourceCreate)
+  })
+}
+
+export const getCreateSourceMutationOptions = <
+  TError =
+    | CreateSource400
+    | CreateSource401
+    | CreateSource403
+    | CreateSource404
+    | CreateSource409
+    | CreateSource422,
+  TContext = unknown
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createSource>>,
+    TError,
+    { accountId: string; data: SourceCreate },
+    TContext
+  >
+  request?: SecondParameter<typeof customFetch>
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof createSource>>,
+  TError,
+  { accountId: string; data: SourceCreate },
+  TContext
+> => {
+  const mutationKey = ['createSource']
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      'mutationKey' in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined }
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof createSource>>,
+    { accountId: string; data: SourceCreate }
+  > = props => {
+    const { accountId, data } = props ?? {}
+
+    return createSource(accountId, data, requestOptions)
   }
-);}
 
+  return { mutationFn, ...mutationOptions }
+}
 
+export type CreateSourceMutationResult = NonNullable<
+  Awaited<ReturnType<typeof createSource>>
+>
+export type CreateSourceMutationBody = SourceCreate
+export type CreateSourceMutationError =
+  | CreateSource400
+  | CreateSource401
+  | CreateSource403
+  | CreateSource404
+  | CreateSource409
+  | CreateSource422
 
-
-
-export const getCreateSourceMutationOptions = <TError = CreateSource400 | CreateSource401 | CreateSource403 | CreateSource404 | CreateSource409 | CreateSource422,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createSource>>, TError,{accountId: string;data: SourceCreate}, TContext>, request?: SecondParameter<typeof customFetch>}
-): UseMutationOptions<Awaited<ReturnType<typeof createSource>>, TError,{accountId: string;data: SourceCreate}, TContext> => {
-
-const mutationKey = ['createSource'];
-const {mutation: mutationOptions, request: requestOptions} = options ?
-      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
-      options
-      : {...options, mutation: {...options.mutation, mutationKey}}
-      : {mutation: { mutationKey, }, request: undefined};
-
-
-
-
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createSource>>, {accountId: string;data: SourceCreate}> = (props) => {
-          const {accountId,data} = props ?? {};
-
-          return  createSource(accountId,data,requestOptions)
-        }
-
-
-
-
-
-
-  return  { mutationFn, ...mutationOptions }}
-
-    export type CreateSourceMutationResult = NonNullable<Awaited<ReturnType<typeof createSource>>>
-    export type CreateSourceMutationBody = SourceCreate
-    export type CreateSourceMutationError = CreateSource400 | CreateSource401 | CreateSource403 | CreateSource404 | CreateSource409 | CreateSource422
-
-    /**
+/**
  * @summary Create Source Route
  */
-export const useCreateSource = <TError = CreateSource400 | CreateSource401 | CreateSource403 | CreateSource404 | CreateSource409 | CreateSource422,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createSource>>, TError,{accountId: string;data: SourceCreate}, TContext>, request?: SecondParameter<typeof customFetch>}
- , queryClient?: QueryClient): UseMutationReturnType<
-        Awaited<ReturnType<typeof createSource>>,
-        TError,
-        {accountId: string;data: SourceCreate},
-        TContext
-      > => {
-      return useMutation(getCreateSourceMutationOptions(options), queryClient);
-    }
+export const useCreateSource = <
+  TError =
+    | CreateSource400
+    | CreateSource401
+    | CreateSource403
+    | CreateSource404
+    | CreateSource409
+    | CreateSource422,
+  TContext = unknown
+>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof createSource>>,
+      TError,
+      { accountId: string; data: SourceCreate },
+      TContext
+    >
+    request?: SecondParameter<typeof customFetch>
+  },
+  queryClient?: QueryClient
+): UseMutationReturnType<
+  Awaited<ReturnType<typeof createSource>>,
+  TError,
+  { accountId: string; data: SourceCreate },
+  TContext
+> => {
+  return useMutation(getCreateSourceMutationOptions(options), queryClient)
+}
 
 export type getSourceResponse200 = {
   data: Source
@@ -2189,98 +2751,130 @@ export type getSourceResponse422 = {
   status: 422
 }
 
-export type getSourceResponseSuccess = (getSourceResponse200) & {
-  headers: Headers;
-};
-export type getSourceResponseError = (getSourceResponse401 | getSourceResponse403 | getSourceResponse404 | getSourceResponse422) & {
-  headers: Headers;
-};
+export type getSourceResponseSuccess = getSourceResponse200 & {
+  headers: Headers
+}
+export type getSourceResponseError = (
+  | getSourceResponse401
+  | getSourceResponse403
+  | getSourceResponse404
+  | getSourceResponse422
+) & {
+  headers: Headers
+}
 
-export type getSourceResponse = (getSourceResponseSuccess | getSourceResponseError)
+export type getSourceResponse =
+  | getSourceResponseSuccess
+  | getSourceResponseError
 
-export const getGetSourceUrl = (accountId: string,
-    sourceId: string,) => {
-
-
-
-
+export const getGetSourceUrl = (accountId: string, sourceId: string) => {
   return `/v1/accounts/${accountId}/sources/${sourceId}`
 }
 
 /**
  * @summary Get Source Route
  */
-export const getSource = async (accountId: string,
-    sourceId: string, options?: RequestInit): Promise<getSourceResponse> => {
-
-  return customFetch<getSourceResponse>(getGetSourceUrl(accountId,sourceId),
-  {
+export const getSource = async (
+  accountId: string,
+  sourceId: string,
+  options?: RequestInit
+): Promise<getSourceResponse> => {
+  return customFetch<getSourceResponse>(getGetSourceUrl(accountId, sourceId), {
     ...options,
     method: 'GET'
-
-
-  }
-);}
-
-
-
-
-
-export const getGetSourceQueryKey = (accountId: MaybeRefOrGetter<string>,
-    sourceId: MaybeRefOrGetter<string>,) => {
-    return [
-    'v1','accounts',accountId,'sources',sourceId
-    ] as const;
-    }
-
-
-export const getGetSourceQueryOptions = <TData = Awaited<ReturnType<typeof getSource>>, TError = GetSource401 | GetSource403 | GetSource404 | GetSource422>(accountId: MaybeRefOrGetter<string>,
-    sourceId: MaybeRefOrGetter<string>, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getSource>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
-) => {
-
-const {query: queryOptions, request: requestOptions} = options ?? {};
-
-  const queryKey =  getGetSourceQueryKey(accountId,sourceId);
-
-
-
-    const queryFn: QueryFunction<Awaited<ReturnType<typeof getSource>>> = ({ signal }) => getSource(toValue(accountId),toValue(sourceId), { signal, ...requestOptions });
-
-
-
-
-
-   return  { queryKey, queryFn, enabled: computed(() => toValue(accountId) !== null && toValue(accountId) !== undefined && toValue(sourceId) !== null && toValue(sourceId) !== undefined), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getSource>>, TError, TData>
+  })
 }
 
-export type GetSourceQueryResult = NonNullable<Awaited<ReturnType<typeof getSource>>>
-export type GetSourceQueryError = GetSource401 | GetSource403 | GetSource404 | GetSource422
+export const getGetSourceQueryKey = (
+  accountId: MaybeRefOrGetter<string>,
+  sourceId: MaybeRefOrGetter<string>
+) => {
+  return ['v1', 'accounts', accountId, 'sources', sourceId] as const
+}
 
+export const getGetSourceQueryOptions = <
+  TData = Awaited<ReturnType<typeof getSource>>,
+  TError = GetSource401 | GetSource403 | GetSource404 | GetSource422
+>(
+  accountId: MaybeRefOrGetter<string>,
+  sourceId: MaybeRefOrGetter<string>,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof getSource>>, TError, TData>
+    >
+    request?: SecondParameter<typeof customFetch>
+  }
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {}
+
+  const queryKey = getGetSourceQueryKey(accountId, sourceId)
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof getSource>>> = ({
+    signal
+  }) =>
+    getSource(toValue(accountId), toValue(sourceId), {
+      signal,
+      ...requestOptions
+    })
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: computed(
+      () =>
+        toValue(accountId) !== null &&
+        toValue(accountId) !== undefined &&
+        toValue(sourceId) !== null &&
+        toValue(sourceId) !== undefined
+    ),
+    ...queryOptions
+  } as UseQueryOptions<Awaited<ReturnType<typeof getSource>>, TError, TData>
+}
+
+export type GetSourceQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getSource>>
+>
+export type GetSourceQueryError =
+  | GetSource401
+  | GetSource403
+  | GetSource404
+  | GetSource422
 
 /**
  * @summary Get Source Route
  */
 
-export function useGetSource<TData = Awaited<ReturnType<typeof getSource>>, TError = GetSource401 | GetSource403 | GetSource404 | GetSource422>(
- accountId: MaybeRefOrGetter<string>,
-    sourceId: MaybeRefOrGetter<string>, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getSource>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
- , queryClient?: QueryClient
- ): UseQueryReturnType<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+export function useGetSource<
+  TData = Awaited<ReturnType<typeof getSource>>,
+  TError = GetSource401 | GetSource403 | GetSource404 | GetSource422
+>(
+  accountId: MaybeRefOrGetter<string>,
+  sourceId: MaybeRefOrGetter<string>,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof getSource>>, TError, TData>
+    >
+    request?: SecondParameter<typeof customFetch>
+  },
+  queryClient?: QueryClient
+): UseQueryReturnType<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>
+} {
+  const queryOptions = getGetSourceQueryOptions(accountId, sourceId, options)
 
-  const queryOptions = getGetSourceQueryOptions(accountId,sourceId,options)
+  const query = useQuery(queryOptions, queryClient) as UseQueryReturnType<
+    TData,
+    TError
+  > & { queryKey: DataTag<QueryKey, TData, TError> }
 
-  const query = useQuery(queryOptions, queryClient) as UseQueryReturnType<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+  query.queryKey = unref(queryOptions).queryKey as DataTag<
+    QueryKey,
+    TData,
+    TError
+  >
 
-  query.queryKey = unref(queryOptions).queryKey as DataTag<QueryKey, TData, TError>;
-
-  return query;
+  return query
 }
-
-
-
-
-
-
 
 export type updateSourceResponse200 = {
   data: Source
@@ -2307,88 +2901,127 @@ export type updateSourceResponse422 = {
   status: 422
 }
 
-export type updateSourceResponseSuccess = (updateSourceResponse200) & {
-  headers: Headers;
-};
-export type updateSourceResponseError = (updateSourceResponse401 | updateSourceResponse403 | updateSourceResponse404 | updateSourceResponse422) & {
-  headers: Headers;
-};
+export type updateSourceResponseSuccess = updateSourceResponse200 & {
+  headers: Headers
+}
+export type updateSourceResponseError = (
+  | updateSourceResponse401
+  | updateSourceResponse403
+  | updateSourceResponse404
+  | updateSourceResponse422
+) & {
+  headers: Headers
+}
 
-export type updateSourceResponse = (updateSourceResponseSuccess | updateSourceResponseError)
+export type updateSourceResponse =
+  | updateSourceResponseSuccess
+  | updateSourceResponseError
 
-export const getUpdateSourceUrl = (accountId: string,
-    sourceId: string,) => {
-
-
-
-
+export const getUpdateSourceUrl = (accountId: string, sourceId: string) => {
   return `/v1/accounts/${accountId}/sources/${sourceId}`
 }
 
 /**
  * @summary Update Source Route
  */
-export const updateSource = async (accountId: string,
-    sourceId: string,
-    sourceUpdate: SourceUpdate, options?: RequestInit): Promise<updateSourceResponse> => {
+export const updateSource = async (
+  accountId: string,
+  sourceId: string,
+  sourceUpdate: SourceUpdate,
+  options?: RequestInit
+): Promise<updateSourceResponse> => {
+  return customFetch<updateSourceResponse>(
+    getUpdateSourceUrl(accountId, sourceId),
+    {
+      ...options,
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json', ...options?.headers },
+      body: JSON.stringify(sourceUpdate)
+    }
+  )
+}
 
-  return customFetch<updateSourceResponse>(getUpdateSourceUrl(accountId,sourceId),
-  {
-    ...options,
-    method: 'PATCH',
-    headers: { 'Content-Type': 'application/json', ...options?.headers },
-    body: JSON.stringify(sourceUpdate)
+export const getUpdateSourceMutationOptions = <
+  TError =
+    | UpdateSource401
+    | UpdateSource403
+    | UpdateSource404
+    | UpdateSource422,
+  TContext = unknown
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updateSource>>,
+    TError,
+    { accountId: string; sourceId: string; data: SourceUpdate },
+    TContext
+  >
+  request?: SecondParameter<typeof customFetch>
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof updateSource>>,
+  TError,
+  { accountId: string; sourceId: string; data: SourceUpdate },
+  TContext
+> => {
+  const mutationKey = ['updateSource']
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      'mutationKey' in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined }
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof updateSource>>,
+    { accountId: string; sourceId: string; data: SourceUpdate }
+  > = props => {
+    const { accountId, sourceId, data } = props ?? {}
+
+    return updateSource(accountId, sourceId, data, requestOptions)
   }
-);}
 
+  return { mutationFn, ...mutationOptions }
+}
 
+export type UpdateSourceMutationResult = NonNullable<
+  Awaited<ReturnType<typeof updateSource>>
+>
+export type UpdateSourceMutationBody = SourceUpdate
+export type UpdateSourceMutationError =
+  | UpdateSource401
+  | UpdateSource403
+  | UpdateSource404
+  | UpdateSource422
 
-
-
-export const getUpdateSourceMutationOptions = <TError = UpdateSource401 | UpdateSource403 | UpdateSource404 | UpdateSource422,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateSource>>, TError,{accountId: string;sourceId: string;data: SourceUpdate}, TContext>, request?: SecondParameter<typeof customFetch>}
-): UseMutationOptions<Awaited<ReturnType<typeof updateSource>>, TError,{accountId: string;sourceId: string;data: SourceUpdate}, TContext> => {
-
-const mutationKey = ['updateSource'];
-const {mutation: mutationOptions, request: requestOptions} = options ?
-      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
-      options
-      : {...options, mutation: {...options.mutation, mutationKey}}
-      : {mutation: { mutationKey, }, request: undefined};
-
-
-
-
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updateSource>>, {accountId: string;sourceId: string;data: SourceUpdate}> = (props) => {
-          const {accountId,sourceId,data} = props ?? {};
-
-          return  updateSource(accountId,sourceId,data,requestOptions)
-        }
-
-
-
-
-
-
-  return  { mutationFn, ...mutationOptions }}
-
-    export type UpdateSourceMutationResult = NonNullable<Awaited<ReturnType<typeof updateSource>>>
-    export type UpdateSourceMutationBody = SourceUpdate
-    export type UpdateSourceMutationError = UpdateSource401 | UpdateSource403 | UpdateSource404 | UpdateSource422
-
-    /**
+/**
  * @summary Update Source Route
  */
-export const useUpdateSource = <TError = UpdateSource401 | UpdateSource403 | UpdateSource404 | UpdateSource422,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateSource>>, TError,{accountId: string;sourceId: string;data: SourceUpdate}, TContext>, request?: SecondParameter<typeof customFetch>}
- , queryClient?: QueryClient): UseMutationReturnType<
-        Awaited<ReturnType<typeof updateSource>>,
-        TError,
-        {accountId: string;sourceId: string;data: SourceUpdate},
-        TContext
-      > => {
-      return useMutation(getUpdateSourceMutationOptions(options), queryClient);
-    }
+export const useUpdateSource = <
+  TError =
+    | UpdateSource401
+    | UpdateSource403
+    | UpdateSource404
+    | UpdateSource422,
+  TContext = unknown
+>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof updateSource>>,
+      TError,
+      { accountId: string; sourceId: string; data: SourceUpdate },
+      TContext
+    >
+    request?: SecondParameter<typeof customFetch>
+  },
+  queryClient?: QueryClient
+): UseMutationReturnType<
+  Awaited<ReturnType<typeof updateSource>>,
+  TError,
+  { accountId: string; sourceId: string; data: SourceUpdate },
+  TContext
+> => {
+  return useMutation(getUpdateSourceMutationOptions(options), queryClient)
+}
 
 export type deleteSourceResponse204 = {
   data: void
@@ -2415,87 +3048,124 @@ export type deleteSourceResponse422 = {
   status: 422
 }
 
-export type deleteSourceResponseSuccess = (deleteSourceResponse204) & {
-  headers: Headers;
-};
-export type deleteSourceResponseError = (deleteSourceResponse401 | deleteSourceResponse403 | deleteSourceResponse404 | deleteSourceResponse422) & {
-  headers: Headers;
-};
+export type deleteSourceResponseSuccess = deleteSourceResponse204 & {
+  headers: Headers
+}
+export type deleteSourceResponseError = (
+  | deleteSourceResponse401
+  | deleteSourceResponse403
+  | deleteSourceResponse404
+  | deleteSourceResponse422
+) & {
+  headers: Headers
+}
 
-export type deleteSourceResponse = (deleteSourceResponseSuccess | deleteSourceResponseError)
+export type deleteSourceResponse =
+  | deleteSourceResponseSuccess
+  | deleteSourceResponseError
 
-export const getDeleteSourceUrl = (accountId: string,
-    sourceId: string,) => {
-
-
-
-
+export const getDeleteSourceUrl = (accountId: string, sourceId: string) => {
   return `/v1/accounts/${accountId}/sources/${sourceId}`
 }
 
 /**
  * @summary Delete Source Route
  */
-export const deleteSource = async (accountId: string,
-    sourceId: string, options?: RequestInit): Promise<deleteSourceResponse> => {
+export const deleteSource = async (
+  accountId: string,
+  sourceId: string,
+  options?: RequestInit
+): Promise<deleteSourceResponse> => {
+  return customFetch<deleteSourceResponse>(
+    getDeleteSourceUrl(accountId, sourceId),
+    {
+      ...options,
+      method: 'DELETE'
+    }
+  )
+}
 
-  return customFetch<deleteSourceResponse>(getDeleteSourceUrl(accountId,sourceId),
-  {
-    ...options,
-    method: 'DELETE'
+export const getDeleteSourceMutationOptions = <
+  TError =
+    | DeleteSource401
+    | DeleteSource403
+    | DeleteSource404
+    | DeleteSource422,
+  TContext = unknown
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof deleteSource>>,
+    TError,
+    { accountId: string; sourceId: string },
+    TContext
+  >
+  request?: SecondParameter<typeof customFetch>
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof deleteSource>>,
+  TError,
+  { accountId: string; sourceId: string },
+  TContext
+> => {
+  const mutationKey = ['deleteSource']
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      'mutationKey' in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined }
 
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof deleteSource>>,
+    { accountId: string; sourceId: string }
+  > = props => {
+    const { accountId, sourceId } = props ?? {}
 
+    return deleteSource(accountId, sourceId, requestOptions)
   }
-);}
 
+  return { mutationFn, ...mutationOptions }
+}
 
+export type DeleteSourceMutationResult = NonNullable<
+  Awaited<ReturnType<typeof deleteSource>>
+>
 
+export type DeleteSourceMutationError =
+  | DeleteSource401
+  | DeleteSource403
+  | DeleteSource404
+  | DeleteSource422
 
-
-export const getDeleteSourceMutationOptions = <TError = DeleteSource401 | DeleteSource403 | DeleteSource404 | DeleteSource422,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteSource>>, TError,{accountId: string;sourceId: string}, TContext>, request?: SecondParameter<typeof customFetch>}
-): UseMutationOptions<Awaited<ReturnType<typeof deleteSource>>, TError,{accountId: string;sourceId: string}, TContext> => {
-
-const mutationKey = ['deleteSource'];
-const {mutation: mutationOptions, request: requestOptions} = options ?
-      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
-      options
-      : {...options, mutation: {...options.mutation, mutationKey}}
-      : {mutation: { mutationKey, }, request: undefined};
-
-
-
-
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof deleteSource>>, {accountId: string;sourceId: string}> = (props) => {
-          const {accountId,sourceId} = props ?? {};
-
-          return  deleteSource(accountId,sourceId,requestOptions)
-        }
-
-
-
-
-
-
-  return  { mutationFn, ...mutationOptions }}
-
-    export type DeleteSourceMutationResult = NonNullable<Awaited<ReturnType<typeof deleteSource>>>
-
-    export type DeleteSourceMutationError = DeleteSource401 | DeleteSource403 | DeleteSource404 | DeleteSource422
-
-    /**
+/**
  * @summary Delete Source Route
  */
-export const useDeleteSource = <TError = DeleteSource401 | DeleteSource403 | DeleteSource404 | DeleteSource422,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteSource>>, TError,{accountId: string;sourceId: string}, TContext>, request?: SecondParameter<typeof customFetch>}
- , queryClient?: QueryClient): UseMutationReturnType<
-        Awaited<ReturnType<typeof deleteSource>>,
-        TError,
-        {accountId: string;sourceId: string},
-        TContext
-      > => {
-      return useMutation(getDeleteSourceMutationOptions(options), queryClient);
-    }
+export const useDeleteSource = <
+  TError =
+    | DeleteSource401
+    | DeleteSource403
+    | DeleteSource404
+    | DeleteSource422,
+  TContext = unknown
+>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof deleteSource>>,
+      TError,
+      { accountId: string; sourceId: string },
+      TContext
+    >
+    request?: SecondParameter<typeof customFetch>
+  },
+  queryClient?: QueryClient
+): UseMutationReturnType<
+  Awaited<ReturnType<typeof deleteSource>>,
+  TError,
+  { accountId: string; sourceId: string },
+  TContext
+> => {
+  return useMutation(getDeleteSourceMutationOptions(options), queryClient)
+}
 
 export type connectZidSourceResponse200 = {
   data: ZidSourceConnectResult
@@ -2532,87 +3202,132 @@ export type connectZidSourceResponse502 = {
   status: 502
 }
 
-export type connectZidSourceResponseSuccess = (connectZidSourceResponse200) & {
-  headers: Headers;
-};
-export type connectZidSourceResponseError = (connectZidSourceResponse400 | connectZidSourceResponse401 | connectZidSourceResponse403 | connectZidSourceResponse404 | connectZidSourceResponse422 | connectZidSourceResponse502) & {
-  headers: Headers;
-};
+export type connectZidSourceResponseSuccess = connectZidSourceResponse200 & {
+  headers: Headers
+}
+export type connectZidSourceResponseError = (
+  | connectZidSourceResponse400
+  | connectZidSourceResponse401
+  | connectZidSourceResponse403
+  | connectZidSourceResponse404
+  | connectZidSourceResponse422
+  | connectZidSourceResponse502
+) & {
+  headers: Headers
+}
 
-export type connectZidSourceResponse = (connectZidSourceResponseSuccess | connectZidSourceResponseError)
+export type connectZidSourceResponse =
+  | connectZidSourceResponseSuccess
+  | connectZidSourceResponseError
 
-export const getConnectZidSourceUrl = (accountId: string,
-    sourceId: string,) => {
-
-
-
-
+export const getConnectZidSourceUrl = (accountId: string, sourceId: string) => {
   return `/v1/accounts/${accountId}/sources/${sourceId}/connect-zid`
 }
 
 /**
  * @summary Connect Zid Source Route
  */
-export const connectZidSource = async (accountId: string,
-    sourceId: string, options?: RequestInit): Promise<connectZidSourceResponse> => {
+export const connectZidSource = async (
+  accountId: string,
+  sourceId: string,
+  options?: RequestInit
+): Promise<connectZidSourceResponse> => {
+  return customFetch<connectZidSourceResponse>(
+    getConnectZidSourceUrl(accountId, sourceId),
+    {
+      ...options,
+      method: 'POST'
+    }
+  )
+}
 
-  return customFetch<connectZidSourceResponse>(getConnectZidSourceUrl(accountId,sourceId),
-  {
-    ...options,
-    method: 'POST'
+export const getConnectZidSourceMutationOptions = <
+  TError =
+    | ConnectZidSource400
+    | ConnectZidSource401
+    | ConnectZidSource403
+    | ConnectZidSource404
+    | ConnectZidSource422
+    | ConnectZidSource502,
+  TContext = unknown
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof connectZidSource>>,
+    TError,
+    { accountId: string; sourceId: string },
+    TContext
+  >
+  request?: SecondParameter<typeof customFetch>
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof connectZidSource>>,
+  TError,
+  { accountId: string; sourceId: string },
+  TContext
+> => {
+  const mutationKey = ['connectZidSource']
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      'mutationKey' in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined }
 
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof connectZidSource>>,
+    { accountId: string; sourceId: string }
+  > = props => {
+    const { accountId, sourceId } = props ?? {}
 
+    return connectZidSource(accountId, sourceId, requestOptions)
   }
-);}
 
+  return { mutationFn, ...mutationOptions }
+}
 
+export type ConnectZidSourceMutationResult = NonNullable<
+  Awaited<ReturnType<typeof connectZidSource>>
+>
 
+export type ConnectZidSourceMutationError =
+  | ConnectZidSource400
+  | ConnectZidSource401
+  | ConnectZidSource403
+  | ConnectZidSource404
+  | ConnectZidSource422
+  | ConnectZidSource502
 
-
-export const getConnectZidSourceMutationOptions = <TError = ConnectZidSource400 | ConnectZidSource401 | ConnectZidSource403 | ConnectZidSource404 | ConnectZidSource422 | ConnectZidSource502,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof connectZidSource>>, TError,{accountId: string;sourceId: string}, TContext>, request?: SecondParameter<typeof customFetch>}
-): UseMutationOptions<Awaited<ReturnType<typeof connectZidSource>>, TError,{accountId: string;sourceId: string}, TContext> => {
-
-const mutationKey = ['connectZidSource'];
-const {mutation: mutationOptions, request: requestOptions} = options ?
-      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
-      options
-      : {...options, mutation: {...options.mutation, mutationKey}}
-      : {mutation: { mutationKey, }, request: undefined};
-
-
-
-
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof connectZidSource>>, {accountId: string;sourceId: string}> = (props) => {
-          const {accountId,sourceId} = props ?? {};
-
-          return  connectZidSource(accountId,sourceId,requestOptions)
-        }
-
-
-
-
-
-
-  return  { mutationFn, ...mutationOptions }}
-
-    export type ConnectZidSourceMutationResult = NonNullable<Awaited<ReturnType<typeof connectZidSource>>>
-
-    export type ConnectZidSourceMutationError = ConnectZidSource400 | ConnectZidSource401 | ConnectZidSource403 | ConnectZidSource404 | ConnectZidSource422 | ConnectZidSource502
-
-    /**
+/**
  * @summary Connect Zid Source Route
  */
-export const useConnectZidSource = <TError = ConnectZidSource400 | ConnectZidSource401 | ConnectZidSource403 | ConnectZidSource404 | ConnectZidSource422 | ConnectZidSource502,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof connectZidSource>>, TError,{accountId: string;sourceId: string}, TContext>, request?: SecondParameter<typeof customFetch>}
- , queryClient?: QueryClient): UseMutationReturnType<
-        Awaited<ReturnType<typeof connectZidSource>>,
-        TError,
-        {accountId: string;sourceId: string},
-        TContext
-      > => {
-      return useMutation(getConnectZidSourceMutationOptions(options), queryClient);
-    }
+export const useConnectZidSource = <
+  TError =
+    | ConnectZidSource400
+    | ConnectZidSource401
+    | ConnectZidSource403
+    | ConnectZidSource404
+    | ConnectZidSource422
+    | ConnectZidSource502,
+  TContext = unknown
+>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof connectZidSource>>,
+      TError,
+      { accountId: string; sourceId: string },
+      TContext
+    >
+    request?: SecondParameter<typeof customFetch>
+  },
+  queryClient?: QueryClient
+): UseMutationReturnType<
+  Awaited<ReturnType<typeof connectZidSource>>,
+  TError,
+  { accountId: string; sourceId: string },
+  TContext
+> => {
+  return useMutation(getConnectZidSourceMutationOptions(options), queryClient)
+}
 
 export type triggerSourceSyncResponse200 = {
   data: SyncRun
@@ -2649,88 +3364,138 @@ export type triggerSourceSyncResponse502 = {
   status: 502
 }
 
-export type triggerSourceSyncResponseSuccess = (triggerSourceSyncResponse200) & {
-  headers: Headers;
-};
-export type triggerSourceSyncResponseError = (triggerSourceSyncResponse400 | triggerSourceSyncResponse401 | triggerSourceSyncResponse403 | triggerSourceSyncResponse404 | triggerSourceSyncResponse422 | triggerSourceSyncResponse502) & {
-  headers: Headers;
-};
+export type triggerSourceSyncResponseSuccess = triggerSourceSyncResponse200 & {
+  headers: Headers
+}
+export type triggerSourceSyncResponseError = (
+  | triggerSourceSyncResponse400
+  | triggerSourceSyncResponse401
+  | triggerSourceSyncResponse403
+  | triggerSourceSyncResponse404
+  | triggerSourceSyncResponse422
+  | triggerSourceSyncResponse502
+) & {
+  headers: Headers
+}
 
-export type triggerSourceSyncResponse = (triggerSourceSyncResponseSuccess | triggerSourceSyncResponseError)
+export type triggerSourceSyncResponse =
+  | triggerSourceSyncResponseSuccess
+  | triggerSourceSyncResponseError
 
-export const getTriggerSourceSyncUrl = (accountId: string,
-    sourceId: string,) => {
-
-
-
-
+export const getTriggerSourceSyncUrl = (
+  accountId: string,
+  sourceId: string
+) => {
   return `/v1/accounts/${accountId}/sources/${sourceId}/sync`
 }
 
 /**
  * @summary Trigger Source Sync Route
  */
-export const triggerSourceSync = async (accountId: string,
-    sourceId: string,
-    syncTriggerRequest: SyncTriggerRequest, options?: RequestInit): Promise<triggerSourceSyncResponse> => {
+export const triggerSourceSync = async (
+  accountId: string,
+  sourceId: string,
+  syncTriggerRequest: SyncTriggerRequest,
+  options?: RequestInit
+): Promise<triggerSourceSyncResponse> => {
+  return customFetch<triggerSourceSyncResponse>(
+    getTriggerSourceSyncUrl(accountId, sourceId),
+    {
+      ...options,
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', ...options?.headers },
+      body: JSON.stringify(syncTriggerRequest)
+    }
+  )
+}
 
-  return customFetch<triggerSourceSyncResponse>(getTriggerSourceSyncUrl(accountId,sourceId),
-  {
-    ...options,
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', ...options?.headers },
-    body: JSON.stringify(syncTriggerRequest)
+export const getTriggerSourceSyncMutationOptions = <
+  TError =
+    | TriggerSourceSync400
+    | TriggerSourceSync401
+    | TriggerSourceSync403
+    | TriggerSourceSync404
+    | TriggerSourceSync422
+    | TriggerSourceSync502,
+  TContext = unknown
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof triggerSourceSync>>,
+    TError,
+    { accountId: string; sourceId: string; data: SyncTriggerRequest },
+    TContext
+  >
+  request?: SecondParameter<typeof customFetch>
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof triggerSourceSync>>,
+  TError,
+  { accountId: string; sourceId: string; data: SyncTriggerRequest },
+  TContext
+> => {
+  const mutationKey = ['triggerSourceSync']
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      'mutationKey' in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined }
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof triggerSourceSync>>,
+    { accountId: string; sourceId: string; data: SyncTriggerRequest }
+  > = props => {
+    const { accountId, sourceId, data } = props ?? {}
+
+    return triggerSourceSync(accountId, sourceId, data, requestOptions)
   }
-);}
 
+  return { mutationFn, ...mutationOptions }
+}
 
+export type TriggerSourceSyncMutationResult = NonNullable<
+  Awaited<ReturnType<typeof triggerSourceSync>>
+>
+export type TriggerSourceSyncMutationBody = SyncTriggerRequest
+export type TriggerSourceSyncMutationError =
+  | TriggerSourceSync400
+  | TriggerSourceSync401
+  | TriggerSourceSync403
+  | TriggerSourceSync404
+  | TriggerSourceSync422
+  | TriggerSourceSync502
 
-
-
-export const getTriggerSourceSyncMutationOptions = <TError = TriggerSourceSync400 | TriggerSourceSync401 | TriggerSourceSync403 | TriggerSourceSync404 | TriggerSourceSync422 | TriggerSourceSync502,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof triggerSourceSync>>, TError,{accountId: string;sourceId: string;data: SyncTriggerRequest}, TContext>, request?: SecondParameter<typeof customFetch>}
-): UseMutationOptions<Awaited<ReturnType<typeof triggerSourceSync>>, TError,{accountId: string;sourceId: string;data: SyncTriggerRequest}, TContext> => {
-
-const mutationKey = ['triggerSourceSync'];
-const {mutation: mutationOptions, request: requestOptions} = options ?
-      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
-      options
-      : {...options, mutation: {...options.mutation, mutationKey}}
-      : {mutation: { mutationKey, }, request: undefined};
-
-
-
-
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof triggerSourceSync>>, {accountId: string;sourceId: string;data: SyncTriggerRequest}> = (props) => {
-          const {accountId,sourceId,data} = props ?? {};
-
-          return  triggerSourceSync(accountId,sourceId,data,requestOptions)
-        }
-
-
-
-
-
-
-  return  { mutationFn, ...mutationOptions }}
-
-    export type TriggerSourceSyncMutationResult = NonNullable<Awaited<ReturnType<typeof triggerSourceSync>>>
-    export type TriggerSourceSyncMutationBody = SyncTriggerRequest
-    export type TriggerSourceSyncMutationError = TriggerSourceSync400 | TriggerSourceSync401 | TriggerSourceSync403 | TriggerSourceSync404 | TriggerSourceSync422 | TriggerSourceSync502
-
-    /**
+/**
  * @summary Trigger Source Sync Route
  */
-export const useTriggerSourceSync = <TError = TriggerSourceSync400 | TriggerSourceSync401 | TriggerSourceSync403 | TriggerSourceSync404 | TriggerSourceSync422 | TriggerSourceSync502,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof triggerSourceSync>>, TError,{accountId: string;sourceId: string;data: SyncTriggerRequest}, TContext>, request?: SecondParameter<typeof customFetch>}
- , queryClient?: QueryClient): UseMutationReturnType<
-        Awaited<ReturnType<typeof triggerSourceSync>>,
-        TError,
-        {accountId: string;sourceId: string;data: SyncTriggerRequest},
-        TContext
-      > => {
-      return useMutation(getTriggerSourceSyncMutationOptions(options), queryClient);
-    }
+export const useTriggerSourceSync = <
+  TError =
+    | TriggerSourceSync400
+    | TriggerSourceSync401
+    | TriggerSourceSync403
+    | TriggerSourceSync404
+    | TriggerSourceSync422
+    | TriggerSourceSync502,
+  TContext = unknown
+>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof triggerSourceSync>>,
+      TError,
+      { accountId: string; sourceId: string; data: SyncTriggerRequest },
+      TContext
+    >
+    request?: SecondParameter<typeof customFetch>
+  },
+  queryClient?: QueryClient
+): UseMutationReturnType<
+  Awaited<ReturnType<typeof triggerSourceSync>>,
+  TError,
+  { accountId: string; sourceId: string; data: SyncTriggerRequest },
+  TContext
+> => {
+  return useMutation(getTriggerSourceSyncMutationOptions(options), queryClient)
+}
 
 export type listSourceSyncRunsResponse200 = {
   data: PageSyncRun
@@ -2757,110 +3522,187 @@ export type listSourceSyncRunsResponse422 = {
   status: 422
 }
 
-export type listSourceSyncRunsResponseSuccess = (listSourceSyncRunsResponse200) & {
-  headers: Headers;
-};
-export type listSourceSyncRunsResponseError = (listSourceSyncRunsResponse401 | listSourceSyncRunsResponse403 | listSourceSyncRunsResponse404 | listSourceSyncRunsResponse422) & {
-  headers: Headers;
-};
+export type listSourceSyncRunsResponseSuccess =
+  listSourceSyncRunsResponse200 & {
+    headers: Headers
+  }
+export type listSourceSyncRunsResponseError = (
+  | listSourceSyncRunsResponse401
+  | listSourceSyncRunsResponse403
+  | listSourceSyncRunsResponse404
+  | listSourceSyncRunsResponse422
+) & {
+  headers: Headers
+}
 
-export type listSourceSyncRunsResponse = (listSourceSyncRunsResponseSuccess | listSourceSyncRunsResponseError)
+export type listSourceSyncRunsResponse =
+  | listSourceSyncRunsResponseSuccess
+  | listSourceSyncRunsResponseError
 
-export const getListSourceSyncRunsUrl = (accountId: string,
-    sourceId: string,
-    params?: ListSourceSyncRunsParams,) => {
-  const normalizedParams = new URLSearchParams();
+export const getListSourceSyncRunsUrl = (
+  accountId: string,
+  sourceId: string,
+  params?: ListSourceSyncRunsParams
+) => {
+  const normalizedParams = new URLSearchParams()
 
   Object.entries(params || {}).forEach(([key, value]) => {
-
     if (value !== undefined) {
       normalizedParams.append(key, value === null ? 'null' : String(value))
     }
-  });
+  })
 
-  const stringifiedParams = normalizedParams.toString();
+  const stringifiedParams = normalizedParams.toString()
 
-  return stringifiedParams.length > 0 ? `/v1/accounts/${accountId}/sources/${sourceId}/sync-runs?${stringifiedParams}` : `/v1/accounts/${accountId}/sources/${sourceId}/sync-runs`
+  return stringifiedParams.length > 0
+    ? `/v1/accounts/${accountId}/sources/${sourceId}/sync-runs?${stringifiedParams}`
+    : `/v1/accounts/${accountId}/sources/${sourceId}/sync-runs`
 }
 
 /**
  * @summary List Source Sync Runs Route
  */
-export const listSourceSyncRuns = async (accountId: string,
-    sourceId: string,
-    params?: ListSourceSyncRunsParams, options?: RequestInit): Promise<listSourceSyncRunsResponse> => {
-
-  return customFetch<listSourceSyncRunsResponse>(getListSourceSyncRunsUrl(accountId,sourceId,params),
-  {
-    ...options,
-    method: 'GET'
-
-
-  }
-);}
-
-
-
-
-
-export const getListSourceSyncRunsQueryKey = (accountId: MaybeRefOrGetter<string>,
-    sourceId: MaybeRefOrGetter<string>,
-    params?: MaybeRefOrGetter<ListSourceSyncRunsParams>,) => {
-    return [
-    'v1','accounts',accountId,'sources',sourceId,'sync-runs', ...(params ? [params] : [])
-    ] as const;
+export const listSourceSyncRuns = async (
+  accountId: string,
+  sourceId: string,
+  params?: ListSourceSyncRunsParams,
+  options?: RequestInit
+): Promise<listSourceSyncRunsResponse> => {
+  return customFetch<listSourceSyncRunsResponse>(
+    getListSourceSyncRunsUrl(accountId, sourceId, params),
+    {
+      ...options,
+      method: 'GET'
     }
-
-
-export const getListSourceSyncRunsQueryOptions = <TData = Awaited<ReturnType<typeof listSourceSyncRuns>>, TError = ListSourceSyncRuns401 | ListSourceSyncRuns403 | ListSourceSyncRuns404 | ListSourceSyncRuns422>(accountId: MaybeRefOrGetter<string>,
-    sourceId: MaybeRefOrGetter<string>,
-    params?: MaybeRefOrGetter<ListSourceSyncRunsParams>, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listSourceSyncRuns>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
-) => {
-
-const {query: queryOptions, request: requestOptions} = options ?? {};
-
-  const queryKey =  getListSourceSyncRunsQueryKey(accountId,sourceId,params);
-
-
-
-    const queryFn: QueryFunction<Awaited<ReturnType<typeof listSourceSyncRuns>>> = ({ signal }) => listSourceSyncRuns(toValue(accountId),toValue(sourceId),toValue(params), { signal, ...requestOptions });
-
-
-
-
-
-   return  { queryKey, queryFn, enabled: computed(() => toValue(accountId) !== null && toValue(accountId) !== undefined && toValue(sourceId) !== null && toValue(sourceId) !== undefined), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listSourceSyncRuns>>, TError, TData>
+  )
 }
 
-export type ListSourceSyncRunsQueryResult = NonNullable<Awaited<ReturnType<typeof listSourceSyncRuns>>>
-export type ListSourceSyncRunsQueryError = ListSourceSyncRuns401 | ListSourceSyncRuns403 | ListSourceSyncRuns404 | ListSourceSyncRuns422
+export const getListSourceSyncRunsQueryKey = (
+  accountId: MaybeRefOrGetter<string>,
+  sourceId: MaybeRefOrGetter<string>,
+  params?: MaybeRefOrGetter<ListSourceSyncRunsParams>
+) => {
+  return [
+    'v1',
+    'accounts',
+    accountId,
+    'sources',
+    sourceId,
+    'sync-runs',
+    ...(params ? [params] : [])
+  ] as const
+}
 
+export const getListSourceSyncRunsQueryOptions = <
+  TData = Awaited<ReturnType<typeof listSourceSyncRuns>>,
+  TError =
+    | ListSourceSyncRuns401
+    | ListSourceSyncRuns403
+    | ListSourceSyncRuns404
+    | ListSourceSyncRuns422
+>(
+  accountId: MaybeRefOrGetter<string>,
+  sourceId: MaybeRefOrGetter<string>,
+  params?: MaybeRefOrGetter<ListSourceSyncRunsParams>,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof listSourceSyncRuns>>,
+        TError,
+        TData
+      >
+    >
+    request?: SecondParameter<typeof customFetch>
+  }
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {}
+
+  const queryKey = getListSourceSyncRunsQueryKey(accountId, sourceId, params)
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof listSourceSyncRuns>>
+  > = ({ signal }) =>
+    listSourceSyncRuns(toValue(accountId), toValue(sourceId), toValue(params), {
+      signal,
+      ...requestOptions
+    })
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: computed(
+      () =>
+        toValue(accountId) !== null &&
+        toValue(accountId) !== undefined &&
+        toValue(sourceId) !== null &&
+        toValue(sourceId) !== undefined
+    ),
+    ...queryOptions
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof listSourceSyncRuns>>,
+    TError,
+    TData
+  >
+}
+
+export type ListSourceSyncRunsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listSourceSyncRuns>>
+>
+export type ListSourceSyncRunsQueryError =
+  | ListSourceSyncRuns401
+  | ListSourceSyncRuns403
+  | ListSourceSyncRuns404
+  | ListSourceSyncRuns422
 
 /**
  * @summary List Source Sync Runs Route
  */
 
-export function useListSourceSyncRuns<TData = Awaited<ReturnType<typeof listSourceSyncRuns>>, TError = ListSourceSyncRuns401 | ListSourceSyncRuns403 | ListSourceSyncRuns404 | ListSourceSyncRuns422>(
- accountId: MaybeRefOrGetter<string>,
-    sourceId: MaybeRefOrGetter<string>,
-    params?: MaybeRefOrGetter<ListSourceSyncRunsParams>, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listSourceSyncRuns>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
- , queryClient?: QueryClient
- ): UseQueryReturnType<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+export function useListSourceSyncRuns<
+  TData = Awaited<ReturnType<typeof listSourceSyncRuns>>,
+  TError =
+    | ListSourceSyncRuns401
+    | ListSourceSyncRuns403
+    | ListSourceSyncRuns404
+    | ListSourceSyncRuns422
+>(
+  accountId: MaybeRefOrGetter<string>,
+  sourceId: MaybeRefOrGetter<string>,
+  params?: MaybeRefOrGetter<ListSourceSyncRunsParams>,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof listSourceSyncRuns>>,
+        TError,
+        TData
+      >
+    >
+    request?: SecondParameter<typeof customFetch>
+  },
+  queryClient?: QueryClient
+): UseQueryReturnType<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>
+} {
+  const queryOptions = getListSourceSyncRunsQueryOptions(
+    accountId,
+    sourceId,
+    params,
+    options
+  )
 
-  const queryOptions = getListSourceSyncRunsQueryOptions(accountId,sourceId,params,options)
+  const query = useQuery(queryOptions, queryClient) as UseQueryReturnType<
+    TData,
+    TError
+  > & { queryKey: DataTag<QueryKey, TData, TError> }
 
-  const query = useQuery(queryOptions, queryClient) as UseQueryReturnType<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+  query.queryKey = unref(queryOptions).queryKey as DataTag<
+    QueryKey,
+    TData,
+    TError
+  >
 
-  query.queryKey = unref(queryOptions).queryKey as DataTag<QueryKey, TData, TError>;
-
-  return query;
+  return query
 }
-
-
-
-
-
-
 
 export type listSourceCustomersResponse200 = {
   data: SourceCustomerPage
@@ -2892,111 +3734,194 @@ export type listSourceCustomersResponse422 = {
   status: 422
 }
 
-export type listSourceCustomersResponseSuccess = (listSourceCustomersResponse200) & {
-  headers: Headers;
-};
-export type listSourceCustomersResponseError = (listSourceCustomersResponse400 | listSourceCustomersResponse401 | listSourceCustomersResponse403 | listSourceCustomersResponse404 | listSourceCustomersResponse422) & {
-  headers: Headers;
-};
+export type listSourceCustomersResponseSuccess =
+  listSourceCustomersResponse200 & {
+    headers: Headers
+  }
+export type listSourceCustomersResponseError = (
+  | listSourceCustomersResponse400
+  | listSourceCustomersResponse401
+  | listSourceCustomersResponse403
+  | listSourceCustomersResponse404
+  | listSourceCustomersResponse422
+) & {
+  headers: Headers
+}
 
-export type listSourceCustomersResponse = (listSourceCustomersResponseSuccess | listSourceCustomersResponseError)
+export type listSourceCustomersResponse =
+  | listSourceCustomersResponseSuccess
+  | listSourceCustomersResponseError
 
-export const getListSourceCustomersUrl = (accountId: string,
-    sourceId: string,
-    params?: ListSourceCustomersParams,) => {
-  const normalizedParams = new URLSearchParams();
+export const getListSourceCustomersUrl = (
+  accountId: string,
+  sourceId: string,
+  params?: ListSourceCustomersParams
+) => {
+  const normalizedParams = new URLSearchParams()
 
   Object.entries(params || {}).forEach(([key, value]) => {
-
     if (value !== undefined) {
       normalizedParams.append(key, value === null ? 'null' : String(value))
     }
-  });
+  })
 
-  const stringifiedParams = normalizedParams.toString();
+  const stringifiedParams = normalizedParams.toString()
 
-  return stringifiedParams.length > 0 ? `/v1/accounts/${accountId}/sources/${sourceId}/customers?${stringifiedParams}` : `/v1/accounts/${accountId}/sources/${sourceId}/customers`
+  return stringifiedParams.length > 0
+    ? `/v1/accounts/${accountId}/sources/${sourceId}/customers?${stringifiedParams}`
+    : `/v1/accounts/${accountId}/sources/${sourceId}/customers`
 }
 
 /**
  * Paginated list of customers synced from the Zid Airbyte connector.
  * @summary List Source Customers Route
  */
-export const listSourceCustomers = async (accountId: string,
-    sourceId: string,
-    params?: ListSourceCustomersParams, options?: RequestInit): Promise<listSourceCustomersResponse> => {
-
-  return customFetch<listSourceCustomersResponse>(getListSourceCustomersUrl(accountId,sourceId,params),
-  {
-    ...options,
-    method: 'GET'
-
-
-  }
-);}
-
-
-
-
-
-export const getListSourceCustomersQueryKey = (accountId: MaybeRefOrGetter<string>,
-    sourceId: MaybeRefOrGetter<string>,
-    params?: MaybeRefOrGetter<ListSourceCustomersParams>,) => {
-    return [
-    'v1','accounts',accountId,'sources',sourceId,'customers', ...(params ? [params] : [])
-    ] as const;
+export const listSourceCustomers = async (
+  accountId: string,
+  sourceId: string,
+  params?: ListSourceCustomersParams,
+  options?: RequestInit
+): Promise<listSourceCustomersResponse> => {
+  return customFetch<listSourceCustomersResponse>(
+    getListSourceCustomersUrl(accountId, sourceId, params),
+    {
+      ...options,
+      method: 'GET'
     }
-
-
-export const getListSourceCustomersQueryOptions = <TData = Awaited<ReturnType<typeof listSourceCustomers>>, TError = ListSourceCustomers400 | ListSourceCustomers401 | ListSourceCustomers403 | ListSourceCustomers404 | ListSourceCustomers422>(accountId: MaybeRefOrGetter<string>,
-    sourceId: MaybeRefOrGetter<string>,
-    params?: MaybeRefOrGetter<ListSourceCustomersParams>, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listSourceCustomers>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
-) => {
-
-const {query: queryOptions, request: requestOptions} = options ?? {};
-
-  const queryKey =  getListSourceCustomersQueryKey(accountId,sourceId,params);
-
-
-
-    const queryFn: QueryFunction<Awaited<ReturnType<typeof listSourceCustomers>>> = ({ signal }) => listSourceCustomers(toValue(accountId),toValue(sourceId),toValue(params), { signal, ...requestOptions });
-
-
-
-
-
-   return  { queryKey, queryFn, enabled: computed(() => toValue(accountId) !== null && toValue(accountId) !== undefined && toValue(sourceId) !== null && toValue(sourceId) !== undefined), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listSourceCustomers>>, TError, TData>
+  )
 }
 
-export type ListSourceCustomersQueryResult = NonNullable<Awaited<ReturnType<typeof listSourceCustomers>>>
-export type ListSourceCustomersQueryError = ListSourceCustomers400 | ListSourceCustomers401 | ListSourceCustomers403 | ListSourceCustomers404 | ListSourceCustomers422
+export const getListSourceCustomersQueryKey = (
+  accountId: MaybeRefOrGetter<string>,
+  sourceId: MaybeRefOrGetter<string>,
+  params?: MaybeRefOrGetter<ListSourceCustomersParams>
+) => {
+  return [
+    'v1',
+    'accounts',
+    accountId,
+    'sources',
+    sourceId,
+    'customers',
+    ...(params ? [params] : [])
+  ] as const
+}
 
+export const getListSourceCustomersQueryOptions = <
+  TData = Awaited<ReturnType<typeof listSourceCustomers>>,
+  TError =
+    | ListSourceCustomers400
+    | ListSourceCustomers401
+    | ListSourceCustomers403
+    | ListSourceCustomers404
+    | ListSourceCustomers422
+>(
+  accountId: MaybeRefOrGetter<string>,
+  sourceId: MaybeRefOrGetter<string>,
+  params?: MaybeRefOrGetter<ListSourceCustomersParams>,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof listSourceCustomers>>,
+        TError,
+        TData
+      >
+    >
+    request?: SecondParameter<typeof customFetch>
+  }
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {}
+
+  const queryKey = getListSourceCustomersQueryKey(accountId, sourceId, params)
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof listSourceCustomers>>
+  > = ({ signal }) =>
+    listSourceCustomers(
+      toValue(accountId),
+      toValue(sourceId),
+      toValue(params),
+      { signal, ...requestOptions }
+    )
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: computed(
+      () =>
+        toValue(accountId) !== null &&
+        toValue(accountId) !== undefined &&
+        toValue(sourceId) !== null &&
+        toValue(sourceId) !== undefined
+    ),
+    ...queryOptions
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof listSourceCustomers>>,
+    TError,
+    TData
+  >
+}
+
+export type ListSourceCustomersQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listSourceCustomers>>
+>
+export type ListSourceCustomersQueryError =
+  | ListSourceCustomers400
+  | ListSourceCustomers401
+  | ListSourceCustomers403
+  | ListSourceCustomers404
+  | ListSourceCustomers422
 
 /**
  * @summary List Source Customers Route
  */
 
-export function useListSourceCustomers<TData = Awaited<ReturnType<typeof listSourceCustomers>>, TError = ListSourceCustomers400 | ListSourceCustomers401 | ListSourceCustomers403 | ListSourceCustomers404 | ListSourceCustomers422>(
- accountId: MaybeRefOrGetter<string>,
-    sourceId: MaybeRefOrGetter<string>,
-    params?: MaybeRefOrGetter<ListSourceCustomersParams>, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listSourceCustomers>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
- , queryClient?: QueryClient
- ): UseQueryReturnType<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+export function useListSourceCustomers<
+  TData = Awaited<ReturnType<typeof listSourceCustomers>>,
+  TError =
+    | ListSourceCustomers400
+    | ListSourceCustomers401
+    | ListSourceCustomers403
+    | ListSourceCustomers404
+    | ListSourceCustomers422
+>(
+  accountId: MaybeRefOrGetter<string>,
+  sourceId: MaybeRefOrGetter<string>,
+  params?: MaybeRefOrGetter<ListSourceCustomersParams>,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof listSourceCustomers>>,
+        TError,
+        TData
+      >
+    >
+    request?: SecondParameter<typeof customFetch>
+  },
+  queryClient?: QueryClient
+): UseQueryReturnType<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>
+} {
+  const queryOptions = getListSourceCustomersQueryOptions(
+    accountId,
+    sourceId,
+    params,
+    options
+  )
 
-  const queryOptions = getListSourceCustomersQueryOptions(accountId,sourceId,params,options)
+  const query = useQuery(queryOptions, queryClient) as UseQueryReturnType<
+    TData,
+    TError
+  > & { queryKey: DataTag<QueryKey, TData, TError> }
 
-  const query = useQuery(queryOptions, queryClient) as UseQueryReturnType<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+  query.queryKey = unref(queryOptions).queryKey as DataTag<
+    QueryKey,
+    TData,
+    TError
+  >
 
-  query.queryKey = unref(queryOptions).queryKey as DataTag<QueryKey, TData, TError>;
-
-  return query;
+  return query
 }
-
-
-
-
-
-
 
 export type listSourceOrdersResponse200 = {
   data: SourceOrderPage
@@ -3028,111 +3953,191 @@ export type listSourceOrdersResponse422 = {
   status: 422
 }
 
-export type listSourceOrdersResponseSuccess = (listSourceOrdersResponse200) & {
-  headers: Headers;
-};
-export type listSourceOrdersResponseError = (listSourceOrdersResponse400 | listSourceOrdersResponse401 | listSourceOrdersResponse403 | listSourceOrdersResponse404 | listSourceOrdersResponse422) & {
-  headers: Headers;
-};
+export type listSourceOrdersResponseSuccess = listSourceOrdersResponse200 & {
+  headers: Headers
+}
+export type listSourceOrdersResponseError = (
+  | listSourceOrdersResponse400
+  | listSourceOrdersResponse401
+  | listSourceOrdersResponse403
+  | listSourceOrdersResponse404
+  | listSourceOrdersResponse422
+) & {
+  headers: Headers
+}
 
-export type listSourceOrdersResponse = (listSourceOrdersResponseSuccess | listSourceOrdersResponseError)
+export type listSourceOrdersResponse =
+  | listSourceOrdersResponseSuccess
+  | listSourceOrdersResponseError
 
-export const getListSourceOrdersUrl = (accountId: string,
-    sourceId: string,
-    params?: ListSourceOrdersParams,) => {
-  const normalizedParams = new URLSearchParams();
+export const getListSourceOrdersUrl = (
+  accountId: string,
+  sourceId: string,
+  params?: ListSourceOrdersParams
+) => {
+  const normalizedParams = new URLSearchParams()
 
   Object.entries(params || {}).forEach(([key, value]) => {
-
     if (value !== undefined) {
       normalizedParams.append(key, value === null ? 'null' : String(value))
     }
-  });
+  })
 
-  const stringifiedParams = normalizedParams.toString();
+  const stringifiedParams = normalizedParams.toString()
 
-  return stringifiedParams.length > 0 ? `/v1/accounts/${accountId}/sources/${sourceId}/orders?${stringifiedParams}` : `/v1/accounts/${accountId}/sources/${sourceId}/orders`
+  return stringifiedParams.length > 0
+    ? `/v1/accounts/${accountId}/sources/${sourceId}/orders?${stringifiedParams}`
+    : `/v1/accounts/${accountId}/sources/${sourceId}/orders`
 }
 
 /**
  * Paginated list of orders synced from the Zid Airbyte connector.
  * @summary List Source Orders Route
  */
-export const listSourceOrders = async (accountId: string,
-    sourceId: string,
-    params?: ListSourceOrdersParams, options?: RequestInit): Promise<listSourceOrdersResponse> => {
-
-  return customFetch<listSourceOrdersResponse>(getListSourceOrdersUrl(accountId,sourceId,params),
-  {
-    ...options,
-    method: 'GET'
-
-
-  }
-);}
-
-
-
-
-
-export const getListSourceOrdersQueryKey = (accountId: MaybeRefOrGetter<string>,
-    sourceId: MaybeRefOrGetter<string>,
-    params?: MaybeRefOrGetter<ListSourceOrdersParams>,) => {
-    return [
-    'v1','accounts',accountId,'sources',sourceId,'orders', ...(params ? [params] : [])
-    ] as const;
+export const listSourceOrders = async (
+  accountId: string,
+  sourceId: string,
+  params?: ListSourceOrdersParams,
+  options?: RequestInit
+): Promise<listSourceOrdersResponse> => {
+  return customFetch<listSourceOrdersResponse>(
+    getListSourceOrdersUrl(accountId, sourceId, params),
+    {
+      ...options,
+      method: 'GET'
     }
-
-
-export const getListSourceOrdersQueryOptions = <TData = Awaited<ReturnType<typeof listSourceOrders>>, TError = ListSourceOrders400 | ListSourceOrders401 | ListSourceOrders403 | ListSourceOrders404 | ListSourceOrders422>(accountId: MaybeRefOrGetter<string>,
-    sourceId: MaybeRefOrGetter<string>,
-    params?: MaybeRefOrGetter<ListSourceOrdersParams>, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listSourceOrders>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
-) => {
-
-const {query: queryOptions, request: requestOptions} = options ?? {};
-
-  const queryKey =  getListSourceOrdersQueryKey(accountId,sourceId,params);
-
-
-
-    const queryFn: QueryFunction<Awaited<ReturnType<typeof listSourceOrders>>> = ({ signal }) => listSourceOrders(toValue(accountId),toValue(sourceId),toValue(params), { signal, ...requestOptions });
-
-
-
-
-
-   return  { queryKey, queryFn, enabled: computed(() => toValue(accountId) !== null && toValue(accountId) !== undefined && toValue(sourceId) !== null && toValue(sourceId) !== undefined), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listSourceOrders>>, TError, TData>
+  )
 }
 
-export type ListSourceOrdersQueryResult = NonNullable<Awaited<ReturnType<typeof listSourceOrders>>>
-export type ListSourceOrdersQueryError = ListSourceOrders400 | ListSourceOrders401 | ListSourceOrders403 | ListSourceOrders404 | ListSourceOrders422
+export const getListSourceOrdersQueryKey = (
+  accountId: MaybeRefOrGetter<string>,
+  sourceId: MaybeRefOrGetter<string>,
+  params?: MaybeRefOrGetter<ListSourceOrdersParams>
+) => {
+  return [
+    'v1',
+    'accounts',
+    accountId,
+    'sources',
+    sourceId,
+    'orders',
+    ...(params ? [params] : [])
+  ] as const
+}
 
+export const getListSourceOrdersQueryOptions = <
+  TData = Awaited<ReturnType<typeof listSourceOrders>>,
+  TError =
+    | ListSourceOrders400
+    | ListSourceOrders401
+    | ListSourceOrders403
+    | ListSourceOrders404
+    | ListSourceOrders422
+>(
+  accountId: MaybeRefOrGetter<string>,
+  sourceId: MaybeRefOrGetter<string>,
+  params?: MaybeRefOrGetter<ListSourceOrdersParams>,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof listSourceOrders>>,
+        TError,
+        TData
+      >
+    >
+    request?: SecondParameter<typeof customFetch>
+  }
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {}
+
+  const queryKey = getListSourceOrdersQueryKey(accountId, sourceId, params)
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof listSourceOrders>>
+  > = ({ signal }) =>
+    listSourceOrders(toValue(accountId), toValue(sourceId), toValue(params), {
+      signal,
+      ...requestOptions
+    })
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: computed(
+      () =>
+        toValue(accountId) !== null &&
+        toValue(accountId) !== undefined &&
+        toValue(sourceId) !== null &&
+        toValue(sourceId) !== undefined
+    ),
+    ...queryOptions
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof listSourceOrders>>,
+    TError,
+    TData
+  >
+}
+
+export type ListSourceOrdersQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listSourceOrders>>
+>
+export type ListSourceOrdersQueryError =
+  | ListSourceOrders400
+  | ListSourceOrders401
+  | ListSourceOrders403
+  | ListSourceOrders404
+  | ListSourceOrders422
 
 /**
  * @summary List Source Orders Route
  */
 
-export function useListSourceOrders<TData = Awaited<ReturnType<typeof listSourceOrders>>, TError = ListSourceOrders400 | ListSourceOrders401 | ListSourceOrders403 | ListSourceOrders404 | ListSourceOrders422>(
- accountId: MaybeRefOrGetter<string>,
-    sourceId: MaybeRefOrGetter<string>,
-    params?: MaybeRefOrGetter<ListSourceOrdersParams>, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listSourceOrders>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
- , queryClient?: QueryClient
- ): UseQueryReturnType<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+export function useListSourceOrders<
+  TData = Awaited<ReturnType<typeof listSourceOrders>>,
+  TError =
+    | ListSourceOrders400
+    | ListSourceOrders401
+    | ListSourceOrders403
+    | ListSourceOrders404
+    | ListSourceOrders422
+>(
+  accountId: MaybeRefOrGetter<string>,
+  sourceId: MaybeRefOrGetter<string>,
+  params?: MaybeRefOrGetter<ListSourceOrdersParams>,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof listSourceOrders>>,
+        TError,
+        TData
+      >
+    >
+    request?: SecondParameter<typeof customFetch>
+  },
+  queryClient?: QueryClient
+): UseQueryReturnType<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>
+} {
+  const queryOptions = getListSourceOrdersQueryOptions(
+    accountId,
+    sourceId,
+    params,
+    options
+  )
 
-  const queryOptions = getListSourceOrdersQueryOptions(accountId,sourceId,params,options)
+  const query = useQuery(queryOptions, queryClient) as UseQueryReturnType<
+    TData,
+    TError
+  > & { queryKey: DataTag<QueryKey, TData, TError> }
 
-  const query = useQuery(queryOptions, queryClient) as UseQueryReturnType<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+  query.queryKey = unref(queryOptions).queryKey as DataTag<
+    QueryKey,
+    TData,
+    TError
+  >
 
-  query.queryKey = unref(queryOptions).queryKey as DataTag<QueryKey, TData, TError>;
-
-  return query;
+  return query
 }
-
-
-
-
-
-
 
 export type listSourceEventsResponse200 = {
   data: EventSummaryPage
@@ -3164,111 +4169,191 @@ export type listSourceEventsResponse422 = {
   status: 422
 }
 
-export type listSourceEventsResponseSuccess = (listSourceEventsResponse200) & {
-  headers: Headers;
-};
-export type listSourceEventsResponseError = (listSourceEventsResponse400 | listSourceEventsResponse401 | listSourceEventsResponse403 | listSourceEventsResponse404 | listSourceEventsResponse422) & {
-  headers: Headers;
-};
+export type listSourceEventsResponseSuccess = listSourceEventsResponse200 & {
+  headers: Headers
+}
+export type listSourceEventsResponseError = (
+  | listSourceEventsResponse400
+  | listSourceEventsResponse401
+  | listSourceEventsResponse403
+  | listSourceEventsResponse404
+  | listSourceEventsResponse422
+) & {
+  headers: Headers
+}
 
-export type listSourceEventsResponse = (listSourceEventsResponseSuccess | listSourceEventsResponseError)
+export type listSourceEventsResponse =
+  | listSourceEventsResponseSuccess
+  | listSourceEventsResponseError
 
-export const getListSourceEventsUrl = (accountId: string,
-    sourceId: string,
-    params?: ListSourceEventsParams,) => {
-  const normalizedParams = new URLSearchParams();
+export const getListSourceEventsUrl = (
+  accountId: string,
+  sourceId: string,
+  params?: ListSourceEventsParams
+) => {
+  const normalizedParams = new URLSearchParams()
 
   Object.entries(params || {}).forEach(([key, value]) => {
-
     if (value !== undefined) {
       normalizedParams.append(key, value === null ? 'null' : String(value))
     }
-  });
+  })
 
-  const stringifiedParams = normalizedParams.toString();
+  const stringifiedParams = normalizedParams.toString()
 
-  return stringifiedParams.length > 0 ? `/v1/accounts/${accountId}/sources/${sourceId}/events?${stringifiedParams}` : `/v1/accounts/${accountId}/sources/${sourceId}/events`
+  return stringifiedParams.length > 0
+    ? `/v1/accounts/${accountId}/sources/${sourceId}/events?${stringifiedParams}`
+    : `/v1/accounts/${accountId}/sources/${sourceId}/events`
 }
 
 /**
  * Paginated list of browser-tracked events for a source.
  * @summary List Source Events Route
  */
-export const listSourceEvents = async (accountId: string,
-    sourceId: string,
-    params?: ListSourceEventsParams, options?: RequestInit): Promise<listSourceEventsResponse> => {
-
-  return customFetch<listSourceEventsResponse>(getListSourceEventsUrl(accountId,sourceId,params),
-  {
-    ...options,
-    method: 'GET'
-
-
-  }
-);}
-
-
-
-
-
-export const getListSourceEventsQueryKey = (accountId: MaybeRefOrGetter<string>,
-    sourceId: MaybeRefOrGetter<string>,
-    params?: MaybeRefOrGetter<ListSourceEventsParams>,) => {
-    return [
-    'v1','accounts',accountId,'sources',sourceId,'events', ...(params ? [params] : [])
-    ] as const;
+export const listSourceEvents = async (
+  accountId: string,
+  sourceId: string,
+  params?: ListSourceEventsParams,
+  options?: RequestInit
+): Promise<listSourceEventsResponse> => {
+  return customFetch<listSourceEventsResponse>(
+    getListSourceEventsUrl(accountId, sourceId, params),
+    {
+      ...options,
+      method: 'GET'
     }
-
-
-export const getListSourceEventsQueryOptions = <TData = Awaited<ReturnType<typeof listSourceEvents>>, TError = ListSourceEvents400 | ListSourceEvents401 | ListSourceEvents403 | ListSourceEvents404 | ListSourceEvents422>(accountId: MaybeRefOrGetter<string>,
-    sourceId: MaybeRefOrGetter<string>,
-    params?: MaybeRefOrGetter<ListSourceEventsParams>, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listSourceEvents>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
-) => {
-
-const {query: queryOptions, request: requestOptions} = options ?? {};
-
-  const queryKey =  getListSourceEventsQueryKey(accountId,sourceId,params);
-
-
-
-    const queryFn: QueryFunction<Awaited<ReturnType<typeof listSourceEvents>>> = ({ signal }) => listSourceEvents(toValue(accountId),toValue(sourceId),toValue(params), { signal, ...requestOptions });
-
-
-
-
-
-   return  { queryKey, queryFn, enabled: computed(() => toValue(accountId) !== null && toValue(accountId) !== undefined && toValue(sourceId) !== null && toValue(sourceId) !== undefined), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listSourceEvents>>, TError, TData>
+  )
 }
 
-export type ListSourceEventsQueryResult = NonNullable<Awaited<ReturnType<typeof listSourceEvents>>>
-export type ListSourceEventsQueryError = ListSourceEvents400 | ListSourceEvents401 | ListSourceEvents403 | ListSourceEvents404 | ListSourceEvents422
+export const getListSourceEventsQueryKey = (
+  accountId: MaybeRefOrGetter<string>,
+  sourceId: MaybeRefOrGetter<string>,
+  params?: MaybeRefOrGetter<ListSourceEventsParams>
+) => {
+  return [
+    'v1',
+    'accounts',
+    accountId,
+    'sources',
+    sourceId,
+    'events',
+    ...(params ? [params] : [])
+  ] as const
+}
 
+export const getListSourceEventsQueryOptions = <
+  TData = Awaited<ReturnType<typeof listSourceEvents>>,
+  TError =
+    | ListSourceEvents400
+    | ListSourceEvents401
+    | ListSourceEvents403
+    | ListSourceEvents404
+    | ListSourceEvents422
+>(
+  accountId: MaybeRefOrGetter<string>,
+  sourceId: MaybeRefOrGetter<string>,
+  params?: MaybeRefOrGetter<ListSourceEventsParams>,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof listSourceEvents>>,
+        TError,
+        TData
+      >
+    >
+    request?: SecondParameter<typeof customFetch>
+  }
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {}
+
+  const queryKey = getListSourceEventsQueryKey(accountId, sourceId, params)
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof listSourceEvents>>
+  > = ({ signal }) =>
+    listSourceEvents(toValue(accountId), toValue(sourceId), toValue(params), {
+      signal,
+      ...requestOptions
+    })
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: computed(
+      () =>
+        toValue(accountId) !== null &&
+        toValue(accountId) !== undefined &&
+        toValue(sourceId) !== null &&
+        toValue(sourceId) !== undefined
+    ),
+    ...queryOptions
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof listSourceEvents>>,
+    TError,
+    TData
+  >
+}
+
+export type ListSourceEventsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listSourceEvents>>
+>
+export type ListSourceEventsQueryError =
+  | ListSourceEvents400
+  | ListSourceEvents401
+  | ListSourceEvents403
+  | ListSourceEvents404
+  | ListSourceEvents422
 
 /**
  * @summary List Source Events Route
  */
 
-export function useListSourceEvents<TData = Awaited<ReturnType<typeof listSourceEvents>>, TError = ListSourceEvents400 | ListSourceEvents401 | ListSourceEvents403 | ListSourceEvents404 | ListSourceEvents422>(
- accountId: MaybeRefOrGetter<string>,
-    sourceId: MaybeRefOrGetter<string>,
-    params?: MaybeRefOrGetter<ListSourceEventsParams>, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listSourceEvents>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
- , queryClient?: QueryClient
- ): UseQueryReturnType<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+export function useListSourceEvents<
+  TData = Awaited<ReturnType<typeof listSourceEvents>>,
+  TError =
+    | ListSourceEvents400
+    | ListSourceEvents401
+    | ListSourceEvents403
+    | ListSourceEvents404
+    | ListSourceEvents422
+>(
+  accountId: MaybeRefOrGetter<string>,
+  sourceId: MaybeRefOrGetter<string>,
+  params?: MaybeRefOrGetter<ListSourceEventsParams>,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof listSourceEvents>>,
+        TError,
+        TData
+      >
+    >
+    request?: SecondParameter<typeof customFetch>
+  },
+  queryClient?: QueryClient
+): UseQueryReturnType<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>
+} {
+  const queryOptions = getListSourceEventsQueryOptions(
+    accountId,
+    sourceId,
+    params,
+    options
+  )
 
-  const queryOptions = getListSourceEventsQueryOptions(accountId,sourceId,params,options)
+  const query = useQuery(queryOptions, queryClient) as UseQueryReturnType<
+    TData,
+    TError
+  > & { queryKey: DataTag<QueryKey, TData, TError> }
 
-  const query = useQuery(queryOptions, queryClient) as UseQueryReturnType<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+  query.queryKey = unref(queryOptions).queryKey as DataTag<
+    QueryKey,
+    TData,
+    TError
+  >
 
-  query.queryKey = unref(queryOptions).queryKey as DataTag<QueryKey, TData, TError>;
-
-  return query;
+  return query
 }
-
-
-
-
-
-
 
 export type listDestinationsResponse200 = {
   data: PageDestination
@@ -3295,105 +4380,174 @@ export type listDestinationsResponse422 = {
   status: 422
 }
 
-export type listDestinationsResponseSuccess = (listDestinationsResponse200) & {
-  headers: Headers;
-};
-export type listDestinationsResponseError = (listDestinationsResponse401 | listDestinationsResponse403 | listDestinationsResponse404 | listDestinationsResponse422) & {
-  headers: Headers;
-};
+export type listDestinationsResponseSuccess = listDestinationsResponse200 & {
+  headers: Headers
+}
+export type listDestinationsResponseError = (
+  | listDestinationsResponse401
+  | listDestinationsResponse403
+  | listDestinationsResponse404
+  | listDestinationsResponse422
+) & {
+  headers: Headers
+}
 
-export type listDestinationsResponse = (listDestinationsResponseSuccess | listDestinationsResponseError)
+export type listDestinationsResponse =
+  | listDestinationsResponseSuccess
+  | listDestinationsResponseError
 
-export const getListDestinationsUrl = (accountId: string,
-    params?: ListDestinationsParams,) => {
-  const normalizedParams = new URLSearchParams();
+export const getListDestinationsUrl = (
+  accountId: string,
+  params?: ListDestinationsParams
+) => {
+  const normalizedParams = new URLSearchParams()
 
   Object.entries(params || {}).forEach(([key, value]) => {
-
     if (value !== undefined) {
       normalizedParams.append(key, value === null ? 'null' : String(value))
     }
-  });
+  })
 
-  const stringifiedParams = normalizedParams.toString();
+  const stringifiedParams = normalizedParams.toString()
 
-  return stringifiedParams.length > 0 ? `/v1/accounts/${accountId}/destinations?${stringifiedParams}` : `/v1/accounts/${accountId}/destinations`
+  return stringifiedParams.length > 0
+    ? `/v1/accounts/${accountId}/destinations?${stringifiedParams}`
+    : `/v1/accounts/${accountId}/destinations`
 }
 
 /**
  * @summary List Destinations Route
  */
-export const listDestinations = async (accountId: string,
-    params?: ListDestinationsParams, options?: RequestInit): Promise<listDestinationsResponse> => {
-
-  return customFetch<listDestinationsResponse>(getListDestinationsUrl(accountId,params),
-  {
-    ...options,
-    method: 'GET'
-
-
-  }
-);}
-
-
-
-
-
-export const getListDestinationsQueryKey = (accountId: MaybeRefOrGetter<string>,
-    params?: MaybeRefOrGetter<ListDestinationsParams>,) => {
-    return [
-    'v1','accounts',accountId,'destinations', ...(params ? [params] : [])
-    ] as const;
+export const listDestinations = async (
+  accountId: string,
+  params?: ListDestinationsParams,
+  options?: RequestInit
+): Promise<listDestinationsResponse> => {
+  return customFetch<listDestinationsResponse>(
+    getListDestinationsUrl(accountId, params),
+    {
+      ...options,
+      method: 'GET'
     }
-
-
-export const getListDestinationsQueryOptions = <TData = Awaited<ReturnType<typeof listDestinations>>, TError = ListDestinations401 | ListDestinations403 | ListDestinations404 | ListDestinations422>(accountId: MaybeRefOrGetter<string>,
-    params?: MaybeRefOrGetter<ListDestinationsParams>, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listDestinations>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
-) => {
-
-const {query: queryOptions, request: requestOptions} = options ?? {};
-
-  const queryKey =  getListDestinationsQueryKey(accountId,params);
-
-
-
-    const queryFn: QueryFunction<Awaited<ReturnType<typeof listDestinations>>> = ({ signal }) => listDestinations(toValue(accountId),toValue(params), { signal, ...requestOptions });
-
-
-
-
-
-   return  { queryKey, queryFn, enabled: computed(() => toValue(accountId) !== null && toValue(accountId) !== undefined), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listDestinations>>, TError, TData>
+  )
 }
 
-export type ListDestinationsQueryResult = NonNullable<Awaited<ReturnType<typeof listDestinations>>>
-export type ListDestinationsQueryError = ListDestinations401 | ListDestinations403 | ListDestinations404 | ListDestinations422
+export const getListDestinationsQueryKey = (
+  accountId: MaybeRefOrGetter<string>,
+  params?: MaybeRefOrGetter<ListDestinationsParams>
+) => {
+  return [
+    'v1',
+    'accounts',
+    accountId,
+    'destinations',
+    ...(params ? [params] : [])
+  ] as const
+}
 
+export const getListDestinationsQueryOptions = <
+  TData = Awaited<ReturnType<typeof listDestinations>>,
+  TError =
+    | ListDestinations401
+    | ListDestinations403
+    | ListDestinations404
+    | ListDestinations422
+>(
+  accountId: MaybeRefOrGetter<string>,
+  params?: MaybeRefOrGetter<ListDestinationsParams>,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof listDestinations>>,
+        TError,
+        TData
+      >
+    >
+    request?: SecondParameter<typeof customFetch>
+  }
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {}
+
+  const queryKey = getListDestinationsQueryKey(accountId, params)
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof listDestinations>>
+  > = ({ signal }) =>
+    listDestinations(toValue(accountId), toValue(params), {
+      signal,
+      ...requestOptions
+    })
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: computed(
+      () => toValue(accountId) !== null && toValue(accountId) !== undefined
+    ),
+    ...queryOptions
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof listDestinations>>,
+    TError,
+    TData
+  >
+}
+
+export type ListDestinationsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listDestinations>>
+>
+export type ListDestinationsQueryError =
+  | ListDestinations401
+  | ListDestinations403
+  | ListDestinations404
+  | ListDestinations422
 
 /**
  * @summary List Destinations Route
  */
 
-export function useListDestinations<TData = Awaited<ReturnType<typeof listDestinations>>, TError = ListDestinations401 | ListDestinations403 | ListDestinations404 | ListDestinations422>(
- accountId: MaybeRefOrGetter<string>,
-    params?: MaybeRefOrGetter<ListDestinationsParams>, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listDestinations>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
- , queryClient?: QueryClient
- ): UseQueryReturnType<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+export function useListDestinations<
+  TData = Awaited<ReturnType<typeof listDestinations>>,
+  TError =
+    | ListDestinations401
+    | ListDestinations403
+    | ListDestinations404
+    | ListDestinations422
+>(
+  accountId: MaybeRefOrGetter<string>,
+  params?: MaybeRefOrGetter<ListDestinationsParams>,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof listDestinations>>,
+        TError,
+        TData
+      >
+    >
+    request?: SecondParameter<typeof customFetch>
+  },
+  queryClient?: QueryClient
+): UseQueryReturnType<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>
+} {
+  const queryOptions = getListDestinationsQueryOptions(
+    accountId,
+    params,
+    options
+  )
 
-  const queryOptions = getListDestinationsQueryOptions(accountId,params,options)
+  const query = useQuery(queryOptions, queryClient) as UseQueryReturnType<
+    TData,
+    TError
+  > & { queryKey: DataTag<QueryKey, TData, TError> }
 
-  const query = useQuery(queryOptions, queryClient) as UseQueryReturnType<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+  query.queryKey = unref(queryOptions).queryKey as DataTag<
+    QueryKey,
+    TData,
+    TError
+  >
 
-  query.queryKey = unref(queryOptions).queryKey as DataTag<QueryKey, TData, TError>;
-
-  return query;
+  return query
 }
-
-
-
-
-
-
 
 export type createDestinationResponse201 = {
   data: Destination
@@ -3430,86 +4584,134 @@ export type createDestinationResponse422 = {
   status: 422
 }
 
-export type createDestinationResponseSuccess = (createDestinationResponse201) & {
-  headers: Headers;
-};
-export type createDestinationResponseError = (createDestinationResponse400 | createDestinationResponse401 | createDestinationResponse403 | createDestinationResponse404 | createDestinationResponse409 | createDestinationResponse422) & {
-  headers: Headers;
-};
+export type createDestinationResponseSuccess = createDestinationResponse201 & {
+  headers: Headers
+}
+export type createDestinationResponseError = (
+  | createDestinationResponse400
+  | createDestinationResponse401
+  | createDestinationResponse403
+  | createDestinationResponse404
+  | createDestinationResponse409
+  | createDestinationResponse422
+) & {
+  headers: Headers
+}
 
-export type createDestinationResponse = (createDestinationResponseSuccess | createDestinationResponseError)
+export type createDestinationResponse =
+  | createDestinationResponseSuccess
+  | createDestinationResponseError
 
-export const getCreateDestinationUrl = (accountId: string,) => {
-
-
-
-
+export const getCreateDestinationUrl = (accountId: string) => {
   return `/v1/accounts/${accountId}/destinations`
 }
 
 /**
  * @summary Create Destination Route
  */
-export const createDestination = async (accountId: string,
-    destinationCreate: DestinationCreate, options?: RequestInit): Promise<createDestinationResponse> => {
+export const createDestination = async (
+  accountId: string,
+  destinationCreate: DestinationCreate,
+  options?: RequestInit
+): Promise<createDestinationResponse> => {
+  return customFetch<createDestinationResponse>(
+    getCreateDestinationUrl(accountId),
+    {
+      ...options,
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', ...options?.headers },
+      body: JSON.stringify(destinationCreate)
+    }
+  )
+}
 
-  return customFetch<createDestinationResponse>(getCreateDestinationUrl(accountId),
-  {
-    ...options,
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', ...options?.headers },
-    body: JSON.stringify(destinationCreate)
+export const getCreateDestinationMutationOptions = <
+  TError =
+    | CreateDestination400
+    | CreateDestination401
+    | CreateDestination403
+    | CreateDestination404
+    | CreateDestination409
+    | CreateDestination422,
+  TContext = unknown
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createDestination>>,
+    TError,
+    { accountId: string; data: DestinationCreate },
+    TContext
+  >
+  request?: SecondParameter<typeof customFetch>
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof createDestination>>,
+  TError,
+  { accountId: string; data: DestinationCreate },
+  TContext
+> => {
+  const mutationKey = ['createDestination']
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      'mutationKey' in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined }
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof createDestination>>,
+    { accountId: string; data: DestinationCreate }
+  > = props => {
+    const { accountId, data } = props ?? {}
+
+    return createDestination(accountId, data, requestOptions)
   }
-);}
 
+  return { mutationFn, ...mutationOptions }
+}
 
+export type CreateDestinationMutationResult = NonNullable<
+  Awaited<ReturnType<typeof createDestination>>
+>
+export type CreateDestinationMutationBody = DestinationCreate
+export type CreateDestinationMutationError =
+  | CreateDestination400
+  | CreateDestination401
+  | CreateDestination403
+  | CreateDestination404
+  | CreateDestination409
+  | CreateDestination422
 
-
-
-export const getCreateDestinationMutationOptions = <TError = CreateDestination400 | CreateDestination401 | CreateDestination403 | CreateDestination404 | CreateDestination409 | CreateDestination422,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createDestination>>, TError,{accountId: string;data: DestinationCreate}, TContext>, request?: SecondParameter<typeof customFetch>}
-): UseMutationOptions<Awaited<ReturnType<typeof createDestination>>, TError,{accountId: string;data: DestinationCreate}, TContext> => {
-
-const mutationKey = ['createDestination'];
-const {mutation: mutationOptions, request: requestOptions} = options ?
-      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
-      options
-      : {...options, mutation: {...options.mutation, mutationKey}}
-      : {mutation: { mutationKey, }, request: undefined};
-
-
-
-
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createDestination>>, {accountId: string;data: DestinationCreate}> = (props) => {
-          const {accountId,data} = props ?? {};
-
-          return  createDestination(accountId,data,requestOptions)
-        }
-
-
-
-
-
-
-  return  { mutationFn, ...mutationOptions }}
-
-    export type CreateDestinationMutationResult = NonNullable<Awaited<ReturnType<typeof createDestination>>>
-    export type CreateDestinationMutationBody = DestinationCreate
-    export type CreateDestinationMutationError = CreateDestination400 | CreateDestination401 | CreateDestination403 | CreateDestination404 | CreateDestination409 | CreateDestination422
-
-    /**
+/**
  * @summary Create Destination Route
  */
-export const useCreateDestination = <TError = CreateDestination400 | CreateDestination401 | CreateDestination403 | CreateDestination404 | CreateDestination409 | CreateDestination422,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createDestination>>, TError,{accountId: string;data: DestinationCreate}, TContext>, request?: SecondParameter<typeof customFetch>}
- , queryClient?: QueryClient): UseMutationReturnType<
-        Awaited<ReturnType<typeof createDestination>>,
-        TError,
-        {accountId: string;data: DestinationCreate},
-        TContext
-      > => {
-      return useMutation(getCreateDestinationMutationOptions(options), queryClient);
-    }
+export const useCreateDestination = <
+  TError =
+    | CreateDestination400
+    | CreateDestination401
+    | CreateDestination403
+    | CreateDestination404
+    | CreateDestination409
+    | CreateDestination422,
+  TContext = unknown
+>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof createDestination>>,
+      TError,
+      { accountId: string; data: DestinationCreate },
+      TContext
+    >
+    request?: SecondParameter<typeof customFetch>
+  },
+  queryClient?: QueryClient
+): UseMutationReturnType<
+  Awaited<ReturnType<typeof createDestination>>,
+  TError,
+  { accountId: string; data: DestinationCreate },
+  TContext
+> => {
+  return useMutation(getCreateDestinationMutationOptions(options), queryClient)
+}
 
 export type getDestinationResponse200 = {
   data: Destination
@@ -3536,98 +4738,152 @@ export type getDestinationResponse422 = {
   status: 422
 }
 
-export type getDestinationResponseSuccess = (getDestinationResponse200) & {
-  headers: Headers;
-};
-export type getDestinationResponseError = (getDestinationResponse401 | getDestinationResponse403 | getDestinationResponse404 | getDestinationResponse422) & {
-  headers: Headers;
-};
+export type getDestinationResponseSuccess = getDestinationResponse200 & {
+  headers: Headers
+}
+export type getDestinationResponseError = (
+  | getDestinationResponse401
+  | getDestinationResponse403
+  | getDestinationResponse404
+  | getDestinationResponse422
+) & {
+  headers: Headers
+}
 
-export type getDestinationResponse = (getDestinationResponseSuccess | getDestinationResponseError)
+export type getDestinationResponse =
+  | getDestinationResponseSuccess
+  | getDestinationResponseError
 
-export const getGetDestinationUrl = (accountId: string,
-    destinationId: string,) => {
-
-
-
-
+export const getGetDestinationUrl = (
+  accountId: string,
+  destinationId: string
+) => {
   return `/v1/accounts/${accountId}/destinations/${destinationId}`
 }
 
 /**
  * @summary Get Destination Route
  */
-export const getDestination = async (accountId: string,
-    destinationId: string, options?: RequestInit): Promise<getDestinationResponse> => {
-
-  return customFetch<getDestinationResponse>(getGetDestinationUrl(accountId,destinationId),
-  {
-    ...options,
-    method: 'GET'
-
-
-  }
-);}
-
-
-
-
-
-export const getGetDestinationQueryKey = (accountId: MaybeRefOrGetter<string>,
-    destinationId: MaybeRefOrGetter<string>,) => {
-    return [
-    'v1','accounts',accountId,'destinations',destinationId
-    ] as const;
+export const getDestination = async (
+  accountId: string,
+  destinationId: string,
+  options?: RequestInit
+): Promise<getDestinationResponse> => {
+  return customFetch<getDestinationResponse>(
+    getGetDestinationUrl(accountId, destinationId),
+    {
+      ...options,
+      method: 'GET'
     }
-
-
-export const getGetDestinationQueryOptions = <TData = Awaited<ReturnType<typeof getDestination>>, TError = GetDestination401 | GetDestination403 | GetDestination404 | GetDestination422>(accountId: MaybeRefOrGetter<string>,
-    destinationId: MaybeRefOrGetter<string>, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getDestination>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
-) => {
-
-const {query: queryOptions, request: requestOptions} = options ?? {};
-
-  const queryKey =  getGetDestinationQueryKey(accountId,destinationId);
-
-
-
-    const queryFn: QueryFunction<Awaited<ReturnType<typeof getDestination>>> = ({ signal }) => getDestination(toValue(accountId),toValue(destinationId), { signal, ...requestOptions });
-
-
-
-
-
-   return  { queryKey, queryFn, enabled: computed(() => toValue(accountId) !== null && toValue(accountId) !== undefined && toValue(destinationId) !== null && toValue(destinationId) !== undefined), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getDestination>>, TError, TData>
+  )
 }
 
-export type GetDestinationQueryResult = NonNullable<Awaited<ReturnType<typeof getDestination>>>
-export type GetDestinationQueryError = GetDestination401 | GetDestination403 | GetDestination404 | GetDestination422
+export const getGetDestinationQueryKey = (
+  accountId: MaybeRefOrGetter<string>,
+  destinationId: MaybeRefOrGetter<string>
+) => {
+  return ['v1', 'accounts', accountId, 'destinations', destinationId] as const
+}
 
+export const getGetDestinationQueryOptions = <
+  TData = Awaited<ReturnType<typeof getDestination>>,
+  TError =
+    | GetDestination401
+    | GetDestination403
+    | GetDestination404
+    | GetDestination422
+>(
+  accountId: MaybeRefOrGetter<string>,
+  destinationId: MaybeRefOrGetter<string>,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof getDestination>>, TError, TData>
+    >
+    request?: SecondParameter<typeof customFetch>
+  }
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {}
+
+  const queryKey = getGetDestinationQueryKey(accountId, destinationId)
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof getDestination>>> = ({
+    signal
+  }) =>
+    getDestination(toValue(accountId), toValue(destinationId), {
+      signal,
+      ...requestOptions
+    })
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: computed(
+      () =>
+        toValue(accountId) !== null &&
+        toValue(accountId) !== undefined &&
+        toValue(destinationId) !== null &&
+        toValue(destinationId) !== undefined
+    ),
+    ...queryOptions
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof getDestination>>,
+    TError,
+    TData
+  >
+}
+
+export type GetDestinationQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getDestination>>
+>
+export type GetDestinationQueryError =
+  | GetDestination401
+  | GetDestination403
+  | GetDestination404
+  | GetDestination422
 
 /**
  * @summary Get Destination Route
  */
 
-export function useGetDestination<TData = Awaited<ReturnType<typeof getDestination>>, TError = GetDestination401 | GetDestination403 | GetDestination404 | GetDestination422>(
- accountId: MaybeRefOrGetter<string>,
-    destinationId: MaybeRefOrGetter<string>, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getDestination>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
- , queryClient?: QueryClient
- ): UseQueryReturnType<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+export function useGetDestination<
+  TData = Awaited<ReturnType<typeof getDestination>>,
+  TError =
+    | GetDestination401
+    | GetDestination403
+    | GetDestination404
+    | GetDestination422
+>(
+  accountId: MaybeRefOrGetter<string>,
+  destinationId: MaybeRefOrGetter<string>,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof getDestination>>, TError, TData>
+    >
+    request?: SecondParameter<typeof customFetch>
+  },
+  queryClient?: QueryClient
+): UseQueryReturnType<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>
+} {
+  const queryOptions = getGetDestinationQueryOptions(
+    accountId,
+    destinationId,
+    options
+  )
 
-  const queryOptions = getGetDestinationQueryOptions(accountId,destinationId,options)
+  const query = useQuery(queryOptions, queryClient) as UseQueryReturnType<
+    TData,
+    TError
+  > & { queryKey: DataTag<QueryKey, TData, TError> }
 
-  const query = useQuery(queryOptions, queryClient) as UseQueryReturnType<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+  query.queryKey = unref(queryOptions).queryKey as DataTag<
+    QueryKey,
+    TData,
+    TError
+  >
 
-  query.queryKey = unref(queryOptions).queryKey as DataTag<QueryKey, TData, TError>;
-
-  return query;
+  return query
 }
-
-
-
-
-
-
 
 export type updateDestinationResponse200 = {
   data: Destination
@@ -3654,88 +4910,130 @@ export type updateDestinationResponse422 = {
   status: 422
 }
 
-export type updateDestinationResponseSuccess = (updateDestinationResponse200) & {
-  headers: Headers;
-};
-export type updateDestinationResponseError = (updateDestinationResponse401 | updateDestinationResponse403 | updateDestinationResponse404 | updateDestinationResponse422) & {
-  headers: Headers;
-};
+export type updateDestinationResponseSuccess = updateDestinationResponse200 & {
+  headers: Headers
+}
+export type updateDestinationResponseError = (
+  | updateDestinationResponse401
+  | updateDestinationResponse403
+  | updateDestinationResponse404
+  | updateDestinationResponse422
+) & {
+  headers: Headers
+}
 
-export type updateDestinationResponse = (updateDestinationResponseSuccess | updateDestinationResponseError)
+export type updateDestinationResponse =
+  | updateDestinationResponseSuccess
+  | updateDestinationResponseError
 
-export const getUpdateDestinationUrl = (accountId: string,
-    destinationId: string,) => {
-
-
-
-
+export const getUpdateDestinationUrl = (
+  accountId: string,
+  destinationId: string
+) => {
   return `/v1/accounts/${accountId}/destinations/${destinationId}`
 }
 
 /**
  * @summary Update Destination Route
  */
-export const updateDestination = async (accountId: string,
-    destinationId: string,
-    destinationUpdate: DestinationUpdate, options?: RequestInit): Promise<updateDestinationResponse> => {
+export const updateDestination = async (
+  accountId: string,
+  destinationId: string,
+  destinationUpdate: DestinationUpdate,
+  options?: RequestInit
+): Promise<updateDestinationResponse> => {
+  return customFetch<updateDestinationResponse>(
+    getUpdateDestinationUrl(accountId, destinationId),
+    {
+      ...options,
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json', ...options?.headers },
+      body: JSON.stringify(destinationUpdate)
+    }
+  )
+}
 
-  return customFetch<updateDestinationResponse>(getUpdateDestinationUrl(accountId,destinationId),
-  {
-    ...options,
-    method: 'PATCH',
-    headers: { 'Content-Type': 'application/json', ...options?.headers },
-    body: JSON.stringify(destinationUpdate)
+export const getUpdateDestinationMutationOptions = <
+  TError =
+    | UpdateDestination401
+    | UpdateDestination403
+    | UpdateDestination404
+    | UpdateDestination422,
+  TContext = unknown
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updateDestination>>,
+    TError,
+    { accountId: string; destinationId: string; data: DestinationUpdate },
+    TContext
+  >
+  request?: SecondParameter<typeof customFetch>
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof updateDestination>>,
+  TError,
+  { accountId: string; destinationId: string; data: DestinationUpdate },
+  TContext
+> => {
+  const mutationKey = ['updateDestination']
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      'mutationKey' in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined }
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof updateDestination>>,
+    { accountId: string; destinationId: string; data: DestinationUpdate }
+  > = props => {
+    const { accountId, destinationId, data } = props ?? {}
+
+    return updateDestination(accountId, destinationId, data, requestOptions)
   }
-);}
 
+  return { mutationFn, ...mutationOptions }
+}
 
+export type UpdateDestinationMutationResult = NonNullable<
+  Awaited<ReturnType<typeof updateDestination>>
+>
+export type UpdateDestinationMutationBody = DestinationUpdate
+export type UpdateDestinationMutationError =
+  | UpdateDestination401
+  | UpdateDestination403
+  | UpdateDestination404
+  | UpdateDestination422
 
-
-
-export const getUpdateDestinationMutationOptions = <TError = UpdateDestination401 | UpdateDestination403 | UpdateDestination404 | UpdateDestination422,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateDestination>>, TError,{accountId: string;destinationId: string;data: DestinationUpdate}, TContext>, request?: SecondParameter<typeof customFetch>}
-): UseMutationOptions<Awaited<ReturnType<typeof updateDestination>>, TError,{accountId: string;destinationId: string;data: DestinationUpdate}, TContext> => {
-
-const mutationKey = ['updateDestination'];
-const {mutation: mutationOptions, request: requestOptions} = options ?
-      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
-      options
-      : {...options, mutation: {...options.mutation, mutationKey}}
-      : {mutation: { mutationKey, }, request: undefined};
-
-
-
-
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updateDestination>>, {accountId: string;destinationId: string;data: DestinationUpdate}> = (props) => {
-          const {accountId,destinationId,data} = props ?? {};
-
-          return  updateDestination(accountId,destinationId,data,requestOptions)
-        }
-
-
-
-
-
-
-  return  { mutationFn, ...mutationOptions }}
-
-    export type UpdateDestinationMutationResult = NonNullable<Awaited<ReturnType<typeof updateDestination>>>
-    export type UpdateDestinationMutationBody = DestinationUpdate
-    export type UpdateDestinationMutationError = UpdateDestination401 | UpdateDestination403 | UpdateDestination404 | UpdateDestination422
-
-    /**
+/**
  * @summary Update Destination Route
  */
-export const useUpdateDestination = <TError = UpdateDestination401 | UpdateDestination403 | UpdateDestination404 | UpdateDestination422,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateDestination>>, TError,{accountId: string;destinationId: string;data: DestinationUpdate}, TContext>, request?: SecondParameter<typeof customFetch>}
- , queryClient?: QueryClient): UseMutationReturnType<
-        Awaited<ReturnType<typeof updateDestination>>,
-        TError,
-        {accountId: string;destinationId: string;data: DestinationUpdate},
-        TContext
-      > => {
-      return useMutation(getUpdateDestinationMutationOptions(options), queryClient);
-    }
+export const useUpdateDestination = <
+  TError =
+    | UpdateDestination401
+    | UpdateDestination403
+    | UpdateDestination404
+    | UpdateDestination422,
+  TContext = unknown
+>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof updateDestination>>,
+      TError,
+      { accountId: string; destinationId: string; data: DestinationUpdate },
+      TContext
+    >
+    request?: SecondParameter<typeof customFetch>
+  },
+  queryClient?: QueryClient
+): UseMutationReturnType<
+  Awaited<ReturnType<typeof updateDestination>>,
+  TError,
+  { accountId: string; destinationId: string; data: DestinationUpdate },
+  TContext
+> => {
+  return useMutation(getUpdateDestinationMutationOptions(options), queryClient)
+}
 
 export type deleteDestinationResponse204 = {
   data: void
@@ -3762,87 +5060,127 @@ export type deleteDestinationResponse422 = {
   status: 422
 }
 
-export type deleteDestinationResponseSuccess = (deleteDestinationResponse204) & {
-  headers: Headers;
-};
-export type deleteDestinationResponseError = (deleteDestinationResponse401 | deleteDestinationResponse403 | deleteDestinationResponse404 | deleteDestinationResponse422) & {
-  headers: Headers;
-};
+export type deleteDestinationResponseSuccess = deleteDestinationResponse204 & {
+  headers: Headers
+}
+export type deleteDestinationResponseError = (
+  | deleteDestinationResponse401
+  | deleteDestinationResponse403
+  | deleteDestinationResponse404
+  | deleteDestinationResponse422
+) & {
+  headers: Headers
+}
 
-export type deleteDestinationResponse = (deleteDestinationResponseSuccess | deleteDestinationResponseError)
+export type deleteDestinationResponse =
+  | deleteDestinationResponseSuccess
+  | deleteDestinationResponseError
 
-export const getDeleteDestinationUrl = (accountId: string,
-    destinationId: string,) => {
-
-
-
-
+export const getDeleteDestinationUrl = (
+  accountId: string,
+  destinationId: string
+) => {
   return `/v1/accounts/${accountId}/destinations/${destinationId}`
 }
 
 /**
  * @summary Delete Destination Route
  */
-export const deleteDestination = async (accountId: string,
-    destinationId: string, options?: RequestInit): Promise<deleteDestinationResponse> => {
+export const deleteDestination = async (
+  accountId: string,
+  destinationId: string,
+  options?: RequestInit
+): Promise<deleteDestinationResponse> => {
+  return customFetch<deleteDestinationResponse>(
+    getDeleteDestinationUrl(accountId, destinationId),
+    {
+      ...options,
+      method: 'DELETE'
+    }
+  )
+}
 
-  return customFetch<deleteDestinationResponse>(getDeleteDestinationUrl(accountId,destinationId),
-  {
-    ...options,
-    method: 'DELETE'
+export const getDeleteDestinationMutationOptions = <
+  TError =
+    | DeleteDestination401
+    | DeleteDestination403
+    | DeleteDestination404
+    | DeleteDestination422,
+  TContext = unknown
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof deleteDestination>>,
+    TError,
+    { accountId: string; destinationId: string },
+    TContext
+  >
+  request?: SecondParameter<typeof customFetch>
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof deleteDestination>>,
+  TError,
+  { accountId: string; destinationId: string },
+  TContext
+> => {
+  const mutationKey = ['deleteDestination']
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      'mutationKey' in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined }
 
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof deleteDestination>>,
+    { accountId: string; destinationId: string }
+  > = props => {
+    const { accountId, destinationId } = props ?? {}
 
+    return deleteDestination(accountId, destinationId, requestOptions)
   }
-);}
 
+  return { mutationFn, ...mutationOptions }
+}
 
+export type DeleteDestinationMutationResult = NonNullable<
+  Awaited<ReturnType<typeof deleteDestination>>
+>
 
+export type DeleteDestinationMutationError =
+  | DeleteDestination401
+  | DeleteDestination403
+  | DeleteDestination404
+  | DeleteDestination422
 
-
-export const getDeleteDestinationMutationOptions = <TError = DeleteDestination401 | DeleteDestination403 | DeleteDestination404 | DeleteDestination422,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteDestination>>, TError,{accountId: string;destinationId: string}, TContext>, request?: SecondParameter<typeof customFetch>}
-): UseMutationOptions<Awaited<ReturnType<typeof deleteDestination>>, TError,{accountId: string;destinationId: string}, TContext> => {
-
-const mutationKey = ['deleteDestination'];
-const {mutation: mutationOptions, request: requestOptions} = options ?
-      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
-      options
-      : {...options, mutation: {...options.mutation, mutationKey}}
-      : {mutation: { mutationKey, }, request: undefined};
-
-
-
-
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof deleteDestination>>, {accountId: string;destinationId: string}> = (props) => {
-          const {accountId,destinationId} = props ?? {};
-
-          return  deleteDestination(accountId,destinationId,requestOptions)
-        }
-
-
-
-
-
-
-  return  { mutationFn, ...mutationOptions }}
-
-    export type DeleteDestinationMutationResult = NonNullable<Awaited<ReturnType<typeof deleteDestination>>>
-
-    export type DeleteDestinationMutationError = DeleteDestination401 | DeleteDestination403 | DeleteDestination404 | DeleteDestination422
-
-    /**
+/**
  * @summary Delete Destination Route
  */
-export const useDeleteDestination = <TError = DeleteDestination401 | DeleteDestination403 | DeleteDestination404 | DeleteDestination422,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteDestination>>, TError,{accountId: string;destinationId: string}, TContext>, request?: SecondParameter<typeof customFetch>}
- , queryClient?: QueryClient): UseMutationReturnType<
-        Awaited<ReturnType<typeof deleteDestination>>,
-        TError,
-        {accountId: string;destinationId: string},
-        TContext
-      > => {
-      return useMutation(getDeleteDestinationMutationOptions(options), queryClient);
-    }
+export const useDeleteDestination = <
+  TError =
+    | DeleteDestination401
+    | DeleteDestination403
+    | DeleteDestination404
+    | DeleteDestination422,
+  TContext = unknown
+>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof deleteDestination>>,
+      TError,
+      { accountId: string; destinationId: string },
+      TContext
+    >
+    request?: SecondParameter<typeof customFetch>
+  },
+  queryClient?: QueryClient
+): UseMutationReturnType<
+  Awaited<ReturnType<typeof deleteDestination>>,
+  TError,
+  { accountId: string; destinationId: string },
+  TContext
+> => {
+  return useMutation(getDeleteDestinationMutationOptions(options), queryClient)
+}
 
 export type listPipelinesResponse200 = {
   data: PagePipeline
@@ -3869,105 +5207,158 @@ export type listPipelinesResponse422 = {
   status: 422
 }
 
-export type listPipelinesResponseSuccess = (listPipelinesResponse200) & {
-  headers: Headers;
-};
-export type listPipelinesResponseError = (listPipelinesResponse401 | listPipelinesResponse403 | listPipelinesResponse404 | listPipelinesResponse422) & {
-  headers: Headers;
-};
+export type listPipelinesResponseSuccess = listPipelinesResponse200 & {
+  headers: Headers
+}
+export type listPipelinesResponseError = (
+  | listPipelinesResponse401
+  | listPipelinesResponse403
+  | listPipelinesResponse404
+  | listPipelinesResponse422
+) & {
+  headers: Headers
+}
 
-export type listPipelinesResponse = (listPipelinesResponseSuccess | listPipelinesResponseError)
+export type listPipelinesResponse =
+  | listPipelinesResponseSuccess
+  | listPipelinesResponseError
 
-export const getListPipelinesUrl = (accountId: string,
-    params?: ListPipelinesParams,) => {
-  const normalizedParams = new URLSearchParams();
+export const getListPipelinesUrl = (
+  accountId: string,
+  params?: ListPipelinesParams
+) => {
+  const normalizedParams = new URLSearchParams()
 
   Object.entries(params || {}).forEach(([key, value]) => {
-
     if (value !== undefined) {
       normalizedParams.append(key, value === null ? 'null' : String(value))
     }
-  });
+  })
 
-  const stringifiedParams = normalizedParams.toString();
+  const stringifiedParams = normalizedParams.toString()
 
-  return stringifiedParams.length > 0 ? `/v1/accounts/${accountId}/pipelines?${stringifiedParams}` : `/v1/accounts/${accountId}/pipelines`
+  return stringifiedParams.length > 0
+    ? `/v1/accounts/${accountId}/pipelines?${stringifiedParams}`
+    : `/v1/accounts/${accountId}/pipelines`
 }
 
 /**
  * @summary List Pipelines Route
  */
-export const listPipelines = async (accountId: string,
-    params?: ListPipelinesParams, options?: RequestInit): Promise<listPipelinesResponse> => {
-
-  return customFetch<listPipelinesResponse>(getListPipelinesUrl(accountId,params),
-  {
-    ...options,
-    method: 'GET'
-
-
-  }
-);}
-
-
-
-
-
-export const getListPipelinesQueryKey = (accountId: MaybeRefOrGetter<string>,
-    params?: MaybeRefOrGetter<ListPipelinesParams>,) => {
-    return [
-    'v1','accounts',accountId,'pipelines', ...(params ? [params] : [])
-    ] as const;
+export const listPipelines = async (
+  accountId: string,
+  params?: ListPipelinesParams,
+  options?: RequestInit
+): Promise<listPipelinesResponse> => {
+  return customFetch<listPipelinesResponse>(
+    getListPipelinesUrl(accountId, params),
+    {
+      ...options,
+      method: 'GET'
     }
-
-
-export const getListPipelinesQueryOptions = <TData = Awaited<ReturnType<typeof listPipelines>>, TError = ListPipelines401 | ListPipelines403 | ListPipelines404 | ListPipelines422>(accountId: MaybeRefOrGetter<string>,
-    params?: MaybeRefOrGetter<ListPipelinesParams>, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listPipelines>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
-) => {
-
-const {query: queryOptions, request: requestOptions} = options ?? {};
-
-  const queryKey =  getListPipelinesQueryKey(accountId,params);
-
-
-
-    const queryFn: QueryFunction<Awaited<ReturnType<typeof listPipelines>>> = ({ signal }) => listPipelines(toValue(accountId),toValue(params), { signal, ...requestOptions });
-
-
-
-
-
-   return  { queryKey, queryFn, enabled: computed(() => toValue(accountId) !== null && toValue(accountId) !== undefined), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listPipelines>>, TError, TData>
+  )
 }
 
-export type ListPipelinesQueryResult = NonNullable<Awaited<ReturnType<typeof listPipelines>>>
-export type ListPipelinesQueryError = ListPipelines401 | ListPipelines403 | ListPipelines404 | ListPipelines422
+export const getListPipelinesQueryKey = (
+  accountId: MaybeRefOrGetter<string>,
+  params?: MaybeRefOrGetter<ListPipelinesParams>
+) => {
+  return [
+    'v1',
+    'accounts',
+    accountId,
+    'pipelines',
+    ...(params ? [params] : [])
+  ] as const
+}
 
+export const getListPipelinesQueryOptions = <
+  TData = Awaited<ReturnType<typeof listPipelines>>,
+  TError =
+    | ListPipelines401
+    | ListPipelines403
+    | ListPipelines404
+    | ListPipelines422
+>(
+  accountId: MaybeRefOrGetter<string>,
+  params?: MaybeRefOrGetter<ListPipelinesParams>,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof listPipelines>>, TError, TData>
+    >
+    request?: SecondParameter<typeof customFetch>
+  }
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {}
+
+  const queryKey = getListPipelinesQueryKey(accountId, params)
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof listPipelines>>> = ({
+    signal
+  }) =>
+    listPipelines(toValue(accountId), toValue(params), {
+      signal,
+      ...requestOptions
+    })
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: computed(
+      () => toValue(accountId) !== null && toValue(accountId) !== undefined
+    ),
+    ...queryOptions
+  } as UseQueryOptions<Awaited<ReturnType<typeof listPipelines>>, TError, TData>
+}
+
+export type ListPipelinesQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listPipelines>>
+>
+export type ListPipelinesQueryError =
+  | ListPipelines401
+  | ListPipelines403
+  | ListPipelines404
+  | ListPipelines422
 
 /**
  * @summary List Pipelines Route
  */
 
-export function useListPipelines<TData = Awaited<ReturnType<typeof listPipelines>>, TError = ListPipelines401 | ListPipelines403 | ListPipelines404 | ListPipelines422>(
- accountId: MaybeRefOrGetter<string>,
-    params?: MaybeRefOrGetter<ListPipelinesParams>, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listPipelines>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
- , queryClient?: QueryClient
- ): UseQueryReturnType<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+export function useListPipelines<
+  TData = Awaited<ReturnType<typeof listPipelines>>,
+  TError =
+    | ListPipelines401
+    | ListPipelines403
+    | ListPipelines404
+    | ListPipelines422
+>(
+  accountId: MaybeRefOrGetter<string>,
+  params?: MaybeRefOrGetter<ListPipelinesParams>,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof listPipelines>>, TError, TData>
+    >
+    request?: SecondParameter<typeof customFetch>
+  },
+  queryClient?: QueryClient
+): UseQueryReturnType<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>
+} {
+  const queryOptions = getListPipelinesQueryOptions(accountId, params, options)
 
-  const queryOptions = getListPipelinesQueryOptions(accountId,params,options)
+  const query = useQuery(queryOptions, queryClient) as UseQueryReturnType<
+    TData,
+    TError
+  > & { queryKey: DataTag<QueryKey, TData, TError> }
 
-  const query = useQuery(queryOptions, queryClient) as UseQueryReturnType<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+  query.queryKey = unref(queryOptions).queryKey as DataTag<
+    QueryKey,
+    TData,
+    TError
+  >
 
-  query.queryKey = unref(queryOptions).queryKey as DataTag<QueryKey, TData, TError>;
-
-  return query;
+  return query
 }
-
-
-
-
-
-
 
 export type createPipelineResponse201 = {
   data: Pipeline
@@ -4004,86 +5395,131 @@ export type createPipelineResponse422 = {
   status: 422
 }
 
-export type createPipelineResponseSuccess = (createPipelineResponse201) & {
-  headers: Headers;
-};
-export type createPipelineResponseError = (createPipelineResponse400 | createPipelineResponse401 | createPipelineResponse403 | createPipelineResponse404 | createPipelineResponse409 | createPipelineResponse422) & {
-  headers: Headers;
-};
+export type createPipelineResponseSuccess = createPipelineResponse201 & {
+  headers: Headers
+}
+export type createPipelineResponseError = (
+  | createPipelineResponse400
+  | createPipelineResponse401
+  | createPipelineResponse403
+  | createPipelineResponse404
+  | createPipelineResponse409
+  | createPipelineResponse422
+) & {
+  headers: Headers
+}
 
-export type createPipelineResponse = (createPipelineResponseSuccess | createPipelineResponseError)
+export type createPipelineResponse =
+  | createPipelineResponseSuccess
+  | createPipelineResponseError
 
-export const getCreatePipelineUrl = (accountId: string,) => {
-
-
-
-
+export const getCreatePipelineUrl = (accountId: string) => {
   return `/v1/accounts/${accountId}/pipelines`
 }
 
 /**
  * @summary Create Pipeline Route
  */
-export const createPipeline = async (accountId: string,
-    pipelineCreate: PipelineCreate, options?: RequestInit): Promise<createPipelineResponse> => {
-
-  return customFetch<createPipelineResponse>(getCreatePipelineUrl(accountId),
-  {
+export const createPipeline = async (
+  accountId: string,
+  pipelineCreate: PipelineCreate,
+  options?: RequestInit
+): Promise<createPipelineResponse> => {
+  return customFetch<createPipelineResponse>(getCreatePipelineUrl(accountId), {
     ...options,
     method: 'POST',
     headers: { 'Content-Type': 'application/json', ...options?.headers },
     body: JSON.stringify(pipelineCreate)
+  })
+}
+
+export const getCreatePipelineMutationOptions = <
+  TError =
+    | CreatePipeline400
+    | CreatePipeline401
+    | CreatePipeline403
+    | CreatePipeline404
+    | CreatePipeline409
+    | CreatePipeline422,
+  TContext = unknown
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createPipeline>>,
+    TError,
+    { accountId: string; data: PipelineCreate },
+    TContext
+  >
+  request?: SecondParameter<typeof customFetch>
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof createPipeline>>,
+  TError,
+  { accountId: string; data: PipelineCreate },
+  TContext
+> => {
+  const mutationKey = ['createPipeline']
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      'mutationKey' in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined }
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof createPipeline>>,
+    { accountId: string; data: PipelineCreate }
+  > = props => {
+    const { accountId, data } = props ?? {}
+
+    return createPipeline(accountId, data, requestOptions)
   }
-);}
 
+  return { mutationFn, ...mutationOptions }
+}
 
+export type CreatePipelineMutationResult = NonNullable<
+  Awaited<ReturnType<typeof createPipeline>>
+>
+export type CreatePipelineMutationBody = PipelineCreate
+export type CreatePipelineMutationError =
+  | CreatePipeline400
+  | CreatePipeline401
+  | CreatePipeline403
+  | CreatePipeline404
+  | CreatePipeline409
+  | CreatePipeline422
 
-
-
-export const getCreatePipelineMutationOptions = <TError = CreatePipeline400 | CreatePipeline401 | CreatePipeline403 | CreatePipeline404 | CreatePipeline409 | CreatePipeline422,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createPipeline>>, TError,{accountId: string;data: PipelineCreate}, TContext>, request?: SecondParameter<typeof customFetch>}
-): UseMutationOptions<Awaited<ReturnType<typeof createPipeline>>, TError,{accountId: string;data: PipelineCreate}, TContext> => {
-
-const mutationKey = ['createPipeline'];
-const {mutation: mutationOptions, request: requestOptions} = options ?
-      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
-      options
-      : {...options, mutation: {...options.mutation, mutationKey}}
-      : {mutation: { mutationKey, }, request: undefined};
-
-
-
-
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createPipeline>>, {accountId: string;data: PipelineCreate}> = (props) => {
-          const {accountId,data} = props ?? {};
-
-          return  createPipeline(accountId,data,requestOptions)
-        }
-
-
-
-
-
-
-  return  { mutationFn, ...mutationOptions }}
-
-    export type CreatePipelineMutationResult = NonNullable<Awaited<ReturnType<typeof createPipeline>>>
-    export type CreatePipelineMutationBody = PipelineCreate
-    export type CreatePipelineMutationError = CreatePipeline400 | CreatePipeline401 | CreatePipeline403 | CreatePipeline404 | CreatePipeline409 | CreatePipeline422
-
-    /**
+/**
  * @summary Create Pipeline Route
  */
-export const useCreatePipeline = <TError = CreatePipeline400 | CreatePipeline401 | CreatePipeline403 | CreatePipeline404 | CreatePipeline409 | CreatePipeline422,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createPipeline>>, TError,{accountId: string;data: PipelineCreate}, TContext>, request?: SecondParameter<typeof customFetch>}
- , queryClient?: QueryClient): UseMutationReturnType<
-        Awaited<ReturnType<typeof createPipeline>>,
-        TError,
-        {accountId: string;data: PipelineCreate},
-        TContext
-      > => {
-      return useMutation(getCreatePipelineMutationOptions(options), queryClient);
-    }
+export const useCreatePipeline = <
+  TError =
+    | CreatePipeline400
+    | CreatePipeline401
+    | CreatePipeline403
+    | CreatePipeline404
+    | CreatePipeline409
+    | CreatePipeline422,
+  TContext = unknown
+>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof createPipeline>>,
+      TError,
+      { accountId: string; data: PipelineCreate },
+      TContext
+    >
+    request?: SecondParameter<typeof customFetch>
+  },
+  queryClient?: QueryClient
+): UseMutationReturnType<
+  Awaited<ReturnType<typeof createPipeline>>,
+  TError,
+  { accountId: string; data: PipelineCreate },
+  TContext
+> => {
+  return useMutation(getCreatePipelineMutationOptions(options), queryClient)
+}
 
 export type getPipelineResponse200 = {
   data: Pipeline
@@ -4110,98 +5546,137 @@ export type getPipelineResponse422 = {
   status: 422
 }
 
-export type getPipelineResponseSuccess = (getPipelineResponse200) & {
-  headers: Headers;
-};
-export type getPipelineResponseError = (getPipelineResponse401 | getPipelineResponse403 | getPipelineResponse404 | getPipelineResponse422) & {
-  headers: Headers;
-};
+export type getPipelineResponseSuccess = getPipelineResponse200 & {
+  headers: Headers
+}
+export type getPipelineResponseError = (
+  | getPipelineResponse401
+  | getPipelineResponse403
+  | getPipelineResponse404
+  | getPipelineResponse422
+) & {
+  headers: Headers
+}
 
-export type getPipelineResponse = (getPipelineResponseSuccess | getPipelineResponseError)
+export type getPipelineResponse =
+  | getPipelineResponseSuccess
+  | getPipelineResponseError
 
-export const getGetPipelineUrl = (accountId: string,
-    pipelineId: string,) => {
-
-
-
-
+export const getGetPipelineUrl = (accountId: string, pipelineId: string) => {
   return `/v1/accounts/${accountId}/pipelines/${pipelineId}`
 }
 
 /**
  * @summary Get Pipeline Route
  */
-export const getPipeline = async (accountId: string,
-    pipelineId: string, options?: RequestInit): Promise<getPipelineResponse> => {
-
-  return customFetch<getPipelineResponse>(getGetPipelineUrl(accountId,pipelineId),
-  {
-    ...options,
-    method: 'GET'
-
-
-  }
-);}
-
-
-
-
-
-export const getGetPipelineQueryKey = (accountId: MaybeRefOrGetter<string>,
-    pipelineId: MaybeRefOrGetter<string>,) => {
-    return [
-    'v1','accounts',accountId,'pipelines',pipelineId
-    ] as const;
+export const getPipeline = async (
+  accountId: string,
+  pipelineId: string,
+  options?: RequestInit
+): Promise<getPipelineResponse> => {
+  return customFetch<getPipelineResponse>(
+    getGetPipelineUrl(accountId, pipelineId),
+    {
+      ...options,
+      method: 'GET'
     }
-
-
-export const getGetPipelineQueryOptions = <TData = Awaited<ReturnType<typeof getPipeline>>, TError = GetPipeline401 | GetPipeline403 | GetPipeline404 | GetPipeline422>(accountId: MaybeRefOrGetter<string>,
-    pipelineId: MaybeRefOrGetter<string>, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getPipeline>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
-) => {
-
-const {query: queryOptions, request: requestOptions} = options ?? {};
-
-  const queryKey =  getGetPipelineQueryKey(accountId,pipelineId);
-
-
-
-    const queryFn: QueryFunction<Awaited<ReturnType<typeof getPipeline>>> = ({ signal }) => getPipeline(toValue(accountId),toValue(pipelineId), { signal, ...requestOptions });
-
-
-
-
-
-   return  { queryKey, queryFn, enabled: computed(() => toValue(accountId) !== null && toValue(accountId) !== undefined && toValue(pipelineId) !== null && toValue(pipelineId) !== undefined), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getPipeline>>, TError, TData>
+  )
 }
 
-export type GetPipelineQueryResult = NonNullable<Awaited<ReturnType<typeof getPipeline>>>
-export type GetPipelineQueryError = GetPipeline401 | GetPipeline403 | GetPipeline404 | GetPipeline422
+export const getGetPipelineQueryKey = (
+  accountId: MaybeRefOrGetter<string>,
+  pipelineId: MaybeRefOrGetter<string>
+) => {
+  return ['v1', 'accounts', accountId, 'pipelines', pipelineId] as const
+}
 
+export const getGetPipelineQueryOptions = <
+  TData = Awaited<ReturnType<typeof getPipeline>>,
+  TError = GetPipeline401 | GetPipeline403 | GetPipeline404 | GetPipeline422
+>(
+  accountId: MaybeRefOrGetter<string>,
+  pipelineId: MaybeRefOrGetter<string>,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof getPipeline>>, TError, TData>
+    >
+    request?: SecondParameter<typeof customFetch>
+  }
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {}
+
+  const queryKey = getGetPipelineQueryKey(accountId, pipelineId)
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof getPipeline>>> = ({
+    signal
+  }) =>
+    getPipeline(toValue(accountId), toValue(pipelineId), {
+      signal,
+      ...requestOptions
+    })
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: computed(
+      () =>
+        toValue(accountId) !== null &&
+        toValue(accountId) !== undefined &&
+        toValue(pipelineId) !== null &&
+        toValue(pipelineId) !== undefined
+    ),
+    ...queryOptions
+  } as UseQueryOptions<Awaited<ReturnType<typeof getPipeline>>, TError, TData>
+}
+
+export type GetPipelineQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getPipeline>>
+>
+export type GetPipelineQueryError =
+  | GetPipeline401
+  | GetPipeline403
+  | GetPipeline404
+  | GetPipeline422
 
 /**
  * @summary Get Pipeline Route
  */
 
-export function useGetPipeline<TData = Awaited<ReturnType<typeof getPipeline>>, TError = GetPipeline401 | GetPipeline403 | GetPipeline404 | GetPipeline422>(
- accountId: MaybeRefOrGetter<string>,
-    pipelineId: MaybeRefOrGetter<string>, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getPipeline>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
- , queryClient?: QueryClient
- ): UseQueryReturnType<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+export function useGetPipeline<
+  TData = Awaited<ReturnType<typeof getPipeline>>,
+  TError = GetPipeline401 | GetPipeline403 | GetPipeline404 | GetPipeline422
+>(
+  accountId: MaybeRefOrGetter<string>,
+  pipelineId: MaybeRefOrGetter<string>,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof getPipeline>>, TError, TData>
+    >
+    request?: SecondParameter<typeof customFetch>
+  },
+  queryClient?: QueryClient
+): UseQueryReturnType<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>
+} {
+  const queryOptions = getGetPipelineQueryOptions(
+    accountId,
+    pipelineId,
+    options
+  )
 
-  const queryOptions = getGetPipelineQueryOptions(accountId,pipelineId,options)
+  const query = useQuery(queryOptions, queryClient) as UseQueryReturnType<
+    TData,
+    TError
+  > & { queryKey: DataTag<QueryKey, TData, TError> }
 
-  const query = useQuery(queryOptions, queryClient) as UseQueryReturnType<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+  query.queryKey = unref(queryOptions).queryKey as DataTag<
+    QueryKey,
+    TData,
+    TError
+  >
 
-  query.queryKey = unref(queryOptions).queryKey as DataTag<QueryKey, TData, TError>;
-
-  return query;
+  return query
 }
-
-
-
-
-
-
 
 export type updatePipelineResponse200 = {
   data: Pipeline
@@ -4228,88 +5703,127 @@ export type updatePipelineResponse422 = {
   status: 422
 }
 
-export type updatePipelineResponseSuccess = (updatePipelineResponse200) & {
-  headers: Headers;
-};
-export type updatePipelineResponseError = (updatePipelineResponse401 | updatePipelineResponse403 | updatePipelineResponse404 | updatePipelineResponse422) & {
-  headers: Headers;
-};
+export type updatePipelineResponseSuccess = updatePipelineResponse200 & {
+  headers: Headers
+}
+export type updatePipelineResponseError = (
+  | updatePipelineResponse401
+  | updatePipelineResponse403
+  | updatePipelineResponse404
+  | updatePipelineResponse422
+) & {
+  headers: Headers
+}
 
-export type updatePipelineResponse = (updatePipelineResponseSuccess | updatePipelineResponseError)
+export type updatePipelineResponse =
+  | updatePipelineResponseSuccess
+  | updatePipelineResponseError
 
-export const getUpdatePipelineUrl = (accountId: string,
-    pipelineId: string,) => {
-
-
-
-
+export const getUpdatePipelineUrl = (accountId: string, pipelineId: string) => {
   return `/v1/accounts/${accountId}/pipelines/${pipelineId}`
 }
 
 /**
  * @summary Update Pipeline Route
  */
-export const updatePipeline = async (accountId: string,
-    pipelineId: string,
-    pipelineUpdate: PipelineUpdate, options?: RequestInit): Promise<updatePipelineResponse> => {
+export const updatePipeline = async (
+  accountId: string,
+  pipelineId: string,
+  pipelineUpdate: PipelineUpdate,
+  options?: RequestInit
+): Promise<updatePipelineResponse> => {
+  return customFetch<updatePipelineResponse>(
+    getUpdatePipelineUrl(accountId, pipelineId),
+    {
+      ...options,
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json', ...options?.headers },
+      body: JSON.stringify(pipelineUpdate)
+    }
+  )
+}
 
-  return customFetch<updatePipelineResponse>(getUpdatePipelineUrl(accountId,pipelineId),
-  {
-    ...options,
-    method: 'PATCH',
-    headers: { 'Content-Type': 'application/json', ...options?.headers },
-    body: JSON.stringify(pipelineUpdate)
+export const getUpdatePipelineMutationOptions = <
+  TError =
+    | UpdatePipeline401
+    | UpdatePipeline403
+    | UpdatePipeline404
+    | UpdatePipeline422,
+  TContext = unknown
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updatePipeline>>,
+    TError,
+    { accountId: string; pipelineId: string; data: PipelineUpdate },
+    TContext
+  >
+  request?: SecondParameter<typeof customFetch>
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof updatePipeline>>,
+  TError,
+  { accountId: string; pipelineId: string; data: PipelineUpdate },
+  TContext
+> => {
+  const mutationKey = ['updatePipeline']
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      'mutationKey' in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined }
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof updatePipeline>>,
+    { accountId: string; pipelineId: string; data: PipelineUpdate }
+  > = props => {
+    const { accountId, pipelineId, data } = props ?? {}
+
+    return updatePipeline(accountId, pipelineId, data, requestOptions)
   }
-);}
 
+  return { mutationFn, ...mutationOptions }
+}
 
+export type UpdatePipelineMutationResult = NonNullable<
+  Awaited<ReturnType<typeof updatePipeline>>
+>
+export type UpdatePipelineMutationBody = PipelineUpdate
+export type UpdatePipelineMutationError =
+  | UpdatePipeline401
+  | UpdatePipeline403
+  | UpdatePipeline404
+  | UpdatePipeline422
 
-
-
-export const getUpdatePipelineMutationOptions = <TError = UpdatePipeline401 | UpdatePipeline403 | UpdatePipeline404 | UpdatePipeline422,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updatePipeline>>, TError,{accountId: string;pipelineId: string;data: PipelineUpdate}, TContext>, request?: SecondParameter<typeof customFetch>}
-): UseMutationOptions<Awaited<ReturnType<typeof updatePipeline>>, TError,{accountId: string;pipelineId: string;data: PipelineUpdate}, TContext> => {
-
-const mutationKey = ['updatePipeline'];
-const {mutation: mutationOptions, request: requestOptions} = options ?
-      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
-      options
-      : {...options, mutation: {...options.mutation, mutationKey}}
-      : {mutation: { mutationKey, }, request: undefined};
-
-
-
-
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updatePipeline>>, {accountId: string;pipelineId: string;data: PipelineUpdate}> = (props) => {
-          const {accountId,pipelineId,data} = props ?? {};
-
-          return  updatePipeline(accountId,pipelineId,data,requestOptions)
-        }
-
-
-
-
-
-
-  return  { mutationFn, ...mutationOptions }}
-
-    export type UpdatePipelineMutationResult = NonNullable<Awaited<ReturnType<typeof updatePipeline>>>
-    export type UpdatePipelineMutationBody = PipelineUpdate
-    export type UpdatePipelineMutationError = UpdatePipeline401 | UpdatePipeline403 | UpdatePipeline404 | UpdatePipeline422
-
-    /**
+/**
  * @summary Update Pipeline Route
  */
-export const useUpdatePipeline = <TError = UpdatePipeline401 | UpdatePipeline403 | UpdatePipeline404 | UpdatePipeline422,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updatePipeline>>, TError,{accountId: string;pipelineId: string;data: PipelineUpdate}, TContext>, request?: SecondParameter<typeof customFetch>}
- , queryClient?: QueryClient): UseMutationReturnType<
-        Awaited<ReturnType<typeof updatePipeline>>,
-        TError,
-        {accountId: string;pipelineId: string;data: PipelineUpdate},
-        TContext
-      > => {
-      return useMutation(getUpdatePipelineMutationOptions(options), queryClient);
-    }
+export const useUpdatePipeline = <
+  TError =
+    | UpdatePipeline401
+    | UpdatePipeline403
+    | UpdatePipeline404
+    | UpdatePipeline422,
+  TContext = unknown
+>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof updatePipeline>>,
+      TError,
+      { accountId: string; pipelineId: string; data: PipelineUpdate },
+      TContext
+    >
+    request?: SecondParameter<typeof customFetch>
+  },
+  queryClient?: QueryClient
+): UseMutationReturnType<
+  Awaited<ReturnType<typeof updatePipeline>>,
+  TError,
+  { accountId: string; pipelineId: string; data: PipelineUpdate },
+  TContext
+> => {
+  return useMutation(getUpdatePipelineMutationOptions(options), queryClient)
+}
 
 export type deletePipelineResponse204 = {
   data: void
@@ -4336,87 +5850,124 @@ export type deletePipelineResponse422 = {
   status: 422
 }
 
-export type deletePipelineResponseSuccess = (deletePipelineResponse204) & {
-  headers: Headers;
-};
-export type deletePipelineResponseError = (deletePipelineResponse401 | deletePipelineResponse403 | deletePipelineResponse404 | deletePipelineResponse422) & {
-  headers: Headers;
-};
+export type deletePipelineResponseSuccess = deletePipelineResponse204 & {
+  headers: Headers
+}
+export type deletePipelineResponseError = (
+  | deletePipelineResponse401
+  | deletePipelineResponse403
+  | deletePipelineResponse404
+  | deletePipelineResponse422
+) & {
+  headers: Headers
+}
 
-export type deletePipelineResponse = (deletePipelineResponseSuccess | deletePipelineResponseError)
+export type deletePipelineResponse =
+  | deletePipelineResponseSuccess
+  | deletePipelineResponseError
 
-export const getDeletePipelineUrl = (accountId: string,
-    pipelineId: string,) => {
-
-
-
-
+export const getDeletePipelineUrl = (accountId: string, pipelineId: string) => {
   return `/v1/accounts/${accountId}/pipelines/${pipelineId}`
 }
 
 /**
  * @summary Delete Pipeline Route
  */
-export const deletePipeline = async (accountId: string,
-    pipelineId: string, options?: RequestInit): Promise<deletePipelineResponse> => {
+export const deletePipeline = async (
+  accountId: string,
+  pipelineId: string,
+  options?: RequestInit
+): Promise<deletePipelineResponse> => {
+  return customFetch<deletePipelineResponse>(
+    getDeletePipelineUrl(accountId, pipelineId),
+    {
+      ...options,
+      method: 'DELETE'
+    }
+  )
+}
 
-  return customFetch<deletePipelineResponse>(getDeletePipelineUrl(accountId,pipelineId),
-  {
-    ...options,
-    method: 'DELETE'
+export const getDeletePipelineMutationOptions = <
+  TError =
+    | DeletePipeline401
+    | DeletePipeline403
+    | DeletePipeline404
+    | DeletePipeline422,
+  TContext = unknown
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof deletePipeline>>,
+    TError,
+    { accountId: string; pipelineId: string },
+    TContext
+  >
+  request?: SecondParameter<typeof customFetch>
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof deletePipeline>>,
+  TError,
+  { accountId: string; pipelineId: string },
+  TContext
+> => {
+  const mutationKey = ['deletePipeline']
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      'mutationKey' in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined }
 
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof deletePipeline>>,
+    { accountId: string; pipelineId: string }
+  > = props => {
+    const { accountId, pipelineId } = props ?? {}
 
+    return deletePipeline(accountId, pipelineId, requestOptions)
   }
-);}
 
+  return { mutationFn, ...mutationOptions }
+}
 
+export type DeletePipelineMutationResult = NonNullable<
+  Awaited<ReturnType<typeof deletePipeline>>
+>
 
+export type DeletePipelineMutationError =
+  | DeletePipeline401
+  | DeletePipeline403
+  | DeletePipeline404
+  | DeletePipeline422
 
-
-export const getDeletePipelineMutationOptions = <TError = DeletePipeline401 | DeletePipeline403 | DeletePipeline404 | DeletePipeline422,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deletePipeline>>, TError,{accountId: string;pipelineId: string}, TContext>, request?: SecondParameter<typeof customFetch>}
-): UseMutationOptions<Awaited<ReturnType<typeof deletePipeline>>, TError,{accountId: string;pipelineId: string}, TContext> => {
-
-const mutationKey = ['deletePipeline'];
-const {mutation: mutationOptions, request: requestOptions} = options ?
-      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
-      options
-      : {...options, mutation: {...options.mutation, mutationKey}}
-      : {mutation: { mutationKey, }, request: undefined};
-
-
-
-
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof deletePipeline>>, {accountId: string;pipelineId: string}> = (props) => {
-          const {accountId,pipelineId} = props ?? {};
-
-          return  deletePipeline(accountId,pipelineId,requestOptions)
-        }
-
-
-
-
-
-
-  return  { mutationFn, ...mutationOptions }}
-
-    export type DeletePipelineMutationResult = NonNullable<Awaited<ReturnType<typeof deletePipeline>>>
-
-    export type DeletePipelineMutationError = DeletePipeline401 | DeletePipeline403 | DeletePipeline404 | DeletePipeline422
-
-    /**
+/**
  * @summary Delete Pipeline Route
  */
-export const useDeletePipeline = <TError = DeletePipeline401 | DeletePipeline403 | DeletePipeline404 | DeletePipeline422,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deletePipeline>>, TError,{accountId: string;pipelineId: string}, TContext>, request?: SecondParameter<typeof customFetch>}
- , queryClient?: QueryClient): UseMutationReturnType<
-        Awaited<ReturnType<typeof deletePipeline>>,
-        TError,
-        {accountId: string;pipelineId: string},
-        TContext
-      > => {
-      return useMutation(getDeletePipelineMutationOptions(options), queryClient);
-    }
+export const useDeletePipeline = <
+  TError =
+    | DeletePipeline401
+    | DeletePipeline403
+    | DeletePipeline404
+    | DeletePipeline422,
+  TContext = unknown
+>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof deletePipeline>>,
+      TError,
+      { accountId: string; pipelineId: string },
+      TContext
+    >
+    request?: SecondParameter<typeof customFetch>
+  },
+  queryClient?: QueryClient
+): UseMutationReturnType<
+  Awaited<ReturnType<typeof deletePipeline>>,
+  TError,
+  { accountId: string; pipelineId: string },
+  TContext
+> => {
+  return useMutation(getDeletePipelineMutationOptions(options), queryClient)
+}
 
 export type listPipelineFunctionsResponse200 = {
   data: PipelineFunctionList
@@ -4443,98 +5994,168 @@ export type listPipelineFunctionsResponse422 = {
   status: 422
 }
 
-export type listPipelineFunctionsResponseSuccess = (listPipelineFunctionsResponse200) & {
-  headers: Headers;
-};
-export type listPipelineFunctionsResponseError = (listPipelineFunctionsResponse401 | listPipelineFunctionsResponse403 | listPipelineFunctionsResponse404 | listPipelineFunctionsResponse422) & {
-  headers: Headers;
-};
+export type listPipelineFunctionsResponseSuccess =
+  listPipelineFunctionsResponse200 & {
+    headers: Headers
+  }
+export type listPipelineFunctionsResponseError = (
+  | listPipelineFunctionsResponse401
+  | listPipelineFunctionsResponse403
+  | listPipelineFunctionsResponse404
+  | listPipelineFunctionsResponse422
+) & {
+  headers: Headers
+}
 
-export type listPipelineFunctionsResponse = (listPipelineFunctionsResponseSuccess | listPipelineFunctionsResponseError)
+export type listPipelineFunctionsResponse =
+  | listPipelineFunctionsResponseSuccess
+  | listPipelineFunctionsResponseError
 
-export const getListPipelineFunctionsUrl = (accountId: string,
-    pipelineId: string,) => {
-
-
-
-
+export const getListPipelineFunctionsUrl = (
+  accountId: string,
+  pipelineId: string
+) => {
   return `/v1/accounts/${accountId}/pipelines/${pipelineId}/functions`
 }
 
 /**
  * @summary List Pipeline Functions Route
  */
-export const listPipelineFunctions = async (accountId: string,
-    pipelineId: string, options?: RequestInit): Promise<listPipelineFunctionsResponse> => {
-
-  return customFetch<listPipelineFunctionsResponse>(getListPipelineFunctionsUrl(accountId,pipelineId),
-  {
-    ...options,
-    method: 'GET'
-
-
-  }
-);}
-
-
-
-
-
-export const getListPipelineFunctionsQueryKey = (accountId: MaybeRefOrGetter<string>,
-    pipelineId: MaybeRefOrGetter<string>,) => {
-    return [
-    'v1','accounts',accountId,'pipelines',pipelineId,'functions'
-    ] as const;
+export const listPipelineFunctions = async (
+  accountId: string,
+  pipelineId: string,
+  options?: RequestInit
+): Promise<listPipelineFunctionsResponse> => {
+  return customFetch<listPipelineFunctionsResponse>(
+    getListPipelineFunctionsUrl(accountId, pipelineId),
+    {
+      ...options,
+      method: 'GET'
     }
-
-
-export const getListPipelineFunctionsQueryOptions = <TData = Awaited<ReturnType<typeof listPipelineFunctions>>, TError = ListPipelineFunctions401 | ListPipelineFunctions403 | ListPipelineFunctions404 | ListPipelineFunctions422>(accountId: MaybeRefOrGetter<string>,
-    pipelineId: MaybeRefOrGetter<string>, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listPipelineFunctions>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
-) => {
-
-const {query: queryOptions, request: requestOptions} = options ?? {};
-
-  const queryKey =  getListPipelineFunctionsQueryKey(accountId,pipelineId);
-
-
-
-    const queryFn: QueryFunction<Awaited<ReturnType<typeof listPipelineFunctions>>> = ({ signal }) => listPipelineFunctions(toValue(accountId),toValue(pipelineId), { signal, ...requestOptions });
-
-
-
-
-
-   return  { queryKey, queryFn, enabled: computed(() => toValue(accountId) !== null && toValue(accountId) !== undefined && toValue(pipelineId) !== null && toValue(pipelineId) !== undefined), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listPipelineFunctions>>, TError, TData>
+  )
 }
 
-export type ListPipelineFunctionsQueryResult = NonNullable<Awaited<ReturnType<typeof listPipelineFunctions>>>
-export type ListPipelineFunctionsQueryError = ListPipelineFunctions401 | ListPipelineFunctions403 | ListPipelineFunctions404 | ListPipelineFunctions422
+export const getListPipelineFunctionsQueryKey = (
+  accountId: MaybeRefOrGetter<string>,
+  pipelineId: MaybeRefOrGetter<string>
+) => {
+  return [
+    'v1',
+    'accounts',
+    accountId,
+    'pipelines',
+    pipelineId,
+    'functions'
+  ] as const
+}
 
+export const getListPipelineFunctionsQueryOptions = <
+  TData = Awaited<ReturnType<typeof listPipelineFunctions>>,
+  TError =
+    | ListPipelineFunctions401
+    | ListPipelineFunctions403
+    | ListPipelineFunctions404
+    | ListPipelineFunctions422
+>(
+  accountId: MaybeRefOrGetter<string>,
+  pipelineId: MaybeRefOrGetter<string>,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof listPipelineFunctions>>,
+        TError,
+        TData
+      >
+    >
+    request?: SecondParameter<typeof customFetch>
+  }
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {}
+
+  const queryKey = getListPipelineFunctionsQueryKey(accountId, pipelineId)
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof listPipelineFunctions>>
+  > = ({ signal }) =>
+    listPipelineFunctions(toValue(accountId), toValue(pipelineId), {
+      signal,
+      ...requestOptions
+    })
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: computed(
+      () =>
+        toValue(accountId) !== null &&
+        toValue(accountId) !== undefined &&
+        toValue(pipelineId) !== null &&
+        toValue(pipelineId) !== undefined
+    ),
+    ...queryOptions
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof listPipelineFunctions>>,
+    TError,
+    TData
+  >
+}
+
+export type ListPipelineFunctionsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listPipelineFunctions>>
+>
+export type ListPipelineFunctionsQueryError =
+  | ListPipelineFunctions401
+  | ListPipelineFunctions403
+  | ListPipelineFunctions404
+  | ListPipelineFunctions422
 
 /**
  * @summary List Pipeline Functions Route
  */
 
-export function useListPipelineFunctions<TData = Awaited<ReturnType<typeof listPipelineFunctions>>, TError = ListPipelineFunctions401 | ListPipelineFunctions403 | ListPipelineFunctions404 | ListPipelineFunctions422>(
- accountId: MaybeRefOrGetter<string>,
-    pipelineId: MaybeRefOrGetter<string>, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listPipelineFunctions>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
- , queryClient?: QueryClient
- ): UseQueryReturnType<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+export function useListPipelineFunctions<
+  TData = Awaited<ReturnType<typeof listPipelineFunctions>>,
+  TError =
+    | ListPipelineFunctions401
+    | ListPipelineFunctions403
+    | ListPipelineFunctions404
+    | ListPipelineFunctions422
+>(
+  accountId: MaybeRefOrGetter<string>,
+  pipelineId: MaybeRefOrGetter<string>,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof listPipelineFunctions>>,
+        TError,
+        TData
+      >
+    >
+    request?: SecondParameter<typeof customFetch>
+  },
+  queryClient?: QueryClient
+): UseQueryReturnType<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>
+} {
+  const queryOptions = getListPipelineFunctionsQueryOptions(
+    accountId,
+    pipelineId,
+    options
+  )
 
-  const queryOptions = getListPipelineFunctionsQueryOptions(accountId,pipelineId,options)
+  const query = useQuery(queryOptions, queryClient) as UseQueryReturnType<
+    TData,
+    TError
+  > & { queryKey: DataTag<QueryKey, TData, TError> }
 
-  const query = useQuery(queryOptions, queryClient) as UseQueryReturnType<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+  query.queryKey = unref(queryOptions).queryKey as DataTag<
+    QueryKey,
+    TData,
+    TError
+  >
 
-  query.queryKey = unref(queryOptions).queryKey as DataTag<QueryKey, TData, TError>;
-
-  return query;
+  return query
 }
-
-
-
-
-
-
 
 export type updatePipelineFunctionResponse200 = {
   data: PipelineFunction
@@ -4571,90 +6192,175 @@ export type updatePipelineFunctionResponse502 = {
   status: 502
 }
 
-export type updatePipelineFunctionResponseSuccess = (updatePipelineFunctionResponse200) & {
-  headers: Headers;
-};
-export type updatePipelineFunctionResponseError = (updatePipelineFunctionResponse400 | updatePipelineFunctionResponse401 | updatePipelineFunctionResponse403 | updatePipelineFunctionResponse404 | updatePipelineFunctionResponse422 | updatePipelineFunctionResponse502) & {
-  headers: Headers;
-};
+export type updatePipelineFunctionResponseSuccess =
+  updatePipelineFunctionResponse200 & {
+    headers: Headers
+  }
+export type updatePipelineFunctionResponseError = (
+  | updatePipelineFunctionResponse400
+  | updatePipelineFunctionResponse401
+  | updatePipelineFunctionResponse403
+  | updatePipelineFunctionResponse404
+  | updatePipelineFunctionResponse422
+  | updatePipelineFunctionResponse502
+) & {
+  headers: Headers
+}
 
-export type updatePipelineFunctionResponse = (updatePipelineFunctionResponseSuccess | updatePipelineFunctionResponseError)
+export type updatePipelineFunctionResponse =
+  | updatePipelineFunctionResponseSuccess
+  | updatePipelineFunctionResponseError
 
-export const getUpdatePipelineFunctionUrl = (accountId: string,
-    pipelineId: string,
-    functionId: string,) => {
-
-
-
-
+export const getUpdatePipelineFunctionUrl = (
+  accountId: string,
+  pipelineId: string,
+  functionId: string
+) => {
   return `/v1/accounts/${accountId}/pipelines/${pipelineId}/functions/${functionId}`
 }
 
 /**
  * @summary Update Pipeline Function Route
  */
-export const updatePipelineFunction = async (accountId: string,
-    pipelineId: string,
-    functionId: string,
-    pipelineFunctionUpdate: PipelineFunctionUpdate, options?: RequestInit): Promise<updatePipelineFunctionResponse> => {
+export const updatePipelineFunction = async (
+  accountId: string,
+  pipelineId: string,
+  functionId: string,
+  pipelineFunctionUpdate: PipelineFunctionUpdate,
+  options?: RequestInit
+): Promise<updatePipelineFunctionResponse> => {
+  return customFetch<updatePipelineFunctionResponse>(
+    getUpdatePipelineFunctionUrl(accountId, pipelineId, functionId),
+    {
+      ...options,
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json', ...options?.headers },
+      body: JSON.stringify(pipelineFunctionUpdate)
+    }
+  )
+}
 
-  return customFetch<updatePipelineFunctionResponse>(getUpdatePipelineFunctionUrl(accountId,pipelineId,functionId),
+export const getUpdatePipelineFunctionMutationOptions = <
+  TError =
+    | UpdatePipelineFunction400
+    | UpdatePipelineFunction401
+    | UpdatePipelineFunction403
+    | UpdatePipelineFunction404
+    | UpdatePipelineFunction422
+    | UpdatePipelineFunction502,
+  TContext = unknown
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updatePipelineFunction>>,
+    TError,
+    {
+      accountId: string
+      pipelineId: string
+      functionId: string
+      data: PipelineFunctionUpdate
+    },
+    TContext
+  >
+  request?: SecondParameter<typeof customFetch>
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof updatePipelineFunction>>,
+  TError,
   {
-    ...options,
-    method: 'PUT',
-    headers: { 'Content-Type': 'application/json', ...options?.headers },
-    body: JSON.stringify(pipelineFunctionUpdate)
+    accountId: string
+    pipelineId: string
+    functionId: string
+    data: PipelineFunctionUpdate
+  },
+  TContext
+> => {
+  const mutationKey = ['updatePipelineFunction']
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      'mutationKey' in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined }
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof updatePipelineFunction>>,
+    {
+      accountId: string
+      pipelineId: string
+      functionId: string
+      data: PipelineFunctionUpdate
+    }
+  > = props => {
+    const { accountId, pipelineId, functionId, data } = props ?? {}
+
+    return updatePipelineFunction(
+      accountId,
+      pipelineId,
+      functionId,
+      data,
+      requestOptions
+    )
   }
-);}
 
+  return { mutationFn, ...mutationOptions }
+}
 
+export type UpdatePipelineFunctionMutationResult = NonNullable<
+  Awaited<ReturnType<typeof updatePipelineFunction>>
+>
+export type UpdatePipelineFunctionMutationBody = PipelineFunctionUpdate
+export type UpdatePipelineFunctionMutationError =
+  | UpdatePipelineFunction400
+  | UpdatePipelineFunction401
+  | UpdatePipelineFunction403
+  | UpdatePipelineFunction404
+  | UpdatePipelineFunction422
+  | UpdatePipelineFunction502
 
-
-
-export const getUpdatePipelineFunctionMutationOptions = <TError = UpdatePipelineFunction400 | UpdatePipelineFunction401 | UpdatePipelineFunction403 | UpdatePipelineFunction404 | UpdatePipelineFunction422 | UpdatePipelineFunction502,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updatePipelineFunction>>, TError,{accountId: string;pipelineId: string;functionId: string;data: PipelineFunctionUpdate}, TContext>, request?: SecondParameter<typeof customFetch>}
-): UseMutationOptions<Awaited<ReturnType<typeof updatePipelineFunction>>, TError,{accountId: string;pipelineId: string;functionId: string;data: PipelineFunctionUpdate}, TContext> => {
-
-const mutationKey = ['updatePipelineFunction'];
-const {mutation: mutationOptions, request: requestOptions} = options ?
-      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
-      options
-      : {...options, mutation: {...options.mutation, mutationKey}}
-      : {mutation: { mutationKey, }, request: undefined};
-
-
-
-
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updatePipelineFunction>>, {accountId: string;pipelineId: string;functionId: string;data: PipelineFunctionUpdate}> = (props) => {
-          const {accountId,pipelineId,functionId,data} = props ?? {};
-
-          return  updatePipelineFunction(accountId,pipelineId,functionId,data,requestOptions)
-        }
-
-
-
-
-
-
-  return  { mutationFn, ...mutationOptions }}
-
-    export type UpdatePipelineFunctionMutationResult = NonNullable<Awaited<ReturnType<typeof updatePipelineFunction>>>
-    export type UpdatePipelineFunctionMutationBody = PipelineFunctionUpdate
-    export type UpdatePipelineFunctionMutationError = UpdatePipelineFunction400 | UpdatePipelineFunction401 | UpdatePipelineFunction403 | UpdatePipelineFunction404 | UpdatePipelineFunction422 | UpdatePipelineFunction502
-
-    /**
+/**
  * @summary Update Pipeline Function Route
  */
-export const useUpdatePipelineFunction = <TError = UpdatePipelineFunction400 | UpdatePipelineFunction401 | UpdatePipelineFunction403 | UpdatePipelineFunction404 | UpdatePipelineFunction422 | UpdatePipelineFunction502,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updatePipelineFunction>>, TError,{accountId: string;pipelineId: string;functionId: string;data: PipelineFunctionUpdate}, TContext>, request?: SecondParameter<typeof customFetch>}
- , queryClient?: QueryClient): UseMutationReturnType<
-        Awaited<ReturnType<typeof updatePipelineFunction>>,
-        TError,
-        {accountId: string;pipelineId: string;functionId: string;data: PipelineFunctionUpdate},
-        TContext
-      > => {
-      return useMutation(getUpdatePipelineFunctionMutationOptions(options), queryClient);
-    }
+export const useUpdatePipelineFunction = <
+  TError =
+    | UpdatePipelineFunction400
+    | UpdatePipelineFunction401
+    | UpdatePipelineFunction403
+    | UpdatePipelineFunction404
+    | UpdatePipelineFunction422
+    | UpdatePipelineFunction502,
+  TContext = unknown
+>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof updatePipelineFunction>>,
+      TError,
+      {
+        accountId: string
+        pipelineId: string
+        functionId: string
+        data: PipelineFunctionUpdate
+      },
+      TContext
+    >
+    request?: SecondParameter<typeof customFetch>
+  },
+  queryClient?: QueryClient
+): UseMutationReturnType<
+  Awaited<ReturnType<typeof updatePipelineFunction>>,
+  TError,
+  {
+    accountId: string
+    pipelineId: string
+    functionId: string
+    data: PipelineFunctionUpdate
+  },
+  TContext
+> => {
+  return useMutation(
+    getUpdatePipelineFunctionMutationOptions(options),
+    queryClient
+  )
+}
 
 export type resetPipelineFunctionResponse200 = {
   data: PipelineFunction
@@ -4686,89 +6392,142 @@ export type resetPipelineFunctionResponse502 = {
   status: 502
 }
 
-export type resetPipelineFunctionResponseSuccess = (resetPipelineFunctionResponse200) & {
-  headers: Headers;
-};
-export type resetPipelineFunctionResponseError = (resetPipelineFunctionResponse401 | resetPipelineFunctionResponse403 | resetPipelineFunctionResponse404 | resetPipelineFunctionResponse422 | resetPipelineFunctionResponse502) & {
-  headers: Headers;
-};
+export type resetPipelineFunctionResponseSuccess =
+  resetPipelineFunctionResponse200 & {
+    headers: Headers
+  }
+export type resetPipelineFunctionResponseError = (
+  | resetPipelineFunctionResponse401
+  | resetPipelineFunctionResponse403
+  | resetPipelineFunctionResponse404
+  | resetPipelineFunctionResponse422
+  | resetPipelineFunctionResponse502
+) & {
+  headers: Headers
+}
 
-export type resetPipelineFunctionResponse = (resetPipelineFunctionResponseSuccess | resetPipelineFunctionResponseError)
+export type resetPipelineFunctionResponse =
+  | resetPipelineFunctionResponseSuccess
+  | resetPipelineFunctionResponseError
 
-export const getResetPipelineFunctionUrl = (accountId: string,
-    pipelineId: string,
-    functionId: string,) => {
-
-
-
-
+export const getResetPipelineFunctionUrl = (
+  accountId: string,
+  pipelineId: string,
+  functionId: string
+) => {
   return `/v1/accounts/${accountId}/pipelines/${pipelineId}/functions/${functionId}/reset`
 }
 
 /**
  * @summary Reset Pipeline Function Route
  */
-export const resetPipelineFunction = async (accountId: string,
-    pipelineId: string,
-    functionId: string, options?: RequestInit): Promise<resetPipelineFunctionResponse> => {
+export const resetPipelineFunction = async (
+  accountId: string,
+  pipelineId: string,
+  functionId: string,
+  options?: RequestInit
+): Promise<resetPipelineFunctionResponse> => {
+  return customFetch<resetPipelineFunctionResponse>(
+    getResetPipelineFunctionUrl(accountId, pipelineId, functionId),
+    {
+      ...options,
+      method: 'POST'
+    }
+  )
+}
 
-  return customFetch<resetPipelineFunctionResponse>(getResetPipelineFunctionUrl(accountId,pipelineId,functionId),
-  {
-    ...options,
-    method: 'POST'
+export const getResetPipelineFunctionMutationOptions = <
+  TError =
+    | ResetPipelineFunction401
+    | ResetPipelineFunction403
+    | ResetPipelineFunction404
+    | ResetPipelineFunction422
+    | ResetPipelineFunction502,
+  TContext = unknown
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof resetPipelineFunction>>,
+    TError,
+    { accountId: string; pipelineId: string; functionId: string },
+    TContext
+  >
+  request?: SecondParameter<typeof customFetch>
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof resetPipelineFunction>>,
+  TError,
+  { accountId: string; pipelineId: string; functionId: string },
+  TContext
+> => {
+  const mutationKey = ['resetPipelineFunction']
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      'mutationKey' in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined }
 
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof resetPipelineFunction>>,
+    { accountId: string; pipelineId: string; functionId: string }
+  > = props => {
+    const { accountId, pipelineId, functionId } = props ?? {}
 
+    return resetPipelineFunction(
+      accountId,
+      pipelineId,
+      functionId,
+      requestOptions
+    )
   }
-);}
 
+  return { mutationFn, ...mutationOptions }
+}
 
+export type ResetPipelineFunctionMutationResult = NonNullable<
+  Awaited<ReturnType<typeof resetPipelineFunction>>
+>
 
+export type ResetPipelineFunctionMutationError =
+  | ResetPipelineFunction401
+  | ResetPipelineFunction403
+  | ResetPipelineFunction404
+  | ResetPipelineFunction422
+  | ResetPipelineFunction502
 
-
-export const getResetPipelineFunctionMutationOptions = <TError = ResetPipelineFunction401 | ResetPipelineFunction403 | ResetPipelineFunction404 | ResetPipelineFunction422 | ResetPipelineFunction502,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof resetPipelineFunction>>, TError,{accountId: string;pipelineId: string;functionId: string}, TContext>, request?: SecondParameter<typeof customFetch>}
-): UseMutationOptions<Awaited<ReturnType<typeof resetPipelineFunction>>, TError,{accountId: string;pipelineId: string;functionId: string}, TContext> => {
-
-const mutationKey = ['resetPipelineFunction'];
-const {mutation: mutationOptions, request: requestOptions} = options ?
-      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
-      options
-      : {...options, mutation: {...options.mutation, mutationKey}}
-      : {mutation: { mutationKey, }, request: undefined};
-
-
-
-
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof resetPipelineFunction>>, {accountId: string;pipelineId: string;functionId: string}> = (props) => {
-          const {accountId,pipelineId,functionId} = props ?? {};
-
-          return  resetPipelineFunction(accountId,pipelineId,functionId,requestOptions)
-        }
-
-
-
-
-
-
-  return  { mutationFn, ...mutationOptions }}
-
-    export type ResetPipelineFunctionMutationResult = NonNullable<Awaited<ReturnType<typeof resetPipelineFunction>>>
-
-    export type ResetPipelineFunctionMutationError = ResetPipelineFunction401 | ResetPipelineFunction403 | ResetPipelineFunction404 | ResetPipelineFunction422 | ResetPipelineFunction502
-
-    /**
+/**
  * @summary Reset Pipeline Function Route
  */
-export const useResetPipelineFunction = <TError = ResetPipelineFunction401 | ResetPipelineFunction403 | ResetPipelineFunction404 | ResetPipelineFunction422 | ResetPipelineFunction502,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof resetPipelineFunction>>, TError,{accountId: string;pipelineId: string;functionId: string}, TContext>, request?: SecondParameter<typeof customFetch>}
- , queryClient?: QueryClient): UseMutationReturnType<
-        Awaited<ReturnType<typeof resetPipelineFunction>>,
-        TError,
-        {accountId: string;pipelineId: string;functionId: string},
-        TContext
-      > => {
-      return useMutation(getResetPipelineFunctionMutationOptions(options), queryClient);
-    }
+export const useResetPipelineFunction = <
+  TError =
+    | ResetPipelineFunction401
+    | ResetPipelineFunction403
+    | ResetPipelineFunction404
+    | ResetPipelineFunction422
+    | ResetPipelineFunction502,
+  TContext = unknown
+>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof resetPipelineFunction>>,
+      TError,
+      { accountId: string; pipelineId: string; functionId: string },
+      TContext
+    >
+    request?: SecondParameter<typeof customFetch>
+  },
+  queryClient?: QueryClient
+): UseMutationReturnType<
+  Awaited<ReturnType<typeof resetPipelineFunction>>,
+  TError,
+  { accountId: string; pipelineId: string; functionId: string },
+  TContext
+> => {
+  return useMutation(
+    getResetPipelineFunctionMutationOptions(options),
+    queryClient
+  )
+}
 
 export type getSourceByStoreResponse200 = {
   data: GetSourceByStore200
@@ -4790,28 +6549,35 @@ export type getSourceByStoreResponse422 = {
   status: 422
 }
 
-export type getSourceByStoreResponseSuccess = (getSourceByStoreResponse200) & {
-  headers: Headers;
-};
-export type getSourceByStoreResponseError = (getSourceByStoreResponse401 | getSourceByStoreResponse404 | getSourceByStoreResponse422) & {
-  headers: Headers;
-};
+export type getSourceByStoreResponseSuccess = getSourceByStoreResponse200 & {
+  headers: Headers
+}
+export type getSourceByStoreResponseError = (
+  | getSourceByStoreResponse401
+  | getSourceByStoreResponse404
+  | getSourceByStoreResponse422
+) & {
+  headers: Headers
+}
 
-export type getSourceByStoreResponse = (getSourceByStoreResponseSuccess | getSourceByStoreResponseError)
+export type getSourceByStoreResponse =
+  | getSourceByStoreResponseSuccess
+  | getSourceByStoreResponseError
 
-export const getGetSourceByStoreUrl = (params: GetSourceByStoreParams,) => {
-  const normalizedParams = new URLSearchParams();
+export const getGetSourceByStoreUrl = (params: GetSourceByStoreParams) => {
+  const normalizedParams = new URLSearchParams()
 
   Object.entries(params || {}).forEach(([key, value]) => {
-
     if (value !== undefined) {
       normalizedParams.append(key, value === null ? 'null' : String(value))
     }
-  });
+  })
 
-  const stringifiedParams = normalizedParams.toString();
+  const stringifiedParams = normalizedParams.toString()
 
-  return stringifiedParams.length > 0 ? `/api/sources/by-store?${stringifiedParams}` : `/api/sources/by-store`
+  return stringifiedParams.length > 0
+    ? `/api/sources/by-store?${stringifiedParams}`
+    : `/api/sources/by-store`
 }
 
 /**
@@ -4822,73 +6588,97 @@ export const getGetSourceByStoreUrl = (params: GetSourceByStoreParams,) => {
  * correct Jitsu source.
  * @summary Get Source By Store Route
  */
-export const getSourceByStore = async (params: GetSourceByStoreParams, options?: RequestInit): Promise<getSourceByStoreResponse> => {
-
-  return customFetch<getSourceByStoreResponse>(getGetSourceByStoreUrl(params),
-  {
+export const getSourceByStore = async (
+  params: GetSourceByStoreParams,
+  options?: RequestInit
+): Promise<getSourceByStoreResponse> => {
+  return customFetch<getSourceByStoreResponse>(getGetSourceByStoreUrl(params), {
     ...options,
     method: 'GET'
-
-
-  }
-);}
-
-
-
-
-
-export const getGetSourceByStoreQueryKey = (params?: MaybeRefOrGetter<GetSourceByStoreParams>,) => {
-    return [
-    'api','sources','by-store', ...(params ? [params] : [])
-    ] as const;
-    }
-
-
-export const getGetSourceByStoreQueryOptions = <TData = Awaited<ReturnType<typeof getSourceByStore>>, TError = void | HTTPValidationError>(params: MaybeRefOrGetter<GetSourceByStoreParams>, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getSourceByStore>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
-) => {
-
-const {query: queryOptions, request: requestOptions} = options ?? {};
-
-  const queryKey =  getGetSourceByStoreQueryKey(params);
-
-
-
-    const queryFn: QueryFunction<Awaited<ReturnType<typeof getSourceByStore>>> = ({ signal }) => getSourceByStore(toValue(params), { signal, ...requestOptions });
-
-
-
-
-
-   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getSourceByStore>>, TError, TData>
+  })
 }
 
-export type GetSourceByStoreQueryResult = NonNullable<Awaited<ReturnType<typeof getSourceByStore>>>
-export type GetSourceByStoreQueryError = void | HTTPValidationError
+export const getGetSourceByStoreQueryKey = (
+  params?: MaybeRefOrGetter<GetSourceByStoreParams>
+) => {
+  return ['api', 'sources', 'by-store', ...(params ? [params] : [])] as const
+}
 
+export const getGetSourceByStoreQueryOptions = <
+  TData = Awaited<ReturnType<typeof getSourceByStore>>,
+  TError = void | HTTPValidationError
+>(
+  params: MaybeRefOrGetter<GetSourceByStoreParams>,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getSourceByStore>>,
+        TError,
+        TData
+      >
+    >
+    request?: SecondParameter<typeof customFetch>
+  }
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {}
+
+  const queryKey = getGetSourceByStoreQueryKey(params)
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getSourceByStore>>
+  > = ({ signal }) =>
+    getSourceByStore(toValue(params), { signal, ...requestOptions })
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof getSourceByStore>>,
+    TError,
+    TData
+  >
+}
+
+export type GetSourceByStoreQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getSourceByStore>>
+>
+export type GetSourceByStoreQueryError = void | HTTPValidationError
 
 /**
  * @summary Get Source By Store Route
  */
 
-export function useGetSourceByStore<TData = Awaited<ReturnType<typeof getSourceByStore>>, TError = void | HTTPValidationError>(
- params: MaybeRefOrGetter<GetSourceByStoreParams>, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getSourceByStore>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
- , queryClient?: QueryClient
- ): UseQueryReturnType<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+export function useGetSourceByStore<
+  TData = Awaited<ReturnType<typeof getSourceByStore>>,
+  TError = void | HTTPValidationError
+>(
+  params: MaybeRefOrGetter<GetSourceByStoreParams>,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getSourceByStore>>,
+        TError,
+        TData
+      >
+    >
+    request?: SecondParameter<typeof customFetch>
+  },
+  queryClient?: QueryClient
+): UseQueryReturnType<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>
+} {
+  const queryOptions = getGetSourceByStoreQueryOptions(params, options)
 
-  const queryOptions = getGetSourceByStoreQueryOptions(params,options)
+  const query = useQuery(queryOptions, queryClient) as UseQueryReturnType<
+    TData,
+    TError
+  > & { queryKey: DataTag<QueryKey, TData, TError> }
 
-  const query = useQuery(queryOptions, queryClient) as UseQueryReturnType<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+  query.queryKey = unref(queryOptions).queryKey as DataTag<
+    QueryKey,
+    TData,
+    TError
+  >
 
-  query.queryKey = unref(queryOptions).queryKey as DataTag<QueryKey, TData, TError>;
-
-  return query;
+  return query
 }
-
-
-
-
-
-
 
 export type reportZidInstallResponse200 = {
   data: ReportZidInstall200
@@ -4910,20 +6700,22 @@ export type reportZidInstallResponse422 = {
   status: 422
 }
 
-export type reportZidInstallResponseSuccess = (reportZidInstallResponse200) & {
-  headers: Headers;
-};
-export type reportZidInstallResponseError = (reportZidInstallResponse401 | reportZidInstallResponse404 | reportZidInstallResponse422) & {
-  headers: Headers;
-};
+export type reportZidInstallResponseSuccess = reportZidInstallResponse200 & {
+  headers: Headers
+}
+export type reportZidInstallResponseError = (
+  | reportZidInstallResponse401
+  | reportZidInstallResponse404
+  | reportZidInstallResponse422
+) & {
+  headers: Headers
+}
 
-export type reportZidInstallResponse = (reportZidInstallResponseSuccess | reportZidInstallResponseError)
+export type reportZidInstallResponse =
+  | reportZidInstallResponseSuccess
+  | reportZidInstallResponseError
 
 export const getReportZidInstallUrl = () => {
-
-
-
-
   return `/api/zid/install-report`
 }
 
@@ -4937,329 +6729,386 @@ export const getReportZidInstallUrl = () => {
  * correct source.
  * @summary Report Zid Install Route
  */
-export const reportZidInstall = async (_zidInstallReport: _ZidInstallReport, options?: RequestInit): Promise<reportZidInstallResponse> => {
-
-  return customFetch<reportZidInstallResponse>(getReportZidInstallUrl(),
-  {
+export const reportZidInstall = async (
+  _zidInstallReport: _ZidInstallReport,
+  options?: RequestInit
+): Promise<reportZidInstallResponse> => {
+  return customFetch<reportZidInstallResponse>(getReportZidInstallUrl(), {
     ...options,
     method: 'POST',
     headers: { 'Content-Type': 'application/json', ...options?.headers },
     body: JSON.stringify(_zidInstallReport)
+  })
+}
+
+export const getReportZidInstallMutationOptions = <
+  TError = void | HTTPValidationError,
+  TContext = unknown
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof reportZidInstall>>,
+    TError,
+    { data: _ZidInstallReport },
+    TContext
+  >
+  request?: SecondParameter<typeof customFetch>
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof reportZidInstall>>,
+  TError,
+  { data: _ZidInstallReport },
+  TContext
+> => {
+  const mutationKey = ['reportZidInstall']
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      'mutationKey' in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined }
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof reportZidInstall>>,
+    { data: _ZidInstallReport }
+  > = props => {
+    const { data } = props ?? {}
+
+    return reportZidInstall(data, requestOptions)
   }
-);}
 
+  return { mutationFn, ...mutationOptions }
+}
 
+export type ReportZidInstallMutationResult = NonNullable<
+  Awaited<ReturnType<typeof reportZidInstall>>
+>
+export type ReportZidInstallMutationBody = _ZidInstallReport
+export type ReportZidInstallMutationError = void | HTTPValidationError
 
-
-
-export const getReportZidInstallMutationOptions = <TError = void | HTTPValidationError,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof reportZidInstall>>, TError,{data: _ZidInstallReport}, TContext>, request?: SecondParameter<typeof customFetch>}
-): UseMutationOptions<Awaited<ReturnType<typeof reportZidInstall>>, TError,{data: _ZidInstallReport}, TContext> => {
-
-const mutationKey = ['reportZidInstall'];
-const {mutation: mutationOptions, request: requestOptions} = options ?
-      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
-      options
-      : {...options, mutation: {...options.mutation, mutationKey}}
-      : {mutation: { mutationKey, }, request: undefined};
-
-
-
-
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof reportZidInstall>>, {data: _ZidInstallReport}> = (props) => {
-          const {data} = props ?? {};
-
-          return  reportZidInstall(data,requestOptions)
-        }
-
-
-
-
-
-
-  return  { mutationFn, ...mutationOptions }}
-
-    export type ReportZidInstallMutationResult = NonNullable<Awaited<ReturnType<typeof reportZidInstall>>>
-    export type ReportZidInstallMutationBody = _ZidInstallReport
-    export type ReportZidInstallMutationError = void | HTTPValidationError
-
-    /**
+/**
  * @summary Report Zid Install Route
  */
-export const useReportZidInstall = <TError = void | HTTPValidationError,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof reportZidInstall>>, TError,{data: _ZidInstallReport}, TContext>, request?: SecondParameter<typeof customFetch>}
- , queryClient?: QueryClient): UseMutationReturnType<
-        Awaited<ReturnType<typeof reportZidInstall>>,
-        TError,
-        {data: _ZidInstallReport},
-        TContext
-      > => {
-      return useMutation(getReportZidInstallMutationOptions(options), queryClient);
-    }
+export const useReportZidInstall = <
+  TError = void | HTTPValidationError,
+  TContext = unknown
+>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof reportZidInstall>>,
+      TError,
+      { data: _ZidInstallReport },
+      TContext
+    >
+    request?: SecondParameter<typeof customFetch>
+  },
+  queryClient?: QueryClient
+): UseMutationReturnType<
+  Awaited<ReturnType<typeof reportZidInstall>>,
+  TError,
+  { data: _ZidInstallReport },
+  TContext
+> => {
+  return useMutation(getReportZidInstallMutationOptions(options), queryClient)
+}
 
 export type versionVersionGetResponse200 = {
   data: VersionVersionGet200
   status: 200
 }
 
-export type versionVersionGetResponseSuccess = (versionVersionGetResponse200) & {
-  headers: Headers;
-};
-;
+export type versionVersionGetResponseSuccess = versionVersionGetResponse200 & {
+  headers: Headers
+}
 
-export type versionVersionGetResponse = (versionVersionGetResponseSuccess)
+export type versionVersionGetResponse = versionVersionGetResponseSuccess
 
 export const getVersionVersionGetUrl = () => {
-
-
-
-
   return `/version`
 }
 
 /**
  * @summary Build & release info
  */
-export const versionVersionGet = async ( options?: RequestInit): Promise<versionVersionGetResponse> => {
-
-  return customFetch<versionVersionGetResponse>(getVersionVersionGetUrl(),
-  {
+export const versionVersionGet = async (
+  options?: RequestInit
+): Promise<versionVersionGetResponse> => {
+  return customFetch<versionVersionGetResponse>(getVersionVersionGetUrl(), {
     ...options,
     method: 'GET'
-
-
-  }
-);}
-
-
-
-
-
-export const getVersionVersionGetQueryKey = () => {
-    return [
-    'version'
-    ] as const;
-    }
-
-
-export const getVersionVersionGetQueryOptions = <TData = Awaited<ReturnType<typeof versionVersionGet>>, TError = unknown>( options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof versionVersionGet>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
-) => {
-
-const {query: queryOptions, request: requestOptions} = options ?? {};
-
-  const queryKey =  getVersionVersionGetQueryKey();
-
-
-
-    const queryFn: QueryFunction<Awaited<ReturnType<typeof versionVersionGet>>> = ({ signal }) => versionVersionGet({ signal, ...requestOptions });
-
-
-
-
-
-   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof versionVersionGet>>, TError, TData>
+  })
 }
 
-export type VersionVersionGetQueryResult = NonNullable<Awaited<ReturnType<typeof versionVersionGet>>>
-export type VersionVersionGetQueryError = unknown
+export const getVersionVersionGetQueryKey = () => {
+  return ['version'] as const
+}
 
+export const getVersionVersionGetQueryOptions = <
+  TData = Awaited<ReturnType<typeof versionVersionGet>>,
+  TError = unknown
+>(options?: {
+  query?: Partial<
+    UseQueryOptions<
+      Awaited<ReturnType<typeof versionVersionGet>>,
+      TError,
+      TData
+    >
+  >
+  request?: SecondParameter<typeof customFetch>
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {}
+
+  const queryKey = getVersionVersionGetQueryKey()
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof versionVersionGet>>
+  > = ({ signal }) => versionVersionGet({ signal, ...requestOptions })
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof versionVersionGet>>,
+    TError,
+    TData
+  >
+}
+
+export type VersionVersionGetQueryResult = NonNullable<
+  Awaited<ReturnType<typeof versionVersionGet>>
+>
+export type VersionVersionGetQueryError = unknown
 
 /**
  * @summary Build & release info
  */
 
-export function useVersionVersionGet<TData = Awaited<ReturnType<typeof versionVersionGet>>, TError = unknown>(
-  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof versionVersionGet>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
- , queryClient?: QueryClient
- ): UseQueryReturnType<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
-
+export function useVersionVersionGet<
+  TData = Awaited<ReturnType<typeof versionVersionGet>>,
+  TError = unknown
+>(
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof versionVersionGet>>,
+        TError,
+        TData
+      >
+    >
+    request?: SecondParameter<typeof customFetch>
+  },
+  queryClient?: QueryClient
+): UseQueryReturnType<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>
+} {
   const queryOptions = getVersionVersionGetQueryOptions(options)
 
-  const query = useQuery(queryOptions, queryClient) as UseQueryReturnType<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+  const query = useQuery(queryOptions, queryClient) as UseQueryReturnType<
+    TData,
+    TError
+  > & { queryKey: DataTag<QueryKey, TData, TError> }
 
-  query.queryKey = unref(queryOptions).queryKey as DataTag<QueryKey, TData, TError>;
+  query.queryKey = unref(queryOptions).queryKey as DataTag<
+    QueryKey,
+    TData,
+    TError
+  >
 
-  return query;
+  return query
 }
-
-
-
-
-
-
 
 export type healthzHealthzGetResponse200 = {
   data: HealthzHealthzGet200
   status: 200
 }
 
-export type healthzHealthzGetResponseSuccess = (healthzHealthzGetResponse200) & {
-  headers: Headers;
-};
-;
+export type healthzHealthzGetResponseSuccess = healthzHealthzGetResponse200 & {
+  headers: Headers
+}
 
-export type healthzHealthzGetResponse = (healthzHealthzGetResponseSuccess)
+export type healthzHealthzGetResponse = healthzHealthzGetResponseSuccess
 
 export const getHealthzHealthzGetUrl = () => {
-
-
-
-
   return `/healthz`
 }
 
 /**
  * @summary Liveness probe
  */
-export const healthzHealthzGet = async ( options?: RequestInit): Promise<healthzHealthzGetResponse> => {
-
-  return customFetch<healthzHealthzGetResponse>(getHealthzHealthzGetUrl(),
-  {
+export const healthzHealthzGet = async (
+  options?: RequestInit
+): Promise<healthzHealthzGetResponse> => {
+  return customFetch<healthzHealthzGetResponse>(getHealthzHealthzGetUrl(), {
     ...options,
     method: 'GET'
-
-
-  }
-);}
-
-
-
-
-
-export const getHealthzHealthzGetQueryKey = () => {
-    return [
-    'healthz'
-    ] as const;
-    }
-
-
-export const getHealthzHealthzGetQueryOptions = <TData = Awaited<ReturnType<typeof healthzHealthzGet>>, TError = unknown>( options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof healthzHealthzGet>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
-) => {
-
-const {query: queryOptions, request: requestOptions} = options ?? {};
-
-  const queryKey =  getHealthzHealthzGetQueryKey();
-
-
-
-    const queryFn: QueryFunction<Awaited<ReturnType<typeof healthzHealthzGet>>> = ({ signal }) => healthzHealthzGet({ signal, ...requestOptions });
-
-
-
-
-
-   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof healthzHealthzGet>>, TError, TData>
+  })
 }
 
-export type HealthzHealthzGetQueryResult = NonNullable<Awaited<ReturnType<typeof healthzHealthzGet>>>
-export type HealthzHealthzGetQueryError = unknown
+export const getHealthzHealthzGetQueryKey = () => {
+  return ['healthz'] as const
+}
 
+export const getHealthzHealthzGetQueryOptions = <
+  TData = Awaited<ReturnType<typeof healthzHealthzGet>>,
+  TError = unknown
+>(options?: {
+  query?: Partial<
+    UseQueryOptions<
+      Awaited<ReturnType<typeof healthzHealthzGet>>,
+      TError,
+      TData
+    >
+  >
+  request?: SecondParameter<typeof customFetch>
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {}
+
+  const queryKey = getHealthzHealthzGetQueryKey()
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof healthzHealthzGet>>
+  > = ({ signal }) => healthzHealthzGet({ signal, ...requestOptions })
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof healthzHealthzGet>>,
+    TError,
+    TData
+  >
+}
+
+export type HealthzHealthzGetQueryResult = NonNullable<
+  Awaited<ReturnType<typeof healthzHealthzGet>>
+>
+export type HealthzHealthzGetQueryError = unknown
 
 /**
  * @summary Liveness probe
  */
 
-export function useHealthzHealthzGet<TData = Awaited<ReturnType<typeof healthzHealthzGet>>, TError = unknown>(
-  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof healthzHealthzGet>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
- , queryClient?: QueryClient
- ): UseQueryReturnType<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
-
+export function useHealthzHealthzGet<
+  TData = Awaited<ReturnType<typeof healthzHealthzGet>>,
+  TError = unknown
+>(
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof healthzHealthzGet>>,
+        TError,
+        TData
+      >
+    >
+    request?: SecondParameter<typeof customFetch>
+  },
+  queryClient?: QueryClient
+): UseQueryReturnType<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>
+} {
   const queryOptions = getHealthzHealthzGetQueryOptions(options)
 
-  const query = useQuery(queryOptions, queryClient) as UseQueryReturnType<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+  const query = useQuery(queryOptions, queryClient) as UseQueryReturnType<
+    TData,
+    TError
+  > & { queryKey: DataTag<QueryKey, TData, TError> }
 
-  query.queryKey = unref(queryOptions).queryKey as DataTag<QueryKey, TData, TError>;
+  query.queryKey = unref(queryOptions).queryKey as DataTag<
+    QueryKey,
+    TData,
+    TError
+  >
 
-  return query;
+  return query
 }
-
-
-
-
-
-
 
 export type readyzReadyzGetResponse200 = {
   data: ReadyzReadyzGet200
   status: 200
 }
 
-export type readyzReadyzGetResponseSuccess = (readyzReadyzGetResponse200) & {
-  headers: Headers;
-};
-;
+export type readyzReadyzGetResponseSuccess = readyzReadyzGetResponse200 & {
+  headers: Headers
+}
 
-export type readyzReadyzGetResponse = (readyzReadyzGetResponseSuccess)
+export type readyzReadyzGetResponse = readyzReadyzGetResponseSuccess
 
 export const getReadyzReadyzGetUrl = () => {
-
-
-
-
   return `/readyz`
 }
 
 /**
  * @summary Readiness probe
  */
-export const readyzReadyzGet = async ( options?: RequestInit): Promise<readyzReadyzGetResponse> => {
-
-  return customFetch<readyzReadyzGetResponse>(getReadyzReadyzGetUrl(),
-  {
+export const readyzReadyzGet = async (
+  options?: RequestInit
+): Promise<readyzReadyzGetResponse> => {
+  return customFetch<readyzReadyzGetResponse>(getReadyzReadyzGetUrl(), {
     ...options,
     method: 'GET'
-
-
-  }
-);}
-
-
-
-
-
-export const getReadyzReadyzGetQueryKey = () => {
-    return [
-    'readyz'
-    ] as const;
-    }
-
-
-export const getReadyzReadyzGetQueryOptions = <TData = Awaited<ReturnType<typeof readyzReadyzGet>>, TError = unknown>( options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof readyzReadyzGet>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
-) => {
-
-const {query: queryOptions, request: requestOptions} = options ?? {};
-
-  const queryKey =  getReadyzReadyzGetQueryKey();
-
-
-
-    const queryFn: QueryFunction<Awaited<ReturnType<typeof readyzReadyzGet>>> = ({ signal }) => readyzReadyzGet({ signal, ...requestOptions });
-
-
-
-
-
-   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof readyzReadyzGet>>, TError, TData>
+  })
 }
 
-export type ReadyzReadyzGetQueryResult = NonNullable<Awaited<ReturnType<typeof readyzReadyzGet>>>
-export type ReadyzReadyzGetQueryError = unknown
+export const getReadyzReadyzGetQueryKey = () => {
+  return ['readyz'] as const
+}
 
+export const getReadyzReadyzGetQueryOptions = <
+  TData = Awaited<ReturnType<typeof readyzReadyzGet>>,
+  TError = unknown
+>(options?: {
+  query?: Partial<
+    UseQueryOptions<Awaited<ReturnType<typeof readyzReadyzGet>>, TError, TData>
+  >
+  request?: SecondParameter<typeof customFetch>
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {}
+
+  const queryKey = getReadyzReadyzGetQueryKey()
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof readyzReadyzGet>>> = ({
+    signal
+  }) => readyzReadyzGet({ signal, ...requestOptions })
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof readyzReadyzGet>>,
+    TError,
+    TData
+  >
+}
+
+export type ReadyzReadyzGetQueryResult = NonNullable<
+  Awaited<ReturnType<typeof readyzReadyzGet>>
+>
+export type ReadyzReadyzGetQueryError = unknown
 
 /**
  * @summary Readiness probe
  */
 
-export function useReadyzReadyzGet<TData = Awaited<ReturnType<typeof readyzReadyzGet>>, TError = unknown>(
-  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof readyzReadyzGet>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
- , queryClient?: QueryClient
- ): UseQueryReturnType<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
-
+export function useReadyzReadyzGet<
+  TData = Awaited<ReturnType<typeof readyzReadyzGet>>,
+  TError = unknown
+>(
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof readyzReadyzGet>>,
+        TError,
+        TData
+      >
+    >
+    request?: SecondParameter<typeof customFetch>
+  },
+  queryClient?: QueryClient
+): UseQueryReturnType<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>
+} {
   const queryOptions = getReadyzReadyzGetQueryOptions(options)
 
-  const query = useQuery(queryOptions, queryClient) as UseQueryReturnType<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+  const query = useQuery(queryOptions, queryClient) as UseQueryReturnType<
+    TData,
+    TError
+  > & { queryKey: DataTag<QueryKey, TData, TError> }
 
-  query.queryKey = unref(queryOptions).queryKey as DataTag<QueryKey, TData, TError>;
+  query.queryKey = unref(queryOptions).queryKey as DataTag<
+    QueryKey,
+    TData,
+    TError
+  >
 
-  return query;
+  return query
 }

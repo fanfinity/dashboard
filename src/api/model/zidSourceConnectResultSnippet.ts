@@ -5,4 +5,4 @@
  * OpenAPI spec version: 0.1.0
  */
 
-export type ZidSourceConnectResultSnippet = { [key: string]: unknown } | null;
+export type ZidSourceConnectResultSnippet = { [key: string]: unknown } | null

@@ -7,14 +7,14 @@
 
 export interface AccountCreate {
   /**
-     * @minLength 1
-     * @maxLength 255
-     */
-  name: string;
+   * @minLength 1
+   * @maxLength 255
+   */
+  name: string
   /**
-     * @minLength 1
-     * @maxLength 255
-     * @pattern ^[a-z0-9][a-z0-9-]*$
-     */
-  slug: string;
+   * @minLength 1
+   * @maxLength 255
+   * @pattern ^[a-z0-9][a-z0-9-]*$
+   */
+  slug: string
 }
