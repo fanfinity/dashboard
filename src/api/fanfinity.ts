@@ -59,6 +59,7 @@ import type {
   CreateSupportSession422,
   Customer,
   CustomerPage,
+  DashboardOverview,
   DeleteDestination401,
   DeleteDestination403,
   DeleteDestination404,
@@ -85,6 +86,12 @@ import type {
   GetAccount422,
   GetCustomer404,
   GetCustomer422,
+  GetDashboardOverview401,
+  GetDashboardOverview403,
+  GetDashboardOverview404,
+  GetDashboardOverview422,
+  GetDashboardOverview502,
+  GetDashboardOverviewParams,
   GetDestination401,
   GetDestination403,
   GetDestination404,
@@ -100,8 +107,15 @@ import type {
   GetSource404,
   GetSource422,
   GetSourceByStore200,
+  GetSourceByStore401,
+  GetSourceByStore404,
+  GetSourceByStore422,
   GetSourceByStoreParams,
-  HTTPValidationError,
+  GetZidConnectStatus200,
+  GetZidConnectStatus401,
+  GetZidConnectStatus403,
+  GetZidConnectStatus404,
+  GetZidConnectStatus422,
   HealthzHealthzGet200,
   InviteMember400,
   InviteMember401,
@@ -116,11 +130,23 @@ import type {
   ListCustomerEventsParams,
   ListCustomers422,
   ListCustomersParams,
+  ListDestinationEvents400,
+  ListDestinationEvents401,
+  ListDestinationEvents403,
+  ListDestinationEvents404,
+  ListDestinationEvents422,
+  ListDestinationEventsParams,
   ListDestinations401,
   ListDestinations403,
   ListDestinations404,
   ListDestinations422,
   ListDestinationsParams,
+  ListLiveEvents401,
+  ListLiveEvents403,
+  ListLiveEvents404,
+  ListLiveEvents422,
+  ListLiveEvents502,
+  ListLiveEventsParams,
   ListMembers401,
   ListMembers403,
   ListMembers404,
@@ -167,6 +193,7 @@ import type {
   ListSupportSessions403,
   ListSupportSessions422,
   ListSupportSessionsParams,
+  LiveEventList,
   Login400,
   Login401,
   Login422,
@@ -188,6 +215,11 @@ import type {
   PipelineFunctionUpdate,
   PipelineUpdate,
   ReadyzReadyzGet200,
+  Refresh400,
+  Refresh401,
+  Refresh422,
+  Refresh429,
+  RefreshRequest,
   Register400,
   Register409,
   Register422,
@@ -200,6 +232,10 @@ import type {
   RemoveMember404,
   RemoveMember422,
   ReportZidInstall200,
+  ReportZidInstall400,
+  ReportZidInstall401,
+  ReportZidInstall404,
+  ReportZidInstall422,
   ResetPipelineFunction401,
   ResetPipelineFunction403,
   ResetPipelineFunction404,
@@ -540,19 +576,15 @@ export const getLoginUrl = () => {
  * @summary Login Route
  */
 export const login = async (
-  bodyLogin?: BodyLogin,
+  bodyLogin: BodyLogin,
   options?: RequestInit
 ): Promise<loginResponse> => {
   const formUrlEncoded = new URLSearchParams()
-  if (bodyLogin?.grant_type !== undefined) {
+  if (bodyLogin.grant_type !== undefined) {
     formUrlEncoded.append(`grant_type`, bodyLogin.grant_type)
   }
-  if (bodyLogin?.username !== undefined) {
-    formUrlEncoded.append(`username`, bodyLogin.username)
-  }
-  if (bodyLogin?.password !== undefined) {
-    formUrlEncoded.append(`password`, bodyLogin.password)
-  }
+  formUrlEncoded.append(`username`, bodyLogin.username)
+  formUrlEncoded.append(`password`, bodyLogin.password)
 
   return customFetch<loginResponse>(getLoginUrl(), {
     ...options,
@@ -572,14 +604,14 @@ export const getLoginMutationOptions = <
   mutation?: UseMutationOptions<
     Awaited<ReturnType<typeof login>>,
     TError,
-    { data?: BodyLogin },
+    { data: BodyLogin },
     TContext
   >
   request?: SecondParameter<typeof customFetch>
 }): UseMutationOptions<
   Awaited<ReturnType<typeof login>>,
   TError,
-  { data?: BodyLogin },
+  { data: BodyLogin },
   TContext
 > => {
   const mutationKey = ['login']
@@ -593,7 +625,7 @@ export const getLoginMutationOptions = <
 
   const mutationFn: MutationFunction<
     Awaited<ReturnType<typeof login>>,
-    { data?: BodyLogin }
+    { data: BodyLogin }
   > = props => {
     const { data } = props ?? {}
 
@@ -604,7 +636,7 @@ export const getLoginMutationOptions = <
 }
 
 export type LoginMutationResult = NonNullable<Awaited<ReturnType<typeof login>>>
-export type LoginMutationBody = BodyLogin | undefined
+export type LoginMutationBody = BodyLogin
 export type LoginMutationError = Login400 | Login401 | Login422 | Login429
 
 /**
@@ -618,7 +650,7 @@ export const useLogin = <
     mutation?: UseMutationOptions<
       Awaited<ReturnType<typeof login>>,
       TError,
-      { data?: BodyLogin },
+      { data: BodyLogin },
       TContext
     >
     request?: SecondParameter<typeof customFetch>
@@ -627,10 +659,142 @@ export const useLogin = <
 ): UseMutationReturnType<
   Awaited<ReturnType<typeof login>>,
   TError,
-  { data?: BodyLogin },
+  { data: BodyLogin },
   TContext
 > => {
   return useMutation(getLoginMutationOptions(options), queryClient)
+}
+
+export type refreshResponse200 = {
+  data: TokenResponse
+  status: 200
+}
+
+export type refreshResponse400 = {
+  data: Refresh400
+  status: 400
+}
+
+export type refreshResponse401 = {
+  data: Refresh401
+  status: 401
+}
+
+export type refreshResponse422 = {
+  data: Refresh422
+  status: 422
+}
+
+export type refreshResponse429 = {
+  data: Refresh429
+  status: 429
+}
+
+export type refreshResponseSuccess = refreshResponse200 & {
+  headers: Headers
+}
+export type refreshResponseError = (
+  | refreshResponse400
+  | refreshResponse401
+  | refreshResponse422
+  | refreshResponse429
+) & {
+  headers: Headers
+}
+
+export type refreshResponse = refreshResponseSuccess | refreshResponseError
+
+export const getRefreshUrl = () => {
+  return `/v1/auth/refresh`
+}
+
+/**
+ * @summary Refresh Route
+ */
+export const refresh = async (
+  refreshRequest: RefreshRequest,
+  options?: RequestInit
+): Promise<refreshResponse> => {
+  return customFetch<refreshResponse>(getRefreshUrl(), {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(refreshRequest)
+  })
+}
+
+export const getRefreshMutationOptions = <
+  TError = Refresh400 | Refresh401 | Refresh422 | Refresh429,
+  TContext = unknown
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof refresh>>,
+    TError,
+    { data: RefreshRequest },
+    TContext
+  >
+  request?: SecondParameter<typeof customFetch>
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof refresh>>,
+  TError,
+  { data: RefreshRequest },
+  TContext
+> => {
+  const mutationKey = ['refresh']
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      'mutationKey' in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined }
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof refresh>>,
+    { data: RefreshRequest }
+  > = props => {
+    const { data } = props ?? {}
+
+    return refresh(data, requestOptions)
+  }
+
+  return { mutationFn, ...mutationOptions }
+}
+
+export type RefreshMutationResult = NonNullable<
+  Awaited<ReturnType<typeof refresh>>
+>
+export type RefreshMutationBody = RefreshRequest
+export type RefreshMutationError =
+  | Refresh400
+  | Refresh401
+  | Refresh422
+  | Refresh429
+
+/**
+ * @summary Refresh Route
+ */
+export const useRefresh = <
+  TError = Refresh400 | Refresh401 | Refresh422 | Refresh429,
+  TContext = unknown
+>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof refresh>>,
+      TError,
+      { data: RefreshRequest },
+      TContext
+    >
+    request?: SecondParameter<typeof customFetch>
+  },
+  queryClient?: QueryClient
+): UseMutationReturnType<
+  Awaited<ReturnType<typeof refresh>>,
+  TError,
+  { data: RefreshRequest },
+  TContext
+> => {
+  return useMutation(getRefreshMutationOptions(options), queryClient)
 }
 
 export type createAccountResponse201 = {
@@ -1333,10 +1497,10 @@ export const getListCustomerEventsUrl = (
 /**
  * Paginated list of events for a customer (name, type, timestamp only).
  *
- * Matches events across multiple identifiers: the numeric ``customer_id``,
- * the customer's email (against both ``events.email`` and ``events.user_id``),
- * and their phone number (against ``events.telephone``).  This catches events
- * regardless of which field the analytics pipeline used to associate them.
+ * Matches events across multiple identifiers: the numeric ids (``customer_id``
+ * and ``user_id``), the customer's email, and their phone number. This catches
+ * events regardless of which field the analytics pipeline used to associate
+ * them (see :func:`app.services.customers.fetch_events_page`).
  * @summary List Customer Events Route
  */
 export const listCustomerEvents = async (
@@ -3165,6 +3329,200 @@ export const useDeleteSource = <
   TContext
 > => {
   return useMutation(getDeleteSourceMutationOptions(options), queryClient)
+}
+
+export type getZidConnectStatusResponse200 = {
+  data: GetZidConnectStatus200
+  status: 200
+}
+
+export type getZidConnectStatusResponse401 = {
+  data: GetZidConnectStatus401
+  status: 401
+}
+
+export type getZidConnectStatusResponse403 = {
+  data: GetZidConnectStatus403
+  status: 403
+}
+
+export type getZidConnectStatusResponse404 = {
+  data: GetZidConnectStatus404
+  status: 404
+}
+
+export type getZidConnectStatusResponse422 = {
+  data: GetZidConnectStatus422
+  status: 422
+}
+
+export type getZidConnectStatusResponseSuccess =
+  getZidConnectStatusResponse200 & {
+    headers: Headers
+  }
+export type getZidConnectStatusResponseError = (
+  | getZidConnectStatusResponse401
+  | getZidConnectStatusResponse403
+  | getZidConnectStatusResponse404
+  | getZidConnectStatusResponse422
+) & {
+  headers: Headers
+}
+
+export type getZidConnectStatusResponse =
+  | getZidConnectStatusResponseSuccess
+  | getZidConnectStatusResponseError
+
+export const getGetZidConnectStatusUrl = (
+  accountId: string,
+  sourceId: string
+) => {
+  return `/v1/accounts/${accountId}/sources/${sourceId}/zid-status`
+}
+
+/**
+ * Whether the Zid store behind this source has completed OAuth.
+ *
+ * Lets the dashboard's Zid setup wizard check that tokens exist before it
+ * calls connect-zid, so a merchant who hasn't authorised yet gets a clear
+ * "authorise first" prompt instead of a 502 from the webhook step.
+ * ``connected`` is true only when valid Zid tokens are stored for the store.
+ * @summary Get Zid Status Route
+ */
+export const getZidConnectStatus = async (
+  accountId: string,
+  sourceId: string,
+  options?: RequestInit
+): Promise<getZidConnectStatusResponse> => {
+  return customFetch<getZidConnectStatusResponse>(
+    getGetZidConnectStatusUrl(accountId, sourceId),
+    {
+      ...options,
+      method: 'GET'
+    }
+  )
+}
+
+export const getGetZidConnectStatusQueryKey = (
+  accountId: MaybeRefOrGetter<string>,
+  sourceId: MaybeRefOrGetter<string>
+) => {
+  return [
+    'v1',
+    'accounts',
+    accountId,
+    'sources',
+    sourceId,
+    'zid-status'
+  ] as const
+}
+
+export const getGetZidConnectStatusQueryOptions = <
+  TData = Awaited<ReturnType<typeof getZidConnectStatus>>,
+  TError =
+    | GetZidConnectStatus401
+    | GetZidConnectStatus403
+    | GetZidConnectStatus404
+    | GetZidConnectStatus422
+>(
+  accountId: MaybeRefOrGetter<string>,
+  sourceId: MaybeRefOrGetter<string>,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getZidConnectStatus>>,
+        TError,
+        TData
+      >
+    >
+    request?: SecondParameter<typeof customFetch>
+  }
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {}
+
+  const queryKey = getGetZidConnectStatusQueryKey(accountId, sourceId)
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getZidConnectStatus>>
+  > = ({ signal }) =>
+    getZidConnectStatus(toValue(accountId), toValue(sourceId), {
+      signal,
+      ...requestOptions
+    })
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: computed(
+      () =>
+        toValue(accountId) !== null &&
+        toValue(accountId) !== undefined &&
+        toValue(sourceId) !== null &&
+        toValue(sourceId) !== undefined
+    ),
+    ...queryOptions
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof getZidConnectStatus>>,
+    TError,
+    TData
+  >
+}
+
+export type GetZidConnectStatusQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getZidConnectStatus>>
+>
+export type GetZidConnectStatusQueryError =
+  | GetZidConnectStatus401
+  | GetZidConnectStatus403
+  | GetZidConnectStatus404
+  | GetZidConnectStatus422
+
+/**
+ * @summary Get Zid Status Route
+ */
+
+export function useGetZidConnectStatus<
+  TData = Awaited<ReturnType<typeof getZidConnectStatus>>,
+  TError =
+    | GetZidConnectStatus401
+    | GetZidConnectStatus403
+    | GetZidConnectStatus404
+    | GetZidConnectStatus422
+>(
+  accountId: MaybeRefOrGetter<string>,
+  sourceId: MaybeRefOrGetter<string>,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getZidConnectStatus>>,
+        TError,
+        TData
+      >
+    >
+    request?: SecondParameter<typeof customFetch>
+  },
+  queryClient?: QueryClient
+): UseQueryReturnType<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>
+} {
+  const queryOptions = getGetZidConnectStatusQueryOptions(
+    accountId,
+    sourceId,
+    options
+  )
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryReturnType<
+    TData,
+    TError
+  > & { queryKey: DataTag<QueryKey, TData, TError> }
+
+  query.queryKey = unref(queryOptions).queryKey as DataTag<
+    QueryKey,
+    TData,
+    TError
+  >
+
+  return query
 }
 
 export type connectZidSourceResponse200 = {
@@ -5182,6 +5540,639 @@ export const useDeleteDestination = <
   return useMutation(getDeleteDestinationMutationOptions(options), queryClient)
 }
 
+export type listDestinationEventsResponse200 = {
+  data: EventSummaryPage
+  status: 200
+}
+
+export type listDestinationEventsResponse400 = {
+  data: ListDestinationEvents400
+  status: 400
+}
+
+export type listDestinationEventsResponse401 = {
+  data: ListDestinationEvents401
+  status: 401
+}
+
+export type listDestinationEventsResponse403 = {
+  data: ListDestinationEvents403
+  status: 403
+}
+
+export type listDestinationEventsResponse404 = {
+  data: ListDestinationEvents404
+  status: 404
+}
+
+export type listDestinationEventsResponse422 = {
+  data: ListDestinationEvents422
+  status: 422
+}
+
+export type listDestinationEventsResponseSuccess =
+  listDestinationEventsResponse200 & {
+    headers: Headers
+  }
+export type listDestinationEventsResponseError = (
+  | listDestinationEventsResponse400
+  | listDestinationEventsResponse401
+  | listDestinationEventsResponse403
+  | listDestinationEventsResponse404
+  | listDestinationEventsResponse422
+) & {
+  headers: Headers
+}
+
+export type listDestinationEventsResponse =
+  | listDestinationEventsResponseSuccess
+  | listDestinationEventsResponseError
+
+export const getListDestinationEventsUrl = (
+  accountId: string,
+  destinationId: string,
+  params?: ListDestinationEventsParams
+) => {
+  const normalizedParams = new URLSearchParams()
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  })
+
+  const stringifiedParams = normalizedParams.toString()
+
+  return stringifiedParams.length > 0
+    ? `/v1/accounts/${accountId}/destinations/${destinationId}/events?${stringifiedParams}`
+    : `/v1/accounts/${accountId}/destinations/${destinationId}/events`
+}
+
+/**
+ * Paginated list of events delivered to this destination's ClickHouse database.
+ *
+ * Mirrors the source events endpoint (same ``EventSummaryPage`` shape) so the
+ * dashboard can share the events table component.
+ * @summary List Destination Events Route
+ */
+export const listDestinationEvents = async (
+  accountId: string,
+  destinationId: string,
+  params?: ListDestinationEventsParams,
+  options?: RequestInit
+): Promise<listDestinationEventsResponse> => {
+  return customFetch<listDestinationEventsResponse>(
+    getListDestinationEventsUrl(accountId, destinationId, params),
+    {
+      ...options,
+      method: 'GET'
+    }
+  )
+}
+
+export const getListDestinationEventsQueryKey = (
+  accountId: MaybeRefOrGetter<string>,
+  destinationId: MaybeRefOrGetter<string>,
+  params?: MaybeRefOrGetter<ListDestinationEventsParams>
+) => {
+  return [
+    'v1',
+    'accounts',
+    accountId,
+    'destinations',
+    destinationId,
+    'events',
+    ...(params ? [params] : [])
+  ] as const
+}
+
+export const getListDestinationEventsQueryOptions = <
+  TData = Awaited<ReturnType<typeof listDestinationEvents>>,
+  TError =
+    | ListDestinationEvents400
+    | ListDestinationEvents401
+    | ListDestinationEvents403
+    | ListDestinationEvents404
+    | ListDestinationEvents422
+>(
+  accountId: MaybeRefOrGetter<string>,
+  destinationId: MaybeRefOrGetter<string>,
+  params?: MaybeRefOrGetter<ListDestinationEventsParams>,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof listDestinationEvents>>,
+        TError,
+        TData
+      >
+    >
+    request?: SecondParameter<typeof customFetch>
+  }
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {}
+
+  const queryKey = getListDestinationEventsQueryKey(
+    accountId,
+    destinationId,
+    params
+  )
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof listDestinationEvents>>
+  > = ({ signal }) =>
+    listDestinationEvents(
+      toValue(accountId),
+      toValue(destinationId),
+      toValue(params),
+      { signal, ...requestOptions }
+    )
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: computed(
+      () =>
+        toValue(accountId) !== null &&
+        toValue(accountId) !== undefined &&
+        toValue(destinationId) !== null &&
+        toValue(destinationId) !== undefined
+    ),
+    ...queryOptions
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof listDestinationEvents>>,
+    TError,
+    TData
+  >
+}
+
+export type ListDestinationEventsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listDestinationEvents>>
+>
+export type ListDestinationEventsQueryError =
+  | ListDestinationEvents400
+  | ListDestinationEvents401
+  | ListDestinationEvents403
+  | ListDestinationEvents404
+  | ListDestinationEvents422
+
+/**
+ * @summary List Destination Events Route
+ */
+
+export function useListDestinationEvents<
+  TData = Awaited<ReturnType<typeof listDestinationEvents>>,
+  TError =
+    | ListDestinationEvents400
+    | ListDestinationEvents401
+    | ListDestinationEvents403
+    | ListDestinationEvents404
+    | ListDestinationEvents422
+>(
+  accountId: MaybeRefOrGetter<string>,
+  destinationId: MaybeRefOrGetter<string>,
+  params?: MaybeRefOrGetter<ListDestinationEventsParams>,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof listDestinationEvents>>,
+        TError,
+        TData
+      >
+    >
+    request?: SecondParameter<typeof customFetch>
+  },
+  queryClient?: QueryClient
+): UseQueryReturnType<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>
+} {
+  const queryOptions = getListDestinationEventsQueryOptions(
+    accountId,
+    destinationId,
+    params,
+    options
+  )
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryReturnType<
+    TData,
+    TError
+  > & { queryKey: DataTag<QueryKey, TData, TError> }
+
+  query.queryKey = unref(queryOptions).queryKey as DataTag<
+    QueryKey,
+    TData,
+    TError
+  >
+
+  return query
+}
+
+export type listLiveEventsResponse200 = {
+  data: LiveEventList
+  status: 200
+}
+
+export type listLiveEventsResponse401 = {
+  data: ListLiveEvents401
+  status: 401
+}
+
+export type listLiveEventsResponse403 = {
+  data: ListLiveEvents403
+  status: 403
+}
+
+export type listLiveEventsResponse404 = {
+  data: ListLiveEvents404
+  status: 404
+}
+
+export type listLiveEventsResponse422 = {
+  data: ListLiveEvents422
+  status: 422
+}
+
+export type listLiveEventsResponse502 = {
+  data: ListLiveEvents502
+  status: 502
+}
+
+export type listLiveEventsResponseSuccess = listLiveEventsResponse200 & {
+  headers: Headers
+}
+export type listLiveEventsResponseError = (
+  | listLiveEventsResponse401
+  | listLiveEventsResponse403
+  | listLiveEventsResponse404
+  | listLiveEventsResponse422
+  | listLiveEventsResponse502
+) & {
+  headers: Headers
+}
+
+export type listLiveEventsResponse =
+  | listLiveEventsResponseSuccess
+  | listLiveEventsResponseError
+
+export const getListLiveEventsUrl = (
+  accountId: string,
+  params?: ListLiveEventsParams
+) => {
+  const normalizedParams = new URLSearchParams()
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  })
+
+  const stringifiedParams = normalizedParams.toString()
+
+  return stringifiedParams.length > 0
+    ? `/v1/accounts/${accountId}/events/live?${stringifiedParams}`
+    : `/v1/accounts/${accountId}/events/live`
+}
+
+/**
+ * Live incoming events for the account's sources, from the Jitsu incoming log.
+ *
+ * Jitsu's log API answers with gzipped NDJSON; ``JitsuService`` parses it and
+ * each record is normalized to ``LiveEvent`` (the shape the dashboard's
+ * live-events table renders). Without ``source_id`` the logs of all enabled
+ * sources are merged, newest first.
+ * @summary List Live Events Route
+ */
+export const listLiveEvents = async (
+  accountId: string,
+  params?: ListLiveEventsParams,
+  options?: RequestInit
+): Promise<listLiveEventsResponse> => {
+  return customFetch<listLiveEventsResponse>(
+    getListLiveEventsUrl(accountId, params),
+    {
+      ...options,
+      method: 'GET'
+    }
+  )
+}
+
+export const getListLiveEventsQueryKey = (
+  accountId: MaybeRefOrGetter<string>,
+  params?: MaybeRefOrGetter<ListLiveEventsParams>
+) => {
+  return [
+    'v1',
+    'accounts',
+    accountId,
+    'events',
+    'live',
+    ...(params ? [params] : [])
+  ] as const
+}
+
+export const getListLiveEventsQueryOptions = <
+  TData = Awaited<ReturnType<typeof listLiveEvents>>,
+  TError =
+    | ListLiveEvents401
+    | ListLiveEvents403
+    | ListLiveEvents404
+    | ListLiveEvents422
+    | ListLiveEvents502
+>(
+  accountId: MaybeRefOrGetter<string>,
+  params?: MaybeRefOrGetter<ListLiveEventsParams>,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof listLiveEvents>>, TError, TData>
+    >
+    request?: SecondParameter<typeof customFetch>
+  }
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {}
+
+  const queryKey = getListLiveEventsQueryKey(accountId, params)
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof listLiveEvents>>> = ({
+    signal
+  }) =>
+    listLiveEvents(toValue(accountId), toValue(params), {
+      signal,
+      ...requestOptions
+    })
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: computed(
+      () => toValue(accountId) !== null && toValue(accountId) !== undefined
+    ),
+    ...queryOptions
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof listLiveEvents>>,
+    TError,
+    TData
+  >
+}
+
+export type ListLiveEventsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listLiveEvents>>
+>
+export type ListLiveEventsQueryError =
+  | ListLiveEvents401
+  | ListLiveEvents403
+  | ListLiveEvents404
+  | ListLiveEvents422
+  | ListLiveEvents502
+
+/**
+ * @summary List Live Events Route
+ */
+
+export function useListLiveEvents<
+  TData = Awaited<ReturnType<typeof listLiveEvents>>,
+  TError =
+    | ListLiveEvents401
+    | ListLiveEvents403
+    | ListLiveEvents404
+    | ListLiveEvents422
+    | ListLiveEvents502
+>(
+  accountId: MaybeRefOrGetter<string>,
+  params?: MaybeRefOrGetter<ListLiveEventsParams>,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof listLiveEvents>>, TError, TData>
+    >
+    request?: SecondParameter<typeof customFetch>
+  },
+  queryClient?: QueryClient
+): UseQueryReturnType<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>
+} {
+  const queryOptions = getListLiveEventsQueryOptions(accountId, params, options)
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryReturnType<
+    TData,
+    TError
+  > & { queryKey: DataTag<QueryKey, TData, TError> }
+
+  query.queryKey = unref(queryOptions).queryKey as DataTag<
+    QueryKey,
+    TData,
+    TError
+  >
+
+  return query
+}
+
+export type getDashboardOverviewResponse200 = {
+  data: DashboardOverview
+  status: 200
+}
+
+export type getDashboardOverviewResponse401 = {
+  data: GetDashboardOverview401
+  status: 401
+}
+
+export type getDashboardOverviewResponse403 = {
+  data: GetDashboardOverview403
+  status: 403
+}
+
+export type getDashboardOverviewResponse404 = {
+  data: GetDashboardOverview404
+  status: 404
+}
+
+export type getDashboardOverviewResponse422 = {
+  data: GetDashboardOverview422
+  status: 422
+}
+
+export type getDashboardOverviewResponse502 = {
+  data: GetDashboardOverview502
+  status: 502
+}
+
+export type getDashboardOverviewResponseSuccess =
+  getDashboardOverviewResponse200 & {
+    headers: Headers
+  }
+export type getDashboardOverviewResponseError = (
+  | getDashboardOverviewResponse401
+  | getDashboardOverviewResponse403
+  | getDashboardOverviewResponse404
+  | getDashboardOverviewResponse422
+  | getDashboardOverviewResponse502
+) & {
+  headers: Headers
+}
+
+export type getDashboardOverviewResponse =
+  | getDashboardOverviewResponseSuccess
+  | getDashboardOverviewResponseError
+
+export const getGetDashboardOverviewUrl = (
+  accountId: string,
+  params?: GetDashboardOverviewParams
+) => {
+  const normalizedParams = new URLSearchParams()
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  })
+
+  const stringifiedParams = normalizedParams.toString()
+
+  return stringifiedParams.length > 0
+    ? `/v1/accounts/${accountId}/dashboard?${stringifiedParams}`
+    : `/v1/accounts/${accountId}/dashboard`
+}
+
+/**
+ * Everything the dashboard home renders, aggregated in one call.
+ *
+ * Received/error figures come from the Jitsu incoming log of every enabled
+ * source; delivered figures from each destination's ClickHouse events table
+ * (best-effort — ``None`` when the store is unavailable).
+ * @summary Get Dashboard Overview Route
+ */
+export const getDashboardOverview = async (
+  accountId: string,
+  params?: GetDashboardOverviewParams,
+  options?: RequestInit
+): Promise<getDashboardOverviewResponse> => {
+  return customFetch<getDashboardOverviewResponse>(
+    getGetDashboardOverviewUrl(accountId, params),
+    {
+      ...options,
+      method: 'GET'
+    }
+  )
+}
+
+export const getGetDashboardOverviewQueryKey = (
+  accountId: MaybeRefOrGetter<string>,
+  params?: MaybeRefOrGetter<GetDashboardOverviewParams>
+) => {
+  return [
+    'v1',
+    'accounts',
+    accountId,
+    'dashboard',
+    ...(params ? [params] : [])
+  ] as const
+}
+
+export const getGetDashboardOverviewQueryOptions = <
+  TData = Awaited<ReturnType<typeof getDashboardOverview>>,
+  TError =
+    | GetDashboardOverview401
+    | GetDashboardOverview403
+    | GetDashboardOverview404
+    | GetDashboardOverview422
+    | GetDashboardOverview502
+>(
+  accountId: MaybeRefOrGetter<string>,
+  params?: MaybeRefOrGetter<GetDashboardOverviewParams>,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getDashboardOverview>>,
+        TError,
+        TData
+      >
+    >
+    request?: SecondParameter<typeof customFetch>
+  }
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {}
+
+  const queryKey = getGetDashboardOverviewQueryKey(accountId, params)
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getDashboardOverview>>
+  > = ({ signal }) =>
+    getDashboardOverview(toValue(accountId), toValue(params), {
+      signal,
+      ...requestOptions
+    })
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: computed(
+      () => toValue(accountId) !== null && toValue(accountId) !== undefined
+    ),
+    ...queryOptions
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof getDashboardOverview>>,
+    TError,
+    TData
+  >
+}
+
+export type GetDashboardOverviewQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getDashboardOverview>>
+>
+export type GetDashboardOverviewQueryError =
+  | GetDashboardOverview401
+  | GetDashboardOverview403
+  | GetDashboardOverview404
+  | GetDashboardOverview422
+  | GetDashboardOverview502
+
+/**
+ * @summary Get Dashboard Overview Route
+ */
+
+export function useGetDashboardOverview<
+  TData = Awaited<ReturnType<typeof getDashboardOverview>>,
+  TError =
+    | GetDashboardOverview401
+    | GetDashboardOverview403
+    | GetDashboardOverview404
+    | GetDashboardOverview422
+    | GetDashboardOverview502
+>(
+  accountId: MaybeRefOrGetter<string>,
+  params?: MaybeRefOrGetter<GetDashboardOverviewParams>,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getDashboardOverview>>,
+        TError,
+        TData
+      >
+    >
+    request?: SecondParameter<typeof customFetch>
+  },
+  queryClient?: QueryClient
+): UseQueryReturnType<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>
+} {
+  const queryOptions = getGetDashboardOverviewQueryOptions(
+    accountId,
+    params,
+    options
+  )
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryReturnType<
+    TData,
+    TError
+  > & { queryKey: DataTag<QueryKey, TData, TError> }
+
+  query.queryKey = unref(queryOptions).queryKey as DataTag<
+    QueryKey,
+    TData,
+    TError
+  >
+
+  return query
+}
+
 export type listPipelinesResponse200 = {
   data: PagePipeline
   status: 200
@@ -6535,17 +7526,17 @@ export type getSourceByStoreResponse200 = {
 }
 
 export type getSourceByStoreResponse401 = {
-  data: void
+  data: GetSourceByStore401
   status: 401
 }
 
 export type getSourceByStoreResponse404 = {
-  data: void
+  data: GetSourceByStore404
   status: 404
 }
 
 export type getSourceByStoreResponse422 = {
-  data: HTTPValidationError
+  data: GetSourceByStore422
   status: 422
 }
 
@@ -6606,7 +7597,7 @@ export const getGetSourceByStoreQueryKey = (
 
 export const getGetSourceByStoreQueryOptions = <
   TData = Awaited<ReturnType<typeof getSourceByStore>>,
-  TError = void | HTTPValidationError
+  TError = GetSourceByStore401 | GetSourceByStore404 | GetSourceByStore422
 >(
   params: MaybeRefOrGetter<GetSourceByStoreParams>,
   options?: {
@@ -6639,7 +7630,10 @@ export const getGetSourceByStoreQueryOptions = <
 export type GetSourceByStoreQueryResult = NonNullable<
   Awaited<ReturnType<typeof getSourceByStore>>
 >
-export type GetSourceByStoreQueryError = void | HTTPValidationError
+export type GetSourceByStoreQueryError =
+  | GetSourceByStore401
+  | GetSourceByStore404
+  | GetSourceByStore422
 
 /**
  * @summary Get Source By Store Route
@@ -6647,7 +7641,7 @@ export type GetSourceByStoreQueryError = void | HTTPValidationError
 
 export function useGetSourceByStore<
   TData = Awaited<ReturnType<typeof getSourceByStore>>,
-  TError = void | HTTPValidationError
+  TError = GetSourceByStore401 | GetSourceByStore404 | GetSourceByStore422
 >(
   params: MaybeRefOrGetter<GetSourceByStoreParams>,
   options?: {
@@ -6685,18 +7679,23 @@ export type reportZidInstallResponse200 = {
   status: 200
 }
 
+export type reportZidInstallResponse400 = {
+  data: ReportZidInstall400
+  status: 400
+}
+
 export type reportZidInstallResponse401 = {
-  data: void
+  data: ReportZidInstall401
   status: 401
 }
 
 export type reportZidInstallResponse404 = {
-  data: void
+  data: ReportZidInstall404
   status: 404
 }
 
 export type reportZidInstallResponse422 = {
-  data: HTTPValidationError
+  data: ReportZidInstall422
   status: 422
 }
 
@@ -6704,6 +7703,7 @@ export type reportZidInstallResponseSuccess = reportZidInstallResponse200 & {
   headers: Headers
 }
 export type reportZidInstallResponseError = (
+  | reportZidInstallResponse400
   | reportZidInstallResponse401
   | reportZidInstallResponse404
   | reportZidInstallResponse422
@@ -6742,7 +7742,11 @@ export const reportZidInstall = async (
 }
 
 export const getReportZidInstallMutationOptions = <
-  TError = void | HTTPValidationError,
+  TError =
+    | ReportZidInstall400
+    | ReportZidInstall401
+    | ReportZidInstall404
+    | ReportZidInstall422,
   TContext = unknown
 >(options?: {
   mutation?: UseMutationOptions<
@@ -6783,13 +7787,21 @@ export type ReportZidInstallMutationResult = NonNullable<
   Awaited<ReturnType<typeof reportZidInstall>>
 >
 export type ReportZidInstallMutationBody = _ZidInstallReport
-export type ReportZidInstallMutationError = void | HTTPValidationError
+export type ReportZidInstallMutationError =
+  | ReportZidInstall400
+  | ReportZidInstall401
+  | ReportZidInstall404
+  | ReportZidInstall422
 
 /**
  * @summary Report Zid Install Route
  */
 export const useReportZidInstall = <
-  TError = void | HTTPValidationError,
+  TError =
+    | ReportZidInstall400
+    | ReportZidInstall401
+    | ReportZidInstall404
+    | ReportZidInstall422,
   TContext = unknown
 >(
   options?: {

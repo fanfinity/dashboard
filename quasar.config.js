@@ -6,10 +6,11 @@ import { existsSync } from 'node:fs'
 
 // Load .env into process.env at config time. Despite what the comment here used
 // to claim, this is NOT only for server-side secrets: the build reads the
-// client-exposed VITE_* vars off process.env too, so without this the Firebase
-// values come through empty and every build fails at sign-in with
-// `auth/invalid-api-key`. It survived the removal of the /japi dev proxy (the
-// server-side EVENTS_API_KEY it was originally added for) for that reason.
+// client-exposed VITE_* vars off process.env too, so without this VITE_API_BASE
+// comes through empty, every call falls back to http://localhost:8080, and a
+// deployed build fails every request while looking like a backend outage. It
+// survived the removal of the /japi dev proxy (the server-side EVENTS_API_KEY it
+// was originally added for) for that reason.
 if (existsSync('.env')) {
   process.loadEnvFile('.env')
 }

@@ -9,7 +9,10 @@ import { createReadStream, existsSync, statSync } from 'node:fs'
 import { extname, join, normalize, resolve } from 'node:path'
 
 const ROOT = resolve(process.argv[2] || 'dist/spa')
-const PORT = Number(process.env.SMOKE_PORT || 4173)
+// Must match smoke.mjs's default, and for the same reason: the served origin
+// has to be one the backend's CORS_ALLOW_ORIGINS names, or sign-in is refused
+// at the preflight. See the SMOKE_PORT note there.
+const PORT = Number(process.env.SMOKE_PORT || 9000)
 
 const TYPES = {
   '.html': 'text/html; charset=utf-8',
@@ -48,6 +51,22 @@ const server = createServer((req, res) => {
     'Cache-Control': 'no-store'
   })
   createReadStream(file).pipe(res)
+})
+
+// Sharing the dev server's port is deliberate (see the PORT note above), so
+// "already in use" is the expected collision, not an exotic one — say what to
+// do about it instead of printing a bare EADDRINUSE stack.
+server.on('error', e => {
+  if (e.code === 'EADDRINUSE') {
+    console.error(
+      `serve-dist: port ${PORT} is already in use.\n` +
+        `            That is almost certainly \`pnpm dev\`. Stop it for the length of\n` +
+        `            the run — the smoke walk needs this exact port, because it is the\n` +
+        `            only localhost origin the backend's CORS_ALLOW_ORIGINS accepts.`
+    )
+    process.exit(1)
+  }
+  throw e
 })
 
 server.listen(PORT, () => {

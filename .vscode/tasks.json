@@ -69,7 +69,7 @@
       "label": "Smoke (build + walk every route)",
       "detail": "Builds, serves dist/spa, signs in, visits every screen. Needs SMOKE_EMAIL / SMOKE_PASSWORD in .env",
       "type": "shell",
-      "command": "pnpm build && node --env-file=.env scripts/smoke.mjs --serve",
+      "command": "pnpm smoke:dist",
       "group": "test",
       "presentation": { "reveal": "always", "panel": "dedicated" },
       "problemMatcher": []

@@ -86,14 +86,16 @@
       </button>
     </div>
 
-    <!-- No endpoint yet. Distinct from an error: nothing broke, GET /v1/events
-         simply is not built on the backend the Data source switch points at. -->
+    <!-- Nothing to read. Distinct from an error: nothing broke, the account's
+         live-events endpoint simply has nothing to answer with on the backend
+         the Data source switch points at — most often because /v1/me has not
+         settled an account yet, or the account has no provisioned source. -->
     <NoticeBanner
       v-if="apiMissing"
       class="mb-4"
       tone="info"
       title="No API yet"
-      message="GET /v1/events is not built on this backend yet. Switch Settings → Data source back to Demo data to see the feed."
+      message="No live events to read on this backend — this account has no source with a provisioned stream yet. Switch Settings → Data source to Demo data to see the feed."
     />
 
     <!-- Error -->
@@ -344,9 +346,9 @@ import { computed, nextTick, onMounted, ref, watch } from 'vue'
 import NoticeBanner from '@/components/ui/NoticeBanner.vue'
 import { useLiveEvents } from '@/composables/useLiveEvents'
 
-// Reads GET /v1/events through the Sfere backend and nothing else. There is no
-// vendor id, no ingest key and no proxy in this page any more — see the header
-// comment in useLiveEvents.js.
+// Reads GET /v1/accounts/{account}/events/live through the Sfere backend and
+// nothing else. There is no vendor id, no ingest key and no proxy in this page
+// any more — see the header comment in useLiveEvents.js.
 const { events, streams, loading, error, apiMissing, load, loadStreams } =
   useLiveEvents()
 
@@ -448,7 +450,7 @@ const drawerRows = computed(() => {
 })
 
 // The backend redacts credential headers and masks write keys before they
-// leave the API (see the LiveEvent schema in openapi/cdp-api-draft.yaml), so
+// leave the API (see the LiveEvent schema in openapi/fanfinity-api.json), so
 // this renders what it is given. The page used to scrub the upstream vendor's
 // name out of every string it displayed; there is no upstream vendor in this
 // page's world any more, so there is nothing to scrub.

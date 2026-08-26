@@ -31,7 +31,13 @@
           :autocomplete="
             mode === 'signup' ? 'new-password' : 'current-password'
           "
-          :rules="[v => !!v || 'Password is required']"
+          :rules="[
+            v => !!v || 'Password is required',
+            v =>
+              mode !== 'signup' ||
+              (v && v.length >= 8) ||
+              'Password must be at least 8 characters'
+          ]"
         />
 
         <q-btn
@@ -73,25 +79,43 @@
 
 <script setup>
 import { ref } from 'vue'
+import { Notify } from 'quasar'
 import { useRouter, useRoute } from 'vue-router'
 import { useAuth } from '@/composables/useAuth'
+import { loadMe, accountMissing } from '@/composables/useMe'
 
 const router = useRouter()
 const route = useRoute()
-const { loading, signIn, signUp } = useAuth()
+const { loading, signIn, signUp, logOut } = useAuth()
 
 const mode = ref('signin')
 const email = ref('')
 const password = ref('')
 
 async function submit() {
-  const ok =
-    mode.value === 'signup'
-      ? await signUp(email.value, password.value)
-      : await signIn(email.value, password.value)
-
-  if (ok) {
-    router.replace(route.query.redirect || '/')
+  // Sign-up provisions the backend account (POST /v1/register) then signs in,
+  // so a success here already means a real account exists.
+  if (mode.value === 'signup') {
+    if (await signUp(email.value, password.value)) {
+      router.replace(route.query.redirect || '/')
+    }
+    return
   }
+
+  // Sign-in: Firebase auth can succeed for an identity that has no backend
+  // account (self-provisioning is disabled server-side). Confirm the account
+  // exists via GET /v1/me; if not, sign back out rather than strand the user.
+  if (!(await signIn(email.value, password.value))) return
+  await loadMe()
+  if (accountMissing.value) {
+    await logOut()
+    Notify.create({
+      type: 'negative',
+      message:
+        'No account exists for this login. Please create an account first.'
+    })
+    return
+  }
+  router.replace(route.query.redirect || '/')
 }
 </script>

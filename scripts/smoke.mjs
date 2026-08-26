@@ -5,6 +5,8 @@
 //
 //   node scripts/smoke.mjs --serve              # build output, own server
 //   node scripts/smoke.mjs                      # against SMOKE_BASE (default :9000)
+//
+// It reads .env itself, so `pnpm smoke:dist` works from a clean shell.
 //   SMOKE_ROUTES=/pipes,/sources node scripts/smoke.mjs --serve
 //
 // It asserts, per route:
@@ -18,17 +20,34 @@
 // PageHeader primitives. Hand-rolled error markup would give 54 different
 // selectors and no generic gate.
 import { spawn } from 'node:child_process'
-import { mkdirSync } from 'node:fs'
+import { existsSync, mkdirSync } from 'node:fs'
 import { chromium } from 'playwright'
 import { screens } from '../src/router/screens.js'
+
+// Load .env before anything reads process.env. This used to be the caller's
+// job (`node --env-file=.env scripts/smoke.mjs`), which meant a bare
+// `pnpm smoke:dist` from a clean shell exited 2 on missing credentials that
+// were sitting in .env all along. loadEnvFile does NOT overwrite variables
+// that are already set, so `SMOKE_ROUTES=/pipes pnpm smoke:dist` and the
+// workflows' env: blocks still win, and passing --env-file as well is
+// harmless rather than conflicting.
+if (existsSync('.env')) process.loadEnvFile('.env')
 
 const args = process.argv.slice(2)
 const SERVE = args.includes('--serve')
 const SHOTS = args.includes('--screenshots')
-const PORT = Number(process.env.SMOKE_PORT || 4173)
+// 9000, not an arbitrary free port, because the origin has to be one the
+// backend's CORS_ALLOW_ORIGINS names — sign-in is a real cross-origin POST to
+// VITE_API_BASE now, so a browser on any other port is refused at the
+// preflight and the run dies before it reaches a single screen. Staging allows
+// exactly `http://localhost:9000` today (not 127.0.0.1, not 4173, which is
+// what this used to default to). It collides with `pnpm dev` on purpose:
+// sharing the dev server's port is what keeps the allowlist to one entry.
+// Override with SMOKE_PORT only if the backend has been taught that port too.
+const PORT = Number(process.env.SMOKE_PORT || 9000)
 const BASE = SERVE
   ? `http://localhost:${PORT}`
-  : process.env.SMOKE_BASE || 'http://localhost:9000'
+  : process.env.SMOKE_BASE || `http://localhost:${PORT}`
 
 const EMAIL = process.env.SMOKE_EMAIL
 const PASSWORD = process.env.SMOKE_PASSWORD
@@ -159,8 +178,9 @@ page.on('console', m => {
   bucket.push(`console.error: ${text.slice(0, 200)}`)
 })
 
-// Firebase persists its session to IndexedDB, which Playwright's storageState
-// does NOT capture — so there is no way to inject a session; we sign in for real.
+// Sign in for real through the backend login form (POST /v1/auth/token) — the
+// session token lives in localStorage, but exercising the real login is the
+// point of the smoke test, so we drive the form rather than inject a token.
 console.log(`smoke: signing in at ${BASE}`)
 await page.goto(`${BASE}/#/login`, { waitUntil: 'domcontentloaded' })
 await page.fill('input[type=email]', EMAIL)
@@ -169,9 +189,27 @@ await page.click('button[type=submit]')
 try {
   await page.waitForSelector('[data-smoke="nav"]', { timeout: 20000 })
 } catch {
+  // The two failures here look identical in the DOM and have different fixes,
+  // so name them rather than making the reader parse the console dump.
+  const noise = bucket.join('\n')
+  let diagnosis =
+    '       Check SMOKE_EMAIL/SMOKE_PASSWORD and VITE_API_BASE in .env.'
+  if (/blocked by CORS/i.test(noise)) {
+    diagnosis =
+      `       The backend refused this origin (${BASE}). Sign-in is a real\n` +
+      `       cross-origin POST, so the origin must be in the backend's\n` +
+      `       CORS_ALLOW_ORIGINS — see the SMOKE_PORT note at the top of this file.`
+  } else if (/\b401\b/.test(noise)) {
+    diagnosis =
+      '       The backend rejected these credentials (401). SMOKE_EMAIL must be a\n' +
+      '       real account on VITE_API_BASE — the backend authenticates at the\n' +
+      '       Identity Platform *project* level, so an account that only ever\n' +
+      '       existed in the old tenant will not resolve. Register it with\n' +
+      '       POST /v1/register against that same host.'
+  }
   console.error(
     'smoke: sign-in did not reach the app shell.\n' +
-      `       Check SMOKE_EMAIL/SMOKE_PASSWORD and VITE_FIREBASE_* in .env.\n` +
+      `${diagnosis}\n` +
       `       Console so far:\n       ${bucket.join('\n       ') || '(nothing)'}`
   )
   await browser.close()

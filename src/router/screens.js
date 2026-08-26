@@ -482,8 +482,9 @@ export const screens = [
 // events console through the /japi dev proxy, and `pnpm smoke:dist` serves a
 // production build where no proxy exists, so the failed request would fail the
 // gate for a reason that had nothing to do with the screen. That reason is
-// gone — it now reads GET /v1/events through the same data-source gate as
-// every other screen, and mock mode serves public/data/live-events.json, so
+// gone — it now reads GET /v1/accounts/{account}/events/live through the same
+// data-source gate as every other screen, and mock mode serves
+// public/data/live-events.json, so
 // nothing about it is dev-only any more. Promoting it into `screens` is a
 // deliberate, separate change (it adds a route to the gate's walk); it is
 // left here only because nobody has made that call yet, not because it

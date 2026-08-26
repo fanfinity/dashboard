@@ -83,6 +83,7 @@
 import { computed, ref } from 'vue'
 import CardPanel from '@/components/ui/CardPanel.vue'
 import StatusBadge from '@/components/ui/StatusBadge.vue'
+import { webSdkSnippet } from '@/lib/webSdkSnippet'
 
 // How a client actually pushes into this source: endpoint, write key and the
 // integration snippet for the template it was created from.
@@ -110,18 +111,15 @@ const shownKey = computed(() => {
   return `${key.slice(0, 11)}${'•'.repeat(Math.max(key.length - 11, 4))}`
 })
 
-// A closing script tag cannot appear anywhere inside an SFC script block — the
-// parser ends the block at the first one, string literal or comment included —
-// so the web snippet's closing tag is assembled rather than written out.
-const CLOSE_SCRIPT = `</${'script'}>`
-
 // Snippets are keyed on the template a source was created from, falling back to
 // the server-side HTTP example — which is correct for anything hand-configured.
-function buildSnippet(templateId, key, slug) {
-  if (templateId === 'web-sdk') {
+// (`webSdkSnippet` lives in its own module because a closing script tag cannot
+// appear anywhere inside an SFC script block.)
+function buildSnippet(templateId, sourceType, key, slug) {
+  if (templateId === 'web-sdk' || sourceType === 'web') {
     return {
       label: 'Web snippet',
-      code: `<script src="https://cdn.sfere.io/fp.js" data-write-key="${key}" defer>${CLOSE_SCRIPT}`
+      code: webSdkSnippet(key)
     }
   }
   if (templateId === 'ios-sdk') {
@@ -147,7 +145,12 @@ function buildSnippet(templateId, key, slug) {
 }
 
 const snippet = computed(() =>
-  buildSnippet(props.source.templateId, shownKey.value, props.source.slug)
+  buildSnippet(
+    props.source.templateId,
+    props.source.sourceType,
+    shownKey.value,
+    props.source.slug
+  )
 )
 
 // What Copy hands over always carries the real key, masked or not.
@@ -155,6 +158,7 @@ const fullSnippet = computed(
   () =>
     buildSnippet(
       props.source.templateId,
+      props.source.sourceType,
       props.source.writeKey ?? '',
       props.source.slug
     ).code

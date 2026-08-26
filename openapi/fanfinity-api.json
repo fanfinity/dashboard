@@ -469,7 +469,265 @@
                 "$ref": "#/components/schemas/Body_login"
               }
             }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TokenResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Malformed request body",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "properties": {
+                    "type": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ],
+                      "title": "Type",
+                      "default": "about:blank"
+                    },
+                    "title": {
+                      "type": "string",
+                      "title": "Title"
+                    },
+                    "status": {
+                      "type": "integer",
+                      "title": "Status"
+                    },
+                    "detail": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ],
+                      "title": "Detail"
+                    },
+                    "instance": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ],
+                      "title": "Instance"
+                    }
+                  },
+                  "type": "object",
+                  "required": ["title", "status"],
+                  "title": "Problem",
+                  "description": "RFC 9457 problem details."
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid credentials",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "properties": {
+                    "type": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ],
+                      "title": "Type",
+                      "default": "about:blank"
+                    },
+                    "title": {
+                      "type": "string",
+                      "title": "Title"
+                    },
+                    "status": {
+                      "type": "integer",
+                      "title": "Status"
+                    },
+                    "detail": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ],
+                      "title": "Detail"
+                    },
+                    "instance": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ],
+                      "title": "Instance"
+                    }
+                  },
+                  "type": "object",
+                  "required": ["title", "status"],
+                  "title": "Problem",
+                  "description": "RFC 9457 problem details."
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Request failed validation",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "properties": {
+                    "type": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ],
+                      "title": "Type",
+                      "default": "about:blank"
+                    },
+                    "title": {
+                      "type": "string",
+                      "title": "Title"
+                    },
+                    "status": {
+                      "type": "integer",
+                      "title": "Status"
+                    },
+                    "detail": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ],
+                      "title": "Detail"
+                    },
+                    "instance": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ],
+                      "title": "Instance"
+                    }
+                  },
+                  "type": "object",
+                  "required": ["title", "status"],
+                  "title": "Problem",
+                  "description": "RFC 9457 problem details."
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limit exceeded",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "properties": {
+                    "type": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ],
+                      "title": "Type",
+                      "default": "about:blank"
+                    },
+                    "title": {
+                      "type": "string",
+                      "title": "Title"
+                    },
+                    "status": {
+                      "type": "integer",
+                      "title": "Status"
+                    },
+                    "detail": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ],
+                      "title": "Detail"
+                    },
+                    "instance": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ],
+                      "title": "Instance"
+                    }
+                  },
+                  "type": "object",
+                  "required": ["title", "status"],
+                  "title": "Problem",
+                  "description": "RFC 9457 problem details."
+                }
+              }
+            }
           }
+        }
+      }
+    },
+    "/v1/auth/refresh": {
+      "post": {
+        "tags": ["identity"],
+        "summary": "Refresh Route",
+        "operationId": "refresh",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RefreshRequest"
+              }
+            }
+          },
+          "required": true
         },
         "responses": {
           "200": {
@@ -1684,7 +1942,7 @@
       "get": {
         "tags": ["customers"],
         "summary": "List Customer Events Route",
-        "description": "Paginated list of events for a customer (name, type, timestamp only).\n\nMatches events across multiple identifiers: the numeric ``customer_id``,\nthe customer's email (against both ``events.email`` and ``events.user_id``),\nand their phone number (against ``events.telephone``).  This catches events\nregardless of which field the analytics pipeline used to associate them.",
+        "description": "Paginated list of events for a customer (name, type, timestamp only).\n\nMatches events across multiple identifiers: the numeric ids (``customer_id``\nand ``user_id``), the customer's email, and their phone number. This catches\nevents regardless of which field the analytics pipeline used to associate\nthem (see :func:`app.services.customers.fetch_events_page`).",
         "operationId": "listCustomerEvents",
         "parameters": [
           {
@@ -2377,8 +2635,8 @@
               }
             }
           },
-          "409": {
-            "description": "Conflicts with existing state",
+          "422": {
+            "description": "Request failed validation",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -2434,8 +2692,8 @@
               }
             }
           },
-          "422": {
-            "description": "Request failed validation",
+          "409": {
+            "description": "Conflicts with existing state",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -4158,8 +4416,8 @@
               }
             }
           },
-          "409": {
-            "description": "Conflicts with existing state",
+          "422": {
+            "description": "Request failed validation",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -4215,8 +4473,8 @@
               }
             }
           },
-          "422": {
-            "description": "Request failed validation",
+          "409": {
+            "description": "Conflicts with existing state",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -5090,11 +5348,12 @@
         }
       }
     },
-    "/v1/accounts/{account_id}/sources/{source_id}/connect-zid": {
-      "post": {
+    "/v1/accounts/{account_id}/sources/{source_id}/zid-status": {
+      "get": {
         "tags": ["sources"],
-        "summary": "Connect Zid Source Route",
-        "operationId": "connectZidSource",
+        "summary": "Get Zid Status Route",
+        "description": "Whether the Zid store behind this source has completed OAuth.\n\nLets the dashboard's Zid setup wizard check that tokens exist before it\ncalls connect-zid, so a merchant who hasn't authorised yet gets a clear\n\"authorise first\" prompt instead of a 502 from the webhook step.\n``connected`` is true only when valid Zid tokens are stored for the store.",
+        "operationId": "getZidConnectStatus",
         "security": [
           {
             "HTTPBearer": []
@@ -5126,64 +5385,9 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ZidSourceConnectResult"
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Malformed request body",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "description": "RFC 9457 problem details.",
-                  "properties": {
-                    "type": {
-                      "anyOf": [
-                        {
-                          "type": "string"
-                        },
-                        {
-                          "type": "null"
-                        }
-                      ],
-                      "default": "about:blank",
-                      "title": "Type"
-                    },
-                    "title": {
-                      "title": "Title",
-                      "type": "string"
-                    },
-                    "status": {
-                      "title": "Status",
-                      "type": "integer"
-                    },
-                    "detail": {
-                      "anyOf": [
-                        {
-                          "type": "string"
-                        },
-                        {
-                          "type": "null"
-                        }
-                      ],
-                      "title": "Detail"
-                    },
-                    "instance": {
-                      "anyOf": [
-                        {
-                          "type": "string"
-                        },
-                        {
-                          "type": "null"
-                        }
-                      ],
-                      "title": "Instance"
-                    }
-                  },
-                  "required": ["title", "status"],
-                  "title": "Problem",
-                  "type": "object"
+                  "type": "object",
+                  "additionalProperties": true,
+                  "title": "Response Getzidconnectstatus"
                 }
               }
             }
@@ -5361,6 +5565,335 @@
           },
           "422": {
             "description": "Request failed validation",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "description": "RFC 9457 problem details.",
+                  "properties": {
+                    "type": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ],
+                      "default": "about:blank",
+                      "title": "Type"
+                    },
+                    "title": {
+                      "title": "Title",
+                      "type": "string"
+                    },
+                    "status": {
+                      "title": "Status",
+                      "type": "integer"
+                    },
+                    "detail": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ],
+                      "title": "Detail"
+                    },
+                    "instance": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ],
+                      "title": "Instance"
+                    }
+                  },
+                  "required": ["title", "status"],
+                  "title": "Problem",
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/accounts/{account_id}/sources/{source_id}/connect-zid": {
+      "post": {
+        "tags": ["sources"],
+        "summary": "Connect Zid Source Route",
+        "operationId": "connectZidSource",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "source_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Source Id"
+            }
+          },
+          {
+            "name": "account_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Account Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ZidSourceConnectResult"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid credentials",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "description": "RFC 9457 problem details.",
+                  "properties": {
+                    "type": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ],
+                      "default": "about:blank",
+                      "title": "Type"
+                    },
+                    "title": {
+                      "title": "Title",
+                      "type": "string"
+                    },
+                    "status": {
+                      "title": "Status",
+                      "type": "integer"
+                    },
+                    "detail": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ],
+                      "title": "Detail"
+                    },
+                    "instance": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ],
+                      "title": "Instance"
+                    }
+                  },
+                  "required": ["title", "status"],
+                  "title": "Problem",
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Authenticated but not permitted",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "description": "RFC 9457 problem details.",
+                  "properties": {
+                    "type": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ],
+                      "default": "about:blank",
+                      "title": "Type"
+                    },
+                    "title": {
+                      "title": "Title",
+                      "type": "string"
+                    },
+                    "status": {
+                      "title": "Status",
+                      "type": "integer"
+                    },
+                    "detail": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ],
+                      "title": "Detail"
+                    },
+                    "instance": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ],
+                      "title": "Instance"
+                    }
+                  },
+                  "required": ["title", "status"],
+                  "title": "Problem",
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Resource not found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "description": "RFC 9457 problem details.",
+                  "properties": {
+                    "type": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ],
+                      "default": "about:blank",
+                      "title": "Type"
+                    },
+                    "title": {
+                      "title": "Title",
+                      "type": "string"
+                    },
+                    "status": {
+                      "title": "Status",
+                      "type": "integer"
+                    },
+                    "detail": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ],
+                      "title": "Detail"
+                    },
+                    "instance": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ],
+                      "title": "Instance"
+                    }
+                  },
+                  "required": ["title", "status"],
+                  "title": "Problem",
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Request failed validation",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "description": "RFC 9457 problem details.",
+                  "properties": {
+                    "type": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ],
+                      "default": "about:blank",
+                      "title": "Type"
+                    },
+                    "title": {
+                      "title": "Title",
+                      "type": "string"
+                    },
+                    "status": {
+                      "title": "Status",
+                      "type": "integer"
+                    },
+                    "detail": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ],
+                      "title": "Detail"
+                    },
+                    "instance": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ],
+                      "title": "Instance"
+                    }
+                  },
+                  "required": ["title", "status"],
+                  "title": "Problem",
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Malformed request body",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -5527,63 +6060,6 @@
               }
             }
           },
-          "400": {
-            "description": "Malformed request body",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "description": "RFC 9457 problem details.",
-                  "properties": {
-                    "type": {
-                      "anyOf": [
-                        {
-                          "type": "string"
-                        },
-                        {
-                          "type": "null"
-                        }
-                      ],
-                      "default": "about:blank",
-                      "title": "Type"
-                    },
-                    "title": {
-                      "title": "Title",
-                      "type": "string"
-                    },
-                    "status": {
-                      "title": "Status",
-                      "type": "integer"
-                    },
-                    "detail": {
-                      "anyOf": [
-                        {
-                          "type": "string"
-                        },
-                        {
-                          "type": "null"
-                        }
-                      ],
-                      "title": "Detail"
-                    },
-                    "instance": {
-                      "anyOf": [
-                        {
-                          "type": "string"
-                        },
-                        {
-                          "type": "null"
-                        }
-                      ],
-                      "title": "Instance"
-                    }
-                  },
-                  "required": ["title", "status"],
-                  "title": "Problem",
-                  "type": "object"
-                }
-              }
-            }
-          },
           "401": {
             "description": "Missing or invalid credentials",
             "content": {
@@ -5757,6 +6233,63 @@
           },
           "422": {
             "description": "Request failed validation",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "description": "RFC 9457 problem details.",
+                  "properties": {
+                    "type": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ],
+                      "default": "about:blank",
+                      "title": "Type"
+                    },
+                    "title": {
+                      "title": "Title",
+                      "type": "string"
+                    },
+                    "status": {
+                      "title": "Status",
+                      "type": "integer"
+                    },
+                    "detail": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ],
+                      "title": "Detail"
+                    },
+                    "instance": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ],
+                      "title": "Instance"
+                    }
+                  },
+                  "required": ["title", "status"],
+                  "title": "Problem",
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Malformed request body",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -6240,63 +6773,6 @@
               }
             }
           },
-          "400": {
-            "description": "Malformed request body",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "description": "RFC 9457 problem details.",
-                  "properties": {
-                    "type": {
-                      "anyOf": [
-                        {
-                          "type": "string"
-                        },
-                        {
-                          "type": "null"
-                        }
-                      ],
-                      "default": "about:blank",
-                      "title": "Type"
-                    },
-                    "title": {
-                      "title": "Title",
-                      "type": "string"
-                    },
-                    "status": {
-                      "title": "Status",
-                      "type": "integer"
-                    },
-                    "detail": {
-                      "anyOf": [
-                        {
-                          "type": "string"
-                        },
-                        {
-                          "type": "null"
-                        }
-                      ],
-                      "title": "Detail"
-                    },
-                    "instance": {
-                      "anyOf": [
-                        {
-                          "type": "string"
-                        },
-                        {
-                          "type": "null"
-                        }
-                      ],
-                      "title": "Instance"
-                    }
-                  },
-                  "required": ["title", "status"],
-                  "title": "Problem",
-                  "type": "object"
-                }
-              }
-            }
-          },
           "401": {
             "description": "Missing or invalid credentials",
             "content": {
@@ -6470,6 +6946,63 @@
           },
           "422": {
             "description": "Request failed validation",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "description": "RFC 9457 problem details.",
+                  "properties": {
+                    "type": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ],
+                      "default": "about:blank",
+                      "title": "Type"
+                    },
+                    "title": {
+                      "title": "Title",
+                      "type": "string"
+                    },
+                    "status": {
+                      "title": "Status",
+                      "type": "integer"
+                    },
+                    "detail": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ],
+                      "title": "Detail"
+                    },
+                    "instance": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ],
+                      "title": "Instance"
+                    }
+                  },
+                  "required": ["title", "status"],
+                  "title": "Problem",
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Malformed request body",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -6597,63 +7130,6 @@
               }
             }
           },
-          "400": {
-            "description": "Malformed request body",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "description": "RFC 9457 problem details.",
-                  "properties": {
-                    "type": {
-                      "anyOf": [
-                        {
-                          "type": "string"
-                        },
-                        {
-                          "type": "null"
-                        }
-                      ],
-                      "default": "about:blank",
-                      "title": "Type"
-                    },
-                    "title": {
-                      "title": "Title",
-                      "type": "string"
-                    },
-                    "status": {
-                      "title": "Status",
-                      "type": "integer"
-                    },
-                    "detail": {
-                      "anyOf": [
-                        {
-                          "type": "string"
-                        },
-                        {
-                          "type": "null"
-                        }
-                      ],
-                      "title": "Detail"
-                    },
-                    "instance": {
-                      "anyOf": [
-                        {
-                          "type": "string"
-                        },
-                        {
-                          "type": "null"
-                        }
-                      ],
-                      "title": "Instance"
-                    }
-                  },
-                  "required": ["title", "status"],
-                  "title": "Problem",
-                  "type": "object"
-                }
-              }
-            }
-          },
           "401": {
             "description": "Missing or invalid credentials",
             "content": {
@@ -6827,6 +7303,63 @@
           },
           "422": {
             "description": "Request failed validation",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "description": "RFC 9457 problem details.",
+                  "properties": {
+                    "type": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ],
+                      "default": "about:blank",
+                      "title": "Type"
+                    },
+                    "title": {
+                      "title": "Title",
+                      "type": "string"
+                    },
+                    "status": {
+                      "title": "Status",
+                      "type": "integer"
+                    },
+                    "detail": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ],
+                      "title": "Detail"
+                    },
+                    "instance": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ],
+                      "title": "Instance"
+                    }
+                  },
+                  "required": ["title", "status"],
+                  "title": "Problem",
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Malformed request body",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -6954,63 +7487,6 @@
               }
             }
           },
-          "400": {
-            "description": "Malformed request body",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "description": "RFC 9457 problem details.",
-                  "properties": {
-                    "type": {
-                      "anyOf": [
-                        {
-                          "type": "string"
-                        },
-                        {
-                          "type": "null"
-                        }
-                      ],
-                      "default": "about:blank",
-                      "title": "Type"
-                    },
-                    "title": {
-                      "title": "Title",
-                      "type": "string"
-                    },
-                    "status": {
-                      "title": "Status",
-                      "type": "integer"
-                    },
-                    "detail": {
-                      "anyOf": [
-                        {
-                          "type": "string"
-                        },
-                        {
-                          "type": "null"
-                        }
-                      ],
-                      "title": "Detail"
-                    },
-                    "instance": {
-                      "anyOf": [
-                        {
-                          "type": "string"
-                        },
-                        {
-                          "type": "null"
-                        }
-                      ],
-                      "title": "Instance"
-                    }
-                  },
-                  "required": ["title", "status"],
-                  "title": "Problem",
-                  "type": "object"
-                }
-              }
-            }
-          },
           "401": {
             "description": "Missing or invalid credentials",
             "content": {
@@ -7184,6 +7660,63 @@
           },
           "422": {
             "description": "Request failed validation",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "description": "RFC 9457 problem details.",
+                  "properties": {
+                    "type": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ],
+                      "default": "about:blank",
+                      "title": "Type"
+                    },
+                    "title": {
+                      "title": "Title",
+                      "type": "string"
+                    },
+                    "status": {
+                      "title": "Status",
+                      "type": "integer"
+                    },
+                    "detail": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ],
+                      "title": "Detail"
+                    },
+                    "instance": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ],
+                      "title": "Instance"
+                    }
+                  },
+                  "required": ["title", "status"],
+                  "title": "Problem",
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Malformed request body",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -7821,8 +8354,8 @@
               }
             }
           },
-          "409": {
-            "description": "Conflicts with existing state",
+          "422": {
+            "description": "Request failed validation",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -7878,8 +8411,8 @@
               }
             }
           },
-          "422": {
-            "description": "Request failed validation",
+          "409": {
+            "description": "Conflicts with existing state",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -8753,6 +9286,1120 @@
         }
       }
     },
+    "/v1/accounts/{account_id}/destinations/{destination_id}/events": {
+      "get": {
+        "tags": ["destinations"],
+        "summary": "List Destination Events Route",
+        "description": "Paginated list of events delivered to this destination's ClickHouse database.\n\nMirrors the source events endpoint (same ``EventSummaryPage`` shape) so the\ndashboard can share the events table component.",
+        "operationId": "listDestinationEvents",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "destination_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Destination Id"
+            }
+          },
+          {
+            "name": "account_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Account Id"
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "description": "Page number",
+              "default": 1,
+              "title": "Page"
+            },
+            "description": "Page number"
+          },
+          {
+            "name": "size",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 1,
+              "description": "Page size",
+              "default": 50,
+              "title": "Size"
+            },
+            "description": "Page size"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EventSummaryPage"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid credentials",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "description": "RFC 9457 problem details.",
+                  "properties": {
+                    "type": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ],
+                      "default": "about:blank",
+                      "title": "Type"
+                    },
+                    "title": {
+                      "title": "Title",
+                      "type": "string"
+                    },
+                    "status": {
+                      "title": "Status",
+                      "type": "integer"
+                    },
+                    "detail": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ],
+                      "title": "Detail"
+                    },
+                    "instance": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ],
+                      "title": "Instance"
+                    }
+                  },
+                  "required": ["title", "status"],
+                  "title": "Problem",
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Authenticated but not permitted",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "description": "RFC 9457 problem details.",
+                  "properties": {
+                    "type": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ],
+                      "default": "about:blank",
+                      "title": "Type"
+                    },
+                    "title": {
+                      "title": "Title",
+                      "type": "string"
+                    },
+                    "status": {
+                      "title": "Status",
+                      "type": "integer"
+                    },
+                    "detail": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ],
+                      "title": "Detail"
+                    },
+                    "instance": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ],
+                      "title": "Instance"
+                    }
+                  },
+                  "required": ["title", "status"],
+                  "title": "Problem",
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Resource not found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "description": "RFC 9457 problem details.",
+                  "properties": {
+                    "type": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ],
+                      "default": "about:blank",
+                      "title": "Type"
+                    },
+                    "title": {
+                      "title": "Title",
+                      "type": "string"
+                    },
+                    "status": {
+                      "title": "Status",
+                      "type": "integer"
+                    },
+                    "detail": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ],
+                      "title": "Detail"
+                    },
+                    "instance": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ],
+                      "title": "Instance"
+                    }
+                  },
+                  "required": ["title", "status"],
+                  "title": "Problem",
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Request failed validation",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "description": "RFC 9457 problem details.",
+                  "properties": {
+                    "type": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ],
+                      "default": "about:blank",
+                      "title": "Type"
+                    },
+                    "title": {
+                      "title": "Title",
+                      "type": "string"
+                    },
+                    "status": {
+                      "title": "Status",
+                      "type": "integer"
+                    },
+                    "detail": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ],
+                      "title": "Detail"
+                    },
+                    "instance": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ],
+                      "title": "Instance"
+                    }
+                  },
+                  "required": ["title", "status"],
+                  "title": "Problem",
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Malformed request body",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "description": "RFC 9457 problem details.",
+                  "properties": {
+                    "type": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ],
+                      "default": "about:blank",
+                      "title": "Type"
+                    },
+                    "title": {
+                      "title": "Title",
+                      "type": "string"
+                    },
+                    "status": {
+                      "title": "Status",
+                      "type": "integer"
+                    },
+                    "detail": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ],
+                      "title": "Detail"
+                    },
+                    "instance": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ],
+                      "title": "Instance"
+                    }
+                  },
+                  "required": ["title", "status"],
+                  "title": "Problem",
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/accounts/{account_id}/events/live": {
+      "get": {
+        "tags": ["events"],
+        "summary": "List Live Events Route",
+        "description": "Live incoming events for the account's sources, from the Jitsu incoming log.\n\nJitsu's log API answers with gzipped NDJSON; ``JitsuService`` parses it and\neach record is normalized to ``LiveEvent`` (the shape the dashboard's\nlive-events table renders). Without ``source_id`` the logs of all enabled\nsources are merged, newest first.",
+        "operationId": "listLiveEvents",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "account_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Account Id"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 1000,
+              "minimum": 1,
+              "description": "Maximum number of events to return",
+              "default": 100,
+              "title": "Limit"
+            },
+            "description": "Maximum number of events to return"
+          },
+          {
+            "name": "source_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Restrict to this source's Jitsu site/stream",
+              "title": "Source Id"
+            },
+            "description": "Restrict to this source's Jitsu site/stream"
+          },
+          {
+            "name": "start",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Only events at or after this time",
+              "title": "Start"
+            },
+            "description": "Only events at or after this time"
+          },
+          {
+            "name": "end",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Only events at or before this time",
+              "title": "End"
+            },
+            "description": "Only events at or before this time"
+          },
+          {
+            "name": "level",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "pattern": "^(all|error)$",
+              "description": "'all' (default) or 'error'",
+              "default": "all",
+              "title": "Level"
+            },
+            "description": "'all' (default) or 'error'"
+          },
+          {
+            "name": "search",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Free-text search forwarded to the Jitsu log API",
+              "title": "Search"
+            },
+            "description": "Free-text search forwarded to the Jitsu log API"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LiveEventList"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid credentials",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "description": "RFC 9457 problem details.",
+                  "properties": {
+                    "type": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ],
+                      "default": "about:blank",
+                      "title": "Type"
+                    },
+                    "title": {
+                      "title": "Title",
+                      "type": "string"
+                    },
+                    "status": {
+                      "title": "Status",
+                      "type": "integer"
+                    },
+                    "detail": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ],
+                      "title": "Detail"
+                    },
+                    "instance": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ],
+                      "title": "Instance"
+                    }
+                  },
+                  "required": ["title", "status"],
+                  "title": "Problem",
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Authenticated but not permitted",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "description": "RFC 9457 problem details.",
+                  "properties": {
+                    "type": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ],
+                      "default": "about:blank",
+                      "title": "Type"
+                    },
+                    "title": {
+                      "title": "Title",
+                      "type": "string"
+                    },
+                    "status": {
+                      "title": "Status",
+                      "type": "integer"
+                    },
+                    "detail": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ],
+                      "title": "Detail"
+                    },
+                    "instance": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ],
+                      "title": "Instance"
+                    }
+                  },
+                  "required": ["title", "status"],
+                  "title": "Problem",
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Resource not found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "description": "RFC 9457 problem details.",
+                  "properties": {
+                    "type": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ],
+                      "default": "about:blank",
+                      "title": "Type"
+                    },
+                    "title": {
+                      "title": "Title",
+                      "type": "string"
+                    },
+                    "status": {
+                      "title": "Status",
+                      "type": "integer"
+                    },
+                    "detail": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ],
+                      "title": "Detail"
+                    },
+                    "instance": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ],
+                      "title": "Instance"
+                    }
+                  },
+                  "required": ["title", "status"],
+                  "title": "Problem",
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Request failed validation",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "description": "RFC 9457 problem details.",
+                  "properties": {
+                    "type": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ],
+                      "default": "about:blank",
+                      "title": "Type"
+                    },
+                    "title": {
+                      "title": "Title",
+                      "type": "string"
+                    },
+                    "status": {
+                      "title": "Status",
+                      "type": "integer"
+                    },
+                    "detail": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ],
+                      "title": "Detail"
+                    },
+                    "instance": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ],
+                      "title": "Instance"
+                    }
+                  },
+                  "required": ["title", "status"],
+                  "title": "Problem",
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Upstream service returned an error",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "description": "RFC 9457 problem details.",
+                  "properties": {
+                    "type": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ],
+                      "default": "about:blank",
+                      "title": "Type"
+                    },
+                    "title": {
+                      "title": "Title",
+                      "type": "string"
+                    },
+                    "status": {
+                      "title": "Status",
+                      "type": "integer"
+                    },
+                    "detail": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ],
+                      "title": "Detail"
+                    },
+                    "instance": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ],
+                      "title": "Instance"
+                    }
+                  },
+                  "required": ["title", "status"],
+                  "title": "Problem",
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/accounts/{account_id}/dashboard": {
+      "get": {
+        "tags": ["dashboard"],
+        "summary": "Get Dashboard Overview Route",
+        "description": "Everything the dashboard home renders, aggregated in one call.\n\nReceived/error figures come from the Jitsu incoming log of every enabled\nsource; delivered figures from each destination's ClickHouse events table\n(best-effort \u2014 ``None`` when the store is unavailable).",
+        "operationId": "getDashboardOverview",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "account_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Account Id"
+            }
+          },
+          {
+            "name": "minutes",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 180,
+              "minimum": 5,
+              "description": "Window size in minutes; counts and buckets cover (now - minutes, now)",
+              "default": 60,
+              "title": "Minutes"
+            },
+            "description": "Window size in minutes; counts and buckets cover (now - minutes, now)"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DashboardOverview"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid credentials",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "description": "RFC 9457 problem details.",
+                  "properties": {
+                    "type": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ],
+                      "default": "about:blank",
+                      "title": "Type"
+                    },
+                    "title": {
+                      "title": "Title",
+                      "type": "string"
+                    },
+                    "status": {
+                      "title": "Status",
+                      "type": "integer"
+                    },
+                    "detail": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ],
+                      "title": "Detail"
+                    },
+                    "instance": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ],
+                      "title": "Instance"
+                    }
+                  },
+                  "required": ["title", "status"],
+                  "title": "Problem",
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Authenticated but not permitted",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "description": "RFC 9457 problem details.",
+                  "properties": {
+                    "type": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ],
+                      "default": "about:blank",
+                      "title": "Type"
+                    },
+                    "title": {
+                      "title": "Title",
+                      "type": "string"
+                    },
+                    "status": {
+                      "title": "Status",
+                      "type": "integer"
+                    },
+                    "detail": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ],
+                      "title": "Detail"
+                    },
+                    "instance": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ],
+                      "title": "Instance"
+                    }
+                  },
+                  "required": ["title", "status"],
+                  "title": "Problem",
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Resource not found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "description": "RFC 9457 problem details.",
+                  "properties": {
+                    "type": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ],
+                      "default": "about:blank",
+                      "title": "Type"
+                    },
+                    "title": {
+                      "title": "Title",
+                      "type": "string"
+                    },
+                    "status": {
+                      "title": "Status",
+                      "type": "integer"
+                    },
+                    "detail": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ],
+                      "title": "Detail"
+                    },
+                    "instance": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ],
+                      "title": "Instance"
+                    }
+                  },
+                  "required": ["title", "status"],
+                  "title": "Problem",
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Request failed validation",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "description": "RFC 9457 problem details.",
+                  "properties": {
+                    "type": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ],
+                      "default": "about:blank",
+                      "title": "Type"
+                    },
+                    "title": {
+                      "title": "Title",
+                      "type": "string"
+                    },
+                    "status": {
+                      "title": "Status",
+                      "type": "integer"
+                    },
+                    "detail": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ],
+                      "title": "Detail"
+                    },
+                    "instance": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ],
+                      "title": "Instance"
+                    }
+                  },
+                  "required": ["title", "status"],
+                  "title": "Problem",
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Upstream service returned an error",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "description": "RFC 9457 problem details.",
+                  "properties": {
+                    "type": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ],
+                      "default": "about:blank",
+                      "title": "Type"
+                    },
+                    "title": {
+                      "title": "Title",
+                      "type": "string"
+                    },
+                    "status": {
+                      "title": "Status",
+                      "type": "integer"
+                    },
+                    "detail": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ],
+                      "title": "Detail"
+                    },
+                    "instance": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ],
+                      "title": "Instance"
+                    }
+                  },
+                  "required": ["title", "status"],
+                  "title": "Problem",
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/v1/accounts/{account_id}/pipelines": {
       "get": {
         "tags": ["pipelines"],
@@ -9332,8 +10979,8 @@
               }
             }
           },
-          "409": {
-            "description": "Conflicts with existing state",
+          "422": {
+            "description": "Request failed validation",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -9389,8 +11036,8 @@
               }
             }
           },
-          "422": {
-            "description": "Request failed validation",
+          "409": {
+            "description": "Conflicts with existing state",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -10596,63 +12243,6 @@
               }
             }
           },
-          "400": {
-            "description": "Malformed request body",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "description": "RFC 9457 problem details.",
-                  "properties": {
-                    "type": {
-                      "anyOf": [
-                        {
-                          "type": "string"
-                        },
-                        {
-                          "type": "null"
-                        }
-                      ],
-                      "default": "about:blank",
-                      "title": "Type"
-                    },
-                    "title": {
-                      "title": "Title",
-                      "type": "string"
-                    },
-                    "status": {
-                      "title": "Status",
-                      "type": "integer"
-                    },
-                    "detail": {
-                      "anyOf": [
-                        {
-                          "type": "string"
-                        },
-                        {
-                          "type": "null"
-                        }
-                      ],
-                      "title": "Detail"
-                    },
-                    "instance": {
-                      "anyOf": [
-                        {
-                          "type": "string"
-                        },
-                        {
-                          "type": "null"
-                        }
-                      ],
-                      "title": "Instance"
-                    }
-                  },
-                  "required": ["title", "status"],
-                  "title": "Problem",
-                  "type": "object"
-                }
-              }
-            }
-          },
           "401": {
             "description": "Missing or invalid credentials",
             "content": {
@@ -10826,6 +12416,63 @@
           },
           "422": {
             "description": "Request failed validation",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "description": "RFC 9457 problem details.",
+                  "properties": {
+                    "type": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ],
+                      "default": "about:blank",
+                      "title": "Type"
+                    },
+                    "title": {
+                      "title": "Title",
+                      "type": "string"
+                    },
+                    "status": {
+                      "title": "Status",
+                      "type": "integer"
+                    },
+                    "detail": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ],
+                      "title": "Detail"
+                    },
+                    "instance": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ],
+                      "title": "Instance"
+                    }
+                  },
+                  "required": ["title", "status"],
+                  "title": "Problem",
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Malformed request body",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -11311,17 +12958,172 @@
             }
           },
           "401": {
-            "description": "Missing or invalid API key"
+            "description": "Missing or invalid API key",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "description": "RFC 9457 problem details.",
+                  "properties": {
+                    "type": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ],
+                      "default": "about:blank",
+                      "title": "Type"
+                    },
+                    "title": {
+                      "title": "Title",
+                      "type": "string"
+                    },
+                    "status": {
+                      "title": "Status",
+                      "type": "integer"
+                    },
+                    "detail": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ],
+                      "title": "Detail"
+                    },
+                    "instance": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ],
+                      "title": "Instance"
+                    }
+                  },
+                  "required": ["title", "status"],
+                  "title": "Problem",
+                  "type": "object"
+                }
+              }
+            }
           },
           "404": {
-            "description": "No source found for this store_id"
+            "description": "No source found for this store_id",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "description": "RFC 9457 problem details.",
+                  "properties": {
+                    "type": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ],
+                      "default": "about:blank",
+                      "title": "Type"
+                    },
+                    "title": {
+                      "title": "Title",
+                      "type": "string"
+                    },
+                    "status": {
+                      "title": "Status",
+                      "type": "integer"
+                    },
+                    "detail": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ],
+                      "title": "Detail"
+                    },
+                    "instance": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ],
+                      "title": "Instance"
+                    }
+                  },
+                  "required": ["title", "status"],
+                  "title": "Problem",
+                  "type": "object"
+                }
+              }
+            }
           },
           "422": {
-            "description": "Validation Error",
+            "description": "Request failed validation",
             "content": {
-              "application/json": {
+              "application/problem+json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
+                  "description": "RFC 9457 problem details.",
+                  "properties": {
+                    "type": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ],
+                      "default": "about:blank",
+                      "title": "Type"
+                    },
+                    "title": {
+                      "title": "Title",
+                      "type": "string"
+                    },
+                    "status": {
+                      "title": "Status",
+                      "type": "integer"
+                    },
+                    "detail": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ],
+                      "title": "Detail"
+                    },
+                    "instance": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ],
+                      "title": "Instance"
+                    }
+                  },
+                  "required": ["title", "status"],
+                  "title": "Problem",
+                  "type": "object"
                 }
               }
             }
@@ -11357,18 +13159,230 @@
               }
             }
           },
+          "400": {
+            "description": "Malformed request body",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "properties": {
+                    "type": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ],
+                      "title": "Type",
+                      "default": "about:blank"
+                    },
+                    "title": {
+                      "type": "string",
+                      "title": "Title"
+                    },
+                    "status": {
+                      "type": "integer",
+                      "title": "Status"
+                    },
+                    "detail": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ],
+                      "title": "Detail"
+                    },
+                    "instance": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ],
+                      "title": "Instance"
+                    }
+                  },
+                  "type": "object",
+                  "required": ["title", "status"],
+                  "title": "Problem",
+                  "description": "RFC 9457 problem details."
+                }
+              }
+            }
+          },
           "401": {
-            "description": "Missing or invalid API key"
+            "description": "Missing or invalid API key",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "properties": {
+                    "type": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ],
+                      "title": "Type",
+                      "default": "about:blank"
+                    },
+                    "title": {
+                      "type": "string",
+                      "title": "Title"
+                    },
+                    "status": {
+                      "type": "integer",
+                      "title": "Status"
+                    },
+                    "detail": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ],
+                      "title": "Detail"
+                    },
+                    "instance": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ],
+                      "title": "Instance"
+                    }
+                  },
+                  "type": "object",
+                  "required": ["title", "status"],
+                  "title": "Problem",
+                  "description": "RFC 9457 problem details."
+                }
+              }
+            }
           },
           "404": {
-            "description": "No source found for this dashboard store_id"
+            "description": "No source found for this dashboard store_id",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "properties": {
+                    "type": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ],
+                      "title": "Type",
+                      "default": "about:blank"
+                    },
+                    "title": {
+                      "type": "string",
+                      "title": "Title"
+                    },
+                    "status": {
+                      "type": "integer",
+                      "title": "Status"
+                    },
+                    "detail": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ],
+                      "title": "Detail"
+                    },
+                    "instance": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ],
+                      "title": "Instance"
+                    }
+                  },
+                  "type": "object",
+                  "required": ["title", "status"],
+                  "title": "Problem",
+                  "description": "RFC 9457 problem details."
+                }
+              }
+            }
           },
           "422": {
-            "description": "Validation Error",
+            "description": "Request failed validation",
             "content": {
-              "application/json": {
+              "application/problem+json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
+                  "properties": {
+                    "type": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ],
+                      "title": "Type",
+                      "default": "about:blank"
+                    },
+                    "title": {
+                      "type": "string",
+                      "title": "Title"
+                    },
+                    "status": {
+                      "type": "integer",
+                      "title": "Status"
+                    },
+                    "detail": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ],
+                      "title": "Detail"
+                    },
+                    "instance": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ],
+                      "title": "Instance"
+                    }
+                  },
+                  "type": "object",
+                  "required": ["title", "status"],
+                  "title": "Problem",
+                  "description": "RFC 9457 problem details."
                 }
               }
             }
@@ -11520,21 +13534,23 @@
         "properties": {
           "grant_type": {
             "type": "string",
+            "const": "password",
             "title": "Grant Type",
             "default": "password"
           },
           "username": {
             "type": "string",
-            "title": "Username",
-            "default": ""
+            "minLength": 1,
+            "title": "Username"
           },
           "password": {
             "type": "string",
-            "title": "Password",
-            "default": ""
+            "minLength": 1,
+            "title": "Password"
           }
         },
         "type": "object",
+        "required": ["username", "password"],
         "title": "Body_login"
       },
       "Customer": {
@@ -11775,22 +13791,22 @@
           },
           "total": {
             "type": "integer",
-            "minimum": 0,
+            "minimum": 0.0,
             "title": "Total"
           },
           "page": {
             "type": "integer",
-            "minimum": 1,
+            "minimum": 1.0,
             "title": "Page"
           },
           "size": {
             "type": "integer",
-            "minimum": 1,
+            "minimum": 1.0,
             "title": "Size"
           },
           "pages": {
             "type": "integer",
-            "minimum": 0,
+            "minimum": 0.0,
             "title": "Pages"
           }
         },
@@ -11798,6 +13814,333 @@
         "required": ["items", "total", "page", "size", "pages"],
         "title": "CustomerPage",
         "description": "One page of customers."
+      },
+      "DashboardBucket": {
+        "properties": {
+          "bucket": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Bucket",
+            "description": "Start of the minute (UTC)"
+          },
+          "received": {
+            "type": "integer",
+            "title": "Received"
+          },
+          "errors": {
+            "type": "integer",
+            "title": "Errors"
+          },
+          "delivered": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Delivered",
+            "description": "Null when the analytics store is unavailable"
+          }
+        },
+        "type": "object",
+        "required": ["bucket", "received", "errors"],
+        "title": "DashboardBucket",
+        "description": "One per-minute bucket of the throughput series."
+      },
+      "DashboardDestinationStat": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "slug": {
+            "type": "string",
+            "title": "Slug"
+          },
+          "destination_type": {
+            "type": "string",
+            "title": "Destination Type"
+          },
+          "is_enabled": {
+            "type": "boolean",
+            "title": "Is Enabled"
+          },
+          "pipe_count": {
+            "type": "integer",
+            "title": "Pipe Count",
+            "description": "Number of pipelines delivering to this destination"
+          },
+          "events_delivered": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Events Delivered",
+            "description": "Rows written to this destination's ClickHouse events table in the window; null when unknown (no database yet, or store unavailable)\n"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "slug",
+          "destination_type",
+          "is_enabled",
+          "pipe_count"
+        ],
+        "title": "DashboardDestinationStat",
+        "description": "Per-destination rollup for the dashboard flow panel."
+      },
+      "DashboardOverview": {
+        "properties": {
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Updated At"
+          },
+          "window_start": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Window Start"
+          },
+          "window_end": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Window End"
+          },
+          "totals": {
+            "$ref": "#/components/schemas/DashboardTotals"
+          },
+          "buckets": {
+            "items": {
+              "$ref": "#/components/schemas/DashboardBucket"
+            },
+            "type": "array",
+            "title": "Buckets",
+            "description": "One entry per minute of the window, zero-filled, oldest first"
+          },
+          "sources": {
+            "items": {
+              "$ref": "#/components/schemas/DashboardSourceStat"
+            },
+            "type": "array",
+            "title": "Sources"
+          },
+          "destinations": {
+            "items": {
+              "$ref": "#/components/schemas/DashboardDestinationStat"
+            },
+            "type": "array",
+            "title": "Destinations"
+          },
+          "pipes": {
+            "items": {
+              "$ref": "#/components/schemas/DashboardPipeStat"
+            },
+            "type": "array",
+            "title": "Pipes"
+          },
+          "recent_events": {
+            "items": {
+              "$ref": "#/components/schemas/LiveEvent"
+            },
+            "type": "array",
+            "title": "Recent Events",
+            "description": "Most recent incoming events, newest first (at most 10)"
+          },
+          "recent_errors": {
+            "items": {
+              "$ref": "#/components/schemas/LiveEvent"
+            },
+            "type": "array",
+            "title": "Recent Errors",
+            "description": "Most recent error-level records, newest first (at most 10)"
+          }
+        },
+        "type": "object",
+        "required": [
+          "updated_at",
+          "window_start",
+          "window_end",
+          "totals",
+          "buckets",
+          "sources",
+          "destinations",
+          "pipes",
+          "recent_events",
+          "recent_errors"
+        ],
+        "title": "DashboardOverview",
+        "description": "The aggregated payload behind the dashboard home screen. All counts cover the requested window ending at ``updated_at``."
+      },
+      "DashboardPipeStat": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "is_enabled": {
+            "type": "boolean",
+            "title": "Is Enabled"
+          },
+          "source_id": {
+            "type": "string",
+            "title": "Source Id"
+          },
+          "source_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source Name"
+          },
+          "destination_id": {
+            "type": "string",
+            "title": "Destination Id"
+          },
+          "destination_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Destination Name"
+          }
+        },
+        "type": "object",
+        "required": ["id", "name", "is_enabled", "source_id", "destination_id"],
+        "title": "DashboardPipeStat",
+        "description": "Per-pipeline rollup for the dashboard flow panel."
+      },
+      "DashboardSourceStat": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "slug": {
+            "type": "string",
+            "title": "Slug"
+          },
+          "source_type": {
+            "type": "string",
+            "title": "Source Type"
+          },
+          "is_enabled": {
+            "type": "boolean",
+            "title": "Is Enabled"
+          },
+          "pipe_count": {
+            "type": "integer",
+            "title": "Pipe Count",
+            "description": "Number of pipelines reading from this source"
+          },
+          "events_received": {
+            "type": "integer",
+            "title": "Events Received",
+            "description": "Incoming events for this source in the window"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "slug",
+          "source_type",
+          "is_enabled",
+          "pipe_count",
+          "events_received"
+        ],
+        "title": "DashboardSourceStat",
+        "description": "Per-source rollup for the dashboard flow panel."
+      },
+      "DashboardTotals": {
+        "properties": {
+          "sources": {
+            "type": "integer",
+            "title": "Sources"
+          },
+          "sources_enabled": {
+            "type": "integer",
+            "title": "Sources Enabled"
+          },
+          "destinations": {
+            "type": "integer",
+            "title": "Destinations"
+          },
+          "destinations_enabled": {
+            "type": "integer",
+            "title": "Destinations Enabled"
+          },
+          "pipes": {
+            "type": "integer",
+            "title": "Pipes"
+          },
+          "pipes_enabled": {
+            "type": "integer",
+            "title": "Pipes Enabled"
+          },
+          "events_received": {
+            "type": "integer",
+            "title": "Events Received",
+            "description": "Incoming events across all enabled sources in the window"
+          },
+          "errors": {
+            "type": "integer",
+            "title": "Errors",
+            "description": "Error-level incoming-log records in the window"
+          },
+          "events_delivered": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Events Delivered",
+            "description": "Rows written to the destinations' ClickHouse events tables in the window; null when the analytics store is unavailable\n"
+          }
+        },
+        "type": "object",
+        "required": [
+          "sources",
+          "sources_enabled",
+          "destinations",
+          "destinations_enabled",
+          "pipes",
+          "pipes_enabled",
+          "events_received",
+          "errors"
+        ],
+        "title": "DashboardTotals",
+        "description": "Headline counters for the dashboard stat cards."
       },
       "Destination": {
         "properties": {
@@ -12049,22 +14392,22 @@
           },
           "total": {
             "type": "integer",
-            "minimum": 0,
+            "minimum": 0.0,
             "title": "Total"
           },
           "page": {
             "type": "integer",
-            "minimum": 1,
+            "minimum": 1.0,
             "title": "Page"
           },
           "size": {
             "type": "integer",
-            "minimum": 1,
+            "minimum": 1.0,
             "title": "Size"
           },
           "pages": {
             "type": "integer",
-            "minimum": 0,
+            "minimum": 0.0,
             "title": "Pages"
           }
         },
@@ -12073,18 +14416,284 @@
         "title": "EventSummaryPage",
         "description": "One page of event summaries."
       },
-      "HTTPValidationError": {
+      "LiveEvent": {
         "properties": {
-          "detail": {
+          "id": {
+            "type": "string",
+            "title": "Id",
+            "description": "Synthetic id (log timestamp + row index)"
+          },
+          "date": {
+            "type": "string",
+            "title": "Date",
+            "description": "Raw log timestamp from Jitsu"
+          },
+          "level": {
+            "type": "string",
+            "title": "Level"
+          },
+          "site_id": {
+            "type": "string",
+            "title": "Site Id",
+            "description": "The Jitsu site/stream id (log actor) this event came from"
+          },
+          "source_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source Id",
+            "description": "The backend source that owns the site, when known"
+          },
+          "ingest_type": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ingest Type"
+          },
+          "type": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Type",
+            "description": "Event kind (track/page/identify)"
+          },
+          "message_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Message Id"
+          },
+          "status": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Status"
+          },
+          "error": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Error"
+          },
+          "write_key": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Write Key"
+          },
+          "origin_domain": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Origin Domain"
+          },
+          "host": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Host"
+          },
+          "page_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Page Url"
+          },
+          "page_path": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Page Path"
+          },
+          "page_title": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Page Title"
+          },
+          "user_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "User Id"
+          },
+          "email": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Email"
+          },
+          "anonymous_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Anonymous Id"
+          },
+          "referring_domain": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Referring Domain"
+          },
+          "event": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Event",
+            "description": "The analytics event payload (ingest httpPayload)"
+          },
+          "context": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Context",
+            "description": "The event context block"
+          },
+          "ingest_payload": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ingest Payload",
+            "description": "The full parsed ingest payload (raw event)"
+          },
+          "unparsed_payload": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Unparsed Payload",
+            "description": "The raw request body when it was a string"
+          },
+          "destinations": {
             "items": {
-              "$ref": "#/components/schemas/ValidationError"
+              "type": "string"
             },
             "type": "array",
-            "title": "Detail"
+            "title": "Destinations",
+            "description": "Destination names/tags the event was routed to"
           }
         },
         "type": "object",
-        "title": "HTTPValidationError"
+        "required": ["id", "date", "level", "site_id", "destinations"],
+        "title": "LiveEvent",
+        "description": "One incoming event from the Jitsu incoming log, normalized to the shape the dashboard's live-events table renders."
+      },
+      "LiveEventList": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/LiveEvent"
+            },
+            "type": "array",
+            "title": "Items"
+          }
+        },
+        "type": "object",
+        "required": ["items"],
+        "title": "LiveEventList",
+        "description": "A list of live incoming events (newest first)."
       },
       "Me": {
         "properties": {
@@ -12148,22 +14757,22 @@
           },
           "total": {
             "type": "integer",
-            "minimum": 0,
+            "minimum": 0.0,
             "title": "Total"
           },
           "page": {
             "type": "integer",
-            "minimum": 1,
+            "minimum": 1.0,
             "title": "Page"
           },
           "size": {
             "type": "integer",
-            "minimum": 1,
+            "minimum": 1.0,
             "title": "Size"
           },
           "pages": {
             "type": "integer",
-            "minimum": 0,
+            "minimum": 0.0,
             "title": "Pages"
           }
         },
@@ -12182,22 +14791,22 @@
           },
           "total": {
             "type": "integer",
-            "minimum": 0,
+            "minimum": 0.0,
             "title": "Total"
           },
           "page": {
             "type": "integer",
-            "minimum": 1,
+            "minimum": 1.0,
             "title": "Page"
           },
           "size": {
             "type": "integer",
-            "minimum": 1,
+            "minimum": 1.0,
             "title": "Size"
           },
           "pages": {
             "type": "integer",
-            "minimum": 0,
+            "minimum": 0.0,
             "title": "Pages"
           }
         },
@@ -12216,22 +14825,22 @@
           },
           "total": {
             "type": "integer",
-            "minimum": 0,
+            "minimum": 0.0,
             "title": "Total"
           },
           "page": {
             "type": "integer",
-            "minimum": 1,
+            "minimum": 1.0,
             "title": "Page"
           },
           "size": {
             "type": "integer",
-            "minimum": 1,
+            "minimum": 1.0,
             "title": "Size"
           },
           "pages": {
             "type": "integer",
-            "minimum": 0,
+            "minimum": 0.0,
             "title": "Pages"
           }
         },
@@ -12250,22 +14859,22 @@
           },
           "total": {
             "type": "integer",
-            "minimum": 0,
+            "minimum": 0.0,
             "title": "Total"
           },
           "page": {
             "type": "integer",
-            "minimum": 1,
+            "minimum": 1.0,
             "title": "Page"
           },
           "size": {
             "type": "integer",
-            "minimum": 1,
+            "minimum": 1.0,
             "title": "Size"
           },
           "pages": {
             "type": "integer",
-            "minimum": 0,
+            "minimum": 0.0,
             "title": "Pages"
           }
         },
@@ -12284,22 +14893,22 @@
           },
           "total": {
             "type": "integer",
-            "minimum": 0,
+            "minimum": 0.0,
             "title": "Total"
           },
           "page": {
             "type": "integer",
-            "minimum": 1,
+            "minimum": 1.0,
             "title": "Page"
           },
           "size": {
             "type": "integer",
-            "minimum": 1,
+            "minimum": 1.0,
             "title": "Size"
           },
           "pages": {
             "type": "integer",
-            "minimum": 0,
+            "minimum": 0.0,
             "title": "Pages"
           }
         },
@@ -12318,22 +14927,22 @@
           },
           "total": {
             "type": "integer",
-            "minimum": 0,
+            "minimum": 0.0,
             "title": "Total"
           },
           "page": {
             "type": "integer",
-            "minimum": 1,
+            "minimum": 1.0,
             "title": "Page"
           },
           "size": {
             "type": "integer",
-            "minimum": 1,
+            "minimum": 1.0,
             "title": "Size"
           },
           "pages": {
             "type": "integer",
-            "minimum": 0,
+            "minimum": 0.0,
             "title": "Pages"
           }
         },
@@ -12352,22 +14961,22 @@
           },
           "total": {
             "type": "integer",
-            "minimum": 0,
+            "minimum": 0.0,
             "title": "Total"
           },
           "page": {
             "type": "integer",
-            "minimum": 1,
+            "minimum": 1.0,
             "title": "Page"
           },
           "size": {
             "type": "integer",
-            "minimum": 1,
+            "minimum": 1.0,
             "title": "Size"
           },
           "pages": {
             "type": "integer",
-            "minimum": 0,
+            "minimum": 0.0,
             "title": "Pages"
           }
         },
@@ -12542,6 +15151,18 @@
         "type": "string",
         "enum": ["http", "https", "clickhouse", "clickhouse-secure"],
         "title": "Protocol"
+      },
+      "RefreshRequest": {
+        "properties": {
+          "refresh_token": {
+            "type": "string",
+            "title": "Refresh Token",
+            "description": "The refresh_token returned by /v1/auth/token or /v1/register."
+          }
+        },
+        "type": "object",
+        "required": ["refresh_token"],
+        "title": "RefreshRequest"
       },
       "RegisterRequest": {
         "properties": {
@@ -12846,22 +15467,22 @@
           },
           "total": {
             "type": "integer",
-            "minimum": 0,
+            "minimum": 0.0,
             "title": "Total"
           },
           "page": {
             "type": "integer",
-            "minimum": 1,
+            "minimum": 1.0,
             "title": "Page"
           },
           "size": {
             "type": "integer",
-            "minimum": 1,
+            "minimum": 1.0,
             "title": "Size"
           },
           "pages": {
             "type": "integer",
-            "minimum": 0,
+            "minimum": 0.0,
             "title": "Pages"
           }
         },
@@ -12940,22 +15561,22 @@
           },
           "total": {
             "type": "integer",
-            "minimum": 0,
+            "minimum": 0.0,
             "title": "Total"
           },
           "page": {
             "type": "integer",
-            "minimum": 1,
+            "minimum": 1.0,
             "title": "Page"
           },
           "size": {
             "type": "integer",
-            "minimum": 1,
+            "minimum": 1.0,
             "title": "Size"
           },
           "pages": {
             "type": "integer",
-            "minimum": 0,
+            "minimum": 0.0,
             "title": "Pages"
           }
         },
@@ -13101,7 +15722,7 @@
           "token": {
             "type": "string",
             "title": "Token",
-            "description": "The short-lived support token — send as the X-Support-Token header. Valid until the session expires or is ended."
+            "description": "The short-lived support token \u2014 send as the X-Support-Token header. Valid until the session expires or is ended."
           }
         },
         "type": "object",
@@ -13305,6 +15926,18 @@
             ],
             "title": "Expires In",
             "description": "Token lifetime in seconds"
+          },
+          "refresh_token": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Refresh Token",
+            "description": "Firebase refresh token. Exchange it at /v1/auth/refresh for a new access token when the current one expires.\n"
           }
         },
         "type": "object",
@@ -13342,42 +15975,6 @@
         "type": "object",
         "required": ["id", "email"],
         "title": "User"
-      },
-      "ValidationError": {
-        "properties": {
-          "loc": {
-            "items": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "integer"
-                }
-              ]
-            },
-            "type": "array",
-            "title": "Location"
-          },
-          "msg": {
-            "type": "string",
-            "title": "Message"
-          },
-          "type": {
-            "type": "string",
-            "title": "Error Type"
-          },
-          "input": {
-            "title": "Input"
-          },
-          "ctx": {
-            "type": "object",
-            "title": "Context"
-          }
-        },
-        "type": "object",
-        "required": ["loc", "msg", "type"],
-        "title": "ValidationError"
       },
       "ZidSourceConnectResult": {
         "properties": {

@@ -107,9 +107,12 @@
         </FormField>
 
         <FormField
+          v-if="isZid"
           label="Zid store ID"
+          required
           for-id="source-store-id"
-          hint="Required to connect a Zid store. Leave blank for a template-based source."
+          :error="errors.storeId"
+          hint="The store this source connects to — found in your Zid dashboard."
         >
           <input
             id="source-store-id"
@@ -208,12 +211,11 @@ const form = reactive({
   isEnabled: true
 })
 
-// A Zid store is identified by its store id; entering one makes this a Zid
-// source, for which the template pick is optional (the backend provisions the
-// ingest site itself).
-const isZid = computed(() => form.storeId.trim().length > 0)
+// Zid-ness comes from the template pick, not from typing a store id — only a
+// Zid source needs (or shows) the store ID field.
+const isZid = computed(() => form.templateId === 'zid')
 
-const errors = reactive({ templateId: '', name: '', slug: '' })
+const errors = reactive({ templateId: '', name: '', slug: '', storeId: '' })
 
 const typeTabs = computed(() => [
   { key: 'all', label: 'All', count: templates.value.length },
@@ -259,10 +261,12 @@ watch(
 )
 
 function validate() {
-  // A Zid source needs no template — its store id stands in for one.
-  errors.templateId =
-    form.templateId || isZid.value ? '' : 'Pick a source template.'
+  errors.templateId = form.templateId ? '' : 'Pick a source template.'
   errors.name = form.name.trim() ? '' : 'A source name is required.'
+  errors.storeId =
+    isZid.value && !form.storeId.trim()
+      ? 'A Zid source needs its store ID.'
+      : ''
 
   if (!form.slug.trim()) {
     errors.slug = 'A slug is required.'
@@ -272,7 +276,7 @@ function validate() {
     errors.slug = ''
   }
 
-  return !errors.templateId && !errors.name && !errors.slug
+  return !errors.templateId && !errors.name && !errors.slug && !errors.storeId
 }
 
 async function submit() {
@@ -283,15 +287,21 @@ async function submit() {
   // go-live steps (connect webhooks, first sync) are one click away.
   if (isReal.value) {
     try {
+      // The zid and web-sdk templates map to the backend's own source types —
+      // both provision a Jitsu stream + write key + ClickHouse destination and
+      // pipeline in the create call; the Web SDK's remaining setup is just
+      // pasting the snippet on the client site.
       const sourceType = isZid.value
         ? 'zid'
-        : (findById(form.templateId)?.sourceType ?? null)
+        : form.templateId === 'web-sdk'
+          ? 'web'
+          : (findById(form.templateId)?.sourceType ?? null)
       const created = await createSourceReal({
         name: form.name.trim(),
         slug: form.slug.trim(),
         sourceType,
         templateId: form.templateId || null,
-        storeId: form.storeId.trim() || null
+        storeId: isZid.value ? form.storeId.trim() : null
       })
       $q.notify({
         message: `“${form.name.trim()}” created`,

@@ -12,4 +12,6 @@ export interface TokenResponse {
   token_type: TokenType
   /** Token lifetime in seconds */
   expires_in?: number | null
+  /** Firebase refresh token. Exchange it at /v1/auth/refresh for a new access token when the current one expires. */
+  refresh_token?: string | null
 }

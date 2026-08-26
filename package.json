@@ -36,7 +36,6 @@
     "@quasar/extras": "^2.0.0",
     "@tanstack/vue-query": "^5.101.3",
     "apexcharts": "^5.15.2",
-    "firebase": "^12.16.0",
     "quasar": "^2.20.0",
     "vue": "^3.5.22",
     "vue-router": "^5.0.6",

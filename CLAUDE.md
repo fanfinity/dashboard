@@ -27,17 +27,28 @@ Linting only `src/` is how a green local run turns into a red CI run.
 There is **no unit-test runner**. The behavioural gate is `pnpm smoke:dist`, which builds,
 serves `dist/spa`, signs in for real, walks every route in the screen manifest, and fails on any
 console error, uncaught error, rendered `ErrorState`, unresolved route, or missing `<h1>`.
-It needs `SMOKE_EMAIL`/`SMOKE_PASSWORD` in `.env` (see `.env.example`) — but **`smoke.mjs` never
-loads `.env` itself**, it only reads `process.env`, so bare `pnpm smoke:dist` exits 2 unless those
-two are already exported in the shell. The form that works from a clean shell is
-`pnpm build && node --env-file=.env scripts/smoke.mjs --serve`, and that is what
-`.vscode/tasks.json` runs. Teaching `smoke.mjs` to call `process.loadEnvFile()` itself would fix
-it properly and nobody has done it yet.
+It needs `SMOKE_EMAIL`/`SMOKE_PASSWORD` in `.env` (see `.env.example`), and **`smoke.mjs` now
+loads `.env` itself** via `process.loadEnvFile()`, so bare `pnpm smoke:dist` works from a clean
+shell. That call does not overwrite variables already set, so `--env-file=.env` and a
+workflow's `env:` block still win where they are used.
 
-`SMOKE_ROUTES` narrows the walk while iterating —
-`SMOKE_ROUTES=/pipes,/sources node --env-file=.env scripts/smoke.mjs --serve` — then run it
-unfiltered once to confirm nothing else broke. A route named there that is not in the manifest
-is an error, not a silent skip.
+**It serves on port 9000, and that is load-bearing, not a default nobody thought about.**
+Sign-in is a real cross-origin `POST` to `VITE_API_BASE` now, so the browser's origin has to be
+one the backend's `CORS_ALLOW_ORIGINS` names — and the only localhost origin staging accepts is
+exactly `http://localhost:9000` (not `127.0.0.1`, not the `4173` this used to use, which failed
+at the preflight before reaching a single screen). It therefore **collides with `pnpm dev`**:
+stop the dev server for the length of a local run. `serve-dist.mjs` says so on `EADDRINUSE`
+rather than printing a bare stack. Only set `SMOKE_PORT` if the backend has been taught that
+port too.
+
+The other half of that: `SMOKE_EMAIL` must be a real account **on the backend `VITE_API_BASE`
+points at**. The backend authenticates at the Identity Platform _project_ level, so an account
+that only ever existed in the old tenant gets `401 Invalid email or password`; register it with
+`POST /v1/register` against that same host. The script names which of the two failures it hit.
+
+`SMOKE_ROUTES` narrows the walk while iterating — `SMOKE_ROUTES=/pipes,/sources pnpm smoke:dist`
+— then run it unfiltered once to confirm nothing else broke. A route named there that is not in
+the manifest is an error, not a silent skip.
 
 `pnpm build` is the other gate worth leaning on: it hard-fails on unresolved `@/` imports,
 unimported components and malformed templates.
@@ -137,8 +148,9 @@ at module load rather than 404-ing silently.
 `scripts/smoke.mjs` walks every route from it — every route in `screens`, that is, not in
 `legacyScreens`. That split used to be load-bearing for `/live-events`, which read a
 third-party events console through a `/japi` dev proxy a production build did not have. It no
-longer is: `/live-events` reads `GET /v1/events` through the normal data-source gate and has a
-mock fixture, so it would survive `pnpm smoke:dist` — promoting it into `screens` is an
+longer is: `/live-events` reads `GET /v1/accounts/{account}/events/live` through the normal
+data-source gate and has a mock fixture, so it would survive `pnpm smoke:dist` — promoting it
+into `screens` is an
 available, deliberate change that nobody has made yet.
 
 A screen's **`group` field does three jobs**, so it has to be accurate: it picks the sidebar
@@ -362,9 +374,9 @@ skips the whole directory.
 ## Data architecture
 
 **The dashboard is connected to the Fanfinity backend and to nothing else.** Every live call
-this app makes goes to that API (plus Identity Platform for sign-in) — there are no direct
-connections to event collectors, vendor consoles or third-party catalogs, and no dev-only
-proxy standing in for one. Anything that has to talk to an outside system is the backend's
+this app makes goes to that API — sign-in included, so not even Identity Platform is a host
+the browser talks to. There are no direct connections to event collectors, vendor consoles or
+third-party catalogs, and no dev-only proxy standing in for one. Anything that has to talk to an outside system is the backend's
 job; hitting the backend is what moves everything else.
 
 Not all of that API is built yet, so pages get data from three places, and the composables
@@ -422,10 +434,17 @@ exists to prevent.`sendMutation()`and`fetchCollection()`resolve`path` the same w
 
    **Wired to a real endpoint today**: `useSources()`, `useDestinations()` and `usePipes()`
    (`/v1/accounts/{account_id}/sources|destinations|pipelines`), plus the per-source panels
-   PR-side (`useSourceSyncAPI`, `useSourceDataAPI`, `usePipelineFunctions`). **Wired to a
-   drafted endpoint that does not exist yet**: `useDashboardHome()` (`/v1/dashboard`,
-   `/v1/errors`), `useLiveEvents()` (`/v1/events`, `/v1/event-streams`),
+   PR-side (`useSourceSyncAPI`, `useSourceDataAPI`, `usePipelineFunctions`),
+   `useLiveEvents()` (`/v1/accounts/{account_id}/events/live`, with the same account's
+   `/sources` behind the stream selector) and `useDashboardHome()`
+   (`/v1/accounts/{account_id}/dashboard` — one aggregate call that feeds the whole home
+   screen, adapted into the three mock payload shapes rather than read through
+   `useMockResource`). **Wired to a drafted endpoint that does not exist yet**:
    `useConnectorCatalog()` (`/v1/connectors`). Everything else has no `api` at all.
+
+   Grep the merged `openapi/fanfinity-api.json` before adding an `api` path — `/v1/dashboard`
+   and `/v1/errors` were drafted flat and shipped account-scoped and merged, which is exactly
+   the drift the check catches.
 
    **There is no fallback from real to mock, and that is deliberate.** `loadReal()` sets
    `apiMissing` and blanks `data`; it does not quietly read the fixture instead, because a
@@ -460,10 +479,14 @@ exists to prevent.`sendMutation()`and`fetchCollection()`resolve`path` the same w
    gate stops testing what users get.
 
 2. **Events, connectors and everything else — through the backend, never direct.**
-   `useLiveEvents.js` reads `GET /v1/events` (and `GET /v1/event-streams` for the site
-   selector); `useConnectorCatalog.js` reads `GET /v1/connectors`. Both go through the same
-   data-source gate as every other screen, with `public/data/live-events.json`,
-   `event-streams.json` and `connectors.json` as their mock fixtures.
+   `useLiveEvents.js` reads `GET /v1/accounts/{account}/events/live`, and lists that
+   account's sources for the stream selector — "stream" being the screen's word for a source,
+   which is why the selector's value goes out as the endpoint's `source_id`. Sources with no
+   provisioned site are left out: they have no event log, so offering one would select a
+   stream that can only ever come back empty. `useConnectorCatalog.js` reads
+   `GET /v1/connectors`, which is still drafted. Both go through the same data-source gate as
+   every other screen, with `public/data/live-events.json`, `event-streams.json` and
+   `connectors.json` as their mock fixtures.
 
    **This is a hard rule, not a preference: the dashboard connects to the Fanfinity backend
    and to nothing else.** Where events are actually collected — Jitsu today — is the backend's
@@ -471,8 +494,9 @@ exists to prevent.`sendMutation()`and`fetchCollection()`resolve`path` the same w
    Three things enforce it rather than merely describing it:
 
    - **The CSP.** `index.html` is `default-src 'self'` with `img-src 'self'` and a
-     `connect-src` naming only the Sfere API hosts plus Identity Platform. A direct call to
-     any other origin is blocked by the browser, not caught in review.
+     `connect-src` naming only the Sfere API hosts — Identity Platform included in that "no",
+     since sign-in is a backend call now. A direct call to any other origin is blocked by the
+     browser, not caught in review.
    - **No dev proxy.** `quasar.config.js` has no `devServer.proxy`. There used to be a
      `/japi/*` → events-console forward that injected a server-side API key, which meant
      `/live-events` worked in `pnpm dev` and nowhere else. Nothing is dev-only now.
@@ -481,9 +505,11 @@ exists to prevent.`sendMutation()`and`fetchCollection()`resolve`path` the same w
      to a collector is something the backend does. (`useDemoEvents.js` is a local simulator
      for the demo screens and reaches nothing; it is not an exception to this.)
 
-   `GET /v1/events` is drafted to return an **already-flattened, vendor-neutral** record
-   (`LiveEvent` in `openapi/cdp-api-draft.yaml`): unwrapping ingest envelopes, redacting
-   credential headers and masking write keys are the backend's job. That shape is what keeps
+   The live-events endpoint returns an **already-flattened, vendor-neutral** record
+   (`LiveEvent` in `openapi/fanfinity-api.json`): unwrapping ingest envelopes, redacting
+   credential headers and masking write keys are the backend's job. `useLiveEvents.js`
+   maps its snake_case fields onto the camelCase shape the fixture carries, so the page is
+   written once against one record shape. That shape is what keeps
    the rule true over time — a passthrough of some upstream's wire format would put the
    dashboard back in the business of knowing who that upstream is. `LiveEventsPage.vue` used
    to scrub the vendor's name out of every string it rendered; there is nothing to scrub now.
@@ -499,12 +525,13 @@ exists to prevent.`sendMutation()`and`fetchCollection()`resolve`path` the same w
      `useGetMe()`; vue-query is registered in `src/boot/vue-query.js`). Never edit
      `src/api/fanfinity.ts` or `src/api/model/` by hand.
    - Auth lives in `src/api/mutator.js` (`customFetch`): prefixes `VITE_API_BASE`
-     (fallback `http://localhost:8080`), attaches the Identity Platform ID token as
-     a Bearer header, retries once with a force-refreshed token on 401, and throws
-     `ApiError` (status + RFC 9457 problem+json body) on non-2xx.
-   - `useMe.js` bootstraps the session: `useAuth.js`'s `onAuthStateChanged` calls
-     `loadMe()`/`clearMe()`, populating `me` + `memberships` from `GET /v1/me`
-     (best-effort — errors never block routing).
+     (fallback `http://localhost:8080`), attaches the access token from `useSession`
+     as a Bearer header, refreshes once via `POST /v1/auth/refresh` on 401, and throws
+     `ApiError` (status + RFC 9457 problem+json body) on non-2xx. See "Authentication".
+   - `useMe.js` bootstraps the session: `useAuth.js` calls `loadMe()` after sign-in and
+     `clearMe()` on sign-out (the router also calls `loadMe()` on cold load into an authed
+     route), populating `me` + `memberships` from `GET /v1/me` (best-effort — errors never
+     block routing).
    - The backend **requires a verified email** (`401 Email is not verified`), and its
      `CORS_ALLOW_ORIGINS` must include the dashboard origin. A PR preview channel gets a
      different, unguessable origin every time, so it cannot be listed — staging admits it by
@@ -542,49 +569,57 @@ This shapes several decisions and will break new code that ignores it:
   URI (which the CSP would block). Prefer real asset files / SVG endpoints over data URIs.
 - Third-party JS must be bundled via npm (first-party `script-src 'self'`), not loaded from a CDN.
 
-## Authentication & multi-tenancy
+## Authentication
 
-Sign-in is Google Cloud Identity Platform (the Firebase Auth JS SDK) email/password auth,
-gated by [multi-tenancy](https://docs.cloud.google.com/identity-platform/docs/multi-tenancy):
+Sign-in goes through the **Fanfinity backend**, not the Firebase SDK. The browser no longer
+talks to Identity Platform directly (there is no `firebase` dependency and no `src/firebase.js`).
+This was a deliberate switch: `/v1/register` creates users at the Identity Platform **project**
+level (`koratona-9791a`), but the old client-side Firebase sign-in was **tenant**-scoped
+(`fanfinity-app-fcsgt`), so it couldn't find those users and failed with `EMAIL_NOT_FOUND`.
+Routing sign-in through the backend (which authenticates at project level, matching register)
+removes the mismatch and makes the backend the single source of truth for the Firebase project.
 
-- `src/firebase.js` calls `initializeApp`/`getAuth`, then pins `auth.tenantId` from
-  `VITE_FIREBASE_DEFAULT_TENANT_ID` at module init. `auth.tenantId` is an in-memory-only
-  SDK property (never persisted), so it must be re-set on every full page load — which
-  happens naturally here since this module's top-level code reruns each load.
-- `src/composables/useAuth.js` follows the same module-singleton pattern as `useFeatures.js`:
-  a lazily-attached `onAuthStateChanged` listener backing reactive `user`/`loading`/`error`,
-  exposed via `useAuth()` returning `{ user, loading, error, signUp, signIn, logOut,
-tenantId }`. It also exports `waitForAuthReady()`, a promise resolved on the _first_
-  auth-state callback — needed because that callback is async, so anything deciding access
-  on page load (like the router guard) must await it rather than read `user.value`
-  immediately.
-- `src/router/routes.js` tags the top-level `/` (`MainLayout`) route with
-  `meta: { requiresAuth: true }`; `src/router/index.js`'s `beforeEach` awaits
-  `waitForAuthReady()` and redirects to `/login?redirect=<path>` if signed out. `/login`
-  itself carries no such meta.
-- **Only one tenant exists today** (`fanfinity-app-fcsgt` / display name `fanfinity-app`,
-  in the `koratona-9791a` project), so every user authenticates into it via the env var
-  above — there is no per-user or per-email-domain tenant selection. Building that requires
-  a lookup mechanism backed by a database/backend (Identity Platform's client SDK has no
-  tenant-discovery API), and this repo has no owned backend (see "Data architecture" above).
-  That's intentionally deferred until a second tenant exists to justify it — don't add a
-  static domain→tenant mapping as a substitute; it won't scale past one real lookup case.
+- `src/composables/useSession.js` is the token store (leaf module): `accessToken`/`refreshToken`
+  refs hydrated **synchronously** from `localStorage` (`sfere_access_token` /
+  `sfere_refresh_token`) at import, plus `setTokens`/`clearTokens`/`isAuthenticated`. This
+  replaces Firebase's IndexedDB session persistence.
+- `src/composables/useAuth.js` (module-singleton, like `useFeatures.js`) exposes
+  `{ isAuthenticated, loading, error, signUp, signIn, logOut }`. `signIn` calls the generated
+  `login()` (`POST /v1/auth/token`, OAuth2 password grant), stores the returned tokens, then
+  `loadMe()`. `signUp` registers via `POST /v1/register` then signs in. `waitForAuthReady()` is
+  kept but now resolves immediately (token hydration is synchronous — no async first callback to
+  await like `onAuthStateChanged` had). The signed-in user's identity comes from `useMe`'s `me`
+  (backend `/v1/me`), not a Firebase user object.
+- `src/api/mutator.js` attaches `accessToken` as the Bearer header when present. On a `401` with
+  a refresh token it trades it at `POST /v1/auth/refresh` (via a plain fetch, not the generated
+  `refresh()`, to avoid recursing through `customFetch`), stores the new tokens, and retries once;
+  a failed refresh clears the session so the guard bounces to `/login`.
+- `src/router/index.js`'s `beforeEach` gates `requiresAuth` routes on `isAuthenticated`
+  (token presence), then confirms a backend account via `waitForAccount()`; a missing account
+  clears tokens and redirects to `/login`. `/login` carries no `requiresAuth` meta.
+
+The access token is a short-lived (~1h) Firebase ID token; the backend also returns a refresh
+token so sessions survive past that. **Multi-tenancy is now a backend concern** — the dashboard
+sends no `tenantId` and needs no `VITE_FIREBASE_*` config.
 
 ## Environment / secrets
 
-Config lives in a gitignored `.env` at the project root, and it is short on purpose: three
-Firebase values, `VITE_API_BASE`, and the two smoke credentials. See `.env.example`.
+Config lives in a gitignored `.env` at the project root, and it is short on purpose:
+`VITE_API_BASE`, the two smoke credentials, and the two build-identity stamps. See
+`.env.example`.
 
-**A var naming a non-Sfere host does not belong here.** `EVENTS_API_KEY`, `VITE_JITSU_HOST`,
-`VITE_JITSU_WRITE_KEY`, `VITE_EVENTS_API_BASE`, `VITE_EVENTS_BASE`,
-`VITE_EVENTS_WORKSPACE_ID`, `VITE_EVENTS_ACTOR_ID` and `VITE_CDP_MOCK_API_BASE` are all gone,
-and the deploy workflows no longer pass the Jitsu/events ones either. If a feature seems to
+**A var naming a non-Sfere host does not belong here.** The three `VITE_FIREBASE_*` values are
+gone with client-side sign-in, and `EVENTS_API_KEY`, `VITE_JITSU_HOST`, `VITE_JITSU_WRITE_KEY`,
+`VITE_EVENTS_API_BASE`, `VITE_EVENTS_BASE`, `VITE_EVENTS_WORKSPACE_ID`, `VITE_EVENTS_ACTOR_ID`
+and `VITE_CDP_MOCK_API_BASE` went with the direct event connections; the deploy workflows no
+longer pass any of them either. If a feature seems to
 need a credential for an outside system, that credential lives in the backend — the browser
 should never hold one.
 
 `quasar.config.js` still calls `process.loadEnvFile('.env')`, but no longer for a dev proxy:
-Quasar reads client-exposed `VITE_*` vars off `process.env`, so without it the Firebase values
-come through empty and every build dies at sign-in with `auth/invalid-api-key`.
+Quasar reads client-exposed `VITE_*` vars off `process.env`, so without it `VITE_API_BASE`
+comes through empty, every call falls back to `http://localhost:8080`, and a deployed build
+fails every request while looking like a backend outage.
 
 There is also no consent banner any more. It gated a browser ingestion SDK that only ever
 mounted on the deleted `/events-demo` page, so despite what this file used to claim, the app
