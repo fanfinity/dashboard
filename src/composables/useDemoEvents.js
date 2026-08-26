@@ -10,9 +10,9 @@ import { useMockResource } from '@/composables/useMockResource'
  * array. A store click followed by a client-side navigation must land in the
  * same list.
  *
- * Nothing here talks to Jitsu, to `/japi` or to any ingest endpoint, and nothing
- * is persisted. `capture()` builds a payload in the shape the Web SDK would have
- * sent and pushes it onto an in-memory array; a reload starts a fresh session.
+ * Nothing here talks to any ingest endpoint, and nothing is persisted.
+ * `capture()` builds a payload in the shape a Web SDK would have sent and
+ * pushes it onto an in-memory array; a reload starts a fresh session.
  * That is the honest model — none of it ever reached a backend, so the screens
  * say so rather than implying an ingest happened.
  *

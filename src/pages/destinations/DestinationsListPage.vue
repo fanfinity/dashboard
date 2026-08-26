@@ -111,6 +111,7 @@
 <script setup>
 import { computed, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
+import { useQuasar } from 'quasar'
 import PageHeader from '@/components/ui/PageHeader.vue'
 import TabNav from '@/components/ui/TabNav.vue'
 import DataTable from '@/components/ui/DataTable.vue'
@@ -121,13 +122,14 @@ import DestinationTemplateBadge from '@/components/destinations/DestinationTempl
 import {
   formatCount,
   formatDate,
-  useDestinations,
-  useDestinationToasts
+  useDestinations
 } from '@/composables/useDestinations'
+import { notifyMutationResult } from '@/composables/useMutationFeedback'
 
 const router = useRouter()
-const { destinations, loading, error, apiMissing, load } = useDestinations()
-const { toast } = useDestinationToasts()
+const $q = useQuasar()
+const { destinations, loading, error, apiMissing, load, setEnabled } =
+  useDestinations()
 
 const query = ref('')
 const tab = ref('all')
@@ -193,13 +195,13 @@ function open(row) {
   router.push({ name: 'destinations-detail', params: { id: row.id } })
 }
 
-// No backend: flip the loaded record and say so in the toast. A reload puts the
-// mock JSON back.
-function toggle(row) {
-  row.isEnabled = !row.isEnabled
-  toast(
-    `“${row.name}” ${row.isEnabled ? 'enabled' : 'paused'} — demo data, nothing was saved.`
-  )
+async function toggle(row) {
+  const next = !row.isEnabled
+  const res = await setEnabled(row.id, next)
+  notifyMutationResult($q, res, {
+    success: `“${row.name}” ${next ? 'enabled' : 'paused'}`,
+    apiMissing: `Can't ${next ? 'enable' : 'pause'} “${row.name}” yet.`
+  })
 }
 
 onMounted(load)

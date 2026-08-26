@@ -9,7 +9,7 @@
   "tasks": [
     {
       "label": "Dev server",
-      "detail": "pnpm dev — quasar dev with HMR and the /japi proxy",
+      "detail": "pnpm dev — quasar dev with HMR",
       "type": "shell",
       "command": "pnpm dev",
       "isBackground": true,
@@ -18,6 +18,26 @@
         "panel": "dedicated",
         "group": "dashboard"
       },
+      "problemMatcher": []
+    },
+    {
+      "label": "CDP API docs",
+      "detail": "pnpm docs:cdp — Scalar API reference for openapi/cdp-api-draft.yaml on :3001",
+      "type": "shell",
+      "command": "pnpm docs:cdp",
+      "isBackground": true,
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated",
+        "group": "dashboard-docs"
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "Dev server + CDP docs",
+      "detail": "Dev server + the browsable reference for openapi/cdp-api-draft.yaml, for working on a screen whose endpoint is still drafted.",
+      "dependsOn": ["Dev server", "CDP API docs"],
+      "dependsOrder": "parallel",
       "problemMatcher": []
     },
     {
@@ -49,7 +69,7 @@
       "label": "Smoke (build + walk every route)",
       "detail": "Builds, serves dist/spa, signs in, visits every screen. Needs SMOKE_EMAIL / SMOKE_PASSWORD in .env",
       "type": "shell",
-      "command": "pnpm build && node --env-file=.env scripts/smoke.mjs --serve",
+      "command": "pnpm smoke:dist",
       "group": "test",
       "presentation": { "reveal": "always", "panel": "dedicated" },
       "problemMatcher": []

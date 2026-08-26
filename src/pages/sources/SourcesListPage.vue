@@ -145,6 +145,7 @@ import {
   sourceTypeLabel,
   useSources
 } from '@/composables/useSources'
+import { notifyMutationResult } from '@/composables/useMutationFeedback'
 
 const router = useRouter()
 const route = useRoute()
@@ -271,20 +272,13 @@ function open(row) {
   router.push({ name: 'sources-detail', params: { id: row.id } })
 }
 
-// Nothing here persists — say so in the toast rather than implying a save.
-function notifyLocal(message) {
-  $q.notify({
-    message,
-    caption: 'Local preview only — no backend is connected yet.',
-    color: 'dark',
-    position: 'bottom',
-    timeout: 2500
+async function toggle(row) {
+  const wasEnabled = row.isEnabled
+  const res = await setEnabled(row.id, !wasEnabled)
+  notifyMutationResult($q, res, {
+    success: `${row.name} ${wasEnabled ? 'paused' : 'enabled'}`,
+    apiMissing: `Can't ${wasEnabled ? 'pause' : 'enable'} ${row.name} yet.`
   })
-}
-
-function toggle(row) {
-  setEnabled(row.id, !row.isEnabled)
-  notifyLocal(`${row.name} ${row.isEnabled ? 'paused' : 'enabled'}`)
 }
 
 function ask(row) {
@@ -298,12 +292,15 @@ const deleteMessage = computed(() =>
     : ''
 )
 
-function remove() {
+async function remove() {
   const row = target.value
   if (!row) return
-  removeSource(row.id)
-  notifyLocal(`${row.name} moved to trash`)
   target.value = null
+  const res = await removeSource(row.id)
+  notifyMutationResult($q, res, {
+    success: `${row.name} moved to trash`,
+    apiMissing: `Can't delete ${row.name} yet.`
+  })
 }
 
 onMounted(load)

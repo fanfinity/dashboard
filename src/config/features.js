@@ -35,7 +35,7 @@ export const FEATURES = [
   {
     key: 'live-events',
     label: 'Live events',
-    description: 'The raw incoming event feed, read straight off the stream.',
+    description: 'The raw incoming event feed, read from the backend.',
     enabled: true
   },
   {
@@ -159,7 +159,7 @@ export const FEATURES = [
   {
     key: 'demo',
     label: 'Demo lab',
-    description: 'The demo store, event inspector and Jitsu write demo.',
+    description: 'The demo store and event inspector.',
     enabled: false
   },
   {

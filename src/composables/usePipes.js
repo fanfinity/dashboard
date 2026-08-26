@@ -1,34 +1,39 @@
 import { computed } from 'vue'
-import { useMockResource } from '@/composables/useMockResource'
+import { useMockResource, sendMutation } from '@/composables/useMockResource'
 import { currentAccount } from '@/composables/useMe'
-import { pageItems } from '@/lib/apiShape'
+import { pageItems, camelizeKeys } from '@/lib/apiShape'
 
 /**
  * The pipe collection — `public/data/pipes.json` — plus the derived counters and
- * the local-only mutations the Pipes screens perform.
+ * the mutations the Pipes screens perform.
  *
  * A pipe joins exactly one source to exactly one event destination and may run a
  * transform function on the events in between. Everything the four Pipes screens
  * know about that shape lives here so the pages stay presentational.
  *
- * There is no backend: `setEnabled`, `addPipe` and `removePipe` mutate the
- * loaded array and nothing else. Each `usePipes()` call owns its own state (it
- * wraps a fresh `useMockResource`), so a mutation on one screen is deliberately
- * invisible to the next — screens must never imply a write was persisted.
+ * `setEnabled` and `removePipe` are async: each sends the matching write via
+ * `sendMutation()` (mock mode = local-only, real mode =
+ * `PATCH`/`DELETE /v1/accounts/{account}/pipelines/{id}`) and only applies the
+ * local mutation once
+ * it comes back `ok` — see `notifyMutationResult()` in `useMutationFeedback.js`.
+ * Each `usePipes()` call still owns its own state (it wraps a fresh
+ * `useMockResource`), so a mutation on one screen stays invisible to another
+ * screen's already-loaded copy until that screen reloads.
  *
  * @returns {{
  *   pipes: import('vue').Ref<any[]>,
  *   loading: import('vue').Ref<boolean>,
  *   error: import('vue').Ref<string|null>,
+ *   apiMissing: import('vue').Ref<boolean>,
  *   load: () => Promise<void>,
  *   enabledCount: import('vue').ComputedRef<number>,
  *   transformCount: import('vue').ComputedRef<number>,
  *   deliveriesLastHour: import('vue').ComputedRef<number>,
  *   byId: (id: string) => any,
  *   findRoute: (sourceId: string, destinationId: string) => any,
- *   setEnabled: (id: string, isEnabled: boolean) => any,
+ *   setEnabled: (id: string, isEnabled: boolean) => Promise<object>,
  *   addPipe: (pipe: object) => object,
- *   removePipe: (id: string) => boolean
+ *   removePipe: (id: string) => Promise<object>
  * }}
  *
  * @example
@@ -83,23 +88,54 @@ export function usePipes() {
     )
   }
 
-  function setEnabled(id, isEnabled) {
-    const pipe = byId(id)
-    if (!pipe) return null
-    pipe.isEnabled = isEnabled
-    pipe.updatedAt = new Date().toISOString()
-    return pipe
+  // The acting account's path for one pipeline; null before GET /v1/me
+  // settles, which sendMutation reports as apiMissing rather than calling
+  // `/v1/accounts//pipelines/…`.
+  function pipelinePath(id) {
+    return () =>
+      currentAccount.value &&
+      `/v1/accounts/${currentAccount.value.id}/pipelines/${id}`
   }
 
+  async function setEnabled(id, isEnabled) {
+    const pipe = byId(id)
+    if (!pipe) return { ok: false, error: 'Pipe not found' }
+    const res = await sendMutation({
+      method: 'PATCH',
+      path: pipelinePath(id),
+      // PipelineUpdate is snake_case, and so is the record that comes back.
+      body: { is_enabled: isEnabled }
+    })
+    if (!res.ok) return res
+    if (res.skipped) {
+      pipe.isEnabled = isEnabled
+      pipe.updatedAt = new Date().toISOString()
+    } else {
+      pipes.value = pipes.value.map(p =>
+        p.id === id ? { ...p, ...camelizeKeys(res.data) } : p
+      )
+    }
+    return res
+  }
+
+  // Local-only, and only ever reached in "Demo data" mode: a real pipeline is
+  // the Jitsu link between a source's site and a destination, which the backend
+  // builds inside POST /v1/accounts/{account}/pipelines. PipeCreatePage calls
+  // usePipelinesAPI().create() for that and only falls through to here when
+  // there is no backend to call.
   function addPipe(pipe) {
     pipes.value = [pipe, ...pipes.value]
     return pipe
   }
 
-  function removePipe(id) {
-    const before = pipes.value.length
+  async function removePipe(id) {
+    const res = await sendMutation({
+      method: 'DELETE',
+      path: pipelinePath(id)
+    })
+    if (!res.ok) return res
     pipes.value = pipes.value.filter(p => p.id !== id)
-    return pipes.value.length < before
+    return res
   }
 
   return {

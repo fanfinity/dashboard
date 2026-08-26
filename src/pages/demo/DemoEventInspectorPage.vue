@@ -376,7 +376,6 @@ function replay(sample) {
     message: `${event.eventName} replayed`,
     caption: 'Simulated locally — nothing was ingested.',
     color: 'dark',
-    position: 'bottom',
     timeout: 2000
   })
 }
@@ -399,7 +398,7 @@ async function copyValue({ label, value }) {
   } catch {
     message = `Couldn't copy the ${label.toLowerCase()} — select it and copy by hand.`
   }
-  $q.notify({ message, color: 'dark', position: 'bottom', timeout: 2500 })
+  $q.notify({ message, color: 'dark', timeout: 2500 })
 }
 
 // Keep the detail panel pointed at the newest event until the user picks one.

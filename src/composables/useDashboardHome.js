@@ -233,6 +233,11 @@ export function useDashboardHome() {
     loading: dashboardLoading,
     error: dashboardError,
     load: loadDashboard
+    // No `api` here on purpose. This resource is read in mock mode only: real
+    // mode is served by loadReal() below, which calls the one aggregate
+    // endpoint that actually exists (GET /v1/accounts/{id}/dashboard) and
+    // adapts it into this same shape. Wiring a second path here would declare
+    // an endpoint nothing calls.
   } = useMockResource('dashboard', { initial: {} })
 
   const {
@@ -247,6 +252,8 @@ export function useDashboardHome() {
     loading: errorsLoading,
     error: errorsError,
     load: loadErrors
+    // Mock mode only, same reason as `dashboard` above — in real mode the
+    // recent failures come out of the dashboard overview's own error rows.
   } = useMockResource('error-logs', { select: payload => payload.errors })
 
   // ---------------------------------------------------------------- real mode

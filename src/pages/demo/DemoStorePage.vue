@@ -276,10 +276,10 @@ import {
 // /demo-event-inspector reads them. Both talk to the same module-level log in
 // useDemoEvents, so a fired event is already there when the user navigates.
 //
-// Nothing is sent anywhere. The legacy /events-demo page drives the real Jitsu
-// SDK behind a consent banner; this one deliberately does not, because a static
-// build has no events proxy and a dead button is worse than an honest
-// simulation. The notice at the top of the screen says so.
+// Nothing is sent anywhere, and nothing here is a stand-in for something that
+// does: the dashboard has no ingestion path at all. Sending an event is the
+// backend's job, so this page simulates the payload rather than firing one,
+// and the notice at the top of the screen says so.
 const router = useRouter()
 const $q = useQuasar()
 
@@ -370,7 +370,6 @@ function notifyLocal(message) {
     message,
     caption: 'Simulated locally — nothing was ingested.',
     color: 'dark',
-    position: 'bottom',
     timeout: 2000
   })
 }
@@ -407,7 +406,7 @@ async function copyValue({ label, value }) {
   } catch {
     message = `Couldn't copy the ${label.toLowerCase()} — select it and copy by hand.`
   }
-  $q.notify({ message, color: 'dark', position: 'bottom', timeout: 2500 })
+  $q.notify({ message, color: 'dark', timeout: 2500 })
 }
 
 onMounted(() => {

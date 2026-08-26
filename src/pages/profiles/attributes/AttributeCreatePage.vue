@@ -509,7 +509,6 @@ function submit() {
     message: `“${form.name.trim()}” configured`,
     caption: 'Local preview only — no backend is connected yet.',
     color: 'dark',
-    position: 'bottom',
     timeout: 2500
   })
 

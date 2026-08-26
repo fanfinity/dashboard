@@ -263,28 +263,6 @@
           @click="leftDrawerOpen = !leftDrawerOpen"
         />
 
-        <!-- Search -->
-        <div
-          class="flex h-9 w-full min-w-0 max-w-[608px] items-center gap-2 rounded-lg border border-line2 bg-white px-2.5 shadow-sm"
-        >
-          <img :src="icSearch" alt="" class="size-4 shrink-0" />
-          <q-input
-            v-model="search"
-            borderless
-            dense
-            hide-bottom-space
-            placeholder="Search fans, segments, campaigns..."
-            class="min-w-0 flex-1 py-0!"
-            input-class="text-sm! text-ink! placeholder:text-subtle!"
-          />
-          <div
-            class="hidden items-center gap-1 rounded-md bg-fill px-1.5 py-1 sm:flex"
-          >
-            <img :src="icCmd" alt="" class="size-3" />
-            <span class="text-xs text-ink">F</span>
-          </div>
-        </div>
-
         <q-space />
 
         <!-- Right cluster -->
@@ -294,15 +272,6 @@
           >
             Collecting
           </span>
-
-          <div class="relative">
-            <q-btn flat dense round size="sm">
-              <img :src="icBell" alt="Notifications" class="size-5" />
-            </q-btn>
-            <span
-              class="pointer-events-none absolute right-1.5 top-1.5 size-1.5 rounded-full bg-red-500"
-            />
-          </div>
 
           <q-btn flat dense round size="sm" class="hidden sm:inline-flex">
             <img :src="icHelp" alt="Help" class="size-5" />
@@ -358,10 +327,10 @@
       <router-view v-else />
     </q-page-container>
 
-    <!-- Standing indicator that every screen is reading mock JSON, not a real
-         backend. Its own file explains why a q-footer rather than a
-         hand-rolled fixed bar. -->
-    <DemoModeBanner v-if="isMockData" />
+    <!-- Standing indicator that every screen is reading fake data (demo JSON
+         or the local mock API), not a real backend. Its own file explains why
+         a q-footer rather than a hand-rolled fixed bar. -->
+    <DemoModeBanner v-if="!isRealData" />
 
     <!-- The onboarding fork. An overlay over a fully-rendered Home, opened only
          on `/`: a deep link from Slack must not be met by a modal demanding a
@@ -403,8 +372,6 @@ import icSetup from '@/assets/dashboard/ic-setup.svg'
 import icSources from '@/assets/dashboard/ic-sources.svg'
 import icSettings from '@/assets/dashboard/ic-settings.svg'
 import icLogout from '@/assets/dashboard/ic-logout.svg'
-import icSearch from '@/assets/dashboard/ic-search.svg'
-import icCmd from '@/assets/dashboard/ic-cmd.svg'
 import icBell from '@/assets/dashboard/ic-bell.svg'
 import icHelp from '@/assets/dashboard/ic-help.svg'
 
@@ -645,7 +612,7 @@ const { isEnabled, load: loadEntitlements } = useEntitlements()
 // Named for what it checks: this file's own isActive() is the route-matching
 // helper further down, and the two are asked entirely different questions.
 const { isActive: isFeatureActive } = useFeatures()
-const { isMock: isMockData } = useDataSource()
+const { isReal: isRealData } = useDataSource()
 
 // A module that is not switched on yet. Rendered rather than hidden — the sidebar
 // is the product roadmap, and a row you can see but not click says "not yet",
@@ -696,7 +663,6 @@ function onChoosePersona(key) {
     message: `Set to “${personaMeta.value?.label ?? key}”`,
     caption: 'Change it any time in Settings → Your role.',
     color: 'dark',
-    position: 'bottom',
     timeout: 2500
   })
 }
@@ -733,7 +699,6 @@ function groupClass(group) {
   return groupHasActiveChild(group) ? 'text-ink font-medium' : 'text-muted'
 }
 
-const search = ref('')
 const leftDrawerOpen = ref(false)
 const miniState = ref(false)
 

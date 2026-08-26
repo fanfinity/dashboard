@@ -8,11 +8,12 @@ Package manager is **pnpm** (Node `>= 22.12`). `postinstall` runs `quasar prepar
 
 ```bash
 pnpm install       # install deps (regenerates .quasar/)
-pnpm dev           # quasar dev — HMR dev server, opens browser, runs the /japi proxy
+pnpm dev           # quasar dev — HMR dev server, opens browser
 pnpm build         # quasar build — static SPA into dist/spa
 pnpm lint          # oxfmt (format) then oxlint --fix
 pnpm lint:check    # oxfmt --check then oxlint (CI-style, no writes)
 pnpm release <x>   # bump package.json, commit, tag vX.Y.Z (patch|minor|major|X.Y.Z)
+pnpm docs:cdp      # Scalar reference for openapi/cdp-api-draft.yaml on :3001
 ```
 
 Linting/formatting is **oxlint + oxfmt**, not ESLint/Prettier. oxfmt style: no semicolons,
@@ -26,17 +27,28 @@ Linting only `src/` is how a green local run turns into a red CI run.
 There is **no unit-test runner**. The behavioural gate is `pnpm smoke:dist`, which builds,
 serves `dist/spa`, signs in for real, walks every route in the screen manifest, and fails on any
 console error, uncaught error, rendered `ErrorState`, unresolved route, or missing `<h1>`.
-It needs `SMOKE_EMAIL`/`SMOKE_PASSWORD` in `.env` (see `.env.example`) — but **`smoke.mjs` never
-loads `.env` itself**, it only reads `process.env`, so bare `pnpm smoke:dist` exits 2 unless those
-two are already exported in the shell. The form that works from a clean shell is
-`pnpm build && node --env-file=.env scripts/smoke.mjs --serve`, and that is what
-`.vscode/tasks.json` runs. Teaching `smoke.mjs` to call `process.loadEnvFile()` itself would fix
-it properly and nobody has done it yet.
+It needs `SMOKE_EMAIL`/`SMOKE_PASSWORD` in `.env` (see `.env.example`), and **`smoke.mjs` now
+loads `.env` itself** via `process.loadEnvFile()`, so bare `pnpm smoke:dist` works from a clean
+shell. That call does not overwrite variables already set, so `--env-file=.env` and a
+workflow's `env:` block still win where they are used.
 
-`SMOKE_ROUTES` narrows the walk while iterating —
-`SMOKE_ROUTES=/pipes,/sources node --env-file=.env scripts/smoke.mjs --serve` — then run it
-unfiltered once to confirm nothing else broke. A route named there that is not in the manifest
-is an error, not a silent skip.
+**It serves on port 9000, and that is load-bearing, not a default nobody thought about.**
+Sign-in is a real cross-origin `POST` to `VITE_API_BASE` now, so the browser's origin has to be
+one the backend's `CORS_ALLOW_ORIGINS` names — and the only localhost origin staging accepts is
+exactly `http://localhost:9000` (not `127.0.0.1`, not the `4173` this used to use, which failed
+at the preflight before reaching a single screen). It therefore **collides with `pnpm dev`**:
+stop the dev server for the length of a local run. `serve-dist.mjs` says so on `EADDRINUSE`
+rather than printing a bare stack. Only set `SMOKE_PORT` if the backend has been taught that
+port too.
+
+The other half of that: `SMOKE_EMAIL` must be a real account **on the backend `VITE_API_BASE`
+points at**. The backend authenticates at the Identity Platform _project_ level, so an account
+that only ever existed in the old tenant gets `401 Invalid email or password`; register it with
+`POST /v1/register` against that same host. The script names which of the two failures it hit.
+
+`SMOKE_ROUTES` narrows the walk while iterating — `SMOKE_ROUTES=/pipes,/sources pnpm smoke:dist`
+— then run it unfiltered once to confirm nothing else broke. A route named there that is not in
+the manifest is an error, not a silent skip.
 
 `pnpm build` is the other gate worth leaning on: it hard-fails on unresolved `@/` imports,
 unimported components and malformed templates.
@@ -56,7 +68,9 @@ its own `dist/`, so concurrent builds do not race.
 (command palette → "Tasks: Run Task"). Two things about it: `options.shell` forces a **login**
 zsh (`zsh -l -c`) because VS Code otherwise runs a non-login shell that never sources
 `.zprofile`, so `nvm`/`pnpm` don't resolve; and its "Dev server" task exists for the user, not
-for you — the rule above still holds.
+for you — the rule above still holds. "Dev server + CDP docs" is a `dependsOn` compound
+launching "Dev server" + "CDP API docs" together (see `pnpm docs:cdp` under Data architecture
+below) — still user-run only, same as "Dev server".
 
 ## Deployment — Firebase Hosting, not GitHub Pages
 
@@ -83,7 +97,7 @@ think about a merge:
   CSP entry fails in the console looking exactly like a CORS error.
 - **`firebase.json` has no catch-all rewrite, deliberately** — the router is hash
   mode, and a `**` -> `/index.html` rewrite would answer a mistyped `/data/*.json`
-  or a `/japi/*` call with a 200 HTML body instead of an honest 404.
+  with a 200 HTML body instead of an honest 404.
 - Deploy auth is keyless WIF (`gh-deployer-dashboard`); there is no service-account
   JSON anywhere. The CLI is `npx --yes firebase-tools@15.24.0` — the `firebase` npm
   dependency in this repo is the **Auth SDK** and ships no binary.
@@ -132,8 +146,12 @@ at module load rather than 404-ing silently.
 
 `screens.js` is deliberately import-free — no Vue, no `@/` aliases — so plain Node can read it.
 `scripts/smoke.mjs` walks every route from it — every route in `screens`, that is, not in
-`legacyScreens`. That split is load-bearing for `/live-events`, which reads the events backend
-through the `/japi` dev proxy that a production build does not have.
+`legacyScreens`. That split used to be load-bearing for `/live-events`, which read a
+third-party events console through a `/japi` dev proxy a production build did not have. It no
+longer is: `/live-events` reads `GET /v1/accounts/{account}/events/live` through the normal
+data-source gate and has a mock fixture, so it would survive `pnpm smoke:dist` — promoting it
+into `screens` is an
+available, deliberate change that nobody has made yet.
 
 A screen's **`group` field does three jobs**, so it has to be accurate: it picks the sidebar
 section, and it is the feature-activation key that decides whether the route renders its real
@@ -316,13 +334,16 @@ inlined into the design agent's prompt; it enumerates 54 token names, so **re-ve
 against the built CSS whenever a token is renamed** — a name that no longer resolves makes
 every design the agent builds silently unstyled.
 
-## Mock data supersedes the issue acceptance criteria
+## Mock data still stands in for most of the backlog
 
-Every backlog issue says _"fetch through the generated orval client in `src/api/`"_. **That is
-wrong for these screens** — there is no backend behind any of them. Data comes from mock JSON in
-`public/data/`, loaded through `useMockResource()`, which follows the same
-`{ data, loading, error, load() }` contract as everything else. `src/api/` remains reserved for
-the real accounts/RBAC backend.
+Every backlog issue says _"fetch through the generated orval client in `src/api/`"_. That is now
+right for a few screens and still wrong for most of them. Sources, Destinations and Pipes have
+real account-scoped endpoints and do use the generated client; **every other screen has no
+backend behind it**, reads mock JSON from `public/data/` through `useMockResource()`, and
+reports `apiMissing` ("No API yet") in the default real mode. Before wiring a screen to
+`src/api/`, check that its endpoint exists in `openapi/fanfinity-api.json` — the shapes in
+`openapi/cdp-api-draft.yaml` are a proposal, not a backend, and three of its domains have
+already shipped in a different shape (see Data architecture below).
 
 ## Files that reach every screen
 
@@ -352,51 +373,152 @@ skips the whole directory.
 
 ## Data architecture
 
-There is no owned application backend. Pages get data from three places, and the composables
+**The dashboard is connected to the Fanfinity backend and to nothing else.** Every live call
+this app makes goes to that API — sign-in included, so not even Identity Platform is a host
+the browser talks to. There are no direct connections to event collectors, vendor consoles or
+third-party catalogs, and no dev-only proxy standing in for one. Anything that has to talk to an outside system is the backend's
+job; hitting the backend is what moves everything else.
+
+Not all of that API is built yet, so pages get data from three places, and the composables
 all follow the same `{ data, loading, error, load() }` contract (`src/composables/`):
 
-1. **Static mock JSON** in `public/data/*.json`, fetched via `import.meta.env.BASE_URL`
-   (e.g. `ContactDetailPage.vue` loads `data/contacts.json` + `data/contact-details.json`).
-   Most pages also define inline mock arrays for demo content.
+1. **The backend, or the static mock JSON standing in for it.** Live reads go through
+   `useMockResource()`; the fallback fixtures are `public/data/*.json`, fetched via
+   `import.meta.env.BASE_URL` (e.g. `ContactDetailPage.vue` loads `data/contacts.json` +
+   `data/contact-details.json`). Most pages also define inline mock arrays for demo content.
 
    The fixtures are cross-referentially consistent — `pipes[].sourceId` resolves in
    `sources.json`, and so on. Adding fields and records is fine; **renaming or renumbering an
    existing `id` is not.** `screens.js`'s `smokeParams` point at those ids by value, and a
    broken lookup renders `undefined` silently rather than failing.
 
-   **Settings → Data source is a global mock/real switch** (`useDataSource.js`, `localStorage`
-   key `sfere_data_source_mode`, default `mock`), and a `DemoModeBanner` `q-footer` stays up in
-   `MainLayout.vue` for as long as it is on. Flipping it does not, by itself, change what a
-   screen shows — `useMockResource()` only calls the real endpoint for a resource whose
-   composable passes an `options.api = { path, select? }` (mirroring `cdp-api-draft.yaml`); a
-   resource with no `api` wired reports `apiMissing: true` with **no network attempt** the
-   moment real mode is on, and `DataTable`'s `api-missing` prop renders that as "No API yet"
-   rather than as an empty list. Today only `useSources()` is wired (`/v1/sources`), as the
-   worked example — the same three-line change (`api: { path }`, forward `apiMissing`, pass
-   `:api-missing` to `DataTable`) rolls out to the rest of the active-11 domains once their
-   composables are checked against the draft spec's `200` schema, per-domain (a mock file's
-   `select` does **not** carry over automatically — several are wrapped, e.g. `trash.json`'s
-   `payload.pipes`, in a way the drafted real endpoint is not). A 404, a CORS block and a
-   connection refused (no local backend running) all read the same as "not built yet"; only a
-   real non-404 response escalates to `ErrorState`. Any page whose empty state depends on a
-   _different_ composable (e.g. `SettingsPage.vue`'s workspace record) needs its own check that
-   flipping to real mode doesn't strand the user — the tab bar there now renders regardless of
-   `workspace`, specifically so the Data source tab that undoes the switch never disappears.
+   **Settings → Data source is a global two-way switch** (`useDataSource.js`, `localStorage`
+   key `sfere_data_source_mode`, values `real` / `mock`, **default `real`**), and a
+   `DemoModeBanner` `q-footer` goes up in `MainLayout.vue` only while it is `mock`. Only an
+   explicit stored `mock` opts out — unset, garbage, or a stale `mockApi` from before that
+   mode was removed all resolve to `real`.
 
-2. **The Jitsu events backend** (`console.fanfinity.io`):
-   - **Read** incoming events (`useLiveEvents.js`) through a same-origin dev proxy: the browser
-     calls `/japi/*`, and `devServer.proxy` in `quasar.config.js` forwards to
-     `https://console.fanfinity.io/api/*` with an API key as a Bearer token. This endpoint
-     requires auth and is not CORS-enabled, so the proxy is the only way to reach it from the
-     browser — **and the proxy only exists in `pnpm dev`**. A production build has no proxy and
-     needs an equivalent reverse proxy in front of it.
-   - **Write** events (`useJitsu.js`) via the bundled `@jitsu/js` browser SDK (POSTs directly to
-     the console origin, allowed by CSP).
-   - The public connector catalog (`useConnectorCatalog.js`) hits `/api/sources` directly — that
-     endpoint is public/CORS-open, no key.
+   **There used to be a third mode**, `mockApi`, pointing at a local Scalar mock server
+   (`pnpm mock:cdp`) generated from `openapi/cdp-api-draft.yaml`. It was scaffolding for a
+   backend that did not exist: sources, destinations and pipelines now have real endpoints, so
+   mocking a draft of them was cost without benefit, and it went along with `MOCK_API_BASE`,
+   `VITE_CDP_MOCK_API_BASE`, `customFetch`'s base-URL override, the `localhost:3000` CSP entry
+   and the "Mock CDP server" VS Code task. **`pnpm docs:cdp` survives** (port 3001,
+   `scalar document serve`, `@scalar/cli` still a devDependency): the draft spec is now a
+   contract document for what is still unbuilt, and that is how you show it to the backend team.
 
-3. **The Fanfinity backend** (accounts/RBAC API; `https://api-staging.fanfinity.io`
-   on staging, local `../backend` via `make run` in dev):
+   **Flipping the switch does not, by itself, change what a screen shows.**
+   `useMockResource()` only calls a live endpoint for a resource whose composable passes an
+   `options.api = { path, select? }`; a resource with no `api` reports `apiMissing: true` with
+   **no network attempt**, and `DataTable`'s `api-missing` prop renders that as "No API yet"
+   rather than as an empty list. A 404, a CORS block and a connection refused (no local backend
+   running) all read the same as "not built yet"; only a real non-404 response escalates to
+   `ErrorState`.
+
+   **`api.path` takes a string or a function**, and the function form is the normal one,
+   because almost every real endpoint is account-scoped:
+   `() => currentAccount.value && \`/v1/accounts/${currentAccount.value.id}/sources\``.
+`useMockResource`awaits`waitForAccount()`(which subsumes`waitForAuthReady()`and settles`currentAccount`from`GET /v1/me`) *before* evaluating it, so the first load already has
+the id; a function returning null reads as `apiMissing`with no request. A static string
+built at composable-definition time would capture`null`— that is the failure this shape
+exists to prevent.`sendMutation()`and`fetchCollection()`resolve`path` the same way.
+
+   **The backend answers snake_case inside a page envelope**, the screens are written in
+   camelCase against bare arrays, and `src/lib/apiShape.js` bridges the two: `pageItems`
+   unwraps `{items, total, page, size, pages}` and camelizes each row (use it as `api.select`),
+   `camelizeKeys` does one record (use it on a write's response). Both are deliberately
+   shallow, so a destination's `config` blob and a sync run's `counts` pass through unmangled.
+   `options.mockOnly: true` is the opposite case — a static catalog with no backend equivalent
+   (the source/destination template lists) always reads the bundled JSON, or real mode would
+   leave a create form with nothing to pick.
+
+   **Wired to a real endpoint today**: `useSources()`, `useDestinations()` and `usePipes()`
+   (`/v1/accounts/{account_id}/sources|destinations|pipelines`), plus the per-source panels
+   PR-side (`useSourceSyncAPI`, `useSourceDataAPI`, `usePipelineFunctions`),
+   `useLiveEvents()` (`/v1/accounts/{account_id}/events/live`, with the same account's
+   `/sources` behind the stream selector) and `useDashboardHome()`
+   (`/v1/accounts/{account_id}/dashboard` — one aggregate call that feeds the whole home
+   screen, adapted into the three mock payload shapes rather than read through
+   `useMockResource`). **Wired to a drafted endpoint that does not exist yet**:
+   `useConnectorCatalog()` (`/v1/connectors`). Everything else has no `api` at all.
+
+   Grep the merged `openapi/fanfinity-api.json` before adding an `api` path — `/v1/dashboard`
+   and `/v1/errors` were drafted flat and shipped account-scoped and merged, which is exactly
+   the drift the check catches.
+
+   **There is no fallback from real to mock, and that is deliberate.** `loadReal()` sets
+   `apiMissing` and blanks `data`; it does not quietly read the fixture instead, because a
+   screen that looks populated when its backend is missing is worse than one that says so. The
+   consequence is that in the default mode only Sources, Destinations and Pipes have content —
+   **to demo the product, or to hand a preview link to a tester, switch to Demo data first.** Rolling one out is the same small change (`api: { path }`, forward
+   `apiMissing`, pass `:api-missing` to `DataTable`) but must be done **per domain against the
+   real `200` schema** — a mock file's `select` does not carry over automatically, several are
+   wrapped (`trash.json`'s `payload.pipes`, `error-logs.json`'s `payload.errors`) in a way the
+   endpoint is not.
+
+   **Writes split by kind, on purpose.** A _create_ is typed and does more than write a row —
+   the backend provisions a Jitsu site and write key for a source, a per-account ClickHouse
+   database for a destination, the delivery link for a pipeline — so creates go through the
+   orval-generated client in `useSourcesAPI` / `useDestinationsAPI` / `usePipelinesAPI`, and
+   the create pages gate on `isReal` and say plainly that mock mode saves nothing. Everything
+   flatter — enable/pause, soft-delete — goes through **`sendMutation()`** (`useMockResource.js`),
+   the write-side counterpart to the reads: a no-op in `mock` mode (the caller applies its own
+   local mutation), the account-scoped `PATCH`/`DELETE` in `real` mode. It returns a
+   discriminated result (`{ok:true,skipped,data}` / `{ok:false,apiMissing:true}` /
+   `{ok:false,error}`) rather than throwing, because a page that fires a success toast
+   unconditionally after a write would lie on a 404 — `notifyMutationResult()`
+   (`useMutationFeedback.js`) is the one shared toast for all three outcomes. Callers apply
+   their local mutation only after `ok: true`. `PATCH`/`DELETE` bodies and responses are
+   snake_case (`{ is_enabled }`), hence `camelizeKeys` on the way back in. Trash restore/purge
+   stays local-only everywhere — the trash has no endpoint at all yet.
+
+   **`pnpm smoke:dist` now walks all 54 routes against whatever `VITE_API_BASE` points at**,
+   because that is what the default mode does. It used to be hermetic. If you need the old
+   behaviour, set `sfere_data_source_mode` to `mock` in the browser profile the run uses, or
+   flip the default — do not add a smoke-only branch to `useDataSource`, which would mean the
+   gate stops testing what users get.
+
+2. **Events, connectors and everything else — through the backend, never direct.**
+   `useLiveEvents.js` reads `GET /v1/accounts/{account}/events/live`, and lists that
+   account's sources for the stream selector — "stream" being the screen's word for a source,
+   which is why the selector's value goes out as the endpoint's `source_id`. Sources with no
+   provisioned site are left out: they have no event log, so offering one would select a
+   stream that can only ever come back empty. `useConnectorCatalog.js` reads
+   `GET /v1/connectors`, which is still drafted. Both go through the same data-source gate as
+   every other screen, with `public/data/live-events.json`, `event-streams.json` and
+   `connectors.json` as their mock fixtures.
+
+   **This is a hard rule, not a preference: the dashboard connects to the Fanfinity backend
+   and to nothing else.** Where events are actually collected — Jitsu today — is the backend's
+   business. It is not a host this app knows, and adding one back is not a config detail.
+   Three things enforce it rather than merely describing it:
+
+   - **The CSP.** `index.html` is `default-src 'self'` with `img-src 'self'` and a
+     `connect-src` naming only the Sfere API hosts — Identity Platform included in that "no",
+     since sign-in is a backend call now. A direct call to any other origin is blocked by the
+     browser, not caught in review.
+   - **No dev proxy.** `quasar.config.js` has no `devServer.proxy`. There used to be a
+     `/japi/*` → events-console forward that injected a server-side API key, which meant
+     `/live-events` worked in `pnpm dev` and nowhere else. Nothing is dev-only now.
+   - **No ingestion path.** The dashboard cannot send an event. The browser SDK, its consent
+     banner and the `/events-demo` page that drove them were deleted, not rewired — writing
+     to a collector is something the backend does. (`useDemoEvents.js` is a local simulator
+     for the demo screens and reaches nothing; it is not an exception to this.)
+
+   The live-events endpoint returns an **already-flattened, vendor-neutral** record
+   (`LiveEvent` in `openapi/fanfinity-api.json`): unwrapping ingest envelopes, redacting
+   credential headers and masking write keys are the backend's job. `useLiveEvents.js`
+   maps its snake_case fields onto the camelCase shape the fixture carries, so the page is
+   written once against one record shape. That shape is what keeps
+   the rule true over time — a passthrough of some upstream's wire format would put the
+   dashboard back in the business of knowing who that upstream is. `LiveEventsPage.vue` used
+   to scrub the vendor's name out of every string it rendered; there is nothing to scrub now.
+
+3. **The Fanfinity backend** (`https://api-staging.sfere.io` on staging,
+   `https://api.sfere.io` in production, local `../backend` via `make run` in dev). It
+   started as accounts/RBAC only; it now also serves the CDP domains that have shipped —
+   account-scoped sources, destinations and pipelines, plus the Zid connect/sync and
+   pipeline-function routes:
    - Client is **generated by orval** from the backend's OpenAPI spec: `pnpm openapi`
      re-pulls `openapi/fanfinity-api.json` from staging and regenerates `src/api/`
      (typed fetchers like `getMe()` plus `@tanstack/vue-query` composables like
@@ -411,26 +533,38 @@ all follow the same `{ data, loading, error, load() }` contract (`src/composable
      route), populating `me` + `memberships` from `GET /v1/me` (best-effort — errors never
      block routing).
    - The backend **requires a verified email** (`401 Email is not verified`), and its
-     `CORS_ALLOW_ORIGINS` must include the dashboard origin (staging currently allows
-     only `https://dashboard-staging.fanfinity.io`, so browser calls from
-     `localhost:9000` to staging are CORS-blocked).
+     `CORS_ALLOW_ORIGINS` must include the dashboard origin. A PR preview channel gets a
+     different, unguessable origin every time, so it cannot be listed — staging admits it by
+     pattern instead (`CORS_ALLOW_ORIGIN_REGEX` in the backend's
+     `k8s/overlays/staging/patch-env.yaml`, anchored to the `sfere-stg` site id). Production
+     sets no regex at all, by design, so no preview channel can reach the production API.
+     `localhost:9000` is not covered by either, so browser calls from a dev server to staging
+     are still CORS-blocked — run `../backend` locally instead.
 
-4. **Derived / client-only state** built on top of the event stream:
-   - `useJitsuContacts.js` folds the raw event log into unique contact records so real visitors
-     appear in the same Contacts table as mock contacts.
-   - `useIdentityResolution.js` does probabilistic identity stitching over those contacts
-     (rarity-weighted, Fellegi–Sunter-style scoring — see the file's header comment).
-   - `useSegments.js` persists segment filter definitions in `localStorage` (no backend to
-     store them). Its `FIELDS` accessors read the event shape produced by
-     `useLiveEvents`' `mapIncomingEvent()` — keep them in sync if that mapper changes.
+4. **Derived / client-only state.** `useProfilesIdentityResolution.js` does probabilistic
+   identity stitching over contact records — rarity-weighted, Fellegi–Sunter-style scoring;
+   read the file's header comment before touching the scoring. It is the only survivor of a
+   trio this section used to list: `useJitsuContacts.js`, `useIdentityResolution.js` and
+   `useSegments.js` were all deleted in the legacy-screen consolidation. If you are looking
+   for one of those, it is gone, not moved.
 
 ## Content-Security-Policy constraints
 
-`index.html` sets a strict CSP: `default-src 'self'`, `script-src 'self'`, images/connections
-whitelisted only to `console.fanfinity.io` (plus `ws://localhost:*` in dev). This shapes several
-decisions and will break new code that ignores it:
+`index.html` sets a strict CSP: `default-src 'self'`, `script-src 'self'`, `img-src 'self'`,
+and a `connect-src` naming only the Sfere API hosts (`api.sfere.io`, `api-staging.sfere.io`,
+and the `*.fanfinity.io` pair still standing while the rename finishes) plus Identity
+Platform — with `ws://localhost:*` and `http://localhost:8080` added in dev only.
 
-- **Any new external host** (API, image CDN, font, analytics) must be added to the CSP meta tag.
+**That allowlist is how "the backend and nothing else" is enforced rather than merely
+documented.** `img-src` is `'self'` with no exceptions: connector logos come from our own API,
+so a card pointing at a vendor's logo endpoint is blocked by the browser. Adding a host back
+is a product decision about what this app connects to, not a config tweak — if a screen needs
+data from an outside system, the backend fetches it.
+
+This shapes several decisions and will break new code that ignores it:
+
+- **Any new external host** (API, image CDN, font, analytics) must be added to the CSP meta
+  tag — and almost always shouldn't be. Route it through the backend instead.
 - `assetsInlineLimit` is forced to `0` in `quasar.config.js` so no asset is inlined as a `data:`
   URI (which the CSP would block). Prefer real asset files / SVG endpoints over data URIs.
 - Third-party JS must be bundled via npm (first-party `script-src 'self'`), not loaded from a CDN.
@@ -449,7 +583,7 @@ removes the mismatch and makes the backend the single source of truth for the Fi
   refs hydrated **synchronously** from `localStorage` (`sfere_access_token` /
   `sfere_refresh_token`) at import, plus `setTokens`/`clearTokens`/`isAuthenticated`. This
   replaces Firebase's IndexedDB session persistence.
-- `src/composables/useAuth.js` (module-singleton, like `useJitsu.js`) exposes
+- `src/composables/useAuth.js` (module-singleton, like `useFeatures.js`) exposes
   `{ isAuthenticated, loading, error, signUp, signIn, logOut }`. `signIn` calls the generated
   `login()` (`POST /v1/auth/token`, OAuth2 password grant), stores the returned tokens, then
   `loadMe()`. `signUp` registers via `POST /v1/register` then signs in. `waitForAuthReady()` is
@@ -470,14 +604,45 @@ sends no `tenantId` and needs no `VITE_FIREBASE_*` config.
 
 ## Environment / secrets
 
-Config lives in a gitignored `.env` at the project root:
+Config lives in a gitignored `.env` at the project root, and it is short on purpose:
+`VITE_API_BASE`, the two smoke credentials, and the two build-identity stamps. See
+`.env.example`.
 
-- `EVENTS_API_KEY` (`keyId:secret`) — read **server-side** by `quasar.config.js` at config time
-  (via `process.loadEnvFile`) and injected by the dev proxy. Never shipped to the client bundle.
-- `VITE_*` vars (`VITE_EVENTS_WORKSPACE_ID`, `VITE_EVENTS_ACTOR_ID`, `VITE_JITSU_HOST`,
-  `VITE_JITSU_WRITE_KEY`) are client-exposed by design and override in-code fallbacks. The Jitsu
-  browser write key is public by design (it only authorizes ingestion).
+**A var naming a non-Sfere host does not belong here.** The three `VITE_FIREBASE_*` values are
+gone with client-side sign-in, and `EVENTS_API_KEY`, `VITE_JITSU_HOST`, `VITE_JITSU_WRITE_KEY`,
+`VITE_EVENTS_API_BASE`, `VITE_EVENTS_BASE`, `VITE_EVENTS_WORKSPACE_ID`, `VITE_EVENTS_ACTOR_ID`
+and `VITE_CDP_MOCK_API_BASE` went with the direct event connections; the deploy workflows no
+longer pass any of them either. If a feature seems to
+need a credential for an outside system, that credential lives in the backend — the browser
+should never hold one.
 
-Jitsu ingestion is **consent-gated**: `useJitsu.js` starts in a restrictive privacy mode
-(nothing sent, IPs stripped, no user IDs) until the user answers `JitsuConsentBanner.vue`;
-the decision is stored under the `fanfinity_jitsu_consent` localStorage key.
+`quasar.config.js` still calls `process.loadEnvFile('.env')`, but no longer for a dev proxy:
+Quasar reads client-exposed `VITE_*` vars off `process.env`, so without it `VITE_API_BASE`
+comes through empty, every call falls back to `http://localhost:8080`, and a deployed build
+fails every request while looking like a backend outage.
+
+There is also no consent banner any more. It gated a browser ingestion SDK that only ever
+mounted on the deleted `/events-demo` page, so despite what this file used to claim, the app
+never ingested anything. Consent for collection now belongs wherever collection happens,
+which is not here.
+
+## Done-features log
+
+`done-features-tasks.md` (repo root, tracked in git) is a running log of work as it happens —
+not a changelog derived after the fact. Whenever a feature or task is **added, finished, or
+stopped** (including "started but paused"), append one line:
+
+```
+- YYYY-MM-DD: <concise, plain-English description>
+```
+
+Newest entry on top. Keep it to one line and one sentence — this is a heads-up for teammates,
+not a commit message or a design doc. Do this as part of the same change, the same way a stale
+CLAUDE.md is treated as a bug elsewhere in this file.
+
+**Weekly cleanup is opportunistic, not scheduled** (no cron job runs this yet — pending GitHub
+App authorization from the company owner; switch to a scheduled agent once that lands). Whenever
+you are working in this repo and notice the oldest entry in `done-features-tasks.md` is 7+ days
+old, show the user the accumulated entries as a digest, ask them to share it on the team Slack,
+and once they confirm, clear the file back to just its header. Don't clear it any other way, and
+don't clear it just because it's non-empty — only once that 7-day threshold is hit.

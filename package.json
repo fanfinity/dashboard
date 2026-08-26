@@ -25,14 +25,14 @@
     "smoke:dist": "quasar build && node scripts/smoke.mjs --serve",
     "serve:dist": "node scripts/serve-dist.mjs",
     "worktree": "bash scripts/new-worktree.sh",
-    "release": "node scripts/release.mjs"
+    "release": "node scripts/release.mjs",
+    "docs:cdp": "scalar document serve openapi/cdp-api-draft.yaml --watch --port 3001"
   },
   "dependencies": {
     "@fontsource-variable/bricolage-grotesque": "^5.3.0",
     "@fontsource/geist-mono": "^5.3.0",
     "@fontsource/inter": "^5.2.8",
     "@fontsource/plus-jakarta-sans": "^5.2.8",
-    "@jitsu/js": "^1.10.4",
     "@quasar/extras": "^2.0.0",
     "@tanstack/vue-query": "^5.101.3",
     "apexcharts": "^5.15.2",
@@ -43,6 +43,7 @@
   },
   "devDependencies": {
     "@quasar/app-vite": "^3.0.0-rc.3",
+    "@scalar/cli": "^2.1.0",
     "@tailwindcss/postcss": "^4.3.1",
     "@tailwindcss/vite": "^4.3.1",
     "autoprefixer": "^10.5.0",

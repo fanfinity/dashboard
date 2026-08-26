@@ -14,7 +14,7 @@ import {
  * stitch those rules produced.
  *
  * NOT `useIdentityResolution` (`/identity-resolution`, the Fan CDP page). That
- * one scores *pairs of live Jitsu contacts* against each other from device,
+ * one scores *pairs of live event contacts* against each other from device,
  * geo, behavioural and temporal event signals, to guess that two anonymous
  * visitors are one person. This one explains the identifier-type rules a
  * resolved profile was actually built with, one merge at a time. The scoring

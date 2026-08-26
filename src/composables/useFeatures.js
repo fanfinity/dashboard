@@ -9,7 +9,7 @@ import { FEATURES } from '@/config/features'
 // survives a reload, while shipping a module to everyone stays a one-line edit in
 // the config. `pendingOverrides` is what makes that difference visible in the UI.
 //
-// Module-level state, the same pattern as useAuth/useJitsu/useEntitlements: the
+// Module-level state, the same pattern as useAuth/useEntitlements: the
 // sidebar, the route gate and the settings panel all read one source, so a toggle
 // updates every one of them in the same tick without a bus or a refetch.
 const STORAGE_KEY = 'sfere_feature_activation'

@@ -195,6 +195,7 @@ import {
   useSourceTemplates,
   useSources
 } from '@/composables/useSources'
+import { notifyMutationResult } from '@/composables/useMutationFeedback'
 
 const route = useRoute()
 const router = useRouter()
@@ -321,15 +322,18 @@ function notifyLocal(message) {
     message,
     caption: 'Local preview only — no backend is connected yet.',
     color: 'dark',
-    position: 'bottom',
     timeout: 2500
   })
 }
 
-function toggle() {
+async function toggle() {
   const s = source.value
-  setEnabled(s.id, !s.isEnabled)
-  notifyLocal(`${s.name} ${s.isEnabled ? 'enabled' : 'paused'}`)
+  const wasEnabled = s.isEnabled
+  const res = await setEnabled(s.id, !wasEnabled)
+  notifyMutationResult($q, res, {
+    success: `${s.name} ${wasEnabled ? 'paused' : 'enabled'}`,
+    apiMissing: `Can't ${wasEnabled ? 'pause' : 'enable'} ${s.name} yet.`
+  })
 }
 
 function upgrade() {
@@ -338,11 +342,14 @@ function upgrade() {
   )
 }
 
-function remove() {
+async function remove() {
   const s = source.value
-  removeSource(s.id)
-  notifyLocal(`${s.name} moved to trash`)
-  router.push({ name: 'sources' })
+  const res = await removeSource(s.id)
+  notifyMutationResult($q, res, {
+    success: `${s.name} moved to trash`,
+    apiMissing: `Can't delete ${s.name} yet.`
+  })
+  if (res.ok) router.push({ name: 'sources' })
 }
 
 // Clipboard access is permission-gated and unavailable outside a secure context,
@@ -354,7 +361,7 @@ async function copyValue({ label, value }) {
   } catch {
     message = `Couldn't copy the ${label.toLowerCase()} — select it and copy by hand.`
   }
-  $q.notify({ message, color: 'dark', position: 'bottom', timeout: 2500 })
+  $q.notify({ message, color: 'dark', timeout: 2500 })
 }
 
 onMounted(() => {

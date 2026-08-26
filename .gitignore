@@ -28,6 +28,7 @@ node_modules
 
 # Smoke-test artifacts
 .playwright/
+.playwright-mcp/
 
 # Working notes and handover drafts — deliberately local, not shared history
 todos/

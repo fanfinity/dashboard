@@ -356,7 +356,6 @@ function notifyLocal(message) {
     message,
     caption: 'Local preview only — no backend is connected yet.',
     color: 'dark',
-    position: 'bottom',
     timeout: 2500
   })
 }
@@ -371,7 +370,7 @@ async function copyReference(row) {
   } catch {
     message = "Couldn't copy the reference — select it and copy by hand."
   }
-  $q.notify({ message, color: 'dark', position: 'bottom', timeout: 2500 })
+  $q.notify({ message, color: 'dark', timeout: 2500 })
 }
 
 function addSecret(input) {

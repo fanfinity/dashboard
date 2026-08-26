@@ -1,0 +1,266 @@
+[
+  {
+    "id": "airbyte/source-shopify",
+    "packageId": "airbyte/source-shopify",
+    "packageType": "airbyte",
+    "iconUrl": null,
+    "meta": {
+      "name": "Shopify",
+      "license": "ELv2",
+      "connectorSubtype": "api"
+    }
+  },
+  {
+    "id": "airbyte/source-google-analytics-data-api",
+    "packageId": "airbyte/source-google-analytics-data-api",
+    "packageType": "airbyte",
+    "iconUrl": null,
+    "meta": {
+      "name": "Google Analytics 4",
+      "license": "MIT",
+      "connectorSubtype": "api"
+    }
+  },
+  {
+    "id": "airbyte/source-salesforce",
+    "packageId": "airbyte/source-salesforce",
+    "packageType": "airbyte",
+    "iconUrl": null,
+    "meta": {
+      "name": "Salesforce",
+      "license": "ELv2",
+      "connectorSubtype": "api"
+    }
+  },
+  {
+    "id": "airbyte/source-hubspot",
+    "packageId": "airbyte/source-hubspot",
+    "packageType": "airbyte",
+    "iconUrl": null,
+    "meta": {
+      "name": "HubSpot",
+      "license": "ELv2",
+      "connectorSubtype": "api"
+    }
+  },
+  {
+    "id": "airbyte/source-stripe",
+    "packageId": "airbyte/source-stripe",
+    "packageType": "airbyte",
+    "iconUrl": null,
+    "meta": {
+      "name": "Stripe",
+      "license": "MIT",
+      "connectorSubtype": "api"
+    }
+  },
+  {
+    "id": "airbyte/source-facebook-marketing",
+    "packageId": "airbyte/source-facebook-marketing",
+    "packageType": "airbyte",
+    "iconUrl": null,
+    "meta": {
+      "name": "Facebook Marketing",
+      "license": "ELv2",
+      "connectorSubtype": "api"
+    }
+  },
+  {
+    "id": "airbyte/source-google-ads",
+    "packageId": "airbyte/source-google-ads",
+    "packageType": "airbyte",
+    "iconUrl": null,
+    "meta": {
+      "name": "Google Ads",
+      "license": "ELv2",
+      "connectorSubtype": "api"
+    }
+  },
+  {
+    "id": "airbyte/source-mailchimp",
+    "packageId": "airbyte/source-mailchimp",
+    "packageType": "airbyte",
+    "iconUrl": null,
+    "meta": {
+      "name": "Mailchimp",
+      "license": "MIT",
+      "connectorSubtype": "api"
+    }
+  },
+  {
+    "id": "airbyte/source-klaviyo",
+    "packageId": "airbyte/source-klaviyo",
+    "packageType": "airbyte",
+    "iconUrl": null,
+    "meta": {
+      "name": "Klaviyo",
+      "license": "MIT",
+      "connectorSubtype": "api"
+    }
+  },
+  {
+    "id": "airbyte/source-intercom",
+    "packageId": "airbyte/source-intercom",
+    "packageType": "airbyte",
+    "iconUrl": null,
+    "meta": {
+      "name": "Intercom",
+      "license": "ELv2",
+      "connectorSubtype": "api"
+    }
+  },
+  {
+    "id": "airbyte/source-zendesk-support",
+    "packageId": "airbyte/source-zendesk-support",
+    "packageType": "airbyte",
+    "iconUrl": null,
+    "meta": {
+      "name": "Zendesk Support",
+      "license": "ELv2",
+      "connectorSubtype": "api"
+    }
+  },
+  {
+    "id": "airbyte/source-postgres",
+    "packageId": "airbyte/source-postgres",
+    "packageType": "airbyte",
+    "iconUrl": null,
+    "meta": {
+      "name": "Postgres",
+      "license": "ELv2",
+      "connectorSubtype": "database"
+    }
+  },
+  {
+    "id": "airbyte/source-mysql",
+    "packageId": "airbyte/source-mysql",
+    "packageType": "airbyte",
+    "iconUrl": null,
+    "meta": {
+      "name": "MySQL",
+      "license": "ELv2",
+      "connectorSubtype": "database"
+    }
+  },
+  {
+    "id": "airbyte/source-mongodb-v2",
+    "packageId": "airbyte/source-mongodb-v2",
+    "packageType": "airbyte",
+    "iconUrl": null,
+    "meta": {
+      "name": "MongoDB",
+      "license": "ELv2",
+      "connectorSubtype": "database"
+    }
+  },
+  {
+    "id": "airbyte/source-snowflake",
+    "packageId": "airbyte/source-snowflake",
+    "packageType": "airbyte",
+    "iconUrl": null,
+    "meta": {
+      "name": "Snowflake",
+      "license": "ELv2",
+      "connectorSubtype": "database"
+    }
+  },
+  {
+    "id": "airbyte/source-bigquery",
+    "packageId": "airbyte/source-bigquery",
+    "packageType": "airbyte",
+    "iconUrl": null,
+    "meta": {
+      "name": "BigQuery",
+      "license": "MIT",
+      "connectorSubtype": "database"
+    }
+  },
+  {
+    "id": "airbyte/source-s3",
+    "packageId": "airbyte/source-s3",
+    "packageType": "airbyte",
+    "iconUrl": null,
+    "meta": {
+      "name": "Amazon S3",
+      "license": "ELv2",
+      "connectorSubtype": "file"
+    }
+  },
+  {
+    "id": "airbyte/source-google-sheets",
+    "packageId": "airbyte/source-google-sheets",
+    "packageType": "airbyte",
+    "iconUrl": null,
+    "meta": {
+      "name": "Google Sheets",
+      "license": "MIT",
+      "connectorSubtype": "file"
+    }
+  },
+  {
+    "id": "airbyte/source-tiktok-marketing",
+    "packageId": "airbyte/source-tiktok-marketing",
+    "packageType": "airbyte",
+    "iconUrl": null,
+    "meta": {
+      "name": "TikTok Marketing",
+      "license": "MIT",
+      "connectorSubtype": "api"
+    }
+  },
+  {
+    "id": "airbyte/source-braze",
+    "packageId": "airbyte/source-braze",
+    "packageType": "airbyte",
+    "iconUrl": null,
+    "meta": {
+      "name": "Braze",
+      "license": "MIT",
+      "connectorSubtype": "api"
+    }
+  },
+  {
+    "id": "airbyte/source-segment",
+    "packageId": "airbyte/source-segment",
+    "packageType": "airbyte",
+    "iconUrl": null,
+    "meta": {
+      "name": "Segment",
+      "license": "MIT",
+      "connectorSubtype": "api"
+    }
+  },
+  {
+    "id": "airbyte/source-amplitude",
+    "packageId": "airbyte/source-amplitude",
+    "packageType": "airbyte",
+    "iconUrl": null,
+    "meta": {
+      "name": "Amplitude",
+      "license": "MIT",
+      "connectorSubtype": "api"
+    }
+  },
+  {
+    "id": "airbyte/source-mixpanel",
+    "packageId": "airbyte/source-mixpanel",
+    "packageType": "airbyte",
+    "iconUrl": null,
+    "meta": {
+      "name": "Mixpanel",
+      "license": "MIT",
+      "connectorSubtype": "api"
+    }
+  },
+  {
+    "id": "airbyte/source-twilio",
+    "packageId": "airbyte/source-twilio",
+    "packageType": "airbyte",
+    "iconUrl": null,
+    "meta": {
+      "name": "Twilio",
+      "license": "MIT",
+      "connectorSubtype": "api"
+    }
+  }
+]

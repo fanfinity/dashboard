@@ -1,0 +1,1297 @@
+[
+  {
+    "id": "evt_2400",
+    "date": "2026-08-25T09:41:12.480Z",
+    "level": "info",
+    "status": "SUCCESS",
+    "error": null,
+    "ingestType": "browser",
+    "messageId": "msg_9021340",
+    "type": "track",
+    "streamId": "str_web_storefront",
+    "writeKey": "wk_live_2f8c***",
+    "originDomain": "shop.sfere.io",
+    "host": "shop.sfere.io",
+    "pageURL": "https://shop.sfere.io/checkout",
+    "pagePath": "/checkout",
+    "pageTitle": "Checkout \u2014 Sfere Store",
+    "referringDomain": "google.com",
+    "userId": "usr_84210",
+    "email": "lina.haddad@example.com",
+    "anonymousId": "anon_c41f9b7d",
+    "destinations": ["Snowflake", "Meta CAPI"],
+    "context": {
+      "geo": {
+        "country": {
+          "code": "AE",
+          "name": "United Arab Emirates"
+        },
+        "city": {
+          "name": "Dubai"
+        }
+      },
+      "page": {
+        "url": "https://shop.sfere.io/checkout",
+        "path": "/checkout",
+        "title": "Checkout \u2014 Sfere Store",
+        "host": "shop.sfere.io",
+        "referring_domain": "google.com"
+      },
+      "userAgent": "Mozilla/5.0 (iPhone; CPU iPhone OS 18_2 like Mac OS X)"
+    },
+    "httpHeaders": {
+      "content-type": "application/json",
+      "x-forwarded-host": "shop.sfere.io",
+      "user-agent": "Mozilla/5.0"
+    },
+    "payload": {
+      "event": "add_to_cart",
+      "userId": "usr_84210",
+      "properties": {
+        "sku": "SF-TEE-01",
+        "value": 129,
+        "currency": "AED"
+      }
+    }
+  },
+  {
+    "id": "evt_2399",
+    "date": "2026-08-25T09:40:55.480Z",
+    "level": "info",
+    "status": "SUCCESS",
+    "error": null,
+    "ingestType": "server",
+    "messageId": "msg_9021377",
+    "type": "identify",
+    "streamId": "str_mobile_app",
+    "writeKey": "wk_live_71da***",
+    "originDomain": "app.sfere.io",
+    "host": "app.sfere.io",
+    "pageURL": "https://app.sfere.io/products/season-pass",
+    "pagePath": "/products/season-pass",
+    "pageTitle": "Season pass \u2014 Sfere Store",
+    "referringDomain": "instagram.com",
+    "userId": "usr_84211",
+    "email": "omar.nasser@example.com",
+    "anonymousId": "anon_18b2ff40",
+    "destinations": ["Snowflake"],
+    "context": {
+      "geo": {
+        "country": {
+          "code": "SA",
+          "name": "Saudi Arabia"
+        },
+        "city": {
+          "name": "Riyadh"
+        }
+      },
+      "page": {
+        "url": "https://app.sfere.io/products/season-pass",
+        "path": "/products/season-pass",
+        "title": "Season pass \u2014 Sfere Store",
+        "host": "app.sfere.io",
+        "referring_domain": "instagram.com"
+      },
+      "userAgent": "sfere-server-sdk/2.4.0"
+    },
+    "httpHeaders": {
+      "content-type": "application/json",
+      "x-forwarded-host": "app.sfere.io",
+      "user-agent": "sfere-server-sdk/2.4.0"
+    },
+    "payload": {
+      "type": "identify",
+      "userId": "usr_84211",
+      "traits": {
+        "plan": "season-ticket",
+        "email": "omar.nasser@example.com"
+      }
+    }
+  },
+  {
+    "id": "evt_2398",
+    "date": "2026-08-25T09:40:38.480Z",
+    "level": "info",
+    "status": "SUCCESS",
+    "error": null,
+    "ingestType": "browser",
+    "messageId": "msg_9021414",
+    "type": "page",
+    "streamId": "str_ticketing",
+    "writeKey": "wk_live_c093***",
+    "originDomain": "tickets.sfere.io",
+    "host": "tickets.sfere.io",
+    "pageURL": "https://tickets.sfere.io/",
+    "pagePath": "/",
+    "pageTitle": "Sfere Store",
+    "referringDomain": null,
+    "userId": null,
+    "email": null,
+    "anonymousId": "anon_71ae3390",
+    "destinations": [],
+    "context": {
+      "geo": {
+        "country": {
+          "code": "EG",
+          "name": "Egypt"
+        },
+        "city": {
+          "name": "Cairo"
+        }
+      },
+      "page": {
+        "url": "https://tickets.sfere.io/",
+        "path": "/",
+        "title": "Sfere Store",
+        "host": "tickets.sfere.io",
+        "referring_domain": null
+      },
+      "userAgent": "Mozilla/5.0 (iPhone; CPU iPhone OS 18_2 like Mac OS X)"
+    },
+    "httpHeaders": {
+      "content-type": "application/json",
+      "x-forwarded-host": "tickets.sfere.io",
+      "user-agent": "Mozilla/5.0"
+    },
+    "payload": {
+      "type": "page",
+      "name": "Sfere Store",
+      "properties": {
+        "path": "/"
+      }
+    }
+  },
+  {
+    "id": "evt_2397",
+    "date": "2026-08-25T09:40:21.480Z",
+    "level": "error",
+    "status": "FAILED",
+    "error": "Destination rejected the payload: missing required field `email`.",
+    "ingestType": "browser",
+    "messageId": "msg_9021451",
+    "type": "track",
+    "streamId": "str_web_storefront",
+    "writeKey": "wk_live_2f8c***",
+    "originDomain": "shop.sfere.io",
+    "host": "shop.sfere.io",
+    "pageURL": "https://shop.sfere.io/fixtures/derby-night",
+    "pagePath": "/fixtures/derby-night",
+    "pageTitle": "Derby night \u2014 Tickets",
+    "referringDomain": "t.co",
+    "userId": "usr_84212",
+    "email": "sara.khoury@example.com",
+    "anonymousId": "anon_5d90c1aa",
+    "destinations": ["Snowflake", "Meta CAPI"],
+    "context": {
+      "geo": {
+        "country": {
+          "code": "GB",
+          "name": "United Kingdom"
+        },
+        "city": {
+          "name": "London"
+        }
+      },
+      "page": {
+        "url": "https://shop.sfere.io/fixtures/derby-night",
+        "path": "/fixtures/derby-night",
+        "title": "Derby night \u2014 Tickets",
+        "host": "shop.sfere.io",
+        "referring_domain": "t.co"
+      },
+      "userAgent": "Mozilla/5.0 (iPhone; CPU iPhone OS 18_2 like Mac OS X)"
+    },
+    "httpHeaders": {
+      "content-type": "application/json",
+      "x-forwarded-host": "shop.sfere.io",
+      "user-agent": "Mozilla/5.0"
+    },
+    "payload": {
+      "event": "wifi_signin",
+      "userId": "usr_84212",
+      "properties": {
+        "venue": "Sfere Arena",
+        "gate": "B4"
+      }
+    }
+  },
+  {
+    "id": "evt_2396",
+    "date": "2026-08-25T09:40:04.480Z",
+    "level": "info",
+    "status": "SUCCESS",
+    "error": null,
+    "ingestType": "server",
+    "messageId": "msg_9021488",
+    "type": "track",
+    "streamId": "str_mobile_app",
+    "writeKey": "wk_live_71da***",
+    "originDomain": "app.sfere.io",
+    "host": "app.sfere.io",
+    "pageURL": "https://app.sfere.io/account/orders",
+    "pagePath": "/account/orders",
+    "pageTitle": "Your orders \u2014 Sfere Store",
+    "referringDomain": null,
+    "userId": null,
+    "email": null,
+    "anonymousId": "anon_2ec7b013",
+    "destinations": ["Snowflake"],
+    "context": {
+      "geo": {
+        "country": {
+          "code": "DE",
+          "name": "Germany"
+        },
+        "city": {
+          "name": "Berlin"
+        }
+      },
+      "page": {
+        "url": "https://app.sfere.io/account/orders",
+        "path": "/account/orders",
+        "title": "Your orders \u2014 Sfere Store",
+        "host": "app.sfere.io",
+        "referring_domain": null
+      },
+      "userAgent": "sfere-server-sdk/2.4.0"
+    },
+    "httpHeaders": {
+      "content-type": "application/json",
+      "x-forwarded-host": "app.sfere.io",
+      "user-agent": "sfere-server-sdk/2.4.0"
+    },
+    "payload": {
+      "event": "app_open",
+      "userId": null,
+      "properties": {
+        "version": "4.12.0",
+        "platform": "ios"
+      }
+    }
+  },
+  {
+    "id": "evt_2395",
+    "date": "2026-08-25T09:40:02.480Z",
+    "level": "info",
+    "status": "SUCCESS",
+    "error": null,
+    "ingestType": "browser",
+    "messageId": "msg_9021525",
+    "type": "identify",
+    "streamId": "str_ticketing",
+    "writeKey": "wk_live_c093***",
+    "originDomain": "tickets.sfere.io",
+    "host": "tickets.sfere.io",
+    "pageURL": "https://tickets.sfere.io/checkout",
+    "pagePath": "/checkout",
+    "pageTitle": "Checkout \u2014 Sfere Store",
+    "referringDomain": "facebook.com",
+    "userId": "usr_84213",
+    "email": null,
+    "anonymousId": "anon_9a4410fe",
+    "destinations": [],
+    "context": {
+      "geo": {
+        "country": {
+          "code": "AE",
+          "name": "United Arab Emirates"
+        },
+        "city": {
+          "name": "Abu Dhabi"
+        }
+      },
+      "page": {
+        "url": "https://tickets.sfere.io/checkout",
+        "path": "/checkout",
+        "title": "Checkout \u2014 Sfere Store",
+        "host": "tickets.sfere.io",
+        "referring_domain": "facebook.com"
+      },
+      "userAgent": "Mozilla/5.0 (iPhone; CPU iPhone OS 18_2 like Mac OS X)"
+    },
+    "httpHeaders": {
+      "content-type": "application/json",
+      "x-forwarded-host": "tickets.sfere.io",
+      "user-agent": "Mozilla/5.0"
+    },
+    "payload": {
+      "type": "identify",
+      "userId": "usr_84213",
+      "traits": {
+        "plan": "season-ticket",
+        "email": null
+      }
+    }
+  },
+  {
+    "id": "evt_2394",
+    "date": "2026-08-25T09:39:45.480Z",
+    "level": "info",
+    "status": "SUCCESS",
+    "error": null,
+    "ingestType": "browser",
+    "messageId": "msg_9021562",
+    "type": "page",
+    "streamId": "str_web_storefront",
+    "writeKey": "wk_live_2f8c***",
+    "originDomain": "shop.sfere.io",
+    "host": "shop.sfere.io",
+    "pageURL": "https://shop.sfere.io/products/season-pass",
+    "pagePath": "/products/season-pass",
+    "pageTitle": "Season pass \u2014 Sfere Store",
+    "referringDomain": "google.com",
+    "userId": "usr_84210",
+    "email": "lina.haddad@example.com",
+    "anonymousId": "anon_c41f9b7d",
+    "destinations": ["Snowflake", "Meta CAPI"],
+    "context": {
+      "geo": {
+        "country": {
+          "code": "AE",
+          "name": "United Arab Emirates"
+        },
+        "city": {
+          "name": "Dubai"
+        }
+      },
+      "page": {
+        "url": "https://shop.sfere.io/products/season-pass",
+        "path": "/products/season-pass",
+        "title": "Season pass \u2014 Sfere Store",
+        "host": "shop.sfere.io",
+        "referring_domain": "google.com"
+      },
+      "userAgent": "Mozilla/5.0 (iPhone; CPU iPhone OS 18_2 like Mac OS X)"
+    },
+    "httpHeaders": {
+      "content-type": "application/json",
+      "x-forwarded-host": "shop.sfere.io",
+      "user-agent": "Mozilla/5.0"
+    },
+    "payload": {
+      "type": "page",
+      "name": "Season pass \u2014 Sfere Store",
+      "properties": {
+        "path": "/products/season-pass"
+      }
+    }
+  },
+  {
+    "id": "evt_2393",
+    "date": "2026-08-25T09:39:28.480Z",
+    "level": "info",
+    "status": "SUCCESS",
+    "error": null,
+    "ingestType": "server",
+    "messageId": "msg_9021599",
+    "type": "track",
+    "streamId": "str_mobile_app",
+    "writeKey": "wk_live_71da***",
+    "originDomain": "app.sfere.io",
+    "host": "app.sfere.io",
+    "pageURL": "https://app.sfere.io/",
+    "pagePath": "/",
+    "pageTitle": "Sfere Store",
+    "referringDomain": "instagram.com",
+    "userId": "usr_84211",
+    "email": "omar.nasser@example.com",
+    "anonymousId": "anon_18b2ff40",
+    "destinations": ["Snowflake"],
+    "context": {
+      "geo": {
+        "country": {
+          "code": "SA",
+          "name": "Saudi Arabia"
+        },
+        "city": {
+          "name": "Riyadh"
+        }
+      },
+      "page": {
+        "url": "https://app.sfere.io/",
+        "path": "/",
+        "title": "Sfere Store",
+        "host": "app.sfere.io",
+        "referring_domain": "instagram.com"
+      },
+      "userAgent": "sfere-server-sdk/2.4.0"
+    },
+    "httpHeaders": {
+      "content-type": "application/json",
+      "x-forwarded-host": "app.sfere.io",
+      "user-agent": "sfere-server-sdk/2.4.0"
+    },
+    "payload": {
+      "event": "purchase",
+      "userId": "usr_84211",
+      "properties": {
+        "orderId": "ord_55210",
+        "value": 480,
+        "currency": "AED",
+        "items": 2
+      }
+    }
+  },
+  {
+    "id": "evt_2392",
+    "date": "2026-08-25T09:39:11.480Z",
+    "level": "info",
+    "status": "SUCCESS",
+    "error": null,
+    "ingestType": "browser",
+    "messageId": "msg_9021636",
+    "type": "track",
+    "streamId": "str_ticketing",
+    "writeKey": "wk_live_c093***",
+    "originDomain": "tickets.sfere.io",
+    "host": "tickets.sfere.io",
+    "pageURL": "https://tickets.sfere.io/fixtures/derby-night",
+    "pagePath": "/fixtures/derby-night",
+    "pageTitle": "Derby night \u2014 Tickets",
+    "referringDomain": null,
+    "userId": null,
+    "email": null,
+    "anonymousId": "anon_71ae3390",
+    "destinations": [],
+    "context": {
+      "geo": {
+        "country": {
+          "code": "EG",
+          "name": "Egypt"
+        },
+        "city": {
+          "name": "Cairo"
+        }
+      },
+      "page": {
+        "url": "https://tickets.sfere.io/fixtures/derby-night",
+        "path": "/fixtures/derby-night",
+        "title": "Derby night \u2014 Tickets",
+        "host": "tickets.sfere.io",
+        "referring_domain": null
+      },
+      "userAgent": "Mozilla/5.0 (iPhone; CPU iPhone OS 18_2 like Mac OS X)"
+    },
+    "httpHeaders": {
+      "content-type": "application/json",
+      "x-forwarded-host": "tickets.sfere.io",
+      "user-agent": "Mozilla/5.0"
+    },
+    "payload": {
+      "event": "wifi_signin",
+      "userId": null,
+      "properties": {
+        "venue": "Sfere Arena",
+        "gate": "B4"
+      }
+    }
+  },
+  {
+    "id": "evt_2391",
+    "date": "2026-08-25T09:38:54.480Z",
+    "level": "info",
+    "status": "SUCCESS",
+    "error": null,
+    "ingestType": "browser",
+    "messageId": "msg_9021673",
+    "type": "identify",
+    "streamId": "str_web_storefront",
+    "writeKey": "wk_live_2f8c***",
+    "originDomain": "shop.sfere.io",
+    "host": "shop.sfere.io",
+    "pageURL": "https://shop.sfere.io/account/orders",
+    "pagePath": "/account/orders",
+    "pageTitle": "Your orders \u2014 Sfere Store",
+    "referringDomain": "t.co",
+    "userId": "usr_84212",
+    "email": "sara.khoury@example.com",
+    "anonymousId": "anon_5d90c1aa",
+    "destinations": ["Snowflake", "Meta CAPI"],
+    "context": {
+      "geo": {
+        "country": {
+          "code": "GB",
+          "name": "United Kingdom"
+        },
+        "city": {
+          "name": "London"
+        }
+      },
+      "page": {
+        "url": "https://shop.sfere.io/account/orders",
+        "path": "/account/orders",
+        "title": "Your orders \u2014 Sfere Store",
+        "host": "shop.sfere.io",
+        "referring_domain": "t.co"
+      },
+      "userAgent": "Mozilla/5.0 (iPhone; CPU iPhone OS 18_2 like Mac OS X)"
+    },
+    "httpHeaders": {
+      "content-type": "application/json",
+      "x-forwarded-host": "shop.sfere.io",
+      "user-agent": "Mozilla/5.0"
+    },
+    "payload": {
+      "type": "identify",
+      "userId": "usr_84212",
+      "traits": {
+        "plan": "season-ticket",
+        "email": "sara.khoury@example.com"
+      }
+    }
+  },
+  {
+    "id": "evt_2390",
+    "date": "2026-08-25T09:38:52.480Z",
+    "level": "info",
+    "status": "SKIPPED",
+    "error": "No pipe is subscribed to this event type.",
+    "ingestType": "server",
+    "messageId": "msg_9021710",
+    "type": "page",
+    "streamId": "str_mobile_app",
+    "writeKey": "wk_live_71da***",
+    "originDomain": "app.sfere.io",
+    "host": "app.sfere.io",
+    "pageURL": "https://app.sfere.io/checkout",
+    "pagePath": "/checkout",
+    "pageTitle": "Checkout \u2014 Sfere Store",
+    "referringDomain": null,
+    "userId": null,
+    "email": null,
+    "anonymousId": "anon_2ec7b013",
+    "destinations": ["Snowflake"],
+    "context": {
+      "geo": {
+        "country": {
+          "code": "DE",
+          "name": "Germany"
+        },
+        "city": {
+          "name": "Berlin"
+        }
+      },
+      "page": {
+        "url": "https://app.sfere.io/checkout",
+        "path": "/checkout",
+        "title": "Checkout \u2014 Sfere Store",
+        "host": "app.sfere.io",
+        "referring_domain": null
+      },
+      "userAgent": "sfere-server-sdk/2.4.0"
+    },
+    "httpHeaders": {
+      "content-type": "application/json",
+      "x-forwarded-host": "app.sfere.io",
+      "user-agent": "sfere-server-sdk/2.4.0"
+    },
+    "payload": {
+      "type": "page",
+      "name": "Checkout \u2014 Sfere Store",
+      "properties": {
+        "path": "/checkout"
+      }
+    }
+  },
+  {
+    "id": "evt_2389",
+    "date": "2026-08-25T09:38:35.480Z",
+    "level": "info",
+    "status": "SUCCESS",
+    "error": null,
+    "ingestType": "browser",
+    "messageId": "msg_9021747",
+    "type": "track",
+    "streamId": "str_ticketing",
+    "writeKey": "wk_live_c093***",
+    "originDomain": "tickets.sfere.io",
+    "host": "tickets.sfere.io",
+    "pageURL": "https://tickets.sfere.io/products/season-pass",
+    "pagePath": "/products/season-pass",
+    "pageTitle": "Season pass \u2014 Sfere Store",
+    "referringDomain": "facebook.com",
+    "userId": "usr_84213",
+    "email": null,
+    "anonymousId": "anon_9a4410fe",
+    "destinations": [],
+    "context": {
+      "geo": {
+        "country": {
+          "code": "AE",
+          "name": "United Arab Emirates"
+        },
+        "city": {
+          "name": "Abu Dhabi"
+        }
+      },
+      "page": {
+        "url": "https://tickets.sfere.io/products/season-pass",
+        "path": "/products/season-pass",
+        "title": "Season pass \u2014 Sfere Store",
+        "host": "tickets.sfere.io",
+        "referring_domain": "facebook.com"
+      },
+      "userAgent": "Mozilla/5.0 (iPhone; CPU iPhone OS 18_2 like Mac OS X)"
+    },
+    "httpHeaders": {
+      "content-type": "application/json",
+      "x-forwarded-host": "tickets.sfere.io",
+      "user-agent": "Mozilla/5.0"
+    },
+    "payload": {
+      "event": "page_view",
+      "userId": "usr_84213",
+      "properties": {
+        "referrer": "https://google.com/"
+      }
+    }
+  },
+  {
+    "id": "evt_2388",
+    "date": "2026-08-25T09:38:18.480Z",
+    "level": "info",
+    "status": "SUCCESS",
+    "error": null,
+    "ingestType": "browser",
+    "messageId": "msg_9021784",
+    "type": "track",
+    "streamId": "str_web_storefront",
+    "writeKey": "wk_live_2f8c***",
+    "originDomain": "shop.sfere.io",
+    "host": "shop.sfere.io",
+    "pageURL": "https://shop.sfere.io/",
+    "pagePath": "/",
+    "pageTitle": "Sfere Store",
+    "referringDomain": "google.com",
+    "userId": "usr_84210",
+    "email": "lina.haddad@example.com",
+    "anonymousId": "anon_c41f9b7d",
+    "destinations": ["Snowflake", "Meta CAPI"],
+    "context": {
+      "geo": {
+        "country": {
+          "code": "AE",
+          "name": "United Arab Emirates"
+        },
+        "city": {
+          "name": "Dubai"
+        }
+      },
+      "page": {
+        "url": "https://shop.sfere.io/",
+        "path": "/",
+        "title": "Sfere Store",
+        "host": "shop.sfere.io",
+        "referring_domain": "google.com"
+      },
+      "userAgent": "Mozilla/5.0 (iPhone; CPU iPhone OS 18_2 like Mac OS X)"
+    },
+    "httpHeaders": {
+      "content-type": "application/json",
+      "x-forwarded-host": "shop.sfere.io",
+      "user-agent": "Mozilla/5.0"
+    },
+    "payload": {
+      "event": "purchase",
+      "userId": "usr_84210",
+      "properties": {
+        "orderId": "ord_55210",
+        "value": 480,
+        "currency": "AED",
+        "items": 2
+      }
+    }
+  },
+  {
+    "id": "evt_2387",
+    "date": "2026-08-25T09:38:01.480Z",
+    "level": "info",
+    "status": "SUCCESS",
+    "error": null,
+    "ingestType": "server",
+    "messageId": "msg_9021821",
+    "type": "identify",
+    "streamId": "str_mobile_app",
+    "writeKey": "wk_live_71da***",
+    "originDomain": "app.sfere.io",
+    "host": "app.sfere.io",
+    "pageURL": "https://app.sfere.io/fixtures/derby-night",
+    "pagePath": "/fixtures/derby-night",
+    "pageTitle": "Derby night \u2014 Tickets",
+    "referringDomain": "instagram.com",
+    "userId": "usr_84211",
+    "email": "omar.nasser@example.com",
+    "anonymousId": "anon_18b2ff40",
+    "destinations": ["Snowflake"],
+    "context": {
+      "geo": {
+        "country": {
+          "code": "SA",
+          "name": "Saudi Arabia"
+        },
+        "city": {
+          "name": "Riyadh"
+        }
+      },
+      "page": {
+        "url": "https://app.sfere.io/fixtures/derby-night",
+        "path": "/fixtures/derby-night",
+        "title": "Derby night \u2014 Tickets",
+        "host": "app.sfere.io",
+        "referring_domain": "instagram.com"
+      },
+      "userAgent": "sfere-server-sdk/2.4.0"
+    },
+    "httpHeaders": {
+      "content-type": "application/json",
+      "x-forwarded-host": "app.sfere.io",
+      "user-agent": "sfere-server-sdk/2.4.0"
+    },
+    "payload": {
+      "type": "identify",
+      "userId": "usr_84211",
+      "traits": {
+        "plan": "season-ticket",
+        "email": "omar.nasser@example.com"
+      }
+    }
+  },
+  {
+    "id": "evt_2386",
+    "date": "2026-08-25T09:37:44.480Z",
+    "level": "info",
+    "status": "SUCCESS",
+    "error": null,
+    "ingestType": "browser",
+    "messageId": "msg_9021858",
+    "type": "page",
+    "streamId": "str_ticketing",
+    "writeKey": "wk_live_c093***",
+    "originDomain": "tickets.sfere.io",
+    "host": "tickets.sfere.io",
+    "pageURL": "https://tickets.sfere.io/account/orders",
+    "pagePath": "/account/orders",
+    "pageTitle": "Your orders \u2014 Sfere Store",
+    "referringDomain": null,
+    "userId": null,
+    "email": null,
+    "anonymousId": "anon_71ae3390",
+    "destinations": [],
+    "context": {
+      "geo": {
+        "country": {
+          "code": "EG",
+          "name": "Egypt"
+        },
+        "city": {
+          "name": "Cairo"
+        }
+      },
+      "page": {
+        "url": "https://tickets.sfere.io/account/orders",
+        "path": "/account/orders",
+        "title": "Your orders \u2014 Sfere Store",
+        "host": "tickets.sfere.io",
+        "referring_domain": null
+      },
+      "userAgent": "Mozilla/5.0 (iPhone; CPU iPhone OS 18_2 like Mac OS X)"
+    },
+    "httpHeaders": {
+      "content-type": "application/json",
+      "x-forwarded-host": "tickets.sfere.io",
+      "user-agent": "Mozilla/5.0"
+    },
+    "payload": {
+      "type": "page",
+      "name": "Your orders \u2014 Sfere Store",
+      "properties": {
+        "path": "/account/orders"
+      }
+    }
+  },
+  {
+    "id": "evt_2385",
+    "date": "2026-08-25T09:37:42.480Z",
+    "level": "info",
+    "status": "SUCCESS",
+    "error": null,
+    "ingestType": "browser",
+    "messageId": "msg_9021895",
+    "type": "track",
+    "streamId": "str_web_storefront",
+    "writeKey": "wk_live_2f8c***",
+    "originDomain": "shop.sfere.io",
+    "host": "shop.sfere.io",
+    "pageURL": "https://shop.sfere.io/checkout",
+    "pagePath": "/checkout",
+    "pageTitle": "Checkout \u2014 Sfere Store",
+    "referringDomain": "t.co",
+    "userId": "usr_84212",
+    "email": "sara.khoury@example.com",
+    "anonymousId": "anon_5d90c1aa",
+    "destinations": ["Snowflake", "Meta CAPI"],
+    "context": {
+      "geo": {
+        "country": {
+          "code": "GB",
+          "name": "United Kingdom"
+        },
+        "city": {
+          "name": "London"
+        }
+      },
+      "page": {
+        "url": "https://shop.sfere.io/checkout",
+        "path": "/checkout",
+        "title": "Checkout \u2014 Sfere Store",
+        "host": "shop.sfere.io",
+        "referring_domain": "t.co"
+      },
+      "userAgent": "Mozilla/5.0 (iPhone; CPU iPhone OS 18_2 like Mac OS X)"
+    },
+    "httpHeaders": {
+      "content-type": "application/json",
+      "x-forwarded-host": "shop.sfere.io",
+      "user-agent": "Mozilla/5.0"
+    },
+    "payload": {
+      "event": "add_to_cart",
+      "userId": "usr_84212",
+      "properties": {
+        "sku": "SF-TEE-01",
+        "value": 129,
+        "currency": "AED"
+      }
+    }
+  },
+  {
+    "id": "evt_2384",
+    "date": "2026-08-25T09:37:25.480Z",
+    "level": "info",
+    "status": "SUCCESS",
+    "error": null,
+    "ingestType": "server",
+    "messageId": "msg_9021932",
+    "type": "track",
+    "streamId": "str_mobile_app",
+    "writeKey": "wk_live_71da***",
+    "originDomain": "app.sfere.io",
+    "host": "app.sfere.io",
+    "pageURL": "https://app.sfere.io/products/season-pass",
+    "pagePath": "/products/season-pass",
+    "pageTitle": "Season pass \u2014 Sfere Store",
+    "referringDomain": null,
+    "userId": null,
+    "email": null,
+    "anonymousId": "anon_2ec7b013",
+    "destinations": ["Snowflake"],
+    "context": {
+      "geo": {
+        "country": {
+          "code": "DE",
+          "name": "Germany"
+        },
+        "city": {
+          "name": "Berlin"
+        }
+      },
+      "page": {
+        "url": "https://app.sfere.io/products/season-pass",
+        "path": "/products/season-pass",
+        "title": "Season pass \u2014 Sfere Store",
+        "host": "app.sfere.io",
+        "referring_domain": null
+      },
+      "userAgent": "sfere-server-sdk/2.4.0"
+    },
+    "httpHeaders": {
+      "content-type": "application/json",
+      "x-forwarded-host": "app.sfere.io",
+      "user-agent": "sfere-server-sdk/2.4.0"
+    },
+    "payload": {
+      "event": "page_view",
+      "userId": null,
+      "properties": {
+        "referrer": "https://google.com/"
+      }
+    }
+  },
+  {
+    "id": "evt_2383",
+    "date": "2026-08-25T09:37:08.480Z",
+    "level": "error",
+    "status": "FAILED",
+    "error": "Destination rejected the payload: missing required field `email`.",
+    "ingestType": "browser",
+    "messageId": "msg_9021969",
+    "type": "identify",
+    "streamId": "str_ticketing",
+    "writeKey": "wk_live_c093***",
+    "originDomain": "tickets.sfere.io",
+    "host": "tickets.sfere.io",
+    "pageURL": "https://tickets.sfere.io/",
+    "pagePath": "/",
+    "pageTitle": "Sfere Store",
+    "referringDomain": "facebook.com",
+    "userId": "usr_84213",
+    "email": null,
+    "anonymousId": "anon_9a4410fe",
+    "destinations": [],
+    "context": {
+      "geo": {
+        "country": {
+          "code": "AE",
+          "name": "United Arab Emirates"
+        },
+        "city": {
+          "name": "Abu Dhabi"
+        }
+      },
+      "page": {
+        "url": "https://tickets.sfere.io/",
+        "path": "/",
+        "title": "Sfere Store",
+        "host": "tickets.sfere.io",
+        "referring_domain": "facebook.com"
+      },
+      "userAgent": "Mozilla/5.0 (iPhone; CPU iPhone OS 18_2 like Mac OS X)"
+    },
+    "httpHeaders": {
+      "content-type": "application/json",
+      "x-forwarded-host": "tickets.sfere.io",
+      "user-agent": "Mozilla/5.0"
+    },
+    "payload": {
+      "type": "identify",
+      "userId": "usr_84213",
+      "traits": {
+        "plan": "season-ticket",
+        "email": null
+      }
+    }
+  },
+  {
+    "id": "evt_2382",
+    "date": "2026-08-25T09:36:51.480Z",
+    "level": "info",
+    "status": "SUCCESS",
+    "error": null,
+    "ingestType": "browser",
+    "messageId": "msg_9022006",
+    "type": "page",
+    "streamId": "str_web_storefront",
+    "writeKey": "wk_live_2f8c***",
+    "originDomain": "shop.sfere.io",
+    "host": "shop.sfere.io",
+    "pageURL": "https://shop.sfere.io/fixtures/derby-night",
+    "pagePath": "/fixtures/derby-night",
+    "pageTitle": "Derby night \u2014 Tickets",
+    "referringDomain": "google.com",
+    "userId": "usr_84210",
+    "email": "lina.haddad@example.com",
+    "anonymousId": "anon_c41f9b7d",
+    "destinations": ["Snowflake", "Meta CAPI"],
+    "context": {
+      "geo": {
+        "country": {
+          "code": "AE",
+          "name": "United Arab Emirates"
+        },
+        "city": {
+          "name": "Dubai"
+        }
+      },
+      "page": {
+        "url": "https://shop.sfere.io/fixtures/derby-night",
+        "path": "/fixtures/derby-night",
+        "title": "Derby night \u2014 Tickets",
+        "host": "shop.sfere.io",
+        "referring_domain": "google.com"
+      },
+      "userAgent": "Mozilla/5.0 (iPhone; CPU iPhone OS 18_2 like Mac OS X)"
+    },
+    "httpHeaders": {
+      "content-type": "application/json",
+      "x-forwarded-host": "shop.sfere.io",
+      "user-agent": "Mozilla/5.0"
+    },
+    "payload": {
+      "type": "page",
+      "name": "Derby night \u2014 Tickets",
+      "properties": {
+        "path": "/fixtures/derby-night"
+      }
+    }
+  },
+  {
+    "id": "evt_2381",
+    "date": "2026-08-25T09:36:34.480Z",
+    "level": "info",
+    "status": "SUCCESS",
+    "error": null,
+    "ingestType": "server",
+    "messageId": "msg_9022043",
+    "type": "track",
+    "streamId": "str_mobile_app",
+    "writeKey": "wk_live_71da***",
+    "originDomain": "app.sfere.io",
+    "host": "app.sfere.io",
+    "pageURL": "https://app.sfere.io/account/orders",
+    "pagePath": "/account/orders",
+    "pageTitle": "Your orders \u2014 Sfere Store",
+    "referringDomain": "instagram.com",
+    "userId": "usr_84211",
+    "email": "omar.nasser@example.com",
+    "anonymousId": "anon_18b2ff40",
+    "destinations": ["Snowflake"],
+    "context": {
+      "geo": {
+        "country": {
+          "code": "SA",
+          "name": "Saudi Arabia"
+        },
+        "city": {
+          "name": "Riyadh"
+        }
+      },
+      "page": {
+        "url": "https://app.sfere.io/account/orders",
+        "path": "/account/orders",
+        "title": "Your orders \u2014 Sfere Store",
+        "host": "app.sfere.io",
+        "referring_domain": "instagram.com"
+      },
+      "userAgent": "sfere-server-sdk/2.4.0"
+    },
+    "httpHeaders": {
+      "content-type": "application/json",
+      "x-forwarded-host": "app.sfere.io",
+      "user-agent": "sfere-server-sdk/2.4.0"
+    },
+    "payload": {
+      "event": "app_open",
+      "userId": "usr_84211",
+      "properties": {
+        "version": "4.12.0",
+        "platform": "ios"
+      }
+    }
+  },
+  {
+    "id": "evt_2380",
+    "date": "2026-08-25T09:36:32.480Z",
+    "level": "info",
+    "status": "SUCCESS",
+    "error": null,
+    "ingestType": "browser",
+    "messageId": "msg_9022080",
+    "type": "track",
+    "streamId": "str_ticketing",
+    "writeKey": "wk_live_c093***",
+    "originDomain": "tickets.sfere.io",
+    "host": "tickets.sfere.io",
+    "pageURL": "https://tickets.sfere.io/checkout",
+    "pagePath": "/checkout",
+    "pageTitle": "Checkout \u2014 Sfere Store",
+    "referringDomain": null,
+    "userId": null,
+    "email": null,
+    "anonymousId": "anon_71ae3390",
+    "destinations": [],
+    "context": {
+      "geo": {
+        "country": {
+          "code": "EG",
+          "name": "Egypt"
+        },
+        "city": {
+          "name": "Cairo"
+        }
+      },
+      "page": {
+        "url": "https://tickets.sfere.io/checkout",
+        "path": "/checkout",
+        "title": "Checkout \u2014 Sfere Store",
+        "host": "tickets.sfere.io",
+        "referring_domain": null
+      },
+      "userAgent": "Mozilla/5.0 (iPhone; CPU iPhone OS 18_2 like Mac OS X)"
+    },
+    "httpHeaders": {
+      "content-type": "application/json",
+      "x-forwarded-host": "tickets.sfere.io",
+      "user-agent": "Mozilla/5.0"
+    },
+    "payload": {
+      "event": "add_to_cart",
+      "userId": null,
+      "properties": {
+        "sku": "SF-TEE-01",
+        "value": 129,
+        "currency": "AED"
+      }
+    }
+  },
+  {
+    "id": "evt_2379",
+    "date": "2026-08-25T09:36:15.480Z",
+    "level": "info",
+    "status": "SUCCESS",
+    "error": null,
+    "ingestType": "browser",
+    "messageId": "msg_9022117",
+    "type": "identify",
+    "streamId": "str_web_storefront",
+    "writeKey": "wk_live_2f8c***",
+    "originDomain": "shop.sfere.io",
+    "host": "shop.sfere.io",
+    "pageURL": "https://shop.sfere.io/products/season-pass",
+    "pagePath": "/products/season-pass",
+    "pageTitle": "Season pass \u2014 Sfere Store",
+    "referringDomain": "t.co",
+    "userId": "usr_84212",
+    "email": "sara.khoury@example.com",
+    "anonymousId": "anon_5d90c1aa",
+    "destinations": ["Snowflake", "Meta CAPI"],
+    "context": {
+      "geo": {
+        "country": {
+          "code": "GB",
+          "name": "United Kingdom"
+        },
+        "city": {
+          "name": "London"
+        }
+      },
+      "page": {
+        "url": "https://shop.sfere.io/products/season-pass",
+        "path": "/products/season-pass",
+        "title": "Season pass \u2014 Sfere Store",
+        "host": "shop.sfere.io",
+        "referring_domain": "t.co"
+      },
+      "userAgent": "Mozilla/5.0 (iPhone; CPU iPhone OS 18_2 like Mac OS X)"
+    },
+    "httpHeaders": {
+      "content-type": "application/json",
+      "x-forwarded-host": "shop.sfere.io",
+      "user-agent": "Mozilla/5.0"
+    },
+    "payload": {
+      "type": "identify",
+      "userId": "usr_84212",
+      "traits": {
+        "plan": "season-ticket",
+        "email": "sara.khoury@example.com"
+      }
+    }
+  },
+  {
+    "id": "evt_2378",
+    "date": "2026-08-25T09:35:58.480Z",
+    "level": "info",
+    "status": "SUCCESS",
+    "error": null,
+    "ingestType": "server",
+    "messageId": "msg_9022154",
+    "type": "page",
+    "streamId": "str_mobile_app",
+    "writeKey": "wk_live_71da***",
+    "originDomain": "app.sfere.io",
+    "host": "app.sfere.io",
+    "pageURL": "https://app.sfere.io/",
+    "pagePath": "/",
+    "pageTitle": "Sfere Store",
+    "referringDomain": null,
+    "userId": null,
+    "email": null,
+    "anonymousId": "anon_2ec7b013",
+    "destinations": ["Snowflake"],
+    "context": {
+      "geo": {
+        "country": {
+          "code": "DE",
+          "name": "Germany"
+        },
+        "city": {
+          "name": "Berlin"
+        }
+      },
+      "page": {
+        "url": "https://app.sfere.io/",
+        "path": "/",
+        "title": "Sfere Store",
+        "host": "app.sfere.io",
+        "referring_domain": null
+      },
+      "userAgent": "sfere-server-sdk/2.4.0"
+    },
+    "httpHeaders": {
+      "content-type": "application/json",
+      "x-forwarded-host": "app.sfere.io",
+      "user-agent": "sfere-server-sdk/2.4.0"
+    },
+    "payload": {
+      "type": "page",
+      "name": "Sfere Store",
+      "properties": {
+        "path": "/"
+      }
+    }
+  },
+  {
+    "id": "evt_2377",
+    "date": "2026-08-25T09:35:41.480Z",
+    "level": "info",
+    "status": "SUCCESS",
+    "error": null,
+    "ingestType": "browser",
+    "messageId": "msg_9022191",
+    "type": "track",
+    "streamId": "str_ticketing",
+    "writeKey": "wk_live_c093***",
+    "originDomain": "tickets.sfere.io",
+    "host": "tickets.sfere.io",
+    "pageURL": "https://tickets.sfere.io/fixtures/derby-night",
+    "pagePath": "/fixtures/derby-night",
+    "pageTitle": "Derby night \u2014 Tickets",
+    "referringDomain": "facebook.com",
+    "userId": "usr_84213",
+    "email": null,
+    "anonymousId": "anon_9a4410fe",
+    "destinations": [],
+    "context": {
+      "geo": {
+        "country": {
+          "code": "AE",
+          "name": "United Arab Emirates"
+        },
+        "city": {
+          "name": "Abu Dhabi"
+        }
+      },
+      "page": {
+        "url": "https://tickets.sfere.io/fixtures/derby-night",
+        "path": "/fixtures/derby-night",
+        "title": "Derby night \u2014 Tickets",
+        "host": "tickets.sfere.io",
+        "referring_domain": "facebook.com"
+      },
+      "userAgent": "Mozilla/5.0 (iPhone; CPU iPhone OS 18_2 like Mac OS X)"
+    },
+    "httpHeaders": {
+      "content-type": "application/json",
+      "x-forwarded-host": "tickets.sfere.io",
+      "user-agent": "Mozilla/5.0"
+    },
+    "payload": {
+      "event": "wifi_signin",
+      "userId": "usr_84213",
+      "properties": {
+        "venue": "Sfere Arena",
+        "gate": "B4"
+      }
+    }
+  }
+]

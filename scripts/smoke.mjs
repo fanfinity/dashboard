@@ -5,6 +5,8 @@
 //
 //   node scripts/smoke.mjs --serve              # build output, own server
 //   node scripts/smoke.mjs                      # against SMOKE_BASE (default :9000)
+//
+// It reads .env itself, so `pnpm smoke:dist` works from a clean shell.
 //   SMOKE_ROUTES=/pipes,/sources node scripts/smoke.mjs --serve
 //
 // It asserts, per route:
@@ -18,17 +20,34 @@
 // PageHeader primitives. Hand-rolled error markup would give 54 different
 // selectors and no generic gate.
 import { spawn } from 'node:child_process'
-import { mkdirSync } from 'node:fs'
+import { existsSync, mkdirSync } from 'node:fs'
 import { chromium } from 'playwright'
 import { screens } from '../src/router/screens.js'
+
+// Load .env before anything reads process.env. This used to be the caller's
+// job (`node --env-file=.env scripts/smoke.mjs`), which meant a bare
+// `pnpm smoke:dist` from a clean shell exited 2 on missing credentials that
+// were sitting in .env all along. loadEnvFile does NOT overwrite variables
+// that are already set, so `SMOKE_ROUTES=/pipes pnpm smoke:dist` and the
+// workflows' env: blocks still win, and passing --env-file as well is
+// harmless rather than conflicting.
+if (existsSync('.env')) process.loadEnvFile('.env')
 
 const args = process.argv.slice(2)
 const SERVE = args.includes('--serve')
 const SHOTS = args.includes('--screenshots')
-const PORT = Number(process.env.SMOKE_PORT || 4173)
+// 9000, not an arbitrary free port, because the origin has to be one the
+// backend's CORS_ALLOW_ORIGINS names — sign-in is a real cross-origin POST to
+// VITE_API_BASE now, so a browser on any other port is refused at the
+// preflight and the run dies before it reaches a single screen. Staging allows
+// exactly `http://localhost:9000` today (not 127.0.0.1, not 4173, which is
+// what this used to default to). It collides with `pnpm dev` on purpose:
+// sharing the dev server's port is what keeps the allowlist to one entry.
+// Override with SMOKE_PORT only if the backend has been taught that port too.
+const PORT = Number(process.env.SMOKE_PORT || 9000)
 const BASE = SERVE
   ? `http://localhost:${PORT}`
-  : process.env.SMOKE_BASE || 'http://localhost:9000'
+  : process.env.SMOKE_BASE || `http://localhost:${PORT}`
 
 const EMAIL = process.env.SMOKE_EMAIL
 const PASSWORD = process.env.SMOKE_PASSWORD
@@ -98,6 +117,37 @@ const context = await browser.newContext({
 })
 const page = await context.newPage()
 
+const IS_LOCAL = /^https?:\/\/localhost[:/]/.test(BASE)
+
+// Which data source the walk runs against. The app defaults to 'real'
+// (useDataSource.js), and that is the right default for a run against a
+// DEPLOYED origin: the backend allows it, the wired domains return real rows,
+// and an unwired one renders "No API yet" — a true picture of the deployed app.
+//
+// Locally it is the wrong one, for two independent reasons. The backend's
+// CORS_ALLOW_ORIGINS does not include this script's static server, so every
+// live read is blocked before it leaves the browser — and a blocked read logs a
+// console error, which this gate fails on. And even if it were reachable, only
+// Sources/Destinations/Pipes have endpoints today, so ~45 of the 54 screens
+// would render "No API yet" and the gate would stop exercising the screens it
+// exists to check. Mock mode is the only mode where all 54 have data.
+//
+// Same IS_LOCAL split as IGNORED_CONSOLE below, and preferred over adding
+// /v1/dashboard and /v1/errors to that list: an ignore entry is permanent
+// blindness to a class of error, this just picks a mode a user could pick too.
+// Override with SMOKE_DATA_SOURCE=real to reproduce a real-mode failure
+// locally (expect CORS noise), or =mock against a deployed origin.
+const DATA_SOURCE =
+  process.env.SMOKE_DATA_SOURCE || (IS_LOCAL ? 'mock' : 'real')
+await context.addInitScript(mode => {
+  try {
+    localStorage.setItem('sfere_data_source_mode', mode)
+  } catch {
+    // Private mode / storage disabled — useDataSource falls back to its own
+    // default, which is the pre-existing behaviour, not a new failure.
+  }
+}, DATA_SOURCE)
+
 // Environmental noise, not page defects. Keep this list SHORT and specific —
 // every entry is a class of real bug the gate can no longer see.
 //
@@ -111,7 +161,6 @@ const page = await context.newPage()
 // (SMOKE_BASE=https://app-staging.sfere.io, which deploy-staging.yml uses) that
 // origin IS allowed, so a CORS failure there is a real regression in the
 // backend's CORS_ALLOW_ORIGINS and must not be swallowed.
-const IS_LOCAL = /^https?:\/\/localhost[:/]/.test(BASE)
 const IGNORED_CONSOLE = IS_LOCAL
   ? [
       /Access to fetch at '[^']*\/v1\/me'.*blocked by CORS/i,
@@ -140,9 +189,27 @@ await page.click('button[type=submit]')
 try {
   await page.waitForSelector('[data-smoke="nav"]', { timeout: 20000 })
 } catch {
+  // The two failures here look identical in the DOM and have different fixes,
+  // so name them rather than making the reader parse the console dump.
+  const noise = bucket.join('\n')
+  let diagnosis =
+    '       Check SMOKE_EMAIL/SMOKE_PASSWORD and VITE_API_BASE in .env.'
+  if (/blocked by CORS/i.test(noise)) {
+    diagnosis =
+      `       The backend refused this origin (${BASE}). Sign-in is a real\n` +
+      `       cross-origin POST, so the origin must be in the backend's\n` +
+      `       CORS_ALLOW_ORIGINS — see the SMOKE_PORT note at the top of this file.`
+  } else if (/\b401\b/.test(noise)) {
+    diagnosis =
+      '       The backend rejected these credentials (401). SMOKE_EMAIL must be a\n' +
+      '       real account on VITE_API_BASE — the backend authenticates at the\n' +
+      '       Identity Platform *project* level, so an account that only ever\n' +
+      '       existed in the old tenant will not resolve. Register it with\n' +
+      '       POST /v1/register against that same host.'
+  }
   console.error(
     'smoke: sign-in did not reach the app shell.\n' +
-      `       Check SMOKE_EMAIL/SMOKE_PASSWORD and VITE_API_BASE in .env.\n` +
+      `${diagnosis}\n` +
       `       Console so far:\n       ${bucket.join('\n       ') || '(nothing)'}`
   )
   await browser.close()

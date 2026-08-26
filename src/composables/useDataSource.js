@@ -1,28 +1,44 @@
 import { computed, ref } from 'vue'
 
-// Whether the app is reading mock JSON or a real backend. One global switch —
-// not per-module like useFeatures — flipped through Settings → Data source.
+// Where the app reads its data from. Two states, flipped through
+// Settings → Data source:
+// - 'real' the Fanfinity backend via VITE_API_BASE. The default: the app is
+//          wired to that API, so a signed-in user should see their own data
+//          without touching Settings. Only the wired domains (sources,
+//          destinations, pipelines, events, connectors) actually call it; a
+//          screen whose endpoint is still drafted in
+//          openapi/cdp-api-draft.yaml reports `apiMissing` ("No API yet").
+// - 'mock' the static JSON in public/data/. A backend-free demo, and the only
+//          way to walk every screen with populated data today.
 //
-// Default is REAL: the app is wired to the accounts backend, so a signed-in
-// user should see their own data without touching Settings. Only the wired
-// domains (sources, destinations, pipelines, live/per-source events) actually
-// call the backend; the rest report `apiMissing` ("No API yet"). Switch to mock
-// for a backend-free demo. `smoke` runs against whatever this default is.
+// There was briefly a third state ('mockApi') pointing at a local Scalar mock
+// server generated from the draft spec. It was scaffolding for a backend that
+// did not exist yet; sources, destinations and pipelines now have real
+// endpoints, so mocking a draft of them is cost without benefit. The draft
+// spec itself stays — it is the contract for what is still unbuilt, browsable
+// with `pnpm docs:cdp`.
 //
-// Same module-singleton pattern as useAuth/useJitsu/useFeatures: one ref, so
-// the Settings toggle and the footer banner agree without a bus or a refetch.
+// One global switch, not per-module like useFeatures: the modes differ in
+// which host answers, not in which features exist, so there is nothing for
+// per-module granularity to control.
+//
+// Same module-singleton pattern as useAuth/useFeatures: one ref, so the
+// Settings toggle and the footer banner agree without a bus or a refetch.
 const STORAGE_KEY = 'sfere_data_source_mode'
 const MOCK = 'mock'
 const REAL = 'real'
+
+// Only an explicit stored 'mock' opts out; everything else — unset, garbage, a
+// stale 'mockApi' from before that mode was removed — resolves to real.
+function sanitize(value) {
+  return value === MOCK ? MOCK : REAL
+}
 
 const mode = ref(readMode())
 
 function readMode() {
   try {
-    const stored = localStorage.getItem(STORAGE_KEY)
-    // Only an explicit stored 'mock' opts out; everything else (unset,
-    // garbage, 'real') resolves to real.
-    return stored === MOCK ? MOCK : REAL
+    return sanitize(localStorage.getItem(STORAGE_KEY))
   } catch {
     // Private mode or a disabled store — fall back to the real default.
     return REAL
@@ -40,7 +56,7 @@ function writeMode(value) {
 
 export function useDataSource() {
   function setMode(value) {
-    const next = value === REAL ? REAL : MOCK
+    const next = sanitize(value)
     mode.value = next
     writeMode(next)
   }

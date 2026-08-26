@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: Sfere CDP API (draft)
-  version: 0.2.0
+  version: 0.1.0
   description: |
     Proposed API for the modules the dashboard has already built against mock
     JSON in `public/data/`. This is a draft handed to the backend team to build
@@ -15,8 +15,11 @@ info:
     Scope: every module `enabled: true` in `src/config/features.js` as of this
     draft — Dashboard, Sources, Destinations, Pipes, Settings, Warehouse
     connections, Monitoring (Errors + Health), Profiles (search), Secrets and
-    Authorizations. Live Events already has a real backend (Jitsu) and is
-    intentionally out of scope here. Two modules are enabled but only partly
+    Authorizations — Live Events included. The dashboard talks to this API and
+    to nothing else: where an event stream is actually hosted (Jitsu today) is
+    the backend's business, and `GET /v1/events` is deliberately specified as
+    an already-flattened, vendor-neutral record rather than a passthrough of
+    any upstream wire format. Two modules are enabled but only partly
     built: Warehouse and Profiles each gate several child screens behind their
     own still-`false` feature key (DWH syncs, Warehouse models, Identity
     resolution, Attributes, Profile API, Live/DWH profile syncs) — those are
@@ -26,6 +29,27 @@ info:
     Every schema below was written by reading the actual mock JSON in
     `public/data/*.json`, not guessed — field names, nullability and enum
     values match the fixtures the frontend already renders.
+
+    ## What is already built — do NOT implement these from this file
+
+    Sources, Destinations and Pipes have since SHIPPED on the real backend, in
+    a different shape from the one drafted here: account-scoped
+    (`/v1/accounts/{account_id}/sources`), snake_case, page-numbered rather
+    than cursor-paginated, and "pipes" are called `pipelines`. The authority
+    for those three is `openapi/fanfinity-api.json`, pulled from staging by
+    `pnpm openapi`, and the frontend already reads and writes them there
+    (`useSources`, `useDestinations`, `usePipes`, plus the `*API` composables
+    for creates).
+
+    Their drafted paths are deliberately LEFT in this file rather than
+    deleted, because the field sets differ: the drafted records carry things
+    the real ones do not yet (`eventCountLastHour`, `pipeCount`,
+    `deliveryCountLastHour`, template versions, the `destinationParams` a pipe
+    carries). Read those as the outstanding ask for those domains, not as an
+    endpoint to build. Everything else here — the dashboard snapshot, events,
+    connectors, trash, errors, secrets, authorizations and the rest — has no
+    real endpoint at all, and a screen reading one shows "No API yet" until it
+    does.
 
     ## Versioning
 
@@ -97,14 +121,15 @@ info:
 servers:
   - url: http://localhost:8080
     description: Local backend dev (mirrors src/api/mutator.js's default)
-  - url: https://api-staging.fanfinity.io
-    description: Staging (VITE_API_BASE) — same host the accounts/RBAC API uses
+  - url: https://api-staging.sfere.io
+    description: Staging (VITE_API_BASE) — the one host this app calls
 
 security:
   - bearerAuth: []
 
 tags:
   - name: Dashboard
+  - name: Events
   - name: Sources
   - name: Destinations
   - name: Pipes
@@ -121,6 +146,7 @@ paths:
   /v1/dashboard:
     get:
       tags: [Dashboard]
+      operationId: getDashboard
       summary: Home screen stats, series and recent activity
       description: >-
         Backs useDashboardHome.js / dashboard.json. One object: counts,
@@ -135,13 +161,552 @@ paths:
           content:
             application/json:
               schema: { $ref: '#/components/schemas/DashboardSnapshot' }
+              example:
+                {
+                  'updatedAt': '2026-07-31T06:00:00.000Z',
+                  'totalSources': 6,
+                  'totalEventDestinations': 6,
+                  'totalPipes': 7,
+                  'totalEventsLastHour': 25952,
+                  'activeSourcesLastHour': 4,
+                  'activeEventTypesLastHour': 23,
+                  'activeEventStreamSourcesLastHour': 3,
+                  'activeCloudAppSourcesLastHour': 1,
+                  'activeEventDestinationsLastHour': 3,
+                  'routedEventsLastHour': 44372,
+                  'failedProfileDeliveriesLastHour': 2,
+                  'activeLiveProfileSyncsLastHour': 3,
+                  'profilesRefreshedLastHour': 9042,
+                  'profilesRoutedLastHour': 1002,
+                  'errorsLastHour': 37,
+                  'routingRate': 1.71,
+                  'sourceSeries':
+                    [
+                      {
+                        'bucket': '2026-07-31T05:49:00.000Z',
+                        'web_sdk': 249,
+                        'ios_sdk': 85,
+                        'shopify_store': 2,
+                        'stadium_wifi_portal': 12
+                      },
+                      {
+                        'bucket': '2026-07-31T05:50:00.000Z',
+                        'web_sdk': 252,
+                        'ios_sdk': 97,
+                        'shopify_store': 3,
+                        'stadium_wifi_portal': 15
+                      },
+                      {
+                        'bucket': '2026-07-31T05:51:00.000Z',
+                        'web_sdk': 286,
+                        'ios_sdk': 97,
+                        'shopify_store': 3,
+                        'stadium_wifi_portal': 16
+                      },
+                      {
+                        'bucket': '2026-07-31T05:52:00.000Z',
+                        'web_sdk': 321,
+                        'ios_sdk': 105,
+                        'shopify_store': 5,
+                        'stadium_wifi_portal': 19
+                      },
+                      {
+                        'bucket': '2026-07-31T05:53:00.000Z',
+                        'web_sdk': 334,
+                        'ios_sdk': 117,
+                        'shopify_store': 6,
+                        'stadium_wifi_portal': 21
+                      },
+                      {
+                        'bucket': '2026-07-31T05:54:00.000Z',
+                        'web_sdk': 340,
+                        'ios_sdk': 124,
+                        'shopify_store': 6,
+                        'stadium_wifi_portal': 24
+                      },
+                      {
+                        'bucket': '2026-07-31T05:55:00.000Z',
+                        'web_sdk': 368,
+                        'ios_sdk': 122,
+                        'shopify_store': 7,
+                        'stadium_wifi_portal': 24
+                      },
+                      {
+                        'bucket': '2026-07-31T05:56:00.000Z',
+                        'web_sdk': 371,
+                        'ios_sdk': 125,
+                        'shopify_store': 7,
+                        'stadium_wifi_portal': 27
+                      },
+                      {
+                        'bucket': '2026-07-31T05:57:00.000Z',
+                        'web_sdk': 376,
+                        'ios_sdk': 135,
+                        'shopify_store': 7,
+                        'stadium_wifi_portal': 25
+                      },
+                      {
+                        'bucket': '2026-07-31T05:58:00.000Z',
+                        'web_sdk': 370,
+                        'ios_sdk': 130,
+                        'shopify_store': 7,
+                        'stadium_wifi_portal': 24
+                      },
+                      {
+                        'bucket': '2026-07-31T05:59:00.000Z',
+                        'web_sdk': 368,
+                        'ios_sdk': 125,
+                        'shopify_store': 6,
+                        'stadium_wifi_portal': 26
+                      },
+                      {
+                        'bucket': '2026-07-31T06:00:00.000Z',
+                        'web_sdk': 370,
+                        'ios_sdk': 121,
+                        'shopify_store': 7,
+                        'stadium_wifi_portal': 26
+                      }
+                    ],
+                  'eventTypeSeries':
+                    [
+                      {
+                        'bucket': '2026-07-31T05:49:00.000Z',
+                        'page_view': 169,
+                        'identify': 32,
+                        'add_to_cart': 17,
+                        'ticket_scan': 9,
+                        'wifi_signin': 12
+                      },
+                      {
+                        'bucket': '2026-07-31T05:50:00.000Z',
+                        'page_view': 194,
+                        'identify': 38,
+                        'add_to_cart': 18,
+                        'ticket_scan': 9,
+                        'wifi_signin': 15
+                      },
+                      {
+                        'bucket': '2026-07-31T05:51:00.000Z',
+                        'page_view': 213,
+                        'identify': 37,
+                        'add_to_cart': 22,
+                        'ticket_scan': 11,
+                        'wifi_signin': 19
+                      },
+                      {
+                        'bucket': '2026-07-31T05:52:00.000Z',
+                        'page_view': 229,
+                        'identify': 44,
+                        'add_to_cart': 24,
+                        'ticket_scan': 13,
+                        'wifi_signin': 18
+                      },
+                      {
+                        'bucket': '2026-07-31T05:53:00.000Z',
+                        'page_view': 232,
+                        'identify': 45,
+                        'add_to_cart': 28,
+                        'ticket_scan': 15,
+                        'wifi_signin': 23
+                      },
+                      {
+                        'bucket': '2026-07-31T05:54:00.000Z',
+                        'page_view': 251,
+                        'identify': 47,
+                        'add_to_cart': 29,
+                        'ticket_scan': 16,
+                        'wifi_signin': 22
+                      },
+                      {
+                        'bucket': '2026-07-31T05:55:00.000Z',
+                        'page_view': 254,
+                        'identify': 50,
+                        'add_to_cart': 31,
+                        'ticket_scan': 17,
+                        'wifi_signin': 25
+                      },
+                      {
+                        'bucket': '2026-07-31T05:56:00.000Z',
+                        'page_view': 263,
+                        'identify': 51,
+                        'add_to_cart': 30,
+                        'ticket_scan': 18,
+                        'wifi_signin': 27
+                      },
+                      {
+                        'bucket': '2026-07-31T05:57:00.000Z',
+                        'page_view': 272,
+                        'identify': 50,
+                        'add_to_cart': 33,
+                        'ticket_scan': 17,
+                        'wifi_signin': 28
+                      },
+                      {
+                        'bucket': '2026-07-31T05:58:00.000Z',
+                        'page_view': 269,
+                        'identify': 50,
+                        'add_to_cart': 34,
+                        'ticket_scan': 19,
+                        'wifi_signin': 28
+                      },
+                      {
+                        'bucket': '2026-07-31T05:59:00.000Z',
+                        'page_view': 273,
+                        'identify': 49,
+                        'add_to_cart': 32,
+                        'ticket_scan': 19,
+                        'wifi_signin': 27
+                      },
+                      {
+                        'bucket': '2026-07-31T06:00:00.000Z',
+                        'page_view': 267,
+                        'identify': 49,
+                        'add_to_cart': 30,
+                        'ticket_scan': 18,
+                        'wifi_signin': 25
+                      }
+                    ],
+                  'routedSeries':
+                    [
+                      {
+                        'bucket': '2026-07-31T05:49:00.000Z',
+                        'snowflake': 340,
+                        'meta_conversions_api': 243,
+                        'ops_webhook': 2
+                      },
+                      {
+                        'bucket': '2026-07-31T05:50:00.000Z',
+                        'snowflake': 369,
+                        'meta_conversions_api': 272,
+                        'ops_webhook': 3
+                      },
+                      {
+                        'bucket': '2026-07-31T05:51:00.000Z',
+                        'snowflake': 382,
+                        'meta_conversions_api': 308,
+                        'ops_webhook': 3
+                      },
+                      {
+                        'bucket': '2026-07-31T05:52:00.000Z',
+                        'snowflake': 430,
+                        'meta_conversions_api': 317,
+                        'ops_webhook': 4
+                      },
+                      {
+                        'bucket': '2026-07-31T05:53:00.000Z',
+                        'snowflake': 434,
+                        'meta_conversions_api': 327,
+                        'ops_webhook': 6
+                      },
+                      {
+                        'bucket': '2026-07-31T05:54:00.000Z',
+                        'snowflake': 470,
+                        'meta_conversions_api': 359,
+                        'ops_webhook': 6
+                      },
+                      {
+                        'bucket': '2026-07-31T05:55:00.000Z',
+                        'snowflake': 500,
+                        'meta_conversions_api': 384,
+                        'ops_webhook': 7
+                      },
+                      {
+                        'bucket': '2026-07-31T05:56:00.000Z',
+                        'snowflake': 501,
+                        'meta_conversions_api': 377,
+                        'ops_webhook': 7
+                      },
+                      {
+                        'bucket': '2026-07-31T05:57:00.000Z',
+                        'snowflake': 535,
+                        'meta_conversions_api': 402,
+                        'ops_webhook': 7
+                      },
+                      {
+                        'bucket': '2026-07-31T05:58:00.000Z',
+                        'snowflake': 502,
+                        'meta_conversions_api': 409,
+                        'ops_webhook': 7
+                      },
+                      {
+                        'bucket': '2026-07-31T05:59:00.000Z',
+                        'snowflake': 504,
+                        'meta_conversions_api': 372,
+                        'ops_webhook': 7
+                      },
+                      {
+                        'bucket': '2026-07-31T06:00:00.000Z',
+                        'snowflake': 517,
+                        'meta_conversions_api': 370,
+                        'ops_webhook': 7
+                      }
+                    ],
+                  'profileRefreshSeries':
+                    [
+                      { 'bucket': '2026-07-31T05:49:00.000Z', 'profiles': 110 },
+                      { 'bucket': '2026-07-31T05:50:00.000Z', 'profiles': 140 },
+                      { 'bucket': '2026-07-31T05:51:00.000Z', 'profiles': 138 },
+                      { 'bucket': '2026-07-31T05:52:00.000Z', 'profiles': 164 },
+                      { 'bucket': '2026-07-31T05:53:00.000Z', 'profiles': 173 },
+                      { 'bucket': '2026-07-31T05:54:00.000Z', 'profiles': 176 },
+                      { 'bucket': '2026-07-31T05:55:00.000Z', 'profiles': 203 },
+                      { 'bucket': '2026-07-31T05:56:00.000Z', 'profiles': 210 },
+                      { 'bucket': '2026-07-31T05:57:00.000Z', 'profiles': 212 },
+                      { 'bucket': '2026-07-31T05:58:00.000Z', 'profiles': 211 },
+                      { 'bucket': '2026-07-31T05:59:00.000Z', 'profiles': 191 },
+                      { 'bucket': '2026-07-31T06:00:00.000Z', 'profiles': 201 }
+                    ],
+                  'profileDeliverySeries':
+                    [
+                      {
+                        'bucket': '2026-07-31T05:49:00.000Z',
+                        'meta_custom_audiences': 11,
+                        'google_ads_customer_match': 2,
+                        'crm_webhook': 0
+                      },
+                      {
+                        'bucket': '2026-07-31T05:50:00.000Z',
+                        'meta_custom_audiences': 13,
+                        'google_ads_customer_match': 2,
+                        'crm_webhook': 1
+                      },
+                      {
+                        'bucket': '2026-07-31T05:51:00.000Z',
+                        'meta_custom_audiences': 13,
+                        'google_ads_customer_match': 3,
+                        'crm_webhook': 1
+                      },
+                      {
+                        'bucket': '2026-07-31T05:52:00.000Z',
+                        'meta_custom_audiences': 15,
+                        'google_ads_customer_match': 3,
+                        'crm_webhook': 1
+                      },
+                      {
+                        'bucket': '2026-07-31T05:53:00.000Z',
+                        'meta_custom_audiences': 16,
+                        'google_ads_customer_match': 4,
+                        'crm_webhook': 2
+                      },
+                      {
+                        'bucket': '2026-07-31T05:54:00.000Z',
+                        'meta_custom_audiences': 17,
+                        'google_ads_customer_match': 4,
+                        'crm_webhook': 2
+                      },
+                      {
+                        'bucket': '2026-07-31T05:55:00.000Z',
+                        'meta_custom_audiences': 18,
+                        'google_ads_customer_match': 4,
+                        'crm_webhook': 2
+                      },
+                      {
+                        'bucket': '2026-07-31T05:56:00.000Z',
+                        'meta_custom_audiences': 20,
+                        'google_ads_customer_match': 5,
+                        'crm_webhook': 2
+                      },
+                      {
+                        'bucket': '2026-07-31T05:57:00.000Z',
+                        'meta_custom_audiences': 20,
+                        'google_ads_customer_match': 5,
+                        'crm_webhook': 2
+                      },
+                      {
+                        'bucket': '2026-07-31T05:58:00.000Z',
+                        'meta_custom_audiences': 21,
+                        'google_ads_customer_match': 5,
+                        'crm_webhook': 2
+                      },
+                      {
+                        'bucket': '2026-07-31T05:59:00.000Z',
+                        'meta_custom_audiences': 20,
+                        'google_ads_customer_match': 5,
+                        'crm_webhook': 2
+                      },
+                      {
+                        'bucket': '2026-07-31T06:00:00.000Z',
+                        'meta_custom_audiences': 19,
+                        'google_ads_customer_match': 4,
+                        'crm_webhook': 2
+                      }
+                    ],
+                  'sourceConfig':
+                    [
+                      {
+                        'key': 'web_sdk',
+                        'label': 'Web SDK',
+                        'color': 'var(--color-chart-1)'
+                      },
+                      {
+                        'key': 'ios_sdk',
+                        'label': 'iOS SDK',
+                        'color': 'var(--color-chart-2)'
+                      },
+                      {
+                        'key': 'shopify_store',
+                        'label': 'Shopify Store',
+                        'color': 'var(--color-chart-3)'
+                      },
+                      {
+                        'key': 'stadium_wifi_portal',
+                        'label': 'Stadium Wi-Fi Portal',
+                        'color': 'var(--color-chart-4)'
+                      }
+                    ],
+                  'eventTypeConfig':
+                    [
+                      {
+                        'key': 'page_view',
+                        'label': 'page_view',
+                        'color': 'var(--color-chart-1)'
+                      },
+                      {
+                        'key': 'identify',
+                        'label': 'identify',
+                        'color': 'var(--color-chart-2)'
+                      },
+                      {
+                        'key': 'add_to_cart',
+                        'label': 'add_to_cart',
+                        'color': 'var(--color-chart-3)'
+                      },
+                      {
+                        'key': 'ticket_scan',
+                        'label': 'ticket_scan',
+                        'color': 'var(--color-chart-4)'
+                      },
+                      {
+                        'key': 'wifi_signin',
+                        'label': 'wifi_signin',
+                        'color': 'var(--color-chart-5)'
+                      }
+                    ],
+                  'routedConfig':
+                    [
+                      {
+                        'key': 'snowflake',
+                        'label': 'Snowflake',
+                        'color': 'var(--color-chart-1)'
+                      },
+                      {
+                        'key': 'meta_conversions_api',
+                        'label': 'Meta Conversions API',
+                        'color': 'var(--color-chart-2)'
+                      },
+                      {
+                        'key': 'ops_webhook',
+                        'label': 'Ops Webhook',
+                        'color': 'var(--color-chart-3)'
+                      }
+                    ],
+                  'profileRefreshConfig':
+                    [
+                      {
+                        'key': 'profiles',
+                        'label': 'Profiles',
+                        'color': 'var(--color-chart-1)'
+                      }
+                    ],
+                  'profileDeliveryConfig':
+                    [
+                      {
+                        'key': 'meta_custom_audiences',
+                        'label': 'Meta Custom Audiences',
+                        'color': 'var(--color-chart-1)'
+                      },
+                      {
+                        'key': 'google_ads_customer_match',
+                        'label': 'Google Ads Customer Match',
+                        'color': 'var(--color-chart-2)'
+                      },
+                      {
+                        'key': 'crm_webhook',
+                        'label': 'CRM Webhook',
+                        'color': 'var(--color-chart-3)'
+                      }
+                    ],
+                  'lastEvents':
+                    [
+                      {
+                        'id': 'ev_9a12f0',
+                        'eventName': 'page_view',
+                        'sourceId': 'src_web_sdk',
+                        'sourceName': 'Web SDK',
+                        'profileId': 'prof_4e9f60',
+                        'occurredAt': '2026-07-31T05:58:44.000Z'
+                      },
+                      {
+                        'id': 'ev_9a12ef',
+                        'eventName': 'add_to_cart',
+                        'sourceId': 'src_shopify',
+                        'sourceName': 'Shopify Store',
+                        'profileId': 'prof_0a41c9',
+                        'occurredAt': '2026-07-31T05:57:12.000Z'
+                      },
+                      {
+                        'id': 'ev_9a12ee',
+                        'eventName': 'wifi_signin',
+                        'sourceId': 'src_stadium_wifi',
+                        'sourceName': 'Stadium Wi-Fi Portal',
+                        'profileId': 'prof_5f2d31',
+                        'occurredAt': '2026-07-31T05:55:03.000Z'
+                      },
+                      {
+                        'id': 'ev_9a12ed',
+                        'eventName': 'identify',
+                        'sourceId': 'src_web_sdk',
+                        'sourceName': 'Web SDK',
+                        'profileId': 'prof_2c03aa',
+                        'occurredAt': '2026-07-31T05:52:40.000Z'
+                      },
+                      {
+                        'id': 'ev_9a12ec',
+                        'eventName': 'app_open',
+                        'sourceId': 'src_ios_sdk',
+                        'sourceName': 'iOS SDK',
+                        'profileId': 'prof_0a41c9',
+                        'occurredAt': '2026-07-31T05:50:19.000Z'
+                      }
+                    ],
+                  'lastProfiles':
+                    [
+                      {
+                        'id': 'prof_4e9f60',
+                        'displayName': 'Anonymous browser b_31aa7f',
+                        'updatedAt': '2026-07-31T05:58:44.000Z'
+                      },
+                      {
+                        'id': 'prof_0a41c9',
+                        'displayName': 'Layla Al-Harbi',
+                        'updatedAt': '2026-07-31T05:41:09.220Z'
+                      },
+                      {
+                        'id': 'prof_5f2d31',
+                        'displayName': 'Noura Al-Otaibi',
+                        'updatedAt': '2026-07-31T05:20:00.000Z'
+                      },
+                      {
+                        'id': 'prof_2c03aa',
+                        'displayName': 'Sara Kim',
+                        'updatedAt': '2026-07-31T03:02:00.000Z'
+                      },
+                      {
+                        'id': 'prof_1b77e2',
+                        'displayName': 'Omar Nasser',
+                        'updatedAt': '2026-07-30T21:15:33.000Z'
+                      }
+                    ]
+                }
         default: { $ref: '#/components/responses/Problem' }
 
   # ------------------------------------------------------------------ Sources
   /v1/sources:
     get:
       tags: [Sources]
+      operationId: listSources
       summary: List configured sources
+      description: Backs useSources() — the Sources list screen. Cursor-paginated.
       parameters:
         - $ref: '#/components/parameters/Cursor'
         - $ref: '#/components/parameters/Limit'
@@ -151,9 +716,132 @@ paths:
           content:
             application/json:
               schema: { $ref: '#/components/schemas/SourceList' }
+              example:
+                {
+                  'items':
+                    [
+                      {
+                        'id': 'src_web_sdk',
+                        'name': 'Web SDK',
+                        'slug': 'web-sdk',
+                        'sourceType': 'event_stream',
+                        'description': 'First-party web tracker on sfere.io and the fan portal.',
+                        'isEnabled': true,
+                        'version': 3,
+                        'createdAt': '2026-02-11T09:14:02.104Z',
+                        'updatedAt': '2026-07-30T22:32:17.087Z',
+                        'eventCountLastHour': 18420,
+                        'eventTypeCount': 52,
+                        'pipeCount': 2,
+                        'templateId': 'web-sdk',
+                        'templateVersion': '2026-06-25',
+                        'latestTemplateVersion': '2026-06-25',
+                        'templateIcon': 'web-sdk',
+                        'writeKey': 'wk_live_web_9f31c8a2'
+                      },
+                      {
+                        'id': 'src_ios_sdk',
+                        'name': 'iOS SDK',
+                        'slug': 'ios-sdk',
+                        'sourceType': 'event_stream',
+                        'description': "Native iOS app \u2014 matchday companion.",
+                        'isEnabled': true,
+                        'version': 2,
+                        'createdAt': '2026-03-04T13:41:55.220Z',
+                        'updatedAt': '2026-07-21T08:02:10.001Z',
+                        'eventCountLastHour': 6215,
+                        'eventTypeCount': 41,
+                        'pipeCount': 1,
+                        'templateId': 'ios-sdk',
+                        'templateVersion': '2026-03-14',
+                        'latestTemplateVersion': '2026-06-25',
+                        'templateIcon': 'ios-sdk',
+                        'writeKey': 'wk_live_ios_4b70de11'
+                      },
+                      {
+                        'id': 'src_android_sdk',
+                        'name': 'Android SDK',
+                        'slug': 'android-sdk',
+                        'sourceType': 'event_stream',
+                        'description': "Native Android app \u2014 matchday companion.",
+                        'isEnabled': false,
+                        'version': 2,
+                        'createdAt': '2026-03-04T13:47:12.883Z',
+                        'updatedAt': '2026-06-18T16:30:44.512Z',
+                        'eventCountLastHour': 0,
+                        'eventTypeCount': 41,
+                        'pipeCount': 1,
+                        'templateId': 'android-sdk',
+                        'templateVersion': '2026-01-30',
+                        'latestTemplateVersion': '2026-06-25',
+                        'templateIcon': 'android-sdk',
+                        'writeKey': 'wk_live_and_c2a5f807'
+                      },
+                      {
+                        'id': 'src_shopify',
+                        'name': 'Shopify Store',
+                        'slug': 'shopify-store',
+                        'sourceType': 'cloud_app',
+                        'description': "Club merchandise store \u2014 orders, carts and refunds.",
+                        'isEnabled': true,
+                        'version': 1,
+                        'createdAt': '2026-05-19T10:05:33.470Z',
+                        'updatedAt': '2026-05-19T10:05:33.470Z',
+                        'eventCountLastHour': 214,
+                        'eventTypeCount': 12,
+                        'pipeCount': 1,
+                        'templateId': 'shopify',
+                        'templateVersion': '2026-05-02',
+                        'latestTemplateVersion': '2026-05-02',
+                        'templateIcon': 'shopify',
+                        'writeKey': null
+                      },
+                      {
+                        'id': 'src_ticketing_api',
+                        'name': 'Ticketing API',
+                        'slug': 'ticketing-api',
+                        'sourceType': 'event_stream',
+                        'description': 'Server-side HTTP ingest from the box-office platform.',
+                        'isEnabled': false,
+                        'version': 4,
+                        'createdAt': '2026-04-02T07:22:41.900Z',
+                        'updatedAt': '2026-07-09T11:18:27.640Z',
+                        'eventCountLastHour': 0,
+                        'eventTypeCount': 9,
+                        'pipeCount': 1,
+                        'templateId': 'http-api',
+                        'templateVersion': '2026-02-11',
+                        'latestTemplateVersion': '2026-06-25',
+                        'templateIcon': 'http-api',
+                        'writeKey': 'wk_live_tix_77e0ab39'
+                      },
+                      {
+                        'id': 'src_stadium_wifi',
+                        'name': 'Stadium Wi-Fi Portal',
+                        'slug': 'stadium-wifi-portal',
+                        'sourceType': 'event_stream',
+                        'description': 'Captive-portal sign-ins captured on match days.',
+                        'isEnabled': true,
+                        'version': 1,
+                        'createdAt': '2026-06-27T18:55:09.311Z',
+                        'updatedAt': '2026-06-27T18:55:09.311Z',
+                        'eventCountLastHour': 1103,
+                        'eventTypeCount': 6,
+                        'pipeCount': 1,
+                        'templateId': 'http-api',
+                        'templateVersion': '2026-06-25',
+                        'latestTemplateVersion': '2026-06-25',
+                        'templateIcon': 'http-api',
+                        'writeKey': 'wk_live_wifi_1de44c60'
+                      }
+                    ],
+                  'nextCursor': null,
+                  'hasMore': false
+                }
         default: { $ref: '#/components/responses/Problem' }
     post:
       tags: [Sources]
+      operationId: createSource
       summary: Create a source from a template
       description: Backs useSources().add() — currently a local-only mutation.
       parameters:
@@ -177,7 +865,9 @@ paths:
       - $ref: '#/components/parameters/Id'
     get:
       tags: [Sources]
+      operationId: getSource
       summary: Get one source
+      description: Fetches a single source by id, e.g. for the source detail screen.
       responses:
         '200':
           description: OK
@@ -187,6 +877,7 @@ paths:
         default: { $ref: '#/components/responses/Problem' }
     patch:
       tags: [Sources]
+      operationId: updateSource
       summary: Update a source
       description: >-
         Backs useSources().setEnabled() today (isEnabled only); the request
@@ -213,6 +904,7 @@ paths:
         default: { $ref: '#/components/responses/Problem' }
     delete:
       tags: [Sources]
+      operationId: deleteSource
       summary: Soft-delete a source (moves it to trash)
       description: Backs useSources().remove(); see the Trash endpoints below.
       responses:
@@ -222,7 +914,9 @@ paths:
   /v1/source-templates:
     get:
       tags: [Sources]
+      operationId: listSourceTemplates
       summary: Catalog of source templates (the create-screen picker)
+      description: Backs the source create screen's template picker.
       parameters:
         - $ref: '#/components/parameters/Cursor'
         - $ref: '#/components/parameters/Limit'
@@ -234,11 +928,266 @@ paths:
               schema: { $ref: '#/components/schemas/SourceTemplateList' }
         default: { $ref: '#/components/responses/Problem' }
 
+  # The browsable catalog of connector *types* — what could be connected. This
+  # is NOT /v1/source-templates: templates back the source create screen's
+  # picker (each one already shaped for this workspace, with defaults and
+  # counts), while this is the wider vendor catalog behind /sources?tab=
+  # connectors. The dashboard used to fetch this straight from the event
+  # vendor's public catalog endpoint, including per-connector logo images; it
+  # no longer talks to anything but this API, so `iconUrl` must be served by
+  # the backend (proxied or mirrored) and may be null — the card falls back to
+  # a bundled icon.
+  /v1/connectors:
+    get:
+      tags: [Sources]
+      operationId: listConnectors
+      summary: Catalog of connector types available to add
+      description: Backs useConnectorCatalog() — the Connectors tab on /sources.
+      parameters:
+        - name: search
+          in: query
+          schema: { type: string }
+        - $ref: '#/components/parameters/Cursor'
+        - $ref: '#/components/parameters/Limit'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ConnectorList' }
+              example:
+                {
+                  'items':
+                    [
+                      {
+                        'id': 'airbyte/source-shopify',
+                        'packageId': 'airbyte/source-shopify',
+                        'packageType': 'airbyte',
+                        'iconUrl': null,
+                        'meta':
+                          {
+                            'name': 'Shopify',
+                            'license': 'ELv2',
+                            'mitVersions': [],
+                            'connectorSubtype': 'api'
+                          }
+                      },
+                      {
+                        'id': 'airbyte/source-google-analytics-data-api',
+                        'packageId': 'airbyte/source-google-analytics-data-api',
+                        'packageType': 'airbyte',
+                        'iconUrl': null,
+                        'meta':
+                          {
+                            'name': 'Google Analytics 4',
+                            'license': 'MIT',
+                            'connectorSubtype': 'api'
+                          }
+                      }
+                    ],
+                  'nextCursor': null,
+                  'hasMore': false
+                }
+        default: { $ref: '#/components/responses/Problem' }
+
+  # ------------------------------------------------------------------ Events
+  # The dashboard has no connection to any event-collection vendor. It asks
+  # this API for events; the backend owns whatever upstream produces them and
+  # returns records in the flat, vendor-neutral shape below. Anything that
+  # names the upstream (its ingest envelope, its internal ids, its wire
+  # format) is the backend's to absorb and must not surface here.
+  /v1/events:
+    get:
+      tags: [Events]
+      operationId: listEvents
+      summary: Incoming events for one stream
+      description: >-
+        Backs useLiveEvents() — the Live Events feed. Cursor-paginated and
+        filterable. `end` doubles as the "load previous" cursor: the page
+        re-requests with `end` set to the oldest event it already holds.
+      parameters:
+        - name: streamId
+          in: query
+          required: true
+          description: Which event stream (site) to read. See GET /v1/event-streams.
+          schema: { type: string }
+        - name: level
+          in: query
+          description: Omit or send `all` for everything; `error` narrows to failures.
+          schema: { type: string, enum: [all, error], default: all }
+        - name: start
+          in: query
+          schema: { type: string, format: date-time }
+        - name: end
+          in: query
+          schema: { type: string, format: date-time }
+        - name: search
+          in: query
+          description: Free-text match across page URL, user id, email and payload.
+          schema: { type: string }
+        - $ref: '#/components/parameters/Cursor'
+        - $ref: '#/components/parameters/Limit'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/LiveEventList' }
+              example:
+                {
+                  'items':
+                    [
+                      {
+                        'id': 'evt_01k3m8a',
+                        'date': '2026-08-25T09:41:12.480Z',
+                        'level': 'info',
+                        'status': 'SUCCESS',
+                        'ingestType': 'browser',
+                        'messageId': 'msg_9f21c4e0',
+                        'type': 'track',
+                        'streamId': 'str_web_storefront',
+                        'writeKey': 'wk_live_2f8c***',
+                        'originDomain': 'shop.sfere.io',
+                        'host': 'shop.sfere.io',
+                        'pageURL': 'https://shop.sfere.io/checkout',
+                        'pagePath': '/checkout',
+                        'pageTitle': 'Checkout — Sfere Store',
+                        'referringDomain': 'google.com',
+                        'userId': 'usr_84210',
+                        'email': 'lina.haddad@example.com',
+                        'anonymousId': 'anon_c41f9b7d',
+                        'destinations': ['Snowflake', 'Meta CAPI'],
+                        'context':
+                          {
+                            'geo':
+                              {
+                                'country':
+                                  {
+                                    'code': 'AE',
+                                    'name': 'United Arab Emirates'
+                                  },
+                                'city': { 'name': 'Dubai' }
+                              },
+                            'page':
+                              {
+                                'url': 'https://shop.sfere.io/checkout',
+                                'path': '/checkout',
+                                'title': 'Checkout — Sfere Store',
+                                'host': 'shop.sfere.io',
+                                'referring_domain': 'google.com'
+                              },
+                            'userAgent': 'Mozilla/5.0 (iPhone; CPU iPhone OS 18_2 like Mac OS X)'
+                          },
+                        'httpHeaders':
+                          {
+                            'content-type': 'application/json',
+                            'x-forwarded-host': 'shop.sfere.io'
+                          },
+                        'payload':
+                          {
+                            'event': 'add_to_cart',
+                            'userId': 'usr_84210',
+                            'properties':
+                              {
+                                'sku': 'SF-TEE-01',
+                                'value': 129,
+                                'currency': 'AED'
+                              }
+                          }
+                      },
+                      {
+                        'id': 'evt_01k3m89',
+                        'date': '2026-08-25T09:40:58.112Z',
+                        'level': 'error',
+                        'status': 'FAILED',
+                        'error': 'Destination rejected the payload: missing required field `email`.',
+                        'ingestType': 'server',
+                        'messageId': 'msg_9f21c3b2',
+                        'type': 'identify',
+                        'streamId': 'str_web_storefront',
+                        'writeKey': 'wk_live_2f8c***',
+                        'originDomain': 'api.sfere.io',
+                        'anonymousId': 'anon_71ae3390',
+                        'destinations': ['Meta CAPI'],
+                        'context':
+                          {
+                            'geo':
+                              {
+                                'country':
+                                  { 'code': 'SA', 'name': 'Saudi Arabia' },
+                                'city': { 'name': 'Riyadh' }
+                              }
+                          },
+                        'httpHeaders': { 'content-type': 'application/json' },
+                        'payload':
+                          {
+                            'type': 'identify',
+                            'traits': { 'plan': 'season-ticket' }
+                          }
+                      }
+                    ],
+                  'nextCursor': null,
+                  'hasMore': false
+                }
+        default: { $ref: '#/components/responses/Problem' }
+
+  /v1/event-streams:
+    get:
+      tags: [Events]
+      operationId: listEventStreams
+      summary: Event streams (sites) the workspace collects from
+      description: >-
+        Backs the Live Events site selector. One entry per collection endpoint;
+        `id` is what `GET /v1/events?streamId=` takes.
+      parameters:
+        - $ref: '#/components/parameters/Cursor'
+        - $ref: '#/components/parameters/Limit'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/EventStreamList' }
+              example:
+                {
+                  'items':
+                    [
+                      {
+                        'id': 'str_web_storefront',
+                        'name': 'Web storefront',
+                        'domains': ['shop.sfere.io'],
+                        'isEnabled': true,
+                        'eventCountLastHour': 18420
+                      },
+                      {
+                        'id': 'str_mobile_app',
+                        'name': 'Mobile app',
+                        'domains': ['app.sfere.io'],
+                        'isEnabled': true,
+                        'eventCountLastHour': 6215
+                      },
+                      {
+                        'id': 'str_stadium_wifi',
+                        'name': 'Stadium Wi-Fi portal',
+                        'domains': ['wifi.sfere.io'],
+                        'isEnabled': false,
+                        'eventCountLastHour': 0
+                      }
+                    ],
+                  'nextCursor': null,
+                  'hasMore': false
+                }
+        default: { $ref: '#/components/responses/Problem' }
+
   # ------------------------------------------------------------- Destinations
   /v1/destinations:
     get:
       tags: [Destinations]
+      operationId: listDestinations
       summary: List configured destinations
+      description: >-
+        Backs useDestinations() — the Destinations list screen.
+        Cursor-paginated.
       parameters:
         - $ref: '#/components/parameters/Cursor'
         - $ref: '#/components/parameters/Limit'
@@ -248,10 +1197,128 @@ paths:
           content:
             application/json:
               schema: { $ref: '#/components/schemas/DestinationList' }
+              example:
+                {
+                  'items':
+                    [
+                      {
+                        'id': 'dst_snowflake',
+                        'name': 'Snowflake',
+                        'slug': 'snowflake',
+                        'description': null,
+                        'destinationType': 'event_destination',
+                        'isEnabled': true,
+                        'version': 2,
+                        'createdAt': '2026-02-11T09:31:48.400Z',
+                        'updatedAt': '2026-07-30T22:33:35.400Z',
+                        'pipeCount': 3,
+                        'deliveryCountLastHour': 25738,
+                        'warehouseConnections': ['dwh_snowflake_prod'],
+                        'templateId': null,
+                        'templateVersion': null,
+                        'latestTemplateVersion': null,
+                        'templateIcon': null
+                      },
+                      {
+                        'id': 'dst_meta_capi',
+                        'name': 'Meta Conversions API',
+                        'slug': 'meta-conversions-api',
+                        'description': 'Server-side conversions for the sponsorship retargeting pool.',
+                        'destinationType': 'event_destination',
+                        'isEnabled': true,
+                        'version': 3,
+                        'createdAt': '2026-03-22T15:02:19.774Z',
+                        'updatedAt': '2026-07-28T09:44:03.220Z',
+                        'pipeCount': 1,
+                        'deliveryCountLastHour': 18420,
+                        'warehouseConnections': [],
+                        'templateId': 'meta-conversions-api',
+                        'templateVersion': '2026-04-10',
+                        'latestTemplateVersion': '2026-04-10',
+                        'templateIcon': 'meta'
+                      },
+                      {
+                        'id': 'dst_tiktok_events',
+                        'name': 'TikTok Events API',
+                        'slug': 'tiktok-events-api',
+                        'description': 'Events API feed for the youth-audience campaign.',
+                        'destinationType': 'event_destination',
+                        'isEnabled': false,
+                        'version': 1,
+                        'createdAt': '2026-04-15T11:37:58.019Z',
+                        'updatedAt': '2026-06-02T14:12:00.500Z',
+                        'pipeCount': 1,
+                        'deliveryCountLastHour': 0,
+                        'warehouseConnections': [],
+                        'templateId': 'tiktok-events-api',
+                        'templateVersion': '2026-01-20',
+                        'latestTemplateVersion': '2026-04-10',
+                        'templateIcon': 'tiktok'
+                      },
+                      {
+                        'id': 'dst_bigquery',
+                        'name': 'BigQuery Archive',
+                        'slug': 'bigquery-archive',
+                        'description': 'Cold archive of raw ticketing events.',
+                        'destinationType': 'event_destination',
+                        'isEnabled': false,
+                        'version': 1,
+                        'createdAt': '2026-04-02T08:10:04.612Z',
+                        'updatedAt': '2026-07-09T11:20:02.870Z',
+                        'pipeCount': 1,
+                        'deliveryCountLastHour': 0,
+                        'warehouseConnections': ['dwh_bigquery_archive'],
+                        'templateId': null,
+                        'templateVersion': null,
+                        'latestTemplateVersion': null,
+                        'templateIcon': null
+                      },
+                      {
+                        'id': 'dst_ops_webhook',
+                        'name': 'Ops Webhook',
+                        'slug': 'ops-webhook',
+                        'description': 'Internal webhook that fans out merch orders to the ops bot.',
+                        'destinationType': 'event_destination',
+                        'isEnabled': true,
+                        'version': 5,
+                        'createdAt': '2026-05-19T10:22:47.005Z',
+                        'updatedAt': '2026-07-26T06:03:41.118Z',
+                        'pipeCount': 1,
+                        'deliveryCountLastHour': 214,
+                        'warehouseConnections': [],
+                        'templateId': 'webhook',
+                        'templateVersion': '2026-02-28',
+                        'latestTemplateVersion': '2026-05-30',
+                        'templateIcon': 'webhook'
+                      },
+                      {
+                        'id': 'dst_s3_archive',
+                        'name': 'S3 Cold Storage',
+                        'slug': 's3-cold-storage',
+                        'description': null,
+                        'destinationType': 'event_destination',
+                        'isEnabled': true,
+                        'version': 1,
+                        'createdAt': '2026-07-14T12:00:00.000Z',
+                        'updatedAt': '2026-07-14T12:00:00.000Z',
+                        'pipeCount': 0,
+                        'deliveryCountLastHour': 0,
+                        'warehouseConnections': [],
+                        'templateId': 's3',
+                        'templateVersion': '2026-05-30',
+                        'latestTemplateVersion': '2026-05-30',
+                        'templateIcon': 's3'
+                      }
+                    ],
+                  'nextCursor': null,
+                  'hasMore': false
+                }
         default: { $ref: '#/components/responses/Problem' }
     post:
       tags: [Destinations]
+      operationId: createDestination
       summary: Create a destination from a template
+      description: Backs useDestinations().add() — currently a local-only mutation.
       parameters:
         - $ref: '#/components/parameters/IdempotencyKey'
       requestBody:
@@ -273,7 +1340,11 @@ paths:
       - $ref: '#/components/parameters/Id'
     get:
       tags: [Destinations]
+      operationId: getDestination
       summary: Get one destination
+      description: >-
+        Fetches a single destination by id, e.g. for the destination detail
+        screen.
       responses:
         '200':
           description: OK
@@ -283,7 +1354,12 @@ paths:
         default: { $ref: '#/components/responses/Problem' }
     patch:
       tags: [Destinations]
+      operationId: updateDestination
       summary: Update a destination
+      description: >-
+        Backs useDestinations().setEnabled() today (isEnabled only); the
+        request body is written open in case editable fields grow beyond
+        that.
       requestBody:
         required: true
         content:
@@ -303,7 +1379,9 @@ paths:
         default: { $ref: '#/components/responses/Problem' }
     delete:
       tags: [Destinations]
+      operationId: deleteDestination
       summary: Soft-delete a destination (moves it to trash)
+      description: Backs useDestinations().remove(); see the Trash endpoints below.
       responses:
         '204': { description: Deleted }
         default: { $ref: '#/components/responses/Problem' }
@@ -311,7 +1389,9 @@ paths:
   /v1/destination-templates:
     get:
       tags: [Destinations]
+      operationId: listDestinationTemplates
       summary: Catalog of destination templates
+      description: Backs the destination create screen's template picker.
       parameters:
         - $ref: '#/components/parameters/Cursor'
         - $ref: '#/components/parameters/Limit'
@@ -327,7 +1407,9 @@ paths:
   /v1/pipes:
     get:
       tags: [Pipes]
+      operationId: listPipes
       summary: List pipes (source → destination transforms)
+      description: Backs usePipes() — the Pipes list screen. Cursor-paginated.
       parameters:
         - $ref: '#/components/parameters/Cursor'
         - $ref: '#/components/parameters/Limit'
@@ -337,10 +1419,153 @@ paths:
           content:
             application/json:
               schema: { $ref: '#/components/schemas/PipeList' }
+              example:
+                {
+                  'items':
+                    [
+                      {
+                        'id': 'pipe_web_to_snowflake',
+                        'name': 'Web SDK to Snowflake',
+                        'sourceId': 'src_web_sdk',
+                        'sourceName': 'Web SDK',
+                        'sourceSlug': 'web-sdk',
+                        'sourceType': 'event_stream',
+                        'eventDestinationId': 'dst_snowflake',
+                        'eventDestinationName': 'Snowflake',
+                        'eventDestinationSlug': 'snowflake',
+                        'isEnabled': true,
+                        'version': 4,
+                        'hasFunctionCode': true,
+                        'destinationParams':
+                          { 'table': 'raw_web_events', 'batchSize': 500 },
+                        'createdAt': '2026-02-11T09:34:06.898Z',
+                        'updatedAt': '2026-07-30T22:34:06.898Z',
+                        'deliveryCountLastHour': 18420
+                      },
+                      {
+                        'id': 'pipe_web_to_meta',
+                        'name': 'Web SDK to Meta CAPI',
+                        'sourceId': 'src_web_sdk',
+                        'sourceName': 'Web SDK',
+                        'sourceSlug': 'web-sdk',
+                        'sourceType': 'event_stream',
+                        'eventDestinationId': 'dst_meta_capi',
+                        'eventDestinationName': 'Meta Conversions API',
+                        'eventDestinationSlug': 'meta-conversions-api',
+                        'isEnabled': true,
+                        'version': 2,
+                        'hasFunctionCode': true,
+                        'destinationParams':
+                          { 'pixel_id': '1088452201', 'log_request': false },
+                        'createdAt': '2026-03-22T15:10:31.226Z',
+                        'updatedAt': '2026-07-28T09:45:12.004Z',
+                        'deliveryCountLastHour': 18420
+                      },
+                      {
+                        'id': 'pipe_ios_to_snowflake',
+                        'name': 'iOS SDK to Snowflake',
+                        'sourceId': 'src_ios_sdk',
+                        'sourceName': 'iOS SDK',
+                        'sourceSlug': 'ios-sdk',
+                        'sourceType': 'event_stream',
+                        'eventDestinationId': 'dst_snowflake',
+                        'eventDestinationName': 'Snowflake',
+                        'eventDestinationSlug': 'snowflake',
+                        'isEnabled': true,
+                        'version': 1,
+                        'hasFunctionCode': false,
+                        'destinationParams':
+                          { 'table': 'raw_mobile_events', 'batchSize': 500 },
+                        'createdAt': '2026-03-04T13:52:40.115Z',
+                        'updatedAt': '2026-07-21T08:03:55.720Z',
+                        'deliveryCountLastHour': 6215
+                      },
+                      {
+                        'id': 'pipe_android_to_tiktok',
+                        'name': 'Android SDK to TikTok',
+                        'sourceId': 'src_android_sdk',
+                        'sourceName': 'Android SDK',
+                        'sourceSlug': 'android-sdk',
+                        'sourceType': 'event_stream',
+                        'eventDestinationId': 'dst_tiktok_events',
+                        'eventDestinationName': 'TikTok Events API',
+                        'eventDestinationSlug': 'tiktok-events-api',
+                        'isEnabled': false,
+                        'version': 1,
+                        'hasFunctionCode': true,
+                        'destinationParams':
+                          { 'event_source_id': 'TT-4471209' },
+                        'createdAt': '2026-04-15T11:44:26.301Z',
+                        'updatedAt': '2026-06-02T14:13:38.900Z',
+                        'deliveryCountLastHour': 0
+                      },
+                      {
+                        'id': 'pipe_ticketing_to_bigquery',
+                        'name': 'Ticketing to BigQuery',
+                        'sourceId': 'src_ticketing_api',
+                        'sourceName': 'Ticketing API',
+                        'sourceSlug': 'ticketing-api',
+                        'sourceType': 'event_stream',
+                        'eventDestinationId': 'dst_bigquery',
+                        'eventDestinationName': 'BigQuery Archive',
+                        'eventDestinationSlug': 'bigquery-archive',
+                        'isEnabled': false,
+                        'version': 3,
+                        'hasFunctionCode': false,
+                        'destinationParams':
+                          { 'dataset': 'fan_raw', 'table': 'ticketing' },
+                        'createdAt': '2026-04-02T08:14:52.774Z',
+                        'updatedAt': '2026-07-09T11:21:44.010Z',
+                        'deliveryCountLastHour': 0
+                      },
+                      {
+                        'id': 'pipe_shopify_to_webhook',
+                        'name': 'Shopify to Ops Webhook',
+                        'sourceId': 'src_shopify',
+                        'sourceName': 'Shopify Store',
+                        'sourceSlug': 'shopify-store',
+                        'sourceType': 'cloud_app',
+                        'eventDestinationId': 'dst_ops_webhook',
+                        'eventDestinationName': 'Ops Webhook',
+                        'eventDestinationSlug': 'ops-webhook',
+                        'isEnabled': true,
+                        'version': 5,
+                        'hasFunctionCode': true,
+                        'destinationParams':
+                          { 'url': 'https://ops.sfere.io/hooks/merch' },
+                        'createdAt': '2026-05-19T10:30:12.660Z',
+                        'updatedAt': '2026-07-26T06:04:19.443Z',
+                        'deliveryCountLastHour': 214
+                      },
+                      {
+                        'id': 'pipe_wifi_to_snowflake',
+                        'name': 'Stadium Wi-Fi to Snowflake',
+                        'sourceId': 'src_stadium_wifi',
+                        'sourceName': 'Stadium Wi-Fi Portal',
+                        'sourceSlug': 'stadium-wifi-portal',
+                        'sourceType': 'event_stream',
+                        'eventDestinationId': 'dst_snowflake',
+                        'eventDestinationName': 'Snowflake',
+                        'eventDestinationSlug': 'snowflake',
+                        'isEnabled': true,
+                        'version': 1,
+                        'hasFunctionCode': false,
+                        'destinationParams':
+                          { 'table': 'raw_wifi_signins', 'batchSize': 200 },
+                        'createdAt': '2026-06-27T19:02:55.480Z',
+                        'updatedAt': '2026-06-27T19:02:55.480Z',
+                        'deliveryCountLastHour': 1103
+                      }
+                    ],
+                  'nextCursor': null,
+                  'hasMore': false
+                }
         default: { $ref: '#/components/responses/Problem' }
     post:
       tags: [Pipes]
+      operationId: createPipe
       summary: Create a pipe between an existing source and destination
+      description: Backs usePipes().add() — currently a local-only mutation.
       parameters:
         - $ref: '#/components/parameters/IdempotencyKey'
       requestBody:
@@ -362,7 +1587,34 @@ paths:
       - $ref: '#/components/parameters/Id'
     get:
       tags: [Pipes]
+      operationId: getPipe
       summary: Get one pipe
+      description: Fetches a single pipe by id, e.g. for the pipe detail screen.
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Pipe' }
+        default: { $ref: '#/components/responses/Problem' }
+    patch:
+      tags: [Pipes]
+      operationId: updatePipe
+      summary: Update a pipe
+      description: >-
+        Backs usePipes().setEnabled() today (isEnabled only); the request body
+        is written open in case editable fields grow beyond that. No
+        Idempotency-Key, matching updateSource/updateDestination — repeating
+        the same patch converges to the same state.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                isEnabled: { type: boolean }
+                name: { type: string }
       responses:
         '200':
           description: OK
@@ -372,7 +1624,9 @@ paths:
         default: { $ref: '#/components/responses/Problem' }
     delete:
       tags: [Pipes]
+      operationId: deletePipe
       summary: Soft-delete a pipe (moves it to trash)
+      description: Backs usePipes().remove(); see the Trash endpoints below.
       responses:
         '204': { description: Deleted }
         default: { $ref: '#/components/responses/Problem' }
@@ -380,6 +1634,7 @@ paths:
   /v1/pipes/diagram:
     get:
       tags: [Pipes]
+      operationId: getPipesDiagram
       summary: Sources, destinations and pipes as one flow graph
       description: >-
         Backs useDiagram()/pipes-diagram.json — the same sources and
@@ -402,6 +1657,7 @@ paths:
   /v1/trash:
     get:
       tags: [Trash]
+      operationId: listTrash
       summary: Deleted sources, destinations and pipes
       description: >-
         Backs trash.json today, one file holding all three resource kinds
@@ -449,6 +1705,7 @@ paths:
       - $ref: '#/components/parameters/Id'
     post:
       tags: [Trash]
+      operationId: restoreTrashedRecord
       summary: Restore one deleted record
       description: >-
         Backs usePipesTrash().restore(). Restoring a pipe whose source or
@@ -483,7 +1740,11 @@ paths:
       - $ref: '#/components/parameters/Id'
     delete:
       tags: [Trash]
+      operationId: purgeTrashedRecord
       summary: Purge one deleted record permanently
+      description: >-
+        Permanently removes one trashed record — cannot be restored
+        afterward.
       responses:
         '204': { description: Purged }
         default: { $ref: '#/components/responses/Problem' }
@@ -496,6 +1757,7 @@ paths:
         schema: { type: string, enum: [sources, destinations, pipes] }
     delete:
       tags: [Trash]
+      operationId: emptyTrash
       summary: Empty trash for one resource kind
       description: Backs usePipesTrash().purgeAll().
       responses:
@@ -506,6 +1768,7 @@ paths:
   /v1/workspace:
     get:
       tags: [Settings]
+      operationId: getWorkspaceSettings
       summary: Workspace settings — identity, retention, identity resolution, alerts
       description: A single settings snapshot, not a list — not paginated.
       responses:
@@ -517,6 +1780,7 @@ paths:
         default: { $ref: '#/components/responses/Problem' }
     patch:
       tags: [Settings]
+      operationId: updateWorkspaceSettings
       summary: Update workspace name and retention windows
       description: >-
         Backs SettingsPage.vue's `save()` — today purely local, the form's
@@ -542,6 +1806,7 @@ paths:
   /v1/members:
     get:
       tags: [Settings]
+      operationId: listMembers
       summary: Active members and pending invitations
       description: >-
         `managedUsers` is cursor-paginated like every list in this spec (an
@@ -561,6 +1826,7 @@ paths:
         default: { $ref: '#/components/responses/Problem' }
     post:
       tags: [Settings]
+      operationId: inviteMember
       summary: Invite a member
       description: >-
         Backs SettingsPage.vue's inviteMember(), which today just notifies
@@ -596,7 +1862,9 @@ paths:
       - $ref: '#/components/parameters/Id'
     delete:
       tags: [Settings]
+      operationId: removeMember
       summary: Remove a member
+      description: Removes an active member from the workspace.
       responses:
         '204': { description: Removed }
         default: { $ref: '#/components/responses/Problem' }
@@ -606,7 +1874,9 @@ paths:
       - $ref: '#/components/parameters/Id'
     delete:
       tags: [Settings]
+      operationId: revokeInvite
       summary: Revoke a pending invitation
+      description: Revokes a pending invitation before it is accepted.
       responses:
         '204': { description: Revoked }
         default: { $ref: '#/components/responses/Problem' }
@@ -614,7 +1884,9 @@ paths:
   /v1/api-tokens:
     get:
       tags: [Settings]
+      operationId: listApiTokens
       summary: List API tokens (preview only, never the full value)
+      description: Backs the Settings → API tokens list. Cursor-paginated.
       parameters:
         - $ref: '#/components/parameters/Cursor'
         - $ref: '#/components/parameters/Limit'
@@ -627,6 +1899,7 @@ paths:
         default: { $ref: '#/components/responses/Problem' }
     post:
       tags: [Settings]
+      operationId: createApiToken
       summary: Create an API token
       description: >-
         The full token value is returned exactly once, on creation — every
@@ -671,7 +1944,9 @@ paths:
       - $ref: '#/components/parameters/Id'
     delete:
       tags: [Settings]
+      operationId: revokeApiToken
       summary: Revoke a token
+      description: Revokes an API token; the token stops authenticating immediately.
       responses:
         '204': { description: Revoked }
         default: { $ref: '#/components/responses/Problem' }
@@ -680,6 +1955,7 @@ paths:
   /v1/dwh-connections:
     get:
       tags: [Warehouse]
+      operationId: listDwhConnections
       summary: Warehouse connections
       description: >-
         Warehouse connections only — DWH syncs and Warehouse models are
@@ -697,7 +1973,11 @@ paths:
         default: { $ref: '#/components/responses/Problem' }
     post:
       tags: [Warehouse]
+      operationId: createDwhConnection
       summary: Add a warehouse connection
+      description: >-
+        Adds a warehouse connection; write-only fields like password are
+        never echoed back.
       parameters:
         - $ref: '#/components/parameters/IdempotencyKey'
       requestBody:
@@ -732,7 +2012,9 @@ paths:
       - $ref: '#/components/parameters/Id'
     get:
       tags: [Warehouse]
+      operationId: getDwhConnection
       summary: Get one warehouse connection
+      description: Fetches a single warehouse connection by id.
       responses:
         '200':
           description: OK
@@ -742,7 +2024,9 @@ paths:
         default: { $ref: '#/components/responses/Problem' }
     delete:
       tags: [Warehouse]
+      operationId: deleteDwhConnection
       summary: Remove a warehouse connection
+      description: Removes a warehouse connection.
       responses:
         '204': { description: Removed }
         default: { $ref: '#/components/responses/Problem' }
@@ -751,7 +2035,11 @@ paths:
   /v1/errors:
     get:
       tags: [Monitoring]
+      operationId: listErrors
       summary: Recent delivery/pipeline errors
+      description: >-
+        Backs the Monitoring → Errors list. Cursor-paginated, filterable by
+        since and severity.
       parameters:
         - name: since
           in: query
@@ -767,11 +2055,134 @@ paths:
           content:
             application/json:
               schema: { $ref: '#/components/schemas/ErrorLogEntryList' }
+              example:
+                {
+                  'items':
+                    [
+                      {
+                        'id': 'err_01j9c2',
+                        'occurredAt': '2026-07-31T05:48:31.900Z',
+                        'category': 'profile_destination',
+                        'severity': 'error',
+                        'code': 'invalid_credentials',
+                        'message': 'Google Ads refused the upload: OAuth token expired.',
+                        'entityType': 'live_profile_sync',
+                        'entityId': 'lps_google_customer_match',
+                        'entityName': 'Google customer match',
+                        'count': 2,
+                        'context':
+                          { 'httpStatus': 401, 'providerId': 'google-ads' }
+                      },
+                      {
+                        'id': 'err_01j9c1',
+                        'occurredAt': '2026-07-31T05:30:02.771Z',
+                        'category': 'dwh_sync',
+                        'severity': 'warning',
+                        'code': 'rows_skipped',
+                        'message': '44 rows skipped: missing identifier column value.',
+                        'entityType': 'dwh_sync',
+                        'entityId': 'dsync_crm_contacts_in',
+                        'entityName': 'CRM contacts inbound',
+                        'count': 44,
+                        'context': { 'table': 'public.contacts' }
+                      },
+                      {
+                        'id': 'err_01j9c0',
+                        'occurredAt': '2026-07-31T05:12:09.400Z',
+                        'category': 'pipe',
+                        'severity': 'error',
+                        'code': 'function_runtime_error',
+                        'message': "TypeError: Cannot read properties of undefined (reading 'value') at transform:14",
+                        'entityType': 'pipe',
+                        'entityId': 'pipe_web_to_meta',
+                        'entityName': 'Web SDK to Meta CAPI',
+                        'count': 18,
+                        'context': { 'line': 14, 'eventName': 'add_to_cart' }
+                      },
+                      {
+                        'id': 'err_01j9bz',
+                        'occurredAt': '2026-07-31T04:55:41.010Z',
+                        'category': 'event_destination',
+                        'severity': 'error',
+                        'code': 'rate_limited',
+                        'message': 'Destination returned 429; batch retried with backoff.',
+                        'entityType': 'event_destination',
+                        'entityId': 'dst_meta_capi',
+                        'entityName': 'Meta Conversions API',
+                        'count': 7,
+                        'context':
+                          { 'httpStatus': 429, 'retryAfterSeconds': 30 }
+                      },
+                      {
+                        'id': 'err_01j9by',
+                        'occurredAt': '2026-07-31T03:41:22.640Z',
+                        'category': 'event_stream',
+                        'severity': 'warning',
+                        'code': 'schema_mismatch',
+                        'message': "Property 'order_total' arrived as string, expected number.",
+                        'entityType': 'source',
+                        'entityId': 'src_shopify',
+                        'entityName': 'Shopify Store',
+                        'count': 61,
+                        'context':
+                          {
+                            'eventName': 'order_created',
+                            'property': 'order_total'
+                          }
+                      },
+                      {
+                        'id': 'err_01j9bx',
+                        'occurredAt': '2026-07-31T02:00:12.400Z',
+                        'category': 'profile_refresh',
+                        'severity': 'error',
+                        'code': 'permission_denied',
+                        'message': 'Writer role missing on dataset fan_raw.',
+                        'entityType': 'profile_dwh_sync',
+                        'entityId': 'pdsync_archive_snapshot',
+                        'entityName': 'Nightly profile snapshot to BigQuery',
+                        'count': 1,
+                        'context': { 'dwhConnectionId': 'dwh_bigquery_archive' }
+                      },
+                      {
+                        'id': 'err_01j9bw',
+                        'occurredAt': '2026-07-30T23:14:55.200Z',
+                        'category': 'cloud_app',
+                        'severity': 'warning',
+                        'code': 'partial_sync',
+                        'message': 'Shopify pagination cursor expired mid-page; sync resumed from checkpoint.',
+                        'entityType': 'source',
+                        'entityId': 'src_shopify',
+                        'entityName': 'Shopify Store',
+                        'count': 1,
+                        'context': { 'resource': 'orders' }
+                      },
+                      {
+                        'id': 'err_01j9bv',
+                        'occurredAt': '2026-07-18T03:05:52.110Z',
+                        'category': 'dwh_sync',
+                        'severity': 'error',
+                        'code': 'connection_failed',
+                        'message': 'Timed out after 30s connecting to legacy.abc123.eu-west-1.redshift.amazonaws.com.',
+                        'entityType': 'dwh_sync',
+                        'entityId': 'dsync_legacy_backfill',
+                        'entityName': 'Legacy Redshift backfill',
+                        'count': 1,
+                        'context':
+                          {
+                            'dwhConnectionId': 'dwh_redshift_legacy',
+                            'timeoutMs': 30000
+                          }
+                      }
+                    ],
+                  'nextCursor': 'eyJvZmZzZXQiOjh9',
+                  'hasMore': true
+                }
         default: { $ref: '#/components/responses/Problem' }
 
   /v1/error-stats:
     get:
       tags: [Monitoring]
+      operationId: getErrorStats
       summary: Error counts and an hourly series by category
       description: >-
         A single aggregate snapshot (counts plus an hourly bucketed time
@@ -788,6 +2199,7 @@ paths:
   /v1/health:
     get:
       tags: [Monitoring]
+      operationId: getHealth
       summary: Queue depths and the async worker heartbeat log
       description: >-
         `queues` is a point-in-time snapshot; `heartbeat` is the one
@@ -815,6 +2227,7 @@ paths:
   /v1/profiles:
     get:
       tags: [Profiles]
+      operationId: listProfiles
       summary: Search/list resolved fan profiles
       description: >-
         Backs Profile search only — the one Profiles child screen whose own
@@ -839,7 +2252,9 @@ paths:
   /v1/identifier-types:
     get:
       tags: [Profiles]
+      operationId: listIdentifierTypes
       summary: Configured identifier types (email, user_id, browser, ...)
+      description: Backs the Profiles → identifier types configuration list.
       parameters:
         - $ref: '#/components/parameters/Cursor'
         - $ref: '#/components/parameters/Limit'
@@ -855,7 +2270,11 @@ paths:
   /v1/secrets:
     get:
       tags: [Secrets]
+      operationId: listSecrets
       summary: List secrets (preview only, never the full value)
+      description: >-
+        Backs the Secrets list screen; values are never returned, only
+        previews.
       parameters:
         - $ref: '#/components/parameters/Cursor'
         - $ref: '#/components/parameters/Limit'
@@ -868,7 +2287,11 @@ paths:
         default: { $ref: '#/components/responses/Problem' }
     post:
       tags: [Secrets]
+      operationId: createSecret
       summary: Create a secret
+      description: >-
+        Creates a secret; the value is write-only and never returned by any
+        GET.
       parameters:
         - $ref: '#/components/parameters/IdempotencyKey'
       requestBody:
@@ -898,6 +2321,7 @@ paths:
       - $ref: '#/components/parameters/Id'
     delete:
       tags: [Secrets]
+      operationId: deleteSecret
       summary: Delete a secret
       description: >-
         Refuse (409) when `usedByCount > 0` — matches the frontend's
@@ -916,7 +2340,11 @@ paths:
   /v1/oauth-providers:
     get:
       tags: [Authorizations]
+      operationId: listOAuthProviders
       summary: OAuth providers available to connect
+      description: >-
+        Backs the Authorizations screen's list of connectable OAuth
+        providers.
       parameters:
         - $ref: '#/components/parameters/Cursor'
         - $ref: '#/components/parameters/Limit'
@@ -931,7 +2359,11 @@ paths:
   /v1/oauth-authorizations:
     get:
       tags: [Authorizations]
+      operationId: listOAuthAuthorizations
       summary: Granted OAuth authorizations
+      description: >-
+        Backs the Authorizations screen's list of granted OAuth
+        authorizations.
       parameters:
         - $ref: '#/components/parameters/Cursor'
         - $ref: '#/components/parameters/Limit'
@@ -948,7 +2380,9 @@ paths:
       - $ref: '#/components/parameters/Id'
     delete:
       tags: [Authorizations]
+      operationId: revokeOAuthAuthorization
       summary: Revoke an authorization
+      description: Revokes a granted OAuth authorization.
       responses:
         '204': { description: Revoked }
         default: { $ref: '#/components/responses/Problem' }
@@ -1230,6 +2664,127 @@ components:
             items:
               type: array
               items: { $ref: '#/components/schemas/SourceTemplate' }
+        - $ref: '#/components/schemas/PageMeta'
+
+    # ---------------------------------------------------------------- Events
+    LiveEvent:
+      type: object
+      description: >-
+        One incoming event, already flattened by the backend. Whatever ingest
+        envelope the upstream collector uses (nested http payloads, NDJSON
+        log lines, vendor-specific ids) is unwrapped server-side — the
+        dashboard renders these fields directly and knows nothing about where
+        the event came from.
+      properties:
+        id: { type: string }
+        date: { type: string, format: date-time }
+        level: { type: string, enum: [info, error] }
+        status:
+          type: string
+          enum: [SUCCESS, FAILED, SKIPPED]
+        error:
+          type: [string, 'null']
+          description: Present when status is FAILED or SKIPPED.
+        ingestType:
+          type: string
+          enum: [browser, server]
+        messageId: { type: string }
+        type:
+          type: string
+          description: Analytics call type — page, track, identify, group.
+        streamId: { type: string }
+        writeKey:
+          type: [string, 'null']
+          description: Masked by the backend; never return a usable key here.
+        originDomain: { type: [string, 'null'] }
+        host: { type: [string, 'null'] }
+        pageURL: { type: [string, 'null'] }
+        pagePath: { type: [string, 'null'] }
+        pageTitle: { type: [string, 'null'] }
+        referringDomain: { type: [string, 'null'] }
+        userId: { type: [string, 'null'] }
+        email: { type: [string, 'null'] }
+        anonymousId: { type: [string, 'null'] }
+        destinations:
+          type: array
+          description: Display names of destinations this event was delivered to.
+          items: { type: string }
+        context:
+          type: object
+          description: Analytics context (geo, page, userAgent) as collected.
+          additionalProperties: true
+        httpHeaders:
+          type: object
+          description: >-
+            Request headers, with `authorization` and any other credential
+            header redacted by the backend before it leaves the API.
+          additionalProperties: true
+        payload:
+          type: object
+          description: The event body as sent by the client.
+          additionalProperties: true
+
+    LiveEventList:
+      allOf:
+        - type: object
+          required: [items]
+          properties:
+            items:
+              type: array
+              items: { $ref: '#/components/schemas/LiveEvent' }
+        - $ref: '#/components/schemas/PageMeta'
+
+    EventStream:
+      type: object
+      properties:
+        id: { type: string }
+        name: { type: string }
+        domains:
+          type: array
+          items: { type: string }
+        isEnabled: { type: boolean }
+        eventCountLastHour: { type: integer }
+
+    EventStreamList:
+      allOf:
+        - type: object
+          required: [items]
+          properties:
+            items:
+              type: array
+              items: { $ref: '#/components/schemas/EventStream' }
+        - $ref: '#/components/schemas/PageMeta'
+
+    # ------------------------------------------------------------- Connectors
+    Connector:
+      type: object
+      properties:
+        id: { type: string }
+        packageId: { type: string }
+        packageType: { type: string }
+        iconUrl:
+          type: [string, 'null']
+          description: >-
+            Absolute or same-origin URL the backend serves. Null when no icon
+            is available — ConnectorCard.vue falls back to a bundled SVG. It
+            must not point at a third-party host: the dashboard's CSP is
+            `img-src 'self'` plus its own API, nothing else.
+        meta:
+          type: object
+          properties:
+            name: { type: string }
+            license: { type: [string, 'null'] }
+            connectorSubtype: { type: [string, 'null'] }
+          additionalProperties: true
+
+    ConnectorList:
+      allOf:
+        - type: object
+          required: [items]
+          properties:
+            items:
+              type: array
+              items: { $ref: '#/components/schemas/Connector' }
         - $ref: '#/components/schemas/PageMeta'
 
     # ---------------------------------------------------------- Destinations
