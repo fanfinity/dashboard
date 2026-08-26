@@ -79,8 +79,10 @@ export function useSourcesAPI() {
    * holds tokens for it). Used by the setup wizard to gate the webhook step, so
    * an un-authorised store gets a clear prompt instead of a 502 from connect.
    *
-   * Raw customFetch rather than a generated fetcher — this endpoint is newer
-   * than the last orval regen. Re-run `pnpm openapi` to type it properly.
+   * Raw customFetch rather than a generated fetcher: the route exists in the
+   * backend (sources.py, operation_id getZidConnectStatus) but is missing from
+   * spec/openapi.yml, so orval does not generate it. Add it to the spec and
+   * re-run `pnpm openapi:generate` to type it properly.
    *
    * @returns {Promise<boolean>}
    */

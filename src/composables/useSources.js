@@ -24,7 +24,10 @@ import { pageItems } from '@/lib/apiShape'
 const TYPE_LABELS = {
   event_stream: 'Event stream',
   cloud_app: 'Cloud app',
-  reverse_etl: 'Reverse ETL'
+  reverse_etl: 'Reverse ETL',
+  // The backend's own kind for a connected Zid store (see Source.source_type);
+  // not a template type, so the mock catalog never uses it.
+  zid: 'Zid store'
 }
 
 /**

@@ -59,6 +59,7 @@ import type {
   CreateSupportSession422,
   Customer,
   CustomerPage,
+  DashboardOverview,
   DeleteDestination401,
   DeleteDestination403,
   DeleteDestination404,
@@ -85,6 +86,12 @@ import type {
   GetAccount422,
   GetCustomer404,
   GetCustomer422,
+  GetDashboardOverview401,
+  GetDashboardOverview403,
+  GetDashboardOverview404,
+  GetDashboardOverview422,
+  GetDashboardOverview502,
+  GetDashboardOverviewParams,
   GetDestination401,
   GetDestination403,
   GetDestination404,
@@ -123,11 +130,23 @@ import type {
   ListCustomerEventsParams,
   ListCustomers422,
   ListCustomersParams,
+  ListDestinationEvents400,
+  ListDestinationEvents401,
+  ListDestinationEvents403,
+  ListDestinationEvents404,
+  ListDestinationEvents422,
+  ListDestinationEventsParams,
   ListDestinations401,
   ListDestinations403,
   ListDestinations404,
   ListDestinations422,
   ListDestinationsParams,
+  ListLiveEvents401,
+  ListLiveEvents403,
+  ListLiveEvents404,
+  ListLiveEvents422,
+  ListLiveEvents502,
+  ListLiveEventsParams,
   ListMembers401,
   ListMembers403,
   ListMembers404,
@@ -174,6 +193,7 @@ import type {
   ListSupportSessions403,
   ListSupportSessions422,
   ListSupportSessionsParams,
+  LiveEventList,
   Login400,
   Login401,
   Login422,
@@ -3366,7 +3386,7 @@ export const getGetZidConnectStatusUrl = (
  * Lets the dashboard's Zid setup wizard check that tokens exist before it
  * calls connect-zid, so a merchant who hasn't authorised yet gets a clear
  * "authorise first" prompt instead of a 502 from the webhook step.
- * ``connected`` is true only when the zid-app has valid tokens for the store.
+ * ``connected`` is true only when valid Zid tokens are stored for the store.
  * @summary Get Zid Status Route
  */
 export const getZidConnectStatus = async (
@@ -5518,6 +5538,639 @@ export const useDeleteDestination = <
   TContext
 > => {
   return useMutation(getDeleteDestinationMutationOptions(options), queryClient)
+}
+
+export type listDestinationEventsResponse200 = {
+  data: EventSummaryPage
+  status: 200
+}
+
+export type listDestinationEventsResponse400 = {
+  data: ListDestinationEvents400
+  status: 400
+}
+
+export type listDestinationEventsResponse401 = {
+  data: ListDestinationEvents401
+  status: 401
+}
+
+export type listDestinationEventsResponse403 = {
+  data: ListDestinationEvents403
+  status: 403
+}
+
+export type listDestinationEventsResponse404 = {
+  data: ListDestinationEvents404
+  status: 404
+}
+
+export type listDestinationEventsResponse422 = {
+  data: ListDestinationEvents422
+  status: 422
+}
+
+export type listDestinationEventsResponseSuccess =
+  listDestinationEventsResponse200 & {
+    headers: Headers
+  }
+export type listDestinationEventsResponseError = (
+  | listDestinationEventsResponse400
+  | listDestinationEventsResponse401
+  | listDestinationEventsResponse403
+  | listDestinationEventsResponse404
+  | listDestinationEventsResponse422
+) & {
+  headers: Headers
+}
+
+export type listDestinationEventsResponse =
+  | listDestinationEventsResponseSuccess
+  | listDestinationEventsResponseError
+
+export const getListDestinationEventsUrl = (
+  accountId: string,
+  destinationId: string,
+  params?: ListDestinationEventsParams
+) => {
+  const normalizedParams = new URLSearchParams()
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  })
+
+  const stringifiedParams = normalizedParams.toString()
+
+  return stringifiedParams.length > 0
+    ? `/v1/accounts/${accountId}/destinations/${destinationId}/events?${stringifiedParams}`
+    : `/v1/accounts/${accountId}/destinations/${destinationId}/events`
+}
+
+/**
+ * Paginated list of events delivered to this destination's ClickHouse database.
+ *
+ * Mirrors the source events endpoint (same ``EventSummaryPage`` shape) so the
+ * dashboard can share the events table component.
+ * @summary List Destination Events Route
+ */
+export const listDestinationEvents = async (
+  accountId: string,
+  destinationId: string,
+  params?: ListDestinationEventsParams,
+  options?: RequestInit
+): Promise<listDestinationEventsResponse> => {
+  return customFetch<listDestinationEventsResponse>(
+    getListDestinationEventsUrl(accountId, destinationId, params),
+    {
+      ...options,
+      method: 'GET'
+    }
+  )
+}
+
+export const getListDestinationEventsQueryKey = (
+  accountId: MaybeRefOrGetter<string>,
+  destinationId: MaybeRefOrGetter<string>,
+  params?: MaybeRefOrGetter<ListDestinationEventsParams>
+) => {
+  return [
+    'v1',
+    'accounts',
+    accountId,
+    'destinations',
+    destinationId,
+    'events',
+    ...(params ? [params] : [])
+  ] as const
+}
+
+export const getListDestinationEventsQueryOptions = <
+  TData = Awaited<ReturnType<typeof listDestinationEvents>>,
+  TError =
+    | ListDestinationEvents400
+    | ListDestinationEvents401
+    | ListDestinationEvents403
+    | ListDestinationEvents404
+    | ListDestinationEvents422
+>(
+  accountId: MaybeRefOrGetter<string>,
+  destinationId: MaybeRefOrGetter<string>,
+  params?: MaybeRefOrGetter<ListDestinationEventsParams>,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof listDestinationEvents>>,
+        TError,
+        TData
+      >
+    >
+    request?: SecondParameter<typeof customFetch>
+  }
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {}
+
+  const queryKey = getListDestinationEventsQueryKey(
+    accountId,
+    destinationId,
+    params
+  )
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof listDestinationEvents>>
+  > = ({ signal }) =>
+    listDestinationEvents(
+      toValue(accountId),
+      toValue(destinationId),
+      toValue(params),
+      { signal, ...requestOptions }
+    )
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: computed(
+      () =>
+        toValue(accountId) !== null &&
+        toValue(accountId) !== undefined &&
+        toValue(destinationId) !== null &&
+        toValue(destinationId) !== undefined
+    ),
+    ...queryOptions
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof listDestinationEvents>>,
+    TError,
+    TData
+  >
+}
+
+export type ListDestinationEventsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listDestinationEvents>>
+>
+export type ListDestinationEventsQueryError =
+  | ListDestinationEvents400
+  | ListDestinationEvents401
+  | ListDestinationEvents403
+  | ListDestinationEvents404
+  | ListDestinationEvents422
+
+/**
+ * @summary List Destination Events Route
+ */
+
+export function useListDestinationEvents<
+  TData = Awaited<ReturnType<typeof listDestinationEvents>>,
+  TError =
+    | ListDestinationEvents400
+    | ListDestinationEvents401
+    | ListDestinationEvents403
+    | ListDestinationEvents404
+    | ListDestinationEvents422
+>(
+  accountId: MaybeRefOrGetter<string>,
+  destinationId: MaybeRefOrGetter<string>,
+  params?: MaybeRefOrGetter<ListDestinationEventsParams>,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof listDestinationEvents>>,
+        TError,
+        TData
+      >
+    >
+    request?: SecondParameter<typeof customFetch>
+  },
+  queryClient?: QueryClient
+): UseQueryReturnType<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>
+} {
+  const queryOptions = getListDestinationEventsQueryOptions(
+    accountId,
+    destinationId,
+    params,
+    options
+  )
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryReturnType<
+    TData,
+    TError
+  > & { queryKey: DataTag<QueryKey, TData, TError> }
+
+  query.queryKey = unref(queryOptions).queryKey as DataTag<
+    QueryKey,
+    TData,
+    TError
+  >
+
+  return query
+}
+
+export type listLiveEventsResponse200 = {
+  data: LiveEventList
+  status: 200
+}
+
+export type listLiveEventsResponse401 = {
+  data: ListLiveEvents401
+  status: 401
+}
+
+export type listLiveEventsResponse403 = {
+  data: ListLiveEvents403
+  status: 403
+}
+
+export type listLiveEventsResponse404 = {
+  data: ListLiveEvents404
+  status: 404
+}
+
+export type listLiveEventsResponse422 = {
+  data: ListLiveEvents422
+  status: 422
+}
+
+export type listLiveEventsResponse502 = {
+  data: ListLiveEvents502
+  status: 502
+}
+
+export type listLiveEventsResponseSuccess = listLiveEventsResponse200 & {
+  headers: Headers
+}
+export type listLiveEventsResponseError = (
+  | listLiveEventsResponse401
+  | listLiveEventsResponse403
+  | listLiveEventsResponse404
+  | listLiveEventsResponse422
+  | listLiveEventsResponse502
+) & {
+  headers: Headers
+}
+
+export type listLiveEventsResponse =
+  | listLiveEventsResponseSuccess
+  | listLiveEventsResponseError
+
+export const getListLiveEventsUrl = (
+  accountId: string,
+  params?: ListLiveEventsParams
+) => {
+  const normalizedParams = new URLSearchParams()
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  })
+
+  const stringifiedParams = normalizedParams.toString()
+
+  return stringifiedParams.length > 0
+    ? `/v1/accounts/${accountId}/events/live?${stringifiedParams}`
+    : `/v1/accounts/${accountId}/events/live`
+}
+
+/**
+ * Live incoming events for the account's sources, from the Jitsu incoming log.
+ *
+ * Jitsu's log API answers with gzipped NDJSON; ``JitsuService`` parses it and
+ * each record is normalized to ``LiveEvent`` (the shape the dashboard's
+ * live-events table renders). Without ``source_id`` the logs of all enabled
+ * sources are merged, newest first.
+ * @summary List Live Events Route
+ */
+export const listLiveEvents = async (
+  accountId: string,
+  params?: ListLiveEventsParams,
+  options?: RequestInit
+): Promise<listLiveEventsResponse> => {
+  return customFetch<listLiveEventsResponse>(
+    getListLiveEventsUrl(accountId, params),
+    {
+      ...options,
+      method: 'GET'
+    }
+  )
+}
+
+export const getListLiveEventsQueryKey = (
+  accountId: MaybeRefOrGetter<string>,
+  params?: MaybeRefOrGetter<ListLiveEventsParams>
+) => {
+  return [
+    'v1',
+    'accounts',
+    accountId,
+    'events',
+    'live',
+    ...(params ? [params] : [])
+  ] as const
+}
+
+export const getListLiveEventsQueryOptions = <
+  TData = Awaited<ReturnType<typeof listLiveEvents>>,
+  TError =
+    | ListLiveEvents401
+    | ListLiveEvents403
+    | ListLiveEvents404
+    | ListLiveEvents422
+    | ListLiveEvents502
+>(
+  accountId: MaybeRefOrGetter<string>,
+  params?: MaybeRefOrGetter<ListLiveEventsParams>,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof listLiveEvents>>, TError, TData>
+    >
+    request?: SecondParameter<typeof customFetch>
+  }
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {}
+
+  const queryKey = getListLiveEventsQueryKey(accountId, params)
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof listLiveEvents>>> = ({
+    signal
+  }) =>
+    listLiveEvents(toValue(accountId), toValue(params), {
+      signal,
+      ...requestOptions
+    })
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: computed(
+      () => toValue(accountId) !== null && toValue(accountId) !== undefined
+    ),
+    ...queryOptions
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof listLiveEvents>>,
+    TError,
+    TData
+  >
+}
+
+export type ListLiveEventsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listLiveEvents>>
+>
+export type ListLiveEventsQueryError =
+  | ListLiveEvents401
+  | ListLiveEvents403
+  | ListLiveEvents404
+  | ListLiveEvents422
+  | ListLiveEvents502
+
+/**
+ * @summary List Live Events Route
+ */
+
+export function useListLiveEvents<
+  TData = Awaited<ReturnType<typeof listLiveEvents>>,
+  TError =
+    | ListLiveEvents401
+    | ListLiveEvents403
+    | ListLiveEvents404
+    | ListLiveEvents422
+    | ListLiveEvents502
+>(
+  accountId: MaybeRefOrGetter<string>,
+  params?: MaybeRefOrGetter<ListLiveEventsParams>,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof listLiveEvents>>, TError, TData>
+    >
+    request?: SecondParameter<typeof customFetch>
+  },
+  queryClient?: QueryClient
+): UseQueryReturnType<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>
+} {
+  const queryOptions = getListLiveEventsQueryOptions(accountId, params, options)
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryReturnType<
+    TData,
+    TError
+  > & { queryKey: DataTag<QueryKey, TData, TError> }
+
+  query.queryKey = unref(queryOptions).queryKey as DataTag<
+    QueryKey,
+    TData,
+    TError
+  >
+
+  return query
+}
+
+export type getDashboardOverviewResponse200 = {
+  data: DashboardOverview
+  status: 200
+}
+
+export type getDashboardOverviewResponse401 = {
+  data: GetDashboardOverview401
+  status: 401
+}
+
+export type getDashboardOverviewResponse403 = {
+  data: GetDashboardOverview403
+  status: 403
+}
+
+export type getDashboardOverviewResponse404 = {
+  data: GetDashboardOverview404
+  status: 404
+}
+
+export type getDashboardOverviewResponse422 = {
+  data: GetDashboardOverview422
+  status: 422
+}
+
+export type getDashboardOverviewResponse502 = {
+  data: GetDashboardOverview502
+  status: 502
+}
+
+export type getDashboardOverviewResponseSuccess =
+  getDashboardOverviewResponse200 & {
+    headers: Headers
+  }
+export type getDashboardOverviewResponseError = (
+  | getDashboardOverviewResponse401
+  | getDashboardOverviewResponse403
+  | getDashboardOverviewResponse404
+  | getDashboardOverviewResponse422
+  | getDashboardOverviewResponse502
+) & {
+  headers: Headers
+}
+
+export type getDashboardOverviewResponse =
+  | getDashboardOverviewResponseSuccess
+  | getDashboardOverviewResponseError
+
+export const getGetDashboardOverviewUrl = (
+  accountId: string,
+  params?: GetDashboardOverviewParams
+) => {
+  const normalizedParams = new URLSearchParams()
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  })
+
+  const stringifiedParams = normalizedParams.toString()
+
+  return stringifiedParams.length > 0
+    ? `/v1/accounts/${accountId}/dashboard?${stringifiedParams}`
+    : `/v1/accounts/${accountId}/dashboard`
+}
+
+/**
+ * Everything the dashboard home renders, aggregated in one call.
+ *
+ * Received/error figures come from the Jitsu incoming log of every enabled
+ * source; delivered figures from each destination's ClickHouse events table
+ * (best-effort — ``None`` when the store is unavailable).
+ * @summary Get Dashboard Overview Route
+ */
+export const getDashboardOverview = async (
+  accountId: string,
+  params?: GetDashboardOverviewParams,
+  options?: RequestInit
+): Promise<getDashboardOverviewResponse> => {
+  return customFetch<getDashboardOverviewResponse>(
+    getGetDashboardOverviewUrl(accountId, params),
+    {
+      ...options,
+      method: 'GET'
+    }
+  )
+}
+
+export const getGetDashboardOverviewQueryKey = (
+  accountId: MaybeRefOrGetter<string>,
+  params?: MaybeRefOrGetter<GetDashboardOverviewParams>
+) => {
+  return [
+    'v1',
+    'accounts',
+    accountId,
+    'dashboard',
+    ...(params ? [params] : [])
+  ] as const
+}
+
+export const getGetDashboardOverviewQueryOptions = <
+  TData = Awaited<ReturnType<typeof getDashboardOverview>>,
+  TError =
+    | GetDashboardOverview401
+    | GetDashboardOverview403
+    | GetDashboardOverview404
+    | GetDashboardOverview422
+    | GetDashboardOverview502
+>(
+  accountId: MaybeRefOrGetter<string>,
+  params?: MaybeRefOrGetter<GetDashboardOverviewParams>,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getDashboardOverview>>,
+        TError,
+        TData
+      >
+    >
+    request?: SecondParameter<typeof customFetch>
+  }
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {}
+
+  const queryKey = getGetDashboardOverviewQueryKey(accountId, params)
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getDashboardOverview>>
+  > = ({ signal }) =>
+    getDashboardOverview(toValue(accountId), toValue(params), {
+      signal,
+      ...requestOptions
+    })
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: computed(
+      () => toValue(accountId) !== null && toValue(accountId) !== undefined
+    ),
+    ...queryOptions
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof getDashboardOverview>>,
+    TError,
+    TData
+  >
+}
+
+export type GetDashboardOverviewQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getDashboardOverview>>
+>
+export type GetDashboardOverviewQueryError =
+  | GetDashboardOverview401
+  | GetDashboardOverview403
+  | GetDashboardOverview404
+  | GetDashboardOverview422
+  | GetDashboardOverview502
+
+/**
+ * @summary Get Dashboard Overview Route
+ */
+
+export function useGetDashboardOverview<
+  TData = Awaited<ReturnType<typeof getDashboardOverview>>,
+  TError =
+    | GetDashboardOverview401
+    | GetDashboardOverview403
+    | GetDashboardOverview404
+    | GetDashboardOverview422
+    | GetDashboardOverview502
+>(
+  accountId: MaybeRefOrGetter<string>,
+  params?: MaybeRefOrGetter<GetDashboardOverviewParams>,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getDashboardOverview>>,
+        TError,
+        TData
+      >
+    >
+    request?: SecondParameter<typeof customFetch>
+  },
+  queryClient?: QueryClient
+): UseQueryReturnType<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>
+} {
+  const queryOptions = getGetDashboardOverviewQueryOptions(
+    accountId,
+    params,
+    options
+  )
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryReturnType<
+    TData,
+    TError
+  > & { queryKey: DataTag<QueryKey, TData, TError> }
+
+  query.queryKey = unref(queryOptions).queryKey as DataTag<
+    QueryKey,
+    TData,
+    TError
+  >
+
+  return query
 }
 
 export type listPipelinesResponse200 = {
