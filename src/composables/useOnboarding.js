@@ -1,6 +1,6 @@
 import { computed, ref } from 'vue'
 import { PERSONA_KEYS, PERSONAS } from '@/config/personas'
-import { user } from '@/composables/useAuth'
+import { me } from '@/composables/useMe'
 
 // What we know about the person using the dashboard, and how far through
 // onboarding they are.
@@ -109,7 +109,7 @@ export function useOnboarding() {
   // The record only speaks for the user it was written by. Anyone else gets the
   // question, and answering it overwrites the record.
   const isOurs = computed(
-    () => Boolean(user.value?.uid) && record.value.uid === user.value.uid
+    () => Boolean(me.value?.id) && record.value.uid === me.value.id
   )
 
   const persona = computed(() => (isOurs.value ? record.value.persona : null))
@@ -140,7 +140,7 @@ export function useOnboarding() {
     const current = base()
     commit({
       ...current,
-      uid: user.value?.uid ?? null,
+      uid: me.value?.id ?? null,
       persona: key,
       askedAt: current.askedAt ?? new Date().toISOString(),
       skipped: false,
@@ -158,7 +158,7 @@ export function useOnboarding() {
     const current = base()
     commit({
       ...current,
-      uid: user.value?.uid ?? null,
+      uid: me.value?.id ?? null,
       persona: null,
       askedAt: current.askedAt ?? new Date().toISOString(),
       skipped: true,
@@ -170,7 +170,7 @@ export function useOnboarding() {
   // Back to unanswered, so the question appears again on Home. Exposed for the
   // Settings control, where "I would rather not say" needs somewhere to go.
   function askAgain() {
-    commit({ ...emptyRecord(), uid: user.value?.uid ?? null })
+    commit({ ...emptyRecord(), uid: me.value?.id ?? null })
   }
 
   return {

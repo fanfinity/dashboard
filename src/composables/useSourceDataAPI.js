@@ -1,4 +1,5 @@
 import { ref } from 'vue'
+import { listSourceEvents as fetchSourceEvents } from '@/api/fanfinity'
 import { customFetch } from '@/api/mutator'
 import { useMe } from '@/composables/useMe'
 
@@ -13,6 +14,19 @@ function camelize(obj) {
     out[key] = v
   }
   return out
+}
+
+/**
+ * Map an EventSummary (event_name / event_type / event_timestamp) onto the
+ * shape SourceEventsPanel's table renders. The summary carries no payload, so
+ * `event` is left undefined and the payload cell shows its em dash.
+ */
+function mapEventSummary(ev) {
+  return {
+    timestamp: ev.event_timestamp,
+    eventName: ev.event_name,
+    eventType: ev.event_type
+  }
 }
 
 /**
@@ -89,11 +103,11 @@ export function useSourceDataAPI() {
     eventsLoading.value = true
     eventsError.value = null
     try {
-      const res = await customFetch(
-        `${_base(sourceId)}/events?page=${page}&size=${size}`
-      )
+      const accountId = currentAccount.value?.id
+      if (!accountId) throw new Error('No account selected')
+      const res = await fetchSourceEvents(accountId, sourceId, { page, size })
       const data = res.data
-      events.value = (data.items ?? []).map(camelize)
+      events.value = (data.items ?? []).map(mapEventSummary)
       eventsTotal.value = data.total ?? 0
     } catch (e) {
       eventsError.value = e.message || 'Failed to load events'

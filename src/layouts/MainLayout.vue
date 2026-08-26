@@ -318,7 +318,7 @@
                       currentAccount.name
                     }}</q-item-label>
                     <q-item-label caption class="truncate">{{
-                      user?.email
+                      me?.email
                     }}</q-item-label>
                     <q-item-label
                       v-if="currentRole"
@@ -411,8 +411,8 @@ import icHelp from '@/assets/dashboard/ic-help.svg'
 const $q = useQuasar()
 const router = useRouter()
 const route = useRoute()
-const { user, logOut } = useAuth()
-const { currentAccount, currentRole } = useMe()
+const { logOut } = useAuth()
+const { me, currentAccount, currentRole } = useMe()
 
 // Stamped by the deploy workflows — staging `sha-<short>`, production `vX.Y.Z`,
 // PR previews `pr-<N>` — and "dev" locally, matching the backend's app_version

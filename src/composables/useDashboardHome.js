@@ -1,5 +1,9 @@
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
+import { getDashboardOverview } from '@/api/fanfinity'
+import { ApiError } from '@/api/mutator'
+import { useDataSource } from '@/composables/useDataSource'
 import { useDiagram } from '@/composables/useDiagram'
+import { currentAccount, waitForAccount } from '@/composables/useMe'
 import { useMockResource } from '@/composables/useMockResource'
 
 const INTEGER = new Intl.NumberFormat('en-US')
@@ -93,55 +97,232 @@ function tone(enabled, volume) {
   return volume > 0 ? 'flowing' : 'idle'
 }
 
+/** track events are named by their payload; page/identify by their kind. */
+function liveEventName(ev) {
+  if (ev.type === 'track') return ev.event?.event || ev.type
+  return ev.type || 'event'
+}
+
 /**
- * Everything the dashboard home screen needs, from three mock payloads:
+ * `GET /v1/accounts/{id}/dashboard` → the `data/dashboard.json` shape the
+ * derived computeds below read, so `totalPerBucket`/`trend`/`stats` need no
+ * real-mode variant. The backend's per-minute buckets become one-key series
+ * arrays, and its recent LiveEvents become the activity-list entries.
+ */
+function overviewToDashboard(o) {
+  const received = Number(o.totals?.events_received) || 0
+  // Delivered stays null when ClickHouse was unavailable — the stat card
+  // then renders an em dash instead of a fake zero.
+  const delivered = o.totals?.events_delivered ?? null
+  const sourceNames = new Map((o.sources ?? []).map(s => [s.id, s.name]))
+  return {
+    updatedAt: o.updated_at,
+    totalEventsLastHour: received,
+    routedEventsLastHour: delivered,
+    errorsLastHour: Number(o.totals?.errors) || 0,
+    routingRate: received ? (delivered ?? 0) / received : 0,
+    sourceSeries: (o.buckets ?? []).map(b => ({
+      bucket: b.bucket,
+      received: b.received
+    })),
+    routedSeries: (o.buckets ?? []).map(b => ({
+      bucket: b.bucket,
+      delivered: b.delivered ?? 0
+    })),
+    lastEvents: (o.recent_events ?? []).map(ev => ({
+      id: ev.id,
+      eventName: liveEventName(ev),
+      sourceName: sourceNames.get(ev.source_id) || ev.site_id || '',
+      occurredAt: ev.date
+    })),
+    // The backend has no profile pipeline yet — honest zeros, not mock numbers.
+    lastProfiles: [],
+    profilesRefreshedLastHour: 0,
+    profilesRoutedLastHour: 0,
+    activeLiveProfileSyncsLastHour: 0,
+    failedProfileDeliveriesLastHour: 0
+  }
+}
+
+/**
+ * Overview → the `useDiagram().nodes` adjacency shape the flow columns and
+ * the needs-attention list read. Per-pipe delivery counts don't exist on the
+ * backend (several pipes can feed one destination), so a pipe borrows its
+ * destination's count — tone then reads "this pipe's destination is moving".
+ */
+function overviewToNodes(o) {
+  const pipes = o.pipes ?? []
+  const sources = (o.sources ?? []).map(s => ({
+    id: s.id,
+    name: s.name,
+    slug: s.slug,
+    sourceType: s.source_type,
+    isEnabled: s.is_enabled,
+    eventCountLastHour: s.events_received,
+    pipes: pipes.filter(p => p.source_id === s.id)
+  }))
+  const destinations = (o.destinations ?? []).map(d => ({
+    id: d.id,
+    name: d.name,
+    slug: d.slug,
+    isEnabled: d.is_enabled,
+    deliveryCountLastHour: d.events_delivered ?? 0,
+    pipes: pipes.filter(p => p.destination_id === d.id)
+  }))
+  const sourceById = new Map(sources.map(s => [s.id, s]))
+  const destinationById = new Map(destinations.map(d => [d.id, d]))
+  const links = pipes
+    .map(p => {
+      const source = sourceById.get(p.source_id)
+      const destination = destinationById.get(p.destination_id)
+      if (!source || !destination) return null
+      return {
+        pipe: {
+          id: p.id,
+          name: p.name,
+          isEnabled: p.is_enabled,
+          deliveryCountLastHour: destination.deliveryCountLastHour
+        },
+        source,
+        destination
+      }
+    })
+    .filter(Boolean)
+  return { sources, destinations, links }
+}
+
+/** Overview errors (LiveEvent records) → the `error-logs.json` entry shape. */
+function overviewToErrors(o) {
+  const sourceNames = new Map((o.sources ?? []).map(s => [s.id, s.name]))
+  return (o.recent_errors ?? []).map(ev => ({
+    id: ev.id,
+    occurredAt: ev.date,
+    severity: 'error',
+    code: ev.status || 'ingest_error',
+    message: ev.error || 'Event was not ingested cleanly.',
+    entityName: sourceNames.get(ev.source_id) || ev.site_id || ''
+  }))
+}
+
+/**
+ * Everything the dashboard home screen needs.
+ *
+ * In real mode (Settings → Data source) one aggregate endpoint feeds the whole
+ * screen — `GET /v1/accounts/{id}/dashboard` via the generated client — and
+ * the adapters above reshape it into the mock payloads' shapes. In mock mode
+ * the three bundled files are read as before:
  *
  * - `data/dashboard.json`      headline counters + the 60 one-minute buckets
  * - `data/pipes-diagram.json`  sources / pipes / destinations, already resolved
  * - `data/error-logs.json`     the most recent failures
  *
- * Follows the repo composable contract: `{ loading, error, load() }` plus the
- * derived reads. `load()` never throws — each underlying composable normalises
- * its own failure — and `error` surfaces the first one so the page can render a
- * single `ErrorState` with a working retry.
+ * Follows the repo composable contract: `{ loading, error, apiMissing, load() }`
+ * plus the derived reads. `load()` never throws, and — same reading as
+ * `useMockResource` — a 404 or a request that never reached the backend sets
+ * `apiMissing` (the screen shows its empty state) rather than `error`.
  *
  * @example
  * const home = useDashboardHome()
  * onMounted(home.load)
  */
 export function useDashboardHome() {
+  const { isReal } = useDataSource()
+
   const {
-    data: dashboard,
+    data: mockDashboard,
     loading: dashboardLoading,
     error: dashboardError,
     load: loadDashboard
   } = useMockResource('dashboard', { initial: {} })
 
   const {
-    nodes,
+    nodes: mockNodes,
     loading: diagramLoading,
     error: diagramError,
     load: loadDiagram
   } = useDiagram()
 
   const {
-    data: recentErrors,
+    data: mockErrors,
     loading: errorsLoading,
     error: errorsError,
     load: loadErrors
   } = useMockResource('error-logs', { select: payload => payload.errors })
 
-  const loading = computed(
-    () => dashboardLoading.value || diagramLoading.value || errorsLoading.value
+  // ---------------------------------------------------------------- real mode
+
+  const overview = ref(null)
+  const realLoading = ref(false)
+  const realError = ref(null)
+  const apiMissing = ref(false)
+
+  async function loadReal() {
+    realLoading.value = true
+    realError.value = null
+    try {
+      await waitForAccount()
+      const id = currentAccount.value?.id
+      if (!id) {
+        apiMissing.value = true
+        overview.value = null
+        return
+      }
+      const { data } = await getDashboardOverview(id, { minutes: 60 })
+      overview.value = data
+    } catch (e) {
+      // Same reading as useMockResource: a 404 or a request that never
+      // reached the backend means "not deployed here yet", not a fault —
+      // only a real non-404 response earns the ErrorState.
+      if (e instanceof ApiError && e.status !== 404) {
+        realError.value = e.message
+      } else {
+        apiMissing.value = true
+      }
+      overview.value = null
+    } finally {
+      realLoading.value = false
+    }
+  }
+
+  // The derived computeds below all read these three — in real mode they are
+  // the adapted overview, in mock mode the bundled files, so everything
+  // downstream is mode-agnostic.
+  const dashboard = computed(() => {
+    if (!isReal.value) return mockDashboard.value
+    return overview.value ? overviewToDashboard(overview.value) : {}
+  })
+
+  const nodes = computed(() => {
+    if (!isReal.value) return mockNodes.value
+    return overview.value
+      ? overviewToNodes(overview.value)
+      : { sources: [], destinations: [], links: [] }
+  })
+
+  const recentErrors = computed(() => {
+    if (!isReal.value) return mockErrors.value
+    return overview.value ? overviewToErrors(overview.value) : []
+  })
+
+  const loading = computed(() =>
+    isReal.value
+      ? realLoading.value
+      : dashboardLoading.value || diagramLoading.value || errorsLoading.value
   )
 
-  const error = computed(
-    () =>
-      dashboardError.value || diagramError.value || errorsError.value || null
+  const error = computed(() =>
+    isReal.value
+      ? realError.value
+      : dashboardError.value || diagramError.value || errorsError.value || null
   )
 
   async function load() {
-    await Promise.all([loadDashboard(), loadDiagram(), loadErrors()])
+    apiMissing.value = false
+    if (isReal.value) {
+      await loadReal()
+    } else {
+      await Promise.all([loadDashboard(), loadDiagram(), loadErrors()])
+    }
   }
 
   // ---------------------------------------------------------------- throughput
@@ -340,6 +521,7 @@ export function useDashboardHome() {
   return {
     loading,
     error,
+    apiMissing,
     load,
     stats,
     throughput,

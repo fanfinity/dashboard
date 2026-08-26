@@ -82,6 +82,13 @@
         @complete="load"
       />
 
+      <WebSdkSetupPanel
+        v-if="showWebSdkSetup"
+        :source="source"
+        @copy="copyValue"
+        @complete="load"
+      />
+
       <TabNav v-model="tab" :tabs="tabs" />
 
       <CardPanel v-if="tab === 'overview'">
@@ -178,6 +185,7 @@ import SourceIngestPanel from '@/components/sources/SourceIngestPanel.vue'
 import SourceEventsPanel from '@/components/sources/SourceEventsPanel.vue'
 import SourceSyncPanel from '@/components/sources/SourceSyncPanel.vue'
 import ZidSetupWizard from '@/components/sources/ZidSetupWizard.vue'
+import WebSdkSetupPanel from '@/components/sources/WebSdkSetupPanel.vue'
 import { useDataSource } from '@/composables/useDataSource'
 import { useTemplates } from '@/composables/useTemplates'
 import {
@@ -236,6 +244,13 @@ const showZidWizard = computed(
     isReal.value &&
     source.value?.sourceType === 'zid' &&
     !source.value?.lastSyncedAt
+)
+
+// Web SDK go-live is a single step — paste the snippet — so the panel shows
+// for any real web source until the user dismisses it (the panel persists the
+// dismissal itself).
+const showWebSdkSetup = computed(
+  () => isReal.value && source.value?.sourceType === 'web'
 )
 
 // Resolved off the loaded list rather than a per-id fetch: the mock layer is one

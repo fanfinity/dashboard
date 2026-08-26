@@ -1,63 +1,62 @@
 import { ref } from 'vue'
 import { Notify } from 'quasar'
+import { login } from '@/api/fanfinity'
+import { API_BASE } from '@/api/mutator'
 import {
-  createUserWithEmailAndPassword,
-  signInWithEmailAndPassword,
-  signOut,
-  onAuthStateChanged
-} from 'firebase/auth'
-import { auth } from '@/firebase'
-import { loadMe, clearMe } from '@/composables/useMe'
+  clearTokens,
+  isAuthenticated,
+  setTokens
+} from '@/composables/useSession'
+import { clearMe, loadMe } from '@/composables/useMe'
 
-// Module-scoped singletons so every useAuth() call shares one reactive view
-// of the signed-in user, mirroring the pattern in useJitsu.js.
-export const user = ref(null)
+// Auth actions for the dashboard. Sign-in/registration go through the Fanfinity
+// backend (POST /v1/auth/token and /v1/register) rather than the Firebase Auth
+// SDK: the backend authenticates at the Identity Platform *project* level, which
+// is where /v1/register creates users — a client-side, tenant-scoped Firebase
+// sign-in cannot find those users and fails with EMAIL_NOT_FOUND. Tokens live in
+// useSession; the signed-in user's profile lives in useMe.
 const loading = ref(false)
 const error = ref(null)
-let authReady = false
 
-// onAuthStateChanged's first callback is async (it round-trips to check
-// persisted auth state), so a router guard reading `user.value` immediately
-// on page load would wrongly treat a signed-in user as signed-out. This
-// resolves once that first callback fires, so callers can await it.
-let resolveAuthReady
-const authReadyPromise = new Promise(resolve => {
-  resolveAuthReady = resolve
-})
-
-function ensureListener() {
-  if (authReady) return
-  authReady = true
-  onAuthStateChanged(auth, firebaseUser => {
-    user.value = firebaseUser
-    // Best-effort session bootstrap from the backend (fire-and-forget so a
-    // backend hiccup never delays resolveAuthReady / the router guard).
-    if (firebaseUser) loadMe()
-    else clearMe()
-    resolveAuthReady()
-  })
-}
-
+// Auth state is now synchronous — the access token is hydrated from localStorage
+// at import (see useSession), so there's no async first-callback to await like
+// Firebase's onAuthStateChanged had. Kept as an already-resolved promise so the
+// router guard and useMe (which await it) need no change.
+const authReadyPromise = Promise.resolve()
 export function waitForAuthReady() {
-  ensureListener()
   return authReadyPromise
 }
 
-// Identity Platform error codes (https://cloud.google.com/identity-platform/docs/error-codes)
-// mapped to short, user-facing messages.
-const ERROR_MESSAGES = {
-  'auth/email-already-in-use': 'An account with this email already exists.',
-  'auth/invalid-email': 'Enter a valid email address.',
-  'auth/weak-password': 'Password must be at least 6 characters.',
-  'auth/user-not-found': 'No account found with this email.',
-  'auth/wrong-password': 'Incorrect password.',
-  'auth/invalid-credential': 'Incorrect email or password.',
-  'auth/too-many-requests':
-    'Too many attempts. Please wait a moment and try again.'
+function messageFor(e) {
+  // Backend errors arrive as ApiError with a friendly RFC 9457 `detail`
+  // (e.g. "No account found with that email", "Invalid password"), already
+  // surfaced as e.message by the mutator.
+  return e?.message || 'Something went wrong.'
 }
 
-function messageFor(e) {
-  return ERROR_MESSAGES[e?.code] || e?.message || 'Something went wrong.'
+// Registration goes through the backend (POST /v1/register), which is the only
+// path that creates an account: it signs the user up in Identity Platform AND
+// provisions their backend user + workspace in one step. Unauthenticated, so it
+// bypasses the orval mutator with a plain fetch.
+async function registerViaBackend(email, password, displayName) {
+  const res = await fetch(`${API_BASE}/v1/register`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+    // No name field on the login form yet, so default display_name to the email.
+    body: JSON.stringify({
+      email,
+      password,
+      display_name: displayName || email
+    })
+  })
+  const body = await res.json().catch(() => null)
+  if (!res.ok) {
+    // RFC 9457 problem+json ({ detail, title, ... }).
+    throw new Error(
+      body?.detail || body?.title || `Registration failed (${res.status})`
+    )
+  }
+  return body
 }
 
 async function run(fn) {
@@ -76,30 +75,43 @@ async function run(fn) {
   }
 }
 
-export function useAuth() {
-  ensureListener()
+// Exchange credentials for tokens via the backend, persist them, then bootstrap
+// the session profile (GET /v1/me).
+async function signInWithBackend(email, password) {
+  const { data } = await login({
+    grant_type: 'password',
+    username: email,
+    password
+  })
+  setTokens({ access: data.access_token, refresh: data.refresh_token })
+  await loadMe()
+}
 
-  // v0.1: email + password only, no verification step. Firebase signs the user
-  // in on creation, so onAuthStateChanged fires and the backend JIT-provisions
-  // their account + Jitsu workspace on the first getMe. That provisioning skips
-  // the email-verified check only when the backend runs with ENV in
-  // {local,test,dev,ci} — so unverified sign-up works locally but a deployed
-  // backend on another ENV would still reject it until verification returns.
-  const signUp = (email, password) =>
-    run(() => createUserWithEmailAndPassword(auth, email, password))
+export function useAuth() {
+  // v0.1: email + password only, no verification step. Registration provisions
+  // the backend account first (POST /v1/register), then signs in through
+  // /v1/auth/token so loadMe() finds a real account.
+  const signUp = (email, password, displayName) =>
+    run(async () => {
+      await registerViaBackend(email, password, displayName)
+      await signInWithBackend(email, password)
+    })
 
   const signIn = (email, password) =>
-    run(() => signInWithEmailAndPassword(auth, email, password))
+    run(() => signInWithBackend(email, password))
 
-  const logOut = () => run(() => signOut(auth))
+  const logOut = () =>
+    run(async () => {
+      clearTokens()
+      clearMe()
+    })
 
   return {
-    user,
+    isAuthenticated,
     loading,
     error,
     signUp,
     signIn,
-    logOut,
-    tenantId: auth.tenantId
+    logOut
   }
 }
