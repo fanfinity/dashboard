@@ -30,6 +30,12 @@ node_modules
 .playwright/
 .playwright-mcp/
 
+# Throwaway JSON export of the contract document (`pnpm contract:json`).
+# Deliberately not committed: it is a second generated copy of the same three
+# inputs, so nothing would keep it in step, and its diff is unreviewable.
+# The YAML is the artefact. See CLAUDE.md, "The contract document".
+openapi/sfere-cdp-contract.json
+
 # Working notes and handover drafts — deliberately local, not shared history
 todos/
 

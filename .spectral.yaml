@@ -1,0 +1,203 @@
+# Spectral ruleset for openapi/sfere-cdp-contract.yaml. Run it with `pnpm contract:lint`.
+#
+# IMPORTANT: `scalar document lint` does NOT auto-discover this file the way the
+# standalone Spectral CLI does — it has to be passed with `-r`, which is what
+# `pnpm contract:lint` exists for. Running `scalar document lint <file>` with no
+# `-r` silently falls back to Spectral's defaults and ignores everything below.
+# That looks like a passing lint while checking none of our own conventions.
+#
+# Two halves:
+#
+#   1. `spectral:oas` — the standard OpenAPI correctness and style rules.
+#   2. `sfere-*` — this contract's own conventions, and the valuable half. The
+#      shipped operations are generated from the backend's spec and cannot
+#      drift, but the proposed half is hand-written in openapi/cdp-proposals.mjs
+#      and nothing else stops a proposal there from quietly breaking a
+#      convention the rest of the document holds to.
+#
+# The document is at zero findings. Anything that shows up is new.
+
+extends: ['spectral:oas']
+
+rules:
+  # -- Status ---------------------------------------------------------------
+  # `x-sfere-status` is the point of this document: it is how a reader tells a
+  # live endpoint from a proposal. An operation without one is worse than an
+  # undocumented endpoint, because it looks documented.
+
+  sfere-status-required:
+    description: Every operation must declare x-sfere-status.
+    message: 'No x-sfere-status here — add "shipped" or "proposed".'
+    given: $.paths[*][get,put,post,delete,patch]
+    severity: error
+    then:
+      field: x-sfere-status
+      function: truthy
+
+  sfere-status-valid:
+    description: x-sfere-status must be exactly "shipped" or "proposed".
+    message: '"{{value}}" is not a valid x-sfere-status.'
+    given: $.paths[*][get,put,post,delete,patch].x-sfere-status
+    severity: error
+    then:
+      function: pattern
+      functionOptions:
+        match: '^(shipped|proposed)$'
+
+  # -- Auth -----------------------------------------------------------------
+  # The document declares a global bearer requirement, so an absent `security`
+  # key means "inherit it". That is valid OpenAPI and completely invisible: a
+  # reader cannot tell an operation that requires auth from one whose author
+  # never thought about it. Requiring the key makes the choice deliberate.
+  # `security: []` is the explicit opt-out and satisfies this rule.
+
+  sfere-security-explicit:
+    description: Every operation states `security`, even when only to inherit the default.
+    message: 'No `security` stated — use [{ HTTPBearer: [] }], or [] if the route is genuinely public.'
+    given: $.paths[*][get,put,post,delete,patch]
+    severity: error
+    then:
+      field: security
+      function: defined
+
+  # -- Naming ---------------------------------------------------------------
+  # operationIds become function names in a generated client, so a snake_case
+  # one produces an odd API for every consumer.
+  #
+  # `/healthz`, `/readyz` and `/version` are exempt: those operationIds are
+  # FastAPI's own (`healthz_healthz_get`), the contract copies them verbatim so
+  # a generated client matches the backend, and `pnpm contract:check` compares
+  # them field for field. Renaming them here would break a real guarantee to fix
+  # a cosmetic problem in three probes.
+
+  sfere-operation-id-camel-case:
+    description: operationIds are camelCase.
+    given: $.paths[?(!@property.match(/^\/(healthz|readyz|version)$/))][get,put,post,delete,patch].operationId
+    severity: error
+    then:
+      function: casing
+      functionOptions:
+        type: camel
+
+  sfere-snake-case-properties:
+    description: Schema properties are snake_case — the backend's casing, not the dashboard's.
+    message: 'Not snake_case. The dashboard camelizes at the edge (src/lib/apiShape.js); do not pre-camelize here.'
+    given: $.components.schemas[*].properties.*~
+    severity: error
+    then:
+      function: casing
+      functionOptions:
+        type: snake
+
+  # -- Shape ----------------------------------------------------------------
+
+  sfere-problem-json-errors:
+    description: Error responses use RFC 9457 application/problem+json.
+    message: 'This error response body is not application/problem+json.'
+    given: $.paths[*][get,put,post,delete,patch].responses[?(@property.match(/^[45]/))].content
+    severity: error
+    then:
+      field: application/problem+json
+      function: truthy
+
+  sfere-page-envelope-shape:
+    description: A Page_* schema carries the whole pagination envelope.
+    message: 'A Page_ schema is missing part of the {items, total, page, size, pages} envelope.'
+    given: $.components.schemas[?(@property.match(/^Page_/))]
+    severity: error
+    then:
+      field: required
+      function: schema
+      functionOptions:
+        schema:
+          type: array
+          allOf:
+            - contains: { const: items }
+            - contains: { const: total }
+            - contains: { const: page }
+            - contains: { const: size }
+            - contains: { const: pages }
+
+  # -- Scoping --------------------------------------------------------------
+  # Account-owned resources live under /v1/accounts/{account_id}/. The flat
+  # paths are the ones that genuinely belong to nobody in particular: identity,
+  # the cross-account customer index, support sessions, and the global catalogs.
+  # A new flat path is nearly always a scoping mistake — it is how the previous
+  # draft ended up with a flat /v1/dashboard and /v1/errors that then shipped
+  # account-scoped.
+
+  sfere-account-scoped-paths:
+    description: Only known-global resources may be flat; everything else is account-scoped.
+    message: 'This path is flat. If an account owns it, put it under /v1/accounts/{account_id}/ — and if it really is global, add it to this rule with a reason.'
+    given: $.paths.*~
+    severity: error
+    then:
+      function: pattern
+      functionOptions:
+        notMatch: '^/v1/(?!accounts|me$|register$|auth/|customers|support-sessions|connectors|source-templates$|destination-templates$|oauth-providers$)'
+
+  # -- Secrets --------------------------------------------------------------
+  # A `*Config` schema is sent on write and returned on read, so a credential in
+  # one has to be marked `writeOnly` or a generated client puts it in a response
+  # type and a docs renderer shows it in a response example.
+  #
+  # Deliberately scoped to Config schemas. A blanket "anything named *_token is
+  # writeOnly" rule flags TokenResponse.access_token, whose entire purpose is to
+  # be returned — marking that writeOnly would break the auth contract.
+
+  sfere-config-secrets-write-only:
+    description: Credentials in a round-tripping Config schema must be writeOnly.
+    message: 'A credential in a schema that is both sent and returned — mark it writeOnly: true.'
+    given: $.components.schemas[?(@property.match(/Config$/))].properties[?(@property.match(/(password|secret|token|credentials|access_key)/i))]
+    severity: error
+    then:
+      field: writeOnly
+      function: truthy
+
+  # -- Hosts ----------------------------------------------------------------
+  # The dashboard's CSP names only the Sfere API hosts, so an endpoint on any
+  # other origin cannot be called from the browser at all. Jitsu is an
+  # implementation detail of the backend, not a host this app knows — a
+  # `use.jitsu.com` server entry here would be a category error, not a typo.
+
+  sfere-sfere-hosts-only:
+    description: Servers name only Sfere API hosts, or the local backend.
+    message: 'Not a Sfere API host. If a screen needs outside data, the backend fetches it.'
+    given: $.servers[*].url
+    severity: error
+    then:
+      function: pattern
+      functionOptions:
+        match: '^https?://(api\.sfere\.io|api-staging\.sfere\.io|localhost:8080)$'
+
+  # -- Prose ----------------------------------------------------------------
+  # `spectral:oas` ships operation-description as a warning and we hold to it:
+  # every operation should say something its summary does not — what happens to
+  # dependents, when it 409s, what is returned once and never again.
+  #
+  # Do not satisfy this by restating the summary. If an operation genuinely has
+  # nothing to add, that is a sign the summary is too vague, not that the
+  # description should be filler.
+  #
+  # Promoted from warning to error on purpose: `scalar document lint` exits 0 on
+  # warnings, so a warning is invisible to CI and to `pnpm contract:check`. The
+  # document is at zero findings, and an error is what keeps it there.
+  operation-description: error
+
+  # -- Guards on by default that are worth naming --------------------------
+  # `spectral:oas` ships this one off. It catches a schema in components that
+  # nothing references — the mirror of the builder's dangling-$ref check, and
+  # the likely residue of renaming a proposal without deleting the old shape.
+  oas3-unused-component: error
+
+  # -- Deliberately off ----------------------------------------------------
+  # Tags are ordered as a reader should meet them — Identity, then Accounts,
+  # then the pipeline in the order data flows through it — not A to Z. Scalar's
+  # sidebar renders them in declared order, so alphabetising would scatter
+  # Sources, Destinations and Pipelines across the nav to no benefit.
+  openapi-tags-alphabetical: off
+
+  # There is no rule requiring a `description` on every schema, and we do not
+  # add one: the schemas with something to explain have it, and demanding it
+  # everywhere would mean writing "An account." under `Account`. Most shipped
+  # schemas are the backend's to describe in any case.

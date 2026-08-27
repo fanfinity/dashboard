@@ -6,17 +6,18 @@ import { computed, ref } from 'vue'
 //          wired to that API, so a signed-in user should see their own data
 //          without touching Settings. Only the wired domains (sources,
 //          destinations, pipelines, events, connectors) actually call it; a
-//          screen whose endpoint is still drafted in
-//          openapi/cdp-api-draft.yaml reports `apiMissing` ("No API yet").
+//          screen whose endpoint is still only proposed in
+//          openapi/sfere-cdp-contract.yaml (`x-sfere-status: proposed`)
+//          reports `apiMissing` ("No API yet").
 // - 'mock' the static JSON in public/data/. A backend-free demo, and the only
 //          way to walk every screen with populated data today.
 //
 // There was briefly a third state ('mockApi') pointing at a local Scalar mock
 // server generated from the draft spec. It was scaffolding for a backend that
 // did not exist yet; sources, destinations and pipelines now have real
-// endpoints, so mocking a draft of them is cost without benefit. The draft
-// spec itself stays — it is the contract for what is still unbuilt, browsable
-// with `pnpm docs:cdp`.
+// endpoints, so mocking a draft of them is cost without benefit. The spec
+// itself stays — as openapi/sfere-cdp-contract.yaml, the contract for what is
+// shipped and what is not, browsable with `pnpm docs:cdp`.
 //
 // One global switch, not per-module like useFeatures: the modes differ in
 // which host answers, not in which features exist, so there is nothing for

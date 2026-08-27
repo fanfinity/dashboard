@@ -95,10 +95,6 @@ const PRESERVED_SPANS = [
     why: 'path of an existing capture harness in another repo'
   },
   {
-    span: 'fanfinity-api.json',
-    why: 'filename of the pulled OpenAPI spec (see package.json openapi:pull)'
-  },
-  {
     span: 'api/fanfinity',
     why: 'import path of the generated client (@/api/fanfinity, ./src/api/fanfinity.ts)'
   },

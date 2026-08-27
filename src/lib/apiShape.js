@@ -1,5 +1,5 @@
 // Adapts the accounts/RBAC backend's payload shape to the one the screens are
-// written against. The backend (see openapi/fanfinity-api.json) returns
+// written against. The backend (see openapi/sfere-api.json) returns
 // snake_case fields wrapped in a Page envelope ({ items, total, page, size,
 // pages }); the mock JSON in public/data/ and every screen use camelCase bare
 // arrays. These helpers bridge the two so a domain composable can wire a real

@@ -450,7 +450,7 @@ const drawerRows = computed(() => {
 })
 
 // The backend redacts credential headers and masks write keys before they
-// leave the API (see the LiveEvent schema in openapi/fanfinity-api.json), so
+// leave the API (see the LiveEvent schema in openapi/sfere-api.json), so
 // this renders what it is given. The page used to scrub the upstream vendor's
 // name out of every string it displayed; there is no upstream vendor in this
 // page's world any more, so there is nothing to scrub.

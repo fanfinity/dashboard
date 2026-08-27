@@ -7,13 +7,17 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 Package manager is **pnpm** (Node `>= 22.12`). `postinstall` runs `quasar prepare`.
 
 ```bash
-pnpm install       # install deps (regenerates .quasar/)
-pnpm dev           # quasar dev — HMR dev server, opens browser
-pnpm build         # quasar build — static SPA into dist/spa
-pnpm lint          # oxfmt (format) then oxlint --fix
-pnpm lint:check    # oxfmt --check then oxlint (CI-style, no writes)
-pnpm release <x>   # bump package.json, commit, tag vX.Y.Z (patch|minor|major|X.Y.Z)
-pnpm docs:cdp      # Scalar reference for openapi/cdp-api-draft.yaml on :3001
+pnpm install         # install deps (regenerates .quasar/)
+pnpm dev             # quasar dev — HMR dev server, opens browser
+pnpm build           # quasar build — static SPA into dist/spa
+pnpm lint            # oxfmt (format) then oxlint --fix
+pnpm lint:check      # oxfmt --check then oxlint (CI-style, no writes)
+pnpm release <x>     # bump package.json, commit, tag vX.Y.Z (patch|minor|major|X.Y.Z)
+pnpm contract:build  # regenerate openapi/sfere-cdp-contract.yaml (see below)
+pnpm contract:json   # throwaway JSON export of the contract (gitignored)
+pnpm contract:lint   # Spectral: spectral:oas + the sfere-* rules in .spectral.yaml
+pnpm contract:check  # validate + lint + staleness + round-trip + shipped-half diff
+pnpm docs:cdp        # Scalar reference for openapi/sfere-cdp-contract.yaml on :3001
 ```
 
 Linting/formatting is **oxlint + oxfmt**, not ESLint/Prettier. oxfmt style: no semicolons,
@@ -334,6 +338,83 @@ inlined into the design agent's prompt; it enumerates 54 token names, so **re-ve
 against the built CSS whenever a token is renamed** — a name that no longer resolves makes
 every design the agent builds silently unstyled.
 
+## The contract document
+
+`openapi/sfere-cdp-contract.yaml` is the agreed interface between this dashboard and the
+backend, and the thing to show the backend team: `pnpm docs:cdp` serves it on :3001. It replaced
+`openapi/cdp-api-draft.yaml`, which is gone — that file drifted (`/v1/dashboard` and `/v1/errors`
+were drafted flat and shipped account-scoped) precisely because nothing in it distinguished a
+proposal from a live endpoint.
+
+**It is generated. Never edit the YAML.** Three inputs, one output:
+
+| file                                | role                                                                 |
+| ----------------------------------- | -------------------------------------------------------------------- |
+| `openapi/sfere-api.json`            | what the backend serves today → the **shipped** half                 |
+| `openapi/cdp-proposals.mjs`         | hand-written; what the dashboard still needs → the **proposed** half |
+| `openapi/jitsu-openapi-schema.json` | Jitsu's spec, for payload shapes and tag prose                       |
+
+```bash
+pnpm openapi:pull     # refresh the backend spec from staging
+pnpm contract:build   # regenerate the contract
+pnpm contract:check   # the gate
+```
+
+**Every operation carries `x-sfere-status: shipped | proposed`**, which is the whole point — drift
+becomes greppable instead of something you rediscover mid-implementation. `shipped` operations are
+lifted out of the backend's own spec, so they agree with the running service by construction; only
+their prose is rewritten (FastAPI's "List Sources Route" is noise in Scalar's sidebar). `proposed`
+operations are a proposal and nothing more.
+
+Things that will bite:
+
+- **`pnpm contract:check` is a real gate, not a lint.** It fails if the committed YAML is not what
+  the inputs produce, if the YAML does not round-trip through a parser back to what the builder
+  meant, or if any `shipped` operation has drifted from `sfere-api.json`. It caught a
+  trailing-newline bug in the emitter that `scalar document validate` passed happily.
+- **The emitter is hand-rolled** (`scripts/build-cdp-contract.mjs`) because neither `yaml` nor
+  `js-yaml` is installed and a docs generator is not worth a lockfile entry. It deliberately emits
+  **single-quoted** scalars to match `oxfmt`'s YAML style — get that wrong and `pnpm lint`
+  reformats the file while `pnpm contract:build` puts it back, so the two fight forever and CI
+  fails whichever ran last.
+- **The document is at zero lint findings, and `.spectral.yaml` is what keeps it there.** Two
+  halves: `spectral:oas`, plus ten `sfere-*` rules for this contract's own conventions —
+  `x-sfere-status` present and valid, explicit `security`, snake_case fields, RFC 9457 errors, the
+  `Page[…]` envelope shape, account-scoped paths, `writeOnly` credentials in round-tripping
+  `*Config` schemas, Sfere-only hosts, and no orphaned schemas. The `sfere-*` half is the valuable
+  one: shipped operations are generated and cannot drift, but the proposals in `cdp-proposals.mjs`
+  are hand-written.
+- **Two traps in running that lint.** `scalar document lint` does **not** auto-discover
+  `.spectral.yaml` — it must be passed `-r`, which is what `pnpm contract:lint` does. Running it
+  bare silently uses Spectral's defaults and checks none of the `sfere-*` rules, which looks like
+  a clean lint. It also **exits 0 on warnings**, so anything that should block CI has to be
+  `error` — that is why `operation-description` is promoted from its default warning.
+- **`operation-description` is an error, and the fix is never filler.** A description should say
+  what the summary does not: what happens to dependents, when it 409s, what is returned once and
+  never again. An operation with nothing to add means the summary is too vague.
+- **A lint rule whose selector matches nothing passes silently**, which is worse than no rule.
+  Every rule in `.spectral.yaml` was verified by mutating a copy of the contract so exactly one
+  rule should trip. Do the same when adding one.
+- **The JSON export is throwaway, and `openapi/sfere-cdp-contract.json` is gitignored.**
+  `pnpm contract:json` reserialises the committed YAML for whoever needs JSON — a Postman
+  import, a tool that will not read YAML. **Do not commit the result.** It would be a fourth
+  generated artefact of the same three inputs with nothing keeping it in step, which is the
+  drift `cdp-api-draft.yaml` died of, and a 534 KB JSON diff hides which operation changed
+  where the YAML diff shows it. It uses `scalar document format` rather than the builder's
+  `--json` flag so it stays read-only — the flag rebuilds the YAML as a side effect, and it
+  exists for `check-cdp-contract.mjs`, which diffs it against the parsed YAML to prove the
+  hand-rolled emitter did not turn a string into a boolean.
+- **Do not feed this file to orval.** `orval.config.js` reads `sfere-api.json`; pointing it
+  here would generate typed fetchers for endpoints that 404.
+- **Never propose an operation the backend already serves.** The builder exits non-zero rather
+  than let a live endpoint be labelled `proposed`.
+- **Jitsu supplies vocabulary and payload shape, never surface.** The backend runs Jitsu
+  underneath (`Account.jitsu_workspace_id`, `Source.jitsu_site_id`,
+  `Destination.jitsu_destination_id`, `Pipeline.jitsu_link_id`), so Jitsu's field names inform the
+  proposed shapes — but workspace is **account**, stream and service collapse into **source**,
+  link is **pipeline**, `camelCase` is `snake_case`, and bare arrays are the `Page[…]` envelope.
+  Jitsu is an implementation detail of the backend, not a host this app knows.
+
 ## Mock data still stands in for most of the backlog
 
 Every backlog issue says _"fetch through the generated orval client in `src/api/`"_. That is now
@@ -341,9 +422,9 @@ right for a few screens and still wrong for most of them. Sources, Destinations 
 real account-scoped endpoints and do use the generated client; **every other screen has no
 backend behind it**, reads mock JSON from `public/data/` through `useMockResource()`, and
 reports `apiMissing` ("No API yet") in the default real mode. Before wiring a screen to
-`src/api/`, check that its endpoint exists in `openapi/fanfinity-api.json` — the shapes in
-`openapi/cdp-api-draft.yaml` are a proposal, not a backend, and three of its domains have
-already shipped in a different shape (see Data architecture below).
+`src/api/`, check that its endpoint exists in `openapi/sfere-api.json`, or that
+`openapi/sfere-cdp-contract.yaml` marks it `x-sfere-status: shipped`. An operation marked
+`proposed` there is a proposal, not a backend (see "The contract document" below).
 
 ## Files that reach every screen
 
@@ -404,8 +485,8 @@ all follow the same `{ data, loading, error, load() }` contract (`src/composable
    mocking a draft of them was cost without benefit, and it went along with `MOCK_API_BASE`,
    `VITE_CDP_MOCK_API_BASE`, `customFetch`'s base-URL override, the `localhost:3000` CSP entry
    and the "Mock CDP server" VS Code task. **`pnpm docs:cdp` survives** (port 3001,
-   `scalar document serve`, `@scalar/cli` still a devDependency): the draft spec is now a
-   contract document for what is still unbuilt, and that is how you show it to the backend team.
+   `scalar document serve`, `@scalar/cli` still a devDependency), now serving
+   `openapi/sfere-cdp-contract.yaml`, and that is how you show the API to the backend team.
 
    **Flipping the switch does not, by itself, change what a screen shows.**
    `useMockResource()` only calls a live endpoint for a resource whose composable passes an
@@ -442,7 +523,7 @@ exists to prevent.`sendMutation()`and`fetchCollection()`resolve`path` the same w
    `useMockResource`). **Wired to a drafted endpoint that does not exist yet**:
    `useConnectorCatalog()` (`/v1/connectors`). Everything else has no `api` at all.
 
-   Grep the merged `openapi/fanfinity-api.json` before adding an `api` path — `/v1/dashboard`
+   Grep the merged `openapi/sfere-api.json` before adding an `api` path — `/v1/dashboard`
    and `/v1/errors` were drafted flat and shipped account-scoped and merged, which is exactly
    the drift the check catches.
 
@@ -506,7 +587,7 @@ exists to prevent.`sendMutation()`and`fetchCollection()`resolve`path` the same w
      for the demo screens and reaches nothing; it is not an exception to this.)
 
    The live-events endpoint returns an **already-flattened, vendor-neutral** record
-   (`LiveEvent` in `openapi/fanfinity-api.json`): unwrapping ingest envelopes, redacting
+   (`LiveEvent` in `openapi/sfere-api.json`): unwrapping ingest envelopes, redacting
    credential headers and masking write keys are the backend's job. `useLiveEvents.js`
    maps its snake_case fields onto the camelCase shape the fixture carries, so the page is
    written once against one record shape. That shape is what keeps
@@ -520,7 +601,7 @@ exists to prevent.`sendMutation()`and`fetchCollection()`resolve`path` the same w
    account-scoped sources, destinations and pipelines, plus the Zid connect/sync and
    pipeline-function routes:
    - Client is **generated by orval** from the backend's OpenAPI spec: `pnpm openapi`
-     re-pulls `openapi/fanfinity-api.json` from staging and regenerates `src/api/`
+     re-pulls `openapi/sfere-api.json` from staging and regenerates `src/api/`
      (typed fetchers like `getMe()` plus `@tanstack/vue-query` composables like
      `useGetMe()`; vue-query is registered in `src/boot/vue-query.js`). Never edit
      `src/api/fanfinity.ts` or `src/api/model/` by hand.

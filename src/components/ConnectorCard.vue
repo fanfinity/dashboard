@@ -45,7 +45,7 @@ import { ref } from 'vue'
 import icSources from '@/assets/dashboard/ic-sources.svg'
 
 // `iconUrl` is served by our own backend (see the Connector schema in
-// openapi/cdp-api-draft.yaml) and is allowed to be null — the catalog used to
+// openapi/sfere-cdp-contract.yaml) and is allowed to be null — the catalog used to
 // build a logo URL against a third-party host, which the CSP no longer permits
 // under `img-src`. Either way the bundled icon is the fallback, so a missing or
 // broken image degrades to exactly what it did before.

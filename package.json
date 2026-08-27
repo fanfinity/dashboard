@@ -18,7 +18,7 @@
     "dev": "quasar dev",
     "build": "quasar build",
     "postinstall": "quasar prepare --silent",
-    "openapi:pull": "curl -fsS https://api-staging.sfere.io/openapi.json -o openapi/fanfinity-api.json",
+    "openapi:pull": "curl -fsS https://api-staging.sfere.io/openapi.json -o openapi/sfere-api.json",
     "openapi:generate": "orval --config orval.config.js",
     "openapi": "pnpm openapi:pull && pnpm openapi:generate",
     "smoke": "node scripts/smoke.mjs",
@@ -26,7 +26,11 @@
     "serve:dist": "node scripts/serve-dist.mjs",
     "worktree": "bash scripts/new-worktree.sh",
     "release": "node scripts/release.mjs",
-    "docs:cdp": "scalar document serve openapi/cdp-api-draft.yaml --watch --port 3001"
+    "contract:build": "node scripts/build-cdp-contract.mjs",
+    "contract:json": "scalar document format openapi/sfere-cdp-contract.yaml --output openapi/sfere-cdp-contract.json",
+    "contract:lint": "scalar document lint openapi/sfere-cdp-contract.yaml -r .spectral.yaml",
+    "contract:check": "scalar document validate openapi/sfere-cdp-contract.yaml && pnpm contract:lint && node scripts/check-cdp-contract.mjs",
+    "docs:cdp": "scalar document serve openapi/sfere-cdp-contract.yaml --watch --port 3001"
   },
   "dependencies": {
     "@fontsource-variable/bricolage-grotesque": "^5.3.0",

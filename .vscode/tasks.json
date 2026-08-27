@@ -22,7 +22,7 @@
     },
     {
       "label": "CDP API docs",
-      "detail": "pnpm docs:cdp — Scalar API reference for openapi/cdp-api-draft.yaml on :3001",
+      "detail": "pnpm docs:cdp — Scalar API reference for openapi/sfere-cdp-contract.yaml on :3001",
       "type": "shell",
       "command": "pnpm docs:cdp",
       "isBackground": true,
@@ -35,9 +35,53 @@
     },
     {
       "label": "Dev server + CDP docs",
-      "detail": "Dev server + the browsable reference for openapi/cdp-api-draft.yaml, for working on a screen whose endpoint is still drafted.",
+      "detail": "Dev server + the browsable reference for openapi/sfere-cdp-contract.yaml, for working on a screen whose endpoint is only proposed.",
       "dependsOn": ["Dev server", "CDP API docs"],
       "dependsOrder": "parallel",
+      "problemMatcher": []
+    },
+    {
+      "label": "Contract: build",
+      "detail": "pnpm contract:build — regenerate openapi/sfere-cdp-contract.yaml from openapi/sfere-api.json (shipped) + openapi/cdp-proposals.mjs (proposed)",
+      "type": "shell",
+      "command": "pnpm contract:build",
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated"
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "Contract: JSON export",
+      "detail": "pnpm contract:json — reserialise the contract to openapi/sfere-cdp-contract.json for a tool that will not read YAML. Read-only and gitignored: the YAML stays the artefact, so do not commit the result.",
+      "type": "shell",
+      "command": "pnpm contract:json",
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated"
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "Contract: lint",
+      "detail": "pnpm contract:lint — Spectral (spectral:oas + the sfere-* convention rules in .spectral.yaml)",
+      "type": "shell",
+      "command": "pnpm contract:lint",
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated"
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "Contract: check",
+      "detail": "pnpm contract:check — validate the contract, confirm it is up to date, and diff its shipped half against openapi/sfere-api.json",
+      "type": "shell",
+      "command": "pnpm contract:check",
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated"
+      },
       "problemMatcher": []
     },
     {
@@ -46,7 +90,10 @@
       "type": "shell",
       "command": "pnpm build",
       "group": "build",
-      "presentation": { "reveal": "always", "panel": "dedicated" },
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated"
+      },
       "problemMatcher": []
     },
     {
@@ -54,7 +101,10 @@
       "detail": "pnpm lint — oxfmt then oxlint --fix",
       "type": "shell",
       "command": "pnpm lint",
-      "presentation": { "reveal": "always", "panel": "dedicated" },
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated"
+      },
       "problemMatcher": []
     },
     {
@@ -62,7 +112,10 @@
       "detail": "pnpm lint:check — CI-style, no writes",
       "type": "shell",
       "command": "pnpm lint:check",
-      "presentation": { "reveal": "always", "panel": "dedicated" },
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated"
+      },
       "problemMatcher": []
     },
     {
@@ -71,7 +124,10 @@
       "type": "shell",
       "command": "pnpm smoke:dist",
       "group": "test",
-      "presentation": { "reveal": "always", "panel": "dedicated" },
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated"
+      },
       "problemMatcher": []
     },
     {
@@ -80,7 +136,10 @@
       "type": "shell",
       "command": "pnpm serve:dist",
       "isBackground": true,
-      "presentation": { "reveal": "always", "panel": "dedicated" },
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated"
+      },
       "problemMatcher": []
     }
   ]

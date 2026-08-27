@@ -29,8 +29,10 @@ anywhere else is blocked by the browser rather than caught in review.
 Configuration lives in a gitignored `.env` — see `.env.example`. If a feature seems to need
 a credential for an outside system, that credential belongs in the backend.
 
-Parts of that API are still drafted rather than built (`openapi/cdp-api-draft.yaml`), so a
-screen whose endpoint does not exist yet renders "No API yet" rather than an empty list.
+Parts of that API are still proposed rather than built. `openapi/sfere-cdp-contract.yaml`
+is the contract covering both halves — every operation says which it is via
+`x-sfere-status` — and `pnpm docs:cdp` browses it. A screen whose endpoint does not exist
+yet renders "No API yet" rather than an empty list.
 **Settings → Data source** switches the whole app between the real API (the default) and the
 mock JSON in `public/data/`, which is what makes a backend-free demo possible.
 
