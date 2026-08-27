@@ -70,14 +70,21 @@
         <p class="text-xs text-subtle">{{ row.id }}</p>
       </template>
 
+      <!-- `usePipes` joins both names in from Sources and Destinations; the
+           backend's pipeline record carries only the two ids. An end that has
+           since been deleted has neither, hence the em dash. -->
       <template #cell-route="{ row }">
-        <span class="text-ink">{{ row.sourceName }}</span>
+        <span class="text-ink">{{ row.sourceName || '—' }}</span>
         <span class="px-1.5 text-subtle">→</span>
-        <span class="text-ink">{{ row.eventDestinationName }}</span>
+        <span class="text-ink">{{ row.eventDestinationName || '—' }}</span>
       </template>
 
+      <!-- `formatCount` reads a missing count as 0, which is right for a real
+           measured zero and wrong here: the pipeline record has no delivery
+           counter at all, so a live pipe would report "0 deliveries / hr" as
+           a fact. -->
       <template #cell-deliveryCountLastHour="{ value }">
-        {{ formatCount(value) }}
+        {{ value == null ? '—' : formatCount(value) }}
       </template>
 
       <template #cell-isEnabled="{ value }">

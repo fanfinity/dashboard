@@ -62,20 +62,21 @@
           :source-hint="sourceHint"
           :destination-label="pipe.eventDestinationName"
           :destination-hint="pipe.eventDestinationSlug"
-          :transform="pipe.hasFunctionCode"
+          :transform="pipe.hasFunctionCode === true"
+          :transform-known="transformKnown"
         />
       </CardPanel>
 
-      <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <StatCard
-          label="Deliveries (last hour)"
-          :value="formatCount(pipe.deliveryCountLastHour)"
-        />
+      <!-- Three cards, not four: there was a "Version" one, and no pipeline,
+           source or destination the backend returns has a version field. It
+           was a `pipes.json` invention, so against a real pipe it rendered the
+           literal string "vundefined". -->
+      <div class="grid grid-cols-1 gap-4 sm:grid-cols-3">
+        <StatCard label="Deliveries (last hour)" :value="deliveriesValue" />
         <StatCard
           label="Status"
           :value="pipe.isEnabled ? 'Enabled' : 'Paused'"
         />
-        <StatCard label="Version" :value="`v${pipe.version}`" />
         <StatCard label="Created" :value="formatDate(pipe.createdAt)" />
       </div>
 
@@ -127,7 +128,7 @@
             <span class="text-sm font-medium text-ink">Transformation</span>
             <StatusBadge
               :tone="pipe.hasFunctionCode ? 'brand' : 'neutral'"
-              :label="pipe.hasFunctionCode ? 'Custom function' : 'Pass-through'"
+              :label="transformLabel"
             />
           </template>
           <p class="text-sm text-muted">{{ transformCopy }}</p>
@@ -186,11 +187,7 @@
           </button>
         </div>
 
-        <EmptyState
-          v-else
-          variant="inline"
-          :title="`Nothing else reads from ${pipe.sourceName} or writes to ${pipe.eventDestinationName}.`"
-        />
+        <EmptyState v-else variant="inline" :title="relatedEmptyTitle" />
       </CardPanel>
     </div>
 
@@ -272,11 +269,16 @@ const pipe = computed(
   () => pipes.value.find(p => p.id === routeId.value) ?? null
 )
 
-const subtitle = computed(() =>
-  pipe.value
-    ? `${pipe.value.sourceName} → ${pipe.value.eventDestinationName}`
-    : routeId.value
-)
+// Falls back to the id, then to the route id: an end whose source or
+// destination has been deleted has no name to print, and "undefined → undefined"
+// is a worse answer than the ids that are actually on the record.
+const subtitle = computed(() => {
+  const p = pipe.value
+  if (!p) return routeId.value
+  const from = p.sourceName || p.sourceId
+  const to = p.eventDestinationName || p.eventDestinationId
+  return from && to ? `${from} → ${to}` : routeId.value
+})
 
 const SOURCE_TYPES = {
   event_stream: 'Event stream',
@@ -287,9 +289,35 @@ const sourceTypeLabel = computed(
   () => SOURCE_TYPES[pipe.value?.sourceType] ?? pipe.value?.sourceType ?? '—'
 )
 
-const sourceHint = computed(
-  () => `${pipe.value?.sourceSlug} · ${sourceTypeLabel.value.toLowerCase()}`
+// Both halves are optional against a real pipeline — the slug is joined in by
+// `usePipes`, the type comes with it — so build the hint from what resolved
+// rather than interpolating blindly. This used to render "undefined · —".
+const sourceHint = computed(() => {
+  const parts = [pipe.value?.sourceSlug]
+  if (pipe.value?.sourceType) parts.push(sourceTypeLabel.value.toLowerCase())
+  return parts.filter(Boolean).join(' · ')
+})
+
+// `deliveryCountLastHour`, like `version`, is a fixture field with no backend
+// behind it. `formatCount` turns a missing one into "0" — the right call for a
+// real measured zero, a fabricated fact here — so ask before formatting.
+const deliveriesValue = computed(() =>
+  pipe.value?.deliveryCountLastHour == null
+    ? '—'
+    : formatCount(pipe.value.deliveryCountLastHour)
 )
+
+// Same class of gap, and the loudest of the three: a pipe with no
+// `hasFunctionCode` is not a pass-through pipe, it is a pipe we have not asked.
+// The Configuration tab's PipeFunctionsPanel reads the real answer from
+// `GET …/pipelines/{id}/functions`; until that answer reaches this summary,
+// say "unknown" rather than assert the wrong one.
+const transformKnown = computed(() => pipe.value?.hasFunctionCode != null)
+
+const transformLabel = computed(() => {
+  if (!transformKnown.value) return 'Not known'
+  return pipe.value.hasFunctionCode ? 'Custom function' : 'Pass-through'
+})
 
 // `Source` and `Destination` are re-rendered as links by the matching
 // `#value-…` slots; every other row falls through to its formatted `value`.
@@ -306,11 +334,22 @@ const details = computed(() => {
   ]
 })
 
-const transformCopy = computed(() =>
-  pipe.value?.hasFunctionCode
+// Named ends when we have them, a generic sentence when we do not — the same
+// reason `subtitle` falls back.
+const relatedEmptyTitle = computed(() => {
+  const p = pipe.value
+  if (!p?.sourceName || !p?.eventDestinationName)
+    return 'Nothing else shares either end of this pipe.'
+  return `Nothing else reads from ${p.sourceName} or writes to ${p.eventDestinationName}.`
+})
+
+const transformCopy = computed(() => {
+  if (!transformKnown.value)
+    return 'Whether a function runs on this pipe is not part of the pipeline record. The functions attached to it are listed below.'
+  return pipe.value.hasFunctionCode
     ? 'A custom function runs on every event this pipe carries, before the destination sees it. Events it drops are never delivered.'
     : 'Events reach the destination exactly as the source emitted them. Add a function to filter, enrich or reshape them.'
-)
+})
 
 // Every other pipe touching either end of this one — the blast radius of a
 // change here, which is the question a detail page is usually opened to answer.

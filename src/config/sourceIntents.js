@@ -18,6 +18,13 @@
 //
 // `to` is the escape hatch: an intent that is not a template at all but a
 // different screen. Only `connector` uses it.
+//
+// THE MARKS ARE NOT HERE. Each entry used to carry an `icon` string — one 24x24
+// path — and five of the six marks need more than one element to read (a phone
+// needs an earpiece, a server needs ports, a bag needs a handle above the bag),
+// so they were subpaths crammed into one `d` that never closed. They live in
+// SourceIntentIcon.vue now, keyed by `key`, the same way PersonaIcon.vue holds
+// the persona marks. Adding an intent means adding a branch there too.
 
 export const SOURCE_INTENTS = [
   {
@@ -25,43 +32,35 @@ export const SOURCE_INTENTS = [
     title: 'A website',
     body: 'Add one script tag and page views, clicks and custom events start arriving.',
     outcome: 'Web source',
-    templates: ['web-sdk'],
-    // 24×24 stroke path, drawn here rather than imported: these are six marks
-    // used in one place, and src/assets/dashboard/ is <img> with brand purple
-    // baked into a stroke attribute, so it cannot take the colour of the card.
-    icon: 'M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18m-9 9h18M12 3c2.5 2.4 3.9 5.6 3.9 9S14.5 18.6 12 21c-2.5-2.4-3.9-5.6-3.9-9S9.5 5.4 12 3'
+    templates: ['web-sdk']
   },
   {
     key: 'app',
     title: 'A mobile app',
     body: 'Our iOS or Android SDK — the same event model on both platforms.',
     outcome: 'App source',
-    templates: ['ios-sdk', 'android-sdk'],
-    icon: 'M7 3h10a1 1 0 0 1 1 1v16a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1m4 15h2'
+    templates: ['ios-sdk', 'android-sdk']
   },
   {
     key: 'backend',
     title: 'My own backend',
     body: 'Send events straight from your server with one HTTP call. No library needed.',
     outcome: 'HTTP API source',
-    templates: ['http-api'],
-    icon: 'M4 6h16M4 6v4h16V6M4 14h16v4H4zM7 8h.01M7 16h.01'
+    templates: ['http-api']
   },
   {
     key: 'store',
     title: 'An online store',
     body: 'Zid or Shopify. We listen for new orders and customers automatically, no code.',
     outcome: 'Store source',
-    templates: ['zid', 'shopify'],
-    icon: 'M3 6h18l-1.5 12a2 2 0 0 1-2 2H6.5a2 2 0 0 1-2-2zM9 10a3 3 0 0 0 6 0'
+    templates: ['zid', 'shopify']
   },
   {
     key: 'payments',
     title: 'Payments',
     body: 'Stripe. Track payments, subscriptions and invoices as they happen.',
     outcome: 'Payments source',
-    templates: ['stripe'],
-    icon: 'M2 8a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2zM2 11h20M6 15h3'
+    templates: ['stripe']
   },
   {
     key: 'connector',
@@ -69,8 +68,7 @@ export const SOURCE_INTENTS = [
     body: 'Browse pre-built connectors — Firebase, MongoDB, Attio, Linear. One login, no code.',
     outcome: 'Go to Connectors',
     templates: [],
-    to: { name: 'sources', query: { tab: 'connectors' } },
-    icon: 'M9 3v6m6-6v6M5 9h14v4a7 7 0 0 1-14 0zM12 20v1'
+    to: { name: 'sources', query: { tab: 'connectors' } }
   }
 ]
 

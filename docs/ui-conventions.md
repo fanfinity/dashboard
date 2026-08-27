@@ -166,6 +166,81 @@ the smoke test can assert on a single selector across every route.
     it makes `truncate` behave on the child, and it says which side is meant to
     give way. Use `shrink-0` on the side that must keep its intrinsic width.
 
+11. **`mt-*` on a `<p>` does nothing, so space cards with `gap`, not margins.**
+    Quasar's unlayered paragraph rule wins twice over: every `<p>` in this repo
+    carries `margin-bottom: 16px`, and a layered `mt-3` on it computes to
+    `margin-top: 0`. A card written as `icon` / `mt-3 title` / `mt-1.5 body` /
+    `mt-3 footer` therefore renders as a flat 16px rhythm that ignores all three
+    values — **including sixteen pixels of dead space under the last line**,
+    which is what knocks a card's footer off the baseline its neighbours sit on.
+    It ships looking merely loose, and the next person edits `mt-3` to `mt-4` and
+    sees nothing change.
+
+    Lay the card out with a grid instead. Grid `gap` has no Quasar counterpart, so
+    it applies, and it is also how you pin a footer:
+
+    ```html
+    <!-- wrong: none of these margins are the ones that render -->
+    <SelectableCard>
+      <span class="chip">…</span>
+      <p class="mt-3 text-sm">Title</p>
+      <p class="mt-1.5 text-xs">Body copy of any length.</p>
+      <p class="mt-3 text-xs">Outcome →</p>
+    </SelectableCard>
+
+    <!-- right: gap for rhythm, `1fr auto` for the footer, `m-0!` to kill the
+         inert margin so it stops adding itself to the gap -->
+    <SelectableCard>
+      <div class="grid h-full w-full grid-rows-[1fr_auto] gap-5">
+        <div class="grid content-start gap-3.5">
+          <span class="chip">…</span>
+          <div class="grid min-w-0 gap-1.5">
+            <p class="m-0! text-sm">Title</p>
+            <p class="m-0! text-xs">Body copy of any length.</p>
+          </div>
+        </div>
+        <div class="border-t border-sfere-line pt-4">Outcome →</div>
+      </div>
+    </SelectableCard>
+    ```
+
+    Reach for the grid row rather than `mt-auto!`: `SelectableCard`'s own `flex`
+    is Quasar's _wrapping_ flex (rule 10), and auto margins in a wrapping column
+    container resolve per flex line. `grid-rows-[1fr_auto]` puts the footer on the
+    bottom edge by construction, so a row of cards stays aligned through any copy
+    edit. `SourceIntentPicker.vue` is the worked example.
+
+12. **Do not size a card grid with `auto-fit`.** `grid-cols-1 sm:grid-cols-2` and
+    friends expand to `repeat(N, minmax(0, 1fr))`, which is safe.
+    `grid-cols-[repeat(auto-fit,minmax(260px,1fr))]` is not: an `auto-fit` track
+    is min-content-sized in the first pass, the min-content height of a
+    `SelectableCard` (a Quasar wrapping flex, rule 10) at that width is enormous,
+    and the row keeps the tall measurement. Measured on `/sources/new`: 219px
+    cards became **637px at every viewport**, columns still resolving to a
+    perfectly normal 328px, so nothing about the width looks wrong.
+
+    When a viewport breakpoint is the wrong question — `MainLayout`'s sidebar
+    collapses without changing the viewport width, so the same 1024px window has
+    two very different content widths — use a **container query** over explicit
+    tracks:
+
+    ```html
+    <div class="@container">
+      <div
+        class="grid grid-cols-1 gap-5 @min-[34rem]:grid-cols-2 @min-[52rem]:grid-cols-3"
+      ></div
+    ></div>
+    ```
+
+    For a picker whose card count is data-driven and small, a growing flex row
+    (`flex flex-wrap gap-5` + `max-w-full grow basis-64` on each card) beats fixed
+    tracks: two cards take half the row each instead of two thirds with a hole
+    beside them. `SourceTemplatePicker.vue` is the worked example.
+
+    One thing the gutter owes the card: **match it to the card's own padding.**
+    `gap-3` against `p-5` is what makes a grid read as crowded rather than as a
+    set of choices.
+
 ---
 
 ## House rules for screens

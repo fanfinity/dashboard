@@ -80,9 +80,13 @@
           />
         </template>
 
-        <template #cell-eventCountLastHour="{ value }">
-          {{ formatCount(value) }}
-        </template>
+        <!-- `formatCount` already reads a missing value as an em dash, and it
+             has to stay that way here: the backend's Source record carries no
+             per-hour counter (it is a `sources.json` field), so a `?? 0` would
+             report a measured zero for every live source. -->
+        <template #cell-eventCountLastHour="{ value }">{{
+          formatCount(value)
+        }}</template>
 
         <template #cell-actions="{ row }">
           <div class="flex items-center justify-end gap-2">

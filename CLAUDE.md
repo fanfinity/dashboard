@@ -119,10 +119,10 @@ Hash mode has one consequence worth internalising: the whole route lives after t
 so an in-page `href="#some-id"` **replaces the route** instead of scrolling. Anchor navigation
 has to go through `scrollIntoView` — see `src/pages/design-system/DesignSystemPage.vue`.
 
-### Four Quasar/Tailwind cascade collisions
+### Six Quasar/Tailwind cascade collisions
 
 Tailwind v4 emits utilities into `@layer utilities`; Quasar's base stylesheet is **unlayered**,
-and unlayered CSS beats layered CSS regardless of specificity. All four of these have cost real
+and unlayered CSS beats layered CSS regardless of specificity. All six of these have cost real
 time:
 
 1. **Headings need the important _suffix_** — `text-2xl!`, never `!text-2xl`. Covered at length
@@ -149,6 +149,24 @@ time:
    and breaks on the copy edit. Fix: `min-w-0 flex-1` on the child that should give way (that
    sets `flex-basis: 0` and removes the wrap decision), `shrink-0` on the one that must not.
    Full worked example in `docs/ui-conventions.md` rule 10.
+5. **`mt-*` on a `<p>` does nothing** — this is #3's margin problem, and it is the one that
+   silently degrades a card. Every `<p>` carries Quasar's unlayered `margin-bottom: 16px`, and a
+   layered `mt-3` on it computes to `margin-top: 0`, so a card spaced `mt-3` / `mt-1.5` / `mt-3`
+   renders as a flat 16px rhythm ignoring all three — plus sixteen pixels of dead space under the
+   last line, which knocks its footer off the baseline the cards beside it sit on. It ships
+   looking merely loose, and editing `mt-3` to `mt-4` changes nothing. Space cards with grid
+   `gap` (no Quasar counterpart, so it applies) and pin the footer with `grid-rows-[1fr_auto]` —
+   not `mt-auto!`, which resolves per flex line inside #4's wrapping flex.
+   `docs/ui-conventions.md` rule 11; `SourceIntentPicker.vue` is the worked example.
+6. **`auto-fit` grid tracks measure a card at min-content and keep the answer.** An
+   `auto-fit` track is min-content-sized in the first pass, and the min-content height of a
+   `SelectableCard` — a #4 wrapping flex — at that width is enormous, so the row keeps it:
+   `grid-cols-[repeat(auto-fit,minmax(260px,1fr))]` turned 219px cards into **637px at every
+   viewport** on `/sources/new`, with columns still resolving to a normal 328px. Stay on
+   `repeat(N,minmax(0,1fr))`, which is what `sm:grid-cols-2` expands to. Where the viewport is
+   the wrong question — the sidebar collapses without changing it, so one 1024px window has two
+   content widths — put a container query in front of those tracks (`@container` +
+   `@min-[52rem]:grid-cols-3`). `docs/ui-conventions.md` rule 12.
 
 ## Screen manifest — routes are generated, not hand-written
 
@@ -310,8 +328,10 @@ panel is dismissible only after that, and the dismissal is `localStorage`.
 
 **The post-auth interstitial** (`components/onboarding/AccountSetupOverlay.vue`) covers the gap
 between a successful sign-in and the dashboard, when the session settles, `/v1/me` is read and
-the acting account resolves. It runs for a random 1.1–2s and is capped there deliberately: it is
-a courtesy transition, not a fake loading screen. Like the persona question it is an overlay, not
+the acting account resolves. It runs for a fixed **2.5s** (`TOTAL_MS`), long enough that its four
+step labels can be read rather than flashed — it used to be a random 1.1–2s, which made the same
+sign-in feel different each time. Still a courtesy transition, not a fake loading screen, so the
+number is a deliberate ceiling and not somewhere to hide slow work. Like the persona question it is an overlay, not
 a route — a `/setting-up` route would need a guard exception and would be a second place the auth
 redirect has to agree with. It mounts only _after_ auth succeeds, so it can never stand between a
 bad password and its error message.
@@ -518,6 +538,22 @@ exists to prevent.`sendMutation()`and`fetchCollection()`resolve`path` the same w
    screen, adapted into the three mock payload shapes rather than read through
    `useMockResource`). **Wired to a drafted endpoint that does not exist yet**:
    `useConnectorCatalog()` (`/v1/connectors`). Everything else has no `api` at all.
+
+   **The fixture is wider than the endpoint, and that is the bug class to look for
+   on the three live domains.** `pipes.json` carries `version`, `sourceName`,
+   `eventDestinationName`, `hasFunctionCode` and `deliveryCountLastHour`; the backend's
+   `Pipeline` is nine fields and has none of them. `sources.json` and `destinations.json`
+   invent the same `version`, plus `pipeCount` and the per-hour counters. Wiring a screen to
+   a real endpoint therefore does not finish at `api: { path }` — **every field the page
+   reads has to exist in the `200` schema**, or it renders a value nobody measured.
+   How it fails is what makes it expensive: `` `v${x}` `` prints the literal `vundefined`
+   and gets reported, while `formatCount(undefined)` prints a confident `0` and a falsy
+   `hasFunctionCode` prints "Pass-through — events are delivered unchanged", both as
+   assertions of fact. Silence is the worse failure. Where the ids are on the record the
+   labels are recoverable — `usePipes()`'s `joinEnds()` resolves a pipe's two ends out of
+   the live Sources and Destinations collections and skips both reads in Demo mode, which
+   is the pattern to copy. Where nothing backs the field, say so (`'—'`, "Not known") or
+   drop the control; do not let `formatCount` decide.
 
    Grep the merged `openapi/fanfinity-api.json` before adding an `api` path — `/v1/dashboard`
    and `/v1/errors` were drafted flat and shipped account-scoped and merged, which is exactly

@@ -150,11 +150,11 @@ import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import SfereLogo from '@/components/ui/SfereLogo.vue'
 import SfereSpinner from '@/components/ui/SfereSpinner.vue'
 
-// Capped at 2s total, on purpose: this is a courtesy transition, not a fake
-// loading screen. The randomness inside that cap keeps repeat sign-ins from
-// feeling mechanically identical without ever making anyone wait longer.
-const MIN_MS = 1100
-const MAX_MS = 2000
+// Fixed at 2.5s, on purpose: this is a courtesy transition, and a sub-second
+// flash of four reassuring step labels reads as a glitch rather than as work.
+// It used to be a random 1.1-2s, which made the same sign-in feel different
+// every time; one duration everyone gets is the calmer trade.
+const TOTAL_MS = 2500
 
 const emit = defineEmits(['done'])
 
@@ -199,13 +199,12 @@ const activeStep = computed(() => STEPS[index.value] ?? null)
 const timers = []
 
 onMounted(() => {
-  const total = MIN_MS + Math.random() * (MAX_MS - MIN_MS)
-  const per = total / STEPS.length
+  const per = TOTAL_MS / STEPS.length
 
   for (let i = 1; i < STEPS.length; i += 1) {
     timers.push(setTimeout(() => (index.value = i), per * i))
   }
-  timers.push(setTimeout(() => emit('done'), total))
+  timers.push(setTimeout(() => emit('done'), TOTAL_MS))
 })
 
 onBeforeUnmount(() => {

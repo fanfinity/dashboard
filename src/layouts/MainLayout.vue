@@ -277,8 +277,31 @@
             <img :src="icHelp" alt="Help" class="size-5" />
           </q-btn>
 
-          <q-avatar size="32px" class="cursor-pointer">
-            <img :src="avatar" alt="Account" />
+          <!-- A silhouette here, initials on /team: the roster is a wall of rows
+               where identical grey heads would carry no information (see
+               SfereAvatar.vue), but this chip is always the one person who is
+               signed in, so a mark that reads as "you" beats a letter pair. It
+               replaced a bundled photo that showed the same stranger's face to
+               every account. -->
+          <q-avatar
+            size="32px"
+            class="cursor-pointer bg-sfere-100 text-sfere-700"
+            role="button"
+            aria-label="Account"
+          >
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.75"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              aria-hidden="true"
+              class="size-[18px]"
+            >
+              <circle cx="12" cy="8.5" r="3.75" />
+              <path d="M4.75 20.25a7.25 7.25 0 0 1 14.5 0" />
+            </svg>
             <q-menu anchor="bottom right" self="top right">
               <q-list style="min-width: 200px">
                 <q-item class="pointer-events-none">
@@ -359,7 +382,6 @@ import ComingSoonPanel from '@/components/ComingSoonPanel.vue'
 import PersonaQuestion from '@/components/onboarding/PersonaQuestion.vue'
 import DemoModeBanner from '@/components/DemoModeBanner.vue'
 
-import avatar from '@/assets/dashboard/avatar.jpg'
 import icCollapse from '@/assets/dashboard/ic-collapse.svg'
 import icChevron from '@/assets/dashboard/ic-chevron.svg'
 import icOverview from '@/assets/dashboard/ic-overview.svg'
