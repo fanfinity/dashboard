@@ -248,9 +248,9 @@ the smoke test can assert on a single selector across every route.
     min-content height and keeps the answer, exactly as rule 12's `auto-fit`
     track does. Measured on `/sources/new`: the 458px intent-card grid rendered
     as a **2314px** block, i.e. roughly 1850px of blank page under step 1, with
-    the cards themselves at a perfectly correct 219px. Setting `flex-wrap:
-nowrap` on the parent alone collapsed it to 458px and the document from
-    2762px to 906px.
+    the cards themselves at a perfectly correct 219px. Setting
+    `flex-wrap: nowrap` on the parent alone collapsed it to 458px and the
+    document from 2762px to 906px.
 
     Use `grid gap-N` for the wrapper instead. Grid `gap` has no Quasar
     counterpart so it applies (rule 11), and a grid parent measures the

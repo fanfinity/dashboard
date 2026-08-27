@@ -24,6 +24,14 @@ single quotes, printWidth 80, `arrowParens: avoid`, no trailing commas. oxlint r
 over the whole repo — `CLAUDE.md`, `docs/**`, `public/data/*.json` and `scripts/` included.
 Linting only `src/` is how a green local run turns into a red CI run.
 
+**In Markdown, never let a hard wrap land inside an inline code span.** oxfmt formats
+`docs/**` and `CLAUDE.md` too, and a continuation line that starts at column 0 — which is
+what wrapping `` `flex-wrap: nowrap` `` mid-span produced in `docs/ui-conventions.md` — ends
+the list item it sits in. oxfmt then reindents the rest of that item on **every** pass, so it
+is not idempotent there: `oxfmt` followed by `oxfmt --check` still fails, and running the
+formatter is not the fix. Keep the span whole on one line and indent the continuation to the
+list marker's width.
+
 There is **no unit-test runner**. The behavioural gate is `pnpm smoke:dist`, which builds,
 serves `dist/spa`, signs in for real, walks every route in the screen manifest, and fails on any
 console error, uncaught error, rendered `ErrorState`, unresolved route, or missing `<h1>`.

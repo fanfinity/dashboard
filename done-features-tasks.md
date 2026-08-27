@@ -4,6 +4,7 @@ Reverse-chronological, one line per entry: `- YYYY-MM-DD: <concise description>`
 whenever a feature or task is added, finished, or stopped — see CLAUDE.md's "Done-features log"
 section for the full convention. Cleared weekly after being shared to Slack.
 
+- 2026-08-27: Fixed the red CI on the ui-overhaul PR — a Markdown hard wrap had landed inside an inline code span in `docs/ui-conventions.md`, which ends the list item and makes oxfmt non-idempotent, so `oxfmt --check` failed even straight after running the formatter.
 - 2026-08-27: Fixed ~1850px of dead space under step 1 of /sources/new — a `@container` inside a Quasar wrapping column flex was measured at min-content height.
 - 2026-08-27: Submit rows across the create forms are now sticky to the bottom of the viewport via a new `StickyActionBar` primitive.
 - 2026-08-27: replaced the header account chip's bundled photo — which showed the same stranger's face to every signed-in user — with a stroke-drawn person mark on the brand tint.
