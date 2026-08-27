@@ -1,5 +1,13 @@
 <template>
-  <div class="flex flex-col gap-5">
+  <!-- GRID, NOT `flex flex-col` — this wrapper is load-bearing, not cosmetic.
+       Quasar's unlayered `.flex { flex-wrap: wrap }` outranks Tailwind's layered
+       `flex-nowrap` (CLAUDE.md collision #4), so `flex flex-col` here was a
+       *wrapping column* flex, and a `container-type: inline-size` child inside
+       one is measured at min-content height and keeps the answer: the 458px card
+       grid below rendered as a 2314px block, i.e. ~1850px of dead space under
+       step 1. Same failure as the `auto-fit` trap in collision #6, reached by a
+       different route. Grid `gap` has no Quasar counterpart, so it applies. -->
+  <div class="grid gap-5">
     <NoticeBanner
       tone="info"
       message="Not sure which one? Pick the closest match — you can add more sources later, and every option leads to the exact setup steps for that platform."

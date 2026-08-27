@@ -4,6 +4,8 @@ Reverse-chronological, one line per entry: `- YYYY-MM-DD: <concise description>`
 whenever a feature or task is added, finished, or stopped — see CLAUDE.md's "Done-features log"
 section for the full convention. Cleared weekly after being shared to Slack.
 
+- 2026-08-27: Fixed ~1850px of dead space under step 1 of /sources/new — a `@container` inside a Quasar wrapping column flex was measured at min-content height.
+- 2026-08-27: Submit rows across the create forms are now sticky to the bottom of the viewport via a new `StickyActionBar` primitive.
 - 2026-08-27: replaced the header account chip's bundled photo — which showed the same stranger's face to every signed-in user — with a stroke-drawn person mark on the brand tint.
 - 2026-08-27: fixed the spacing, alignment and icons on the source intent picker — redrew the six marks as real multi-element SVGs (the server rack read as a hamburger menu, the plug as a light bulb), and found two more Quasar/Tailwind cascade collisions doing it: `mt-*` on a `<p>` computes to zero so the cards' whole spacing rhythm had never rendered, and an `auto-fit` grid inflated 219px cards to 637px.
 - 2026-08-27: made the post-auth "setting up your account" transition a fixed 2.5s instead of a random 1.1–2s, so it is long enough to read rather than flashing past.

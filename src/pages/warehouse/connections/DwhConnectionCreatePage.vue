@@ -26,7 +26,7 @@
       @retry="load"
     />
 
-    <form v-else class="flex max-w-4xl flex-col gap-4" @submit.prevent="submit">
+    <form v-else class="grid max-w-4xl gap-4" @submit.prevent="submit">
       <!-- Nothing configured yet is not an empty screen — creating one is what
            this screen is for — so the "none yet" case is a notice, not an
            EmptyState. -->
@@ -224,7 +224,7 @@
         :message="testResult.message"
       />
 
-      <div class="flex flex-wrap items-center gap-2">
+      <StickyActionBar>
         <button
           type="submit"
           :disabled="saving"
@@ -250,7 +250,7 @@
         <p class="text-xs text-subtle"
           >Nothing is persisted yet — there is no backend behind this form.</p
         >
-      </div>
+      </StickyActionBar>
     </form>
   </q-page>
 </template>
@@ -265,6 +265,7 @@ import LoadingState from '@/components/ui/LoadingState.vue'
 import ErrorState from '@/components/ui/ErrorState.vue'
 import EmptyState from '@/components/ui/EmptyState.vue'
 import NoticeBanner from '@/components/ui/NoticeBanner.vue'
+import StickyActionBar from '@/components/ui/StickyActionBar.vue'
 import DwhConnectionTypePicker from '@/components/warehouse/connections/DwhConnectionTypePicker.vue'
 import {
   CONNECTION_TYPES,

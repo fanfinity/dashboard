@@ -41,7 +41,7 @@
       </template>
     </EmptyState>
 
-    <form v-else class="flex max-w-3xl flex-col gap-4" @submit.prevent="submit">
+    <form v-else class="grid max-w-3xl gap-4" @submit.prevent="submit">
       <FormSection
         title="Kind"
         description="Realtime attributes update as events land. Warehouse attributes are recomputed when their model refreshes."
@@ -277,7 +277,7 @@
         </FormField>
       </FormSection>
 
-      <div class="flex flex-wrap items-center gap-2">
+      <StickyActionBar>
         <button
           type="submit"
           :disabled="saving"
@@ -295,7 +295,7 @@
         <p class="text-xs text-subtle"
           >Nothing is persisted yet — there is no backend behind this form.</p
         >
-      </div>
+      </StickyActionBar>
     </form>
   </q-page>
 </template>
@@ -312,6 +312,7 @@ import ErrorState from '@/components/ui/ErrorState.vue'
 import EmptyState from '@/components/ui/EmptyState.vue'
 import SelectableCard from '@/components/ui/SelectableCard.vue'
 import StatusBadge from '@/components/ui/StatusBadge.vue'
+import StickyActionBar from '@/components/ui/StickyActionBar.vue'
 import AttributeDimensionsField from '@/components/profiles/attributes/AttributeDimensionsField.vue'
 import { useMockResource } from '@/composables/useMockResource'
 import {

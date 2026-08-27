@@ -42,7 +42,7 @@
       </template>
     </EmptyState>
 
-    <form v-else class="flex max-w-3xl flex-col gap-4" @submit.prevent="submit">
+    <form v-else class="grid max-w-3xl gap-4" @submit.prevent="submit">
       <FormSection
         title="Basics"
         description="How this sync appears in lists and in delivery logs."
@@ -226,7 +226,7 @@
         </FormField>
       </FormSection>
 
-      <div class="flex flex-wrap items-center gap-2">
+      <StickyActionBar>
         <button
           type="submit"
           :disabled="saving"
@@ -244,7 +244,7 @@
         <p class="text-xs text-subtle"
           >Nothing is persisted yet — there is no backend behind this form.</p
         >
-      </div>
+      </StickyActionBar>
     </form>
   </q-page>
 </template>
@@ -259,6 +259,7 @@ import LoadingState from '@/components/ui/LoadingState.vue'
 import ErrorState from '@/components/ui/ErrorState.vue'
 import EmptyState from '@/components/ui/EmptyState.vue'
 import NoticeBanner from '@/components/ui/NoticeBanner.vue'
+import StickyActionBar from '@/components/ui/StickyActionBar.vue'
 import {
   formatCount,
   modeLabel,

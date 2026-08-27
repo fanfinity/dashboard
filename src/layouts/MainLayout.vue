@@ -1,5 +1,13 @@
 <template>
-  <q-layout view="lHh Lpr lFf">
+  <!-- `--app-footer-h` is what lets a `sticky bottom-0` submit bar clear the
+       DemoModeBanner. That banner is a q-footer fixed to the viewport bottom,
+       and sticky offsets resolve against the viewport, not against the padding
+       q-page-container reserves for it — so without this every StickyActionBar
+       would dock underneath it in Demo mode. Zero the rest of the time. -->
+  <q-layout
+    view="lHh Lpr lFf"
+    :style="{ '--app-footer-h': isRealData ? '0px' : '36px' }"
+  >
     <!-- Sidebar -->
     <q-drawer
       v-model="leftDrawerOpen"

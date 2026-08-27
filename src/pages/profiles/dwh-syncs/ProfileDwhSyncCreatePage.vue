@@ -41,7 +41,7 @@
       </template>
     </EmptyState>
 
-    <form v-else class="flex max-w-4xl flex-col gap-4" @submit.prevent="submit">
+    <form v-else class="grid max-w-4xl gap-4" @submit.prevent="submit">
       <FormSection
         title="Basics"
         description="How this sync appears in lists and run logs."
@@ -226,7 +226,7 @@
 
       <NoticeBanner tone="info" title="What this will do" :message="summary" />
 
-      <div class="flex flex-wrap items-center gap-2">
+      <StickyActionBar>
         <button
           type="submit"
           :disabled="saving"
@@ -241,12 +241,11 @@
         >
           Cancel
         </button>
-      </div>
-
-      <p class="text-xs text-subtle"
-        >No backend is connected to this screen yet — creating a sync updates
-        this session only and is gone on reload.</p
-      >
+        <p class="min-w-0 flex-1 text-xs text-subtle"
+          >No backend is connected to this screen yet — creating a sync updates
+          this session only and is gone on reload.</p
+        >
+      </StickyActionBar>
     </form>
   </q-page>
 </template>
@@ -263,6 +262,7 @@ import NoticeBanner from '@/components/ui/NoticeBanner.vue'
 import LoadingState from '@/components/ui/LoadingState.vue'
 import ErrorState from '@/components/ui/ErrorState.vue'
 import EmptyState from '@/components/ui/EmptyState.vue'
+import StickyActionBar from '@/components/ui/StickyActionBar.vue'
 import ProfileDwhSyncColumnMap from '@/components/profiles/dwh-syncs/ProfileDwhSyncColumnMap.vue'
 import ProfileDwhSyncScheduleFields from '@/components/profiles/dwh-syncs/ProfileDwhSyncScheduleFields.vue'
 import {

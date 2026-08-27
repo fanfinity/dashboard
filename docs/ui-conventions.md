@@ -241,11 +241,60 @@ the smoke test can assert on a single selector across every route.
     `gap-3` against `p-5` is what makes a grid read as crowded rather than as a
     set of choices.
 
+13. **Never put an `@container` inside `class="flex flex-col"`.** Rule 10's
+    collision has a second, worse form. Quasar's unlayered `.flex` sets
+    `flex-wrap: wrap`, so `flex flex-col` is a _wrapping column_ flex — and a
+    child carrying `container-type: inline-size` inside one is measured at
+    min-content height and keeps the answer, exactly as rule 12's `auto-fit`
+    track does. Measured on `/sources/new`: the 458px intent-card grid rendered
+    as a **2314px** block, i.e. roughly 1850px of blank page under step 1, with
+    the cards themselves at a perfectly correct 219px. Setting `flex-wrap:
+nowrap` on the parent alone collapsed it to 458px and the document from
+    2762px to 906px.
+
+    Use `grid gap-N` for the wrapper instead. Grid `gap` has no Quasar
+    counterpart so it applies (rule 11), and a grid parent measures the
+    container child at its content height. `SourceIntentPicker.vue` is the
+    worked example.
+
+    The tell is a page that scrolls far past its content with nothing in the
+    gap, where every individual element measures correctly. Check the ancestor
+    chain of the `@container`, not the cards.
+
+14. **A form's submit row is `StickyActionBar`, not a bare `<div class="flex">`.**
+    House rule, not a per-screen choice: a long create form used to hide its own
+    Create button below the fold, so submitting meant scrolling to the end and
+    hoping. The bar is `sticky bottom-[var(--app-footer-h,0px)]` — pulled up into
+    view while its natural position is below the fold, settling exactly at the
+    end of the form once you reach it.
+
+    Three things it needs from the screen:
+
+    - **Put it last in the `<form>`.** Sticky resolves against the parent's
+      padding box, so the form is the travel range. A trailing "nothing is
+      persisted yet" note goes _inside_ the bar (`min-w-0 flex-1`), not after it.
+    - **The form container must be `grid`, not `flex flex-col`** — same reason as
+      rule 13, and a wrapping column flex resolves the bar's position per flex
+      line.
+    - **`align="end"`** for the single-Continue step of a guided flow;
+      the default `start` for the usual primary-then-secondary row.
+
+    The offset is a variable rather than `0` because `DemoModeBanner` is a
+    `q-footer` fixed to the viewport bottom, and sticky offsets resolve against
+    the viewport, not against the padding `q-page-container` reserves for it.
+    `MainLayout` publishes the banner's height on `.q-layout` as
+    `--app-footer-h`; it is `0px` in real-data mode.
+
+    Not every `type="submit"` wants this. `/login` is a centred card outside
+    `MainLayout`, Profile search is a filter row rather than a create, and the
+    Settings panels each hold several independent forms — stacking a sticky bar
+    per panel would dock several of them at once.
+
 ---
 
 ## House rules for screens
 
-Rules 1–10 are about the primitives. These are about how a screen uses them, and
+Rules 1–14 are about the primitives. These are about how a screen uses them, and
 every one of them is a bug wave 1 hit or narrowly avoided.
 
 ### A missing `:id` is empty, not an error

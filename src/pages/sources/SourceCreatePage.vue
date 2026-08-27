@@ -59,24 +59,24 @@
     </EmptyState>
 
     <!-- STEP 1 — what are you connecting? -->
-    <div v-else-if="step === 'intent'" class="flex max-w-5xl flex-col gap-5">
+    <div v-else-if="step === 'intent'" class="grid max-w-5xl gap-5">
       <SourceIntentPicker
         v-model="intent"
         :available-template-ids="templateIds"
       />
 
-      <div class="flex items-center justify-end gap-3">
+      <StickyActionBar align="end">
         <p v-if="!intent" class="text-xs text-subtle">Pick one to continue.</p>
         <SfereButton :disabled="!intent" @click="continueFromIntent">{{
           continueLabel
         }}</SfereButton>
-      </div>
+      </StickyActionBar>
     </div>
 
     <!-- STEP 2 — name it and set it up. -->
     <form
       v-else-if="step === 'configure'"
-      class="flex max-w-4xl flex-col gap-4"
+      class="grid max-w-4xl gap-4"
       @submit.prevent="submit"
     >
       <!-- One template behind the chosen intent: settled, shown as a fact with a
@@ -247,22 +247,22 @@
         </div>
       </FormSection>
 
-      <div class="flex flex-wrap items-center gap-3">
+      <StickyActionBar>
         <SfereButton type="submit" :loading="saving">{{
           saving ? 'Creating…' : 'Create source →'
         }}</SfereButton>
         <SfereButton variant="secondary" @click="backToIntent"
           >Back</SfereButton
         >
-        <p v-if="!isReal" class="text-xs text-subtle"
+        <p v-if="!isReal" class="min-w-0 flex-1 text-xs text-subtle"
           >Demo data mode — this will walk you through setup but save nothing.
           Switch Settings → Data source to real to persist.</p
         >
-      </div>
+      </StickyActionBar>
     </form>
 
     <!-- STEP 3 — install and confirm. -->
-    <div v-else class="flex max-w-4xl flex-col gap-4">
+    <div v-else class="grid max-w-4xl gap-4">
       <NoticeBanner
         v-if="preview"
         tone="warn"
@@ -277,7 +277,7 @@
         @verified="onVerified"
       />
 
-      <div class="flex flex-wrap items-center gap-3">
+      <StickyActionBar>
         <SfereButton :to="{ name: 'destinations-new' }"
           >Add a destination →</SfereButton
         >
@@ -290,7 +290,7 @@
         <SfereButton variant="ghost" :to="{ name: 'sources' }"
           >I'll finish this later</SfereButton
         >
-      </div>
+      </StickyActionBar>
     </div>
   </q-page>
 </template>
@@ -310,6 +310,7 @@ import SfereButton from '@/components/ui/SfereButton.vue'
 import SfereInput from '@/components/ui/SfereInput.vue'
 import SfereTextarea from '@/components/ui/SfereTextarea.vue'
 import SfereToggle from '@/components/ui/SfereToggle.vue'
+import StickyActionBar from '@/components/ui/StickyActionBar.vue'
 import SetupStepper from '@/components/sources/SetupStepper.vue'
 import SourceIntentPicker from '@/components/sources/SourceIntentPicker.vue'
 import SourceInstallGuide from '@/components/sources/SourceInstallGuide.vue'

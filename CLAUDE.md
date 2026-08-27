@@ -350,19 +350,20 @@ attribute and cannot take the colour of the chip they sit in.
 
 ## UI primitives
 
-`src/components/ui/` is **the** component kit — 39 components, all built on the Sfere token
+`src/components/ui/` is **the** component kit — 40 components, all built on the Sfere token
 layer. **Use them; do not re-implement their markup and do not copy their class strings into a
 page.** Read `docs/ui-conventions.md` before writing any new screen.
 
 Two naming schemes live in the folder, for a reason worth knowing:
 
-- **16 screen primitives keep the names the screens already imported** — `PageHeader`,
+- **17 screen primitives carry plain, unprefixed names** — `PageHeader`,
   `DataTable`, `EmptyState`, `ErrorState`, `LoadingState`, `StatusBadge`, `CardPanel`,
   `NoticeBanner`, `StatCard`, `TabNav`, `FormField`, `FormSection`, `ConfirmDialog`,
-  `DefinitionList`, `SelectableCard`, `ToolbarSearch`. Keeping the filenames is what let the
-  Sfere implementations replace the originals across 104 files without rewriting 571 imports.
-  A few of those names are now worse than what they hold (`CardPanel` is a card, `NoticeBanner`
-  is an alert); that was the price of the swap.
+  `DefinitionList`, `SelectableCard`, `ToolbarSearch` and `StickyActionBar`. Sixteen of them
+  keep the names the screens already imported, which is what let the Sfere implementations
+  replace the originals across 104 files without rewriting 571 imports; `StickyActionBar` is
+  newer and simply describes what it does. A few of the older names are now worse than what
+  they hold (`CardPanel` is a card, `NoticeBanner` is an alert); that was the price of the swap.
 - **23 keep their `Sfere*` names** — `SfereButton`, `SfereInput`, `SfereTable`, `SfereSection`,
   `SfereFeatureCard` and friends. These have no pre-Sfere counterpart, and the prefix keeps
   `SfereTable` distinguishable from a bare `<table>` and from `QTable`.
@@ -374,7 +375,7 @@ would leave the only behavioural gate in the repo with nothing to assert on.
 ## The Sfere design system
 
 `src/css/sfere.css` holds the token layer, measured off the live marketing site
-(<https://sfere.io>) rather than eyeballed, and `src/components/ui/` holds the 39-component kit
+(<https://sfere.io>) rather than eyeballed, and `src/components/ui/` holds the 40-component kit
 built on it. Browse the whole thing at **`#/design-system`** (hash mode — not `/design-system`);
 no sign-in required.
 

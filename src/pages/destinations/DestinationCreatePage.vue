@@ -58,7 +58,7 @@
     />
 
     <!-- Step 2 — configure the chosen template. -->
-    <form v-else class="flex max-w-2xl flex-col gap-4" @submit.prevent="submit">
+    <form v-else class="grid max-w-2xl gap-4" @submit.prevent="submit">
       <FormSection
         title="Basics"
         description="How this destination appears in lists and pipe pickers."
@@ -147,7 +147,7 @@
         </FormField>
       </FormSection>
 
-      <div class="flex flex-wrap items-center gap-2">
+      <StickyActionBar>
         <button
           type="submit"
           :disabled="saving"
@@ -162,12 +162,11 @@
         >
           Cancel
         </button>
-      </div>
-
-      <p v-if="!isReal" class="text-xs text-subtle"
-        >Local preview — switch Settings → Data source to “real” to provision a
-        ClickHouse destination on the backend.</p
-      >
+        <p v-if="!isReal" class="min-w-0 flex-1 text-xs text-subtle"
+          >Local preview — switch Settings → Data source to “real” to provision
+          a ClickHouse destination on the backend.</p
+        >
+      </StickyActionBar>
     </form>
   </q-page>
 </template>
@@ -183,6 +182,7 @@ import LoadingState from '@/components/ui/LoadingState.vue'
 import ErrorState from '@/components/ui/ErrorState.vue'
 import EmptyState from '@/components/ui/EmptyState.vue'
 import NoticeBanner from '@/components/ui/NoticeBanner.vue'
+import StickyActionBar from '@/components/ui/StickyActionBar.vue'
 import DestinationCatalogPicker from '@/components/destinations/DestinationCatalogPicker.vue'
 import DestinationParamFields from '@/components/destinations/DestinationParamFields.vue'
 import {
