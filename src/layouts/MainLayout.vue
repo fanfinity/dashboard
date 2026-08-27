@@ -538,6 +538,23 @@ const navGroups = [
       }
     ]
   },
+  // ACCOUNT is who and how much. It sits directly after FANS — above the four
+  // not-yet-built sections rather than below them — because those four are the
+  // longest part of the sidebar and burying a live row under them means Team and
+  // Billing can only be reached by scrolling past a wall of Soon pills.
+  {
+    key: 'team',
+    caption: 'ACCOUNT',
+    label: 'Team & roles',
+    icon: icContacts,
+    to: '/team'
+  },
+  {
+    key: 'billing',
+    label: 'Billing',
+    icon: icActivation,
+    to: '/billing'
+  },
   {
     key: 'audiences',
     caption: 'ACTIVATE',

@@ -19,7 +19,13 @@
     </div>
 
     <div class="flex shrink-0 items-center justify-center px-1">
-      <span class="inline-block rotate-90 text-subtle sm:rotate-0">→</span>
+      <!-- `max-sm:rotate-90`, not `rotate-90 sm:rotate-0`. Quasar ships an
+           unlayered `.rotate-90 { transform: rotate(90deg) }`, so the `sm:`
+           reset never won and the arrow pointed DOWN between three
+           side-by-side boxes at every width. Same shape of bug as a bare
+           `hidden` — use the inverse variant, which names a class Quasar does
+           not define. -->
+      <span class="inline-block text-subtle max-sm:rotate-90">→</span>
     </div>
 
     <div
@@ -47,7 +53,13 @@
     </div>
 
     <div class="flex shrink-0 items-center justify-center px-1">
-      <span class="inline-block rotate-90 text-subtle sm:rotate-0">→</span>
+      <!-- `max-sm:rotate-90`, not `rotate-90 sm:rotate-0`. Quasar ships an
+           unlayered `.rotate-90 { transform: rotate(90deg) }`, so the `sm:`
+           reset never won and the arrow pointed DOWN between three
+           side-by-side boxes at every width. Same shape of bug as a bare
+           `hidden` — use the inverse variant, which names a class Quasar does
+           not define. -->
+      <span class="inline-block text-subtle max-sm:rotate-90">→</span>
     </div>
 
     <div

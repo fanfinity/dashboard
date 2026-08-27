@@ -31,6 +31,22 @@
       </template>
     </PageHeader>
 
+    <!-- The setup tracker sits above every other state, including the loading
+         and error branches below: it reads three list endpoints of its own, so
+         it can be useful precisely when the dashboard aggregate is not. This is
+         the canonical progress surface — Sources, Destinations and Pipes each
+         show a one-line reminder pointing back here. -->
+    <SetupProgressPanel
+      v-if="setupVisible"
+      class="mb-4"
+      :steps="setupSteps"
+      :done-count="setupDone"
+      :total="setupTotal"
+      :complete="setupComplete"
+      :unavailable="setupUnavailable"
+      @dismiss="dismissSetup"
+    />
+
     <!-- 1. Loading -->
     <div v-if="showSkeleton" class="flex flex-col gap-4">
       <LoadingState variant="grid" :rows="4" />
@@ -45,32 +61,15 @@
       @retry="refresh"
     />
 
-    <!-- 3. Empty — nothing configured yet. This is a first run, not a fault. -->
+    <!-- 3. Empty — nothing configured yet. This is a first run, not a fault.
+         The three-step call to action that used to live here is now
+         SetupProgressPanel above, which knows which of the three are actually
+         done; this says only what the *metrics* are waiting for. -->
     <EmptyState
       v-else-if="isEmpty"
       title="No data is flowing yet"
-      description="Sfere collects fan signals from a source, routes them through a pipe, and delivers them to a destination. Set up the three and this screen fills in."
-    >
-      <template #cta>
-        <div class="flex flex-wrap items-center justify-center gap-2">
-          <router-link
-            :to="{ name: 'sources-new' }"
-            class="flex h-9 items-center gap-1.5 rounded-lg bg-brand px-3.5 text-sm font-medium text-white shadow-sm hover:opacity-90"
-            >1. Connect a source</router-link
-          >
-          <router-link
-            :to="{ name: 'destinations-new' }"
-            class="flex h-9 items-center gap-1.5 rounded-lg border border-line2 bg-white px-3 text-sm text-ink shadow-sm hover:bg-fill"
-            >2. Add a destination</router-link
-          >
-          <router-link
-            :to="{ name: 'pipes-new' }"
-            class="flex h-9 items-center gap-1.5 rounded-lg border border-line2 bg-white px-3 text-sm text-ink shadow-sm hover:bg-fill"
-            >3. Create a pipe</router-link
-          >
-        </div>
-      </template>
-    </EmptyState>
+      :description="emptyDescription"
+    />
 
     <!-- 4. Populated -->
     <div v-else class="flex flex-col gap-4">
@@ -213,6 +212,7 @@ import LoadingState from '@/components/ui/LoadingState.vue'
 import PageHeader from '@/components/ui/PageHeader.vue'
 import StatCard from '@/components/ui/StatCard.vue'
 import ActivityList from '@/components/shell/ActivityList.vue'
+import SetupProgressPanel from '@/components/shell/SetupProgressPanel.vue'
 import PipelineFlowPanel from '@/components/shell/PipelineFlowPanel.vue'
 import ThroughputChart from '@/components/shell/ThroughputChart.vue'
 import {
@@ -221,6 +221,7 @@ import {
   formatNumber,
   useDashboardHome
 } from '@/composables/useDashboardHome'
+import { useSetupProgress } from '@/composables/useSetupProgress'
 
 const {
   loading,
@@ -239,6 +240,38 @@ const {
   isEmpty
 } = useDashboardHome()
 
+// Setup progress is its own three reads, deliberately separate from the
+// dashboard aggregate — see useSetupProgress for why it is derived rather than
+// stored.
+const {
+  steps: setupSteps,
+  doneCount: setupDone,
+  total: setupTotal,
+  complete: setupComplete,
+  unavailable: setupUnavailable,
+  loaded: setupLoaded,
+  load: loadSetup
+} = useSetupProgress()
+
+// Dismissal is per-browser and only offered once setup is complete, so nobody
+// can hide the tracker while it still has something to tell them. It is not
+// per-account state worth a backend field: the panel is a nudge, and a nudge
+// someone has read is a nudge they can put away.
+const SETUP_DISMISS_KEY = 'sfere_setup_tracker_dismissed'
+const setupDismissed = ref(localStorage.getItem(SETUP_DISMISS_KEY) === '1')
+
+const setupVisible = computed(
+  () =>
+    setupLoaded.value &&
+    !setupUnavailable.value &&
+    !(setupComplete.value && setupDismissed.value)
+)
+
+function dismissSetup() {
+  localStorage.setItem(SETUP_DISMISS_KEY, '1')
+  setupDismissed.value = true
+}
+
 // The skeleton is for the first paint only — a manual refresh keeps the
 // populated screen on-screen rather than collapsing it back to grey bars.
 const loaded = ref(false)
@@ -246,9 +279,18 @@ const loaded = ref(false)
 const showSkeleton = computed(() => loading.value && !loaded.value)
 
 async function refresh() {
-  await load()
+  await Promise.all([load(), loadSetup()])
   loaded.value = true
 }
+
+// What the metrics are waiting for, which is not the same question the tracker
+// answers: a workspace can have all three pieces and still be waiting for the
+// first event to arrive.
+const emptyDescription = computed(() =>
+  setupComplete.value
+    ? 'Your source, destination and pipe are all in place — this fills in as soon as the first events arrive.'
+    : 'Finish the setup steps above and this screen fills in with live throughput, errors and profiles.'
+)
 
 const subtitle = computed(() => {
   const at = formatClock(updatedAt.value)

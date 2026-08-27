@@ -14,6 +14,8 @@
       :placeholder="placeholder"
       :disabled="disabled"
       :readonly="readonly"
+      :name="name || undefined"
+      :autocomplete="autocomplete || undefined"
       :aria-invalid="invalid ? 'true' : undefined"
       :class="classes"
       @input="emit('update:modelValue', $event.target.value)"
@@ -46,6 +48,13 @@ const props = defineProps({
   disabled: { type: Boolean, default: false },
   readonly: { type: Boolean, default: false },
   invalid: { type: Boolean, default: false },
+  // Declared props, not attribute fallthrough: the root element here is the
+  // positioning wrapper for the leading/trailing slots, so a bare
+  // `autocomplete="email"` on the component would land on that <div> and do
+  // nothing. A login form silently losing password-manager autofill is exactly
+  // the kind of bug that never gets reported.
+  name: { type: String, default: '' },
+  autocomplete: { type: String, default: '' },
   onDark: { type: Boolean, default: false }
 })
 

@@ -21,6 +21,16 @@
       </template>
     </PageHeader>
 
+    <!-- Where this screen sits in first-run setup. One line only; the
+         full tracker is on the Dashboard, deliberately in one place. -->
+    <SetupReminderStrip
+      step="pipe"
+      :steps="setupSteps"
+      :total="setupTotal"
+      :complete="setupComplete"
+      :unavailable="setupUnavailable"
+    />
+
     <div
       v-if="!loading && !error && pipes.length"
       class="mb-5 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4"
@@ -174,6 +184,8 @@ import { computed, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useQuasar } from 'quasar'
 import PageHeader from '@/components/ui/PageHeader.vue'
+import SetupReminderStrip from '@/components/shell/SetupReminderStrip.vue'
+import { useSetupProgress } from '@/composables/useSetupProgress'
 import DataTable from '@/components/ui/DataTable.vue'
 import EmptyState from '@/components/ui/EmptyState.vue'
 import ErrorState from '@/components/ui/ErrorState.vue'
@@ -186,6 +198,17 @@ import PipeTopology from '@/components/pipes/PipeTopology.vue'
 import { useDiagram } from '@/composables/useDiagram'
 import { formatCount, formatDate, usePipes } from '@/composables/usePipes'
 import { notifyMutationResult } from '@/composables/useMutationFeedback'
+
+// The reminder strip needs the same three counts the Dashboard tracker
+// derives. Read here rather than passed down: this page has no parent to
+// pass it, and the reads are cached by the browser for the round trip.
+const {
+  steps: setupSteps,
+  total: setupTotal,
+  complete: setupComplete,
+  unavailable: setupUnavailable,
+  load: loadSetupProgress
+} = useSetupProgress()
 
 const router = useRouter()
 const $q = useQuasar()
@@ -282,5 +305,10 @@ async function toggle(pipe) {
   if (mirrored) mirrored.isEnabled = next
 }
 
-onMounted(load)
+onMounted(() => {
+  load()
+  // Deliberately not awaited alongside `load()`: the strip is secondary, and a
+  // slow setup read must not hold the table's first paint.
+  loadSetupProgress()
+})
 </script>

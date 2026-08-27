@@ -109,7 +109,9 @@ const CORE_KEYS = [
   'monitoring',
   'profiles',
   'secrets',
-  'authorizations'
+  'authorizations',
+  'team',
+  'billing'
 ]
 
 const sections = computed(() => {

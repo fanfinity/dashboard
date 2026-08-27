@@ -49,37 +49,13 @@
       </template>
     </EmptyState>
 
-    <!-- Step 1 — template picker. -->
-    <div v-else-if="!selected" class="flex flex-col gap-4">
-      <ToolbarSearch v-model="query" placeholder="Search templates..." />
-
-      <div
-        v-if="visibleTemplates.length"
-        class="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3"
-      >
-        <DestinationTemplateCard
-          v-for="t in visibleTemplates"
-          :key="t.id"
-          :template="t"
-          @select="pick"
-        />
-      </div>
-
-      <EmptyState
-        v-else
-        title="No templates match your search"
-        :description="`None of the ${templates.length} templates match “${query}”.`"
-      >
-        <template #cta>
-          <button
-            class="rounded-lg border border-line2 bg-white px-3 py-1.5 text-sm font-medium text-brand hover:bg-fill"
-            @click="query = ''"
-          >
-            Clear search
-          </button>
-        </template>
-      </EmptyState>
-    </div>
+    <!-- Step 1 — the catalog, grouped by category. -->
+    <DestinationCatalogPicker
+      v-else-if="!selected"
+      v-model:query="query"
+      :templates="templates"
+      @select="pick"
+    />
 
     <!-- Step 2 — configure the chosen template. -->
     <form v-else class="flex max-w-2xl flex-col gap-4" @submit.prevent="submit">
@@ -122,6 +98,16 @@
           </div>
         </FormField>
       </FormSection>
+
+      <!-- Said before the credentials form rather than after saving: a paid
+           template is a plan change, and finding that out at the end is the
+           worst moment to find it out. -->
+      <NoticeBanner
+        v-if="selected.licensing === 'addon'"
+        tone="warn"
+        title="This destination is a paid add-on"
+        :message="`${selected.name} is billed on top of your plan. Creating it here configures the connection; the plan change is confirmed on Billing before anything is charged.`"
+      />
 
       <FormSection
         v-if="paramKeys.length"
@@ -193,11 +179,11 @@ import PageHeader from '@/components/ui/PageHeader.vue'
 import FormSection from '@/components/ui/FormSection.vue'
 import FormField from '@/components/ui/FormField.vue'
 import StatusBadge from '@/components/ui/StatusBadge.vue'
-import ToolbarSearch from '@/components/ui/ToolbarSearch.vue'
 import LoadingState from '@/components/ui/LoadingState.vue'
 import ErrorState from '@/components/ui/ErrorState.vue'
 import EmptyState from '@/components/ui/EmptyState.vue'
-import DestinationTemplateCard from '@/components/destinations/DestinationTemplateCard.vue'
+import NoticeBanner from '@/components/ui/NoticeBanner.vue'
+import DestinationCatalogPicker from '@/components/destinations/DestinationCatalogPicker.vue'
 import DestinationParamFields from '@/components/destinations/DestinationParamFields.vue'
 import {
   useDestinationTemplates,
@@ -219,18 +205,6 @@ const saving = ref(false)
 
 const form = ref({ name: '', description: '', params: {}, secrets: {} })
 const errors = ref(blankErrors())
-
-const visibleTemplates = computed(() => {
-  const q = query.value.trim().toLowerCase()
-  if (!q) return templates.value
-  return templates.value.filter(t =>
-    [t.name, t.description, ...(t.tags || [])].some(v =>
-      String(v ?? '')
-        .toLowerCase()
-        .includes(q)
-    )
-  )
-})
 
 // The template's JSON Schema drives both the rendered fields and the validation
 // below, so a template that gains a parameter needs no code change here.

@@ -1,7 +1,11 @@
 <template>
   <q-item
     clickable
-    class="min-h-0! rounded-xl! p-4! flex items-start gap-3 border border-line2 bg-white shadow-sm hover:shadow-md transition-shadow"
+    :aria-pressed="String(selected)"
+    class="min-h-0! rounded-xl! p-4! flex items-start gap-3 border bg-white shadow-sm hover:shadow-md transition-shadow"
+    :class="
+      selected ? 'border-sfere-400! ring-2 ring-sfere-500/25' : 'border-line2'
+    "
     @click="emit('select', connector)"
   >
     <!-- Logo -->
@@ -50,7 +54,12 @@ import icSources from '@/assets/dashboard/ic-sources.svg'
 // under `img-src`. Either way the bundled icon is the fallback, so a missing or
 // broken image degrades to exactly what it did before.
 const props = defineProps({
-  connector: { type: Object, required: true }
+  connector: { type: Object, required: true },
+  // Marked while its connect form is open below the grid, so it is obvious which
+  // of two dozen cards the form belongs to. `border-*!` carries the important
+  // suffix because the base class list already sets a border colour on the same
+  // element and Quasar's q-item styling is unlayered.
+  selected: { type: Boolean, default: false }
 })
 
 const emit = defineEmits(['select'])

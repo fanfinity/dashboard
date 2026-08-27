@@ -173,6 +173,22 @@ export const FEATURES = [
     label: 'Authorizations',
     description: 'OAuth grants and per-integration authorizations.',
     enabled: true
+  },
+  // The ACCOUNT section. Team and Billing are two answers to "who and how much",
+  // and they are separate keys rather than one `account` key because Billing is
+  // role-restricted in a way the roster is not — a workspace can reasonably show
+  // the member list to everyone and the invoices to nobody but the Owner.
+  {
+    key: 'team',
+    label: 'Team',
+    description: 'Members, roles and the domain-match approval queue.',
+    enabled: true
+  },
+  {
+    key: 'billing',
+    label: 'Billing',
+    description: 'Plan, add-ons, payment method and invoice history.',
+    enabled: true
   }
 ]
 

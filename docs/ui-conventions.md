@@ -136,11 +136,41 @@ the smoke test can assert on a single selector across every route.
    `DataTable` does this for you. A form or detail page must do it by hand with
    `LoadingState` / `ErrorState` / `EmptyState`.
 
+10. **`class="flex"` wraps, and `flex-nowrap` cannot stop it.** Quasar ships an
+    unlayered `.flex { display: flex; flex-wrap: wrap }`, so every `flex` in this
+    repo is a _wrapping_ flex container, and Tailwind's layered `flex-nowrap`
+    loses to it the same way a layered `text-2xl` loses to Quasar's `h2`. The
+    symptom is a `justify-between` row where the label suddenly sits **above**
+    the control instead of beside it — and it only appears once the text is long
+    enough, which is why it usually ships.
+
+    Give the child that should absorb the slack `min-w-0 flex-1`. That sets
+    `flex-basis: 0`, which removes the wrap decision entirely rather than
+    fighting the cascade:
+
+    ```html
+    <!-- wrong: wraps as soon as the paragraph is wide -->
+    <div class="flex items-start justify-between gap-4">
+      <div><p>A long explanation of what this toggle does…</p></div>
+      <SfereToggle v-model="on" />
+    </div>
+
+    <!-- right -->
+    <div class="flex items-start justify-between gap-4">
+      <div class="min-w-0 flex-1"><p>A long explanation…</p></div>
+      <SfereToggle v-model="on" />
+    </div>
+    ```
+
+    `flex-nowrap!` would also work, but `min-w-0 flex-1` is what you want anyway:
+    it makes `truncate` behave on the child, and it says which side is meant to
+    give way. Use `shrink-0` on the side that must keep its intrinsic width.
+
 ---
 
 ## House rules for screens
 
-Rules 1–9 are about the primitives. These are about how a screen uses them, and
+Rules 1–10 are about the primitives. These are about how a screen uses them, and
 every one of them is a bug wave 1 hit or narrowly avoided.
 
 ### A missing `:id` is empty, not an error

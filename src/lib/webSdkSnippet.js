@@ -3,9 +3,10 @@
 // backend generates (a Jitsu browser key, keyId:secret) when the source is
 // created.
 //
-// Lives in its own module because both SourceIngestPanel and WebSdkSetupPanel
-// render it, and an SFC script block cannot contain a literal closing script
-// tag — the parser ends the block at the first one, string or comment included.
+// Lives in its own module because three callers render it — SourceIngestPanel,
+// WebSdkSetupPanel and sourceInstallSnippets — and because an SFC script block
+// cannot contain a literal closing script tag: the parser ends the block at the
+// first one, string or comment included.
 
 export const JITSU_SNIPPET_HOST = 'https://console.fanfinity.io'
 

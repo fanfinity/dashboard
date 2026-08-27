@@ -103,13 +103,39 @@
         <DefinitionList :items="facts" :columns="2" />
       </CardPanel>
 
-      <SourceIngestPanel
-        v-else-if="tab === 'ingest'"
+      <!-- The same guide the create flow's step 3 renders. One component, two
+           entry points: the person who closed the tab mid-setup and the person
+           coming back a week later want exactly the same page. -->
+      <SourceInstallGuide
+        v-else-if="tab === 'setup'"
         :source="source"
         @copy="copyValue"
       />
 
       <SourceEventsPanel v-else-if="tab === 'events'" :source="source" />
+
+      <SourcePipesPanel
+        v-else-if="tab === 'pipes'"
+        :source="source"
+        :pipes="sourcePipes"
+        :loading="pipesLoading"
+        :error="pipesError"
+        :api-missing="pipesApiMissing"
+        @retry="loadPipes"
+        @open="openPipe"
+      />
+
+      <SourceSettingsPanel
+        v-else-if="tab === 'settings'"
+        :source="source"
+        @save="saveDetails"
+        @copy="copyValue"
+        @rotate="onRotate"
+        @revoke="onRevoke"
+        @issue-server-key="onIssueServerKey"
+        @strict-mode="onStrictMode"
+        @delete="confirmDelete = true"
+      />
 
       <SourceSyncPanel v-else-if="tab === 'sync'" :source="source" />
 
@@ -181,8 +207,10 @@ import LoadingState from '@/components/ui/LoadingState.vue'
 import ErrorState from '@/components/ui/ErrorState.vue'
 import EmptyState from '@/components/ui/EmptyState.vue'
 import ConfirmDialog from '@/components/ui/ConfirmDialog.vue'
-import SourceIngestPanel from '@/components/sources/SourceIngestPanel.vue'
+import SourceInstallGuide from '@/components/sources/SourceInstallGuide.vue'
 import SourceEventsPanel from '@/components/sources/SourceEventsPanel.vue'
+import SourcePipesPanel from '@/components/sources/SourcePipesPanel.vue'
+import SourceSettingsPanel from '@/components/sources/SourceSettingsPanel.vue'
 import SourceSyncPanel from '@/components/sources/SourceSyncPanel.vue'
 import ZidSetupWizard from '@/components/sources/ZidSetupWizard.vue'
 import WebSdkSetupPanel from '@/components/sources/WebSdkSetupPanel.vue'
@@ -196,6 +224,7 @@ import {
   useSources
 } from '@/composables/useSources'
 import { notifyMutationResult } from '@/composables/useMutationFeedback'
+import { usePipes } from '@/composables/usePipes'
 
 const route = useRoute()
 const router = useRouter()
@@ -230,13 +259,23 @@ const zidAppUrl = import.meta.env.VITE_ZID_APP_URL || ''
 const tab = ref('overview')
 const confirmDelete = ref(false)
 
-const tabs = [
+// Ordered as a setup journey, not alphabetically: what is it → how do I wire it
+// → is anything arriving → where does it go → the knobs. "Ingest" became
+// "Setup instructions" because that is what someone opening this tab is looking
+// for, and it now renders the full multi-platform guide rather than one snippet.
+const tabs = computed(() => [
   { key: 'overview', label: 'Overview' },
-  { key: 'ingest', label: 'Ingest' },
-  { key: 'events', label: 'Events' },
+  { key: 'setup', label: 'Setup instructions' },
+  { key: 'events', label: 'Live events' },
+  {
+    key: 'pipes',
+    label: 'Destinations & pipes',
+    count: sourcePipes.value.length
+  },
   { key: 'sync', label: 'Syncs' },
+  { key: 'settings', label: 'Settings' },
   { key: 'template', label: 'Template' }
-]
+])
 
 // The Zid go-live steps (authorize → connect webhooks → first sync) hit the
 // real backend, so only offer them in real mode for an unsynced Zid source.
@@ -254,10 +293,25 @@ const showWebSdkSetup = computed(
   () => isReal.value && source.value?.sourceType === 'web'
 )
 
+// The workspace's pipes, filtered to this source. Read here rather than in
+// SourcePipesPanel so switching tabs does not refetch, and so the tab can carry
+// a live count in its label.
+const {
+  pipes: allPipes,
+  loading: pipesLoading,
+  error: pipesError,
+  apiMissing: pipesApiMissing,
+  load: loadPipes
+} = usePipes()
+
 // Resolved off the loaded list rather than a per-id fetch: the mock layer is one
 // JSON file, and a list already in memory is the same data.
 const source = computed(
   () => sources.value.find(s => s.id === route.params.id) ?? null
+)
+
+const sourcePipes = computed(() =>
+  source.value ? allPipes.value.filter(p => p.sourceId === source.value.id) : []
 )
 
 const template = computed(() =>
@@ -364,8 +418,38 @@ async function copyValue({ label, value }) {
   $q.notify({ message, color: 'dark', timeout: 2500 })
 }
 
+function openPipe(pipe) {
+  router.push({ name: 'pipes-detail', params: { id: pipe.id } })
+}
+
+// Renaming a source has no endpoint yet — there is no PATCH for name or
+// description, only for `is_enabled`. Rather than fake a save, say what would
+// happen. Same for the three key actions and strict mode below: each is a real
+// product decision with no backend behind it, and a silent no-op that looks
+// like a success is the one outcome worth avoiding.
+function saveDetails({ name }) {
+  notifyLocal(`“${name}” would be saved`)
+}
+
+function onRotate(kind) {
+  notifyLocal(`The ${kind} write key would be rotated`)
+}
+
+function onRevoke() {
+  notifyLocal('That key would be revoked')
+}
+
+function onIssueServerKey() {
+  notifyLocal('A server-to-server key would be issued')
+}
+
+function onStrictMode(value) {
+  notifyLocal(`Strict mode would be turned ${value ? 'on' : 'off'}`)
+}
+
 onMounted(() => {
   load()
   loadTemplates()
+  loadPipes()
 })
 </script>
