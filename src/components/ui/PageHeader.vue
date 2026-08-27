@@ -1,6 +1,13 @@
 <template>
   <div class="mb-6 flex flex-wrap items-start justify-between gap-4">
-    <div class="min-w-0">
+    <!-- `min-w-0 flex-1` on the title block and `shrink-0` on the actions:
+         without them the title's max-content width claims the whole row and the
+         action group drops to a second line — Quasar's unlayered
+         `.flex { flex-wrap: wrap }` beats Tailwind's `flex-nowrap`, so the wrap
+         has to be removed at the flex-basis level instead. This is the primitive
+         every screen renders, so the bug was every screen's. See
+         docs/ui-conventions.md rule 10. -->
+    <div class="min-w-0 flex-1">
       <SfereEyebrow
         v-if="eyebrow"
         :label="eyebrow"
@@ -17,7 +24,10 @@
       </p>
     </div>
 
-    <div v-if="$slots.actions" class="flex flex-wrap items-center gap-2">
+    <div
+      v-if="$slots.actions"
+      class="flex shrink-0 flex-wrap items-center gap-2"
+    >
       <slot name="actions" />
     </div>
   </div>

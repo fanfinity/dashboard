@@ -1,5 +1,13 @@
 <template>
-  <q-layout view="lHh Lpr lFf">
+  <!-- `--app-footer-h` is what lets a `sticky bottom-0` submit bar clear the
+       DemoModeBanner. That banner is a q-footer fixed to the viewport bottom,
+       and sticky offsets resolve against the viewport, not against the padding
+       q-page-container reserves for it — so without this every StickyActionBar
+       would dock underneath it in Demo mode. Zero the rest of the time. -->
+  <q-layout
+    view="lHh Lpr lFf"
+    :style="{ '--app-footer-h': isRealData ? '0px' : '36px' }"
+  >
     <!-- Sidebar -->
     <q-drawer
       v-model="leftDrawerOpen"
@@ -277,8 +285,31 @@
             <img :src="icHelp" alt="Help" class="size-5" />
           </q-btn>
 
-          <q-avatar size="32px" class="cursor-pointer">
-            <img :src="avatar" alt="Account" />
+          <!-- A silhouette here, initials on /team: the roster is a wall of rows
+               where identical grey heads would carry no information (see
+               SfereAvatar.vue), but this chip is always the one person who is
+               signed in, so a mark that reads as "you" beats a letter pair. It
+               replaced a bundled photo that showed the same stranger's face to
+               every account. -->
+          <q-avatar
+            size="32px"
+            class="cursor-pointer bg-sfere-100 text-sfere-700"
+            role="button"
+            aria-label="Account"
+          >
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.75"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              aria-hidden="true"
+              class="size-[18px]"
+            >
+              <circle cx="12" cy="8.5" r="3.75" />
+              <path d="M4.75 20.25a7.25 7.25 0 0 1 14.5 0" />
+            </svg>
             <q-menu anchor="bottom right" self="top right">
               <q-list style="min-width: 200px">
                 <q-item class="pointer-events-none">
@@ -359,7 +390,6 @@ import ComingSoonPanel from '@/components/ComingSoonPanel.vue'
 import PersonaQuestion from '@/components/onboarding/PersonaQuestion.vue'
 import DemoModeBanner from '@/components/DemoModeBanner.vue'
 
-import avatar from '@/assets/dashboard/avatar.jpg'
 import icCollapse from '@/assets/dashboard/ic-collapse.svg'
 import icChevron from '@/assets/dashboard/ic-chevron.svg'
 import icOverview from '@/assets/dashboard/ic-overview.svg'
@@ -537,6 +567,23 @@ const navGroups = [
         key: 'profile-dwh-syncs'
       }
     ]
+  },
+  // ACCOUNT is who and how much. It sits directly after FANS — above the four
+  // not-yet-built sections rather than below them — because those four are the
+  // longest part of the sidebar and burying a live row under them means Team and
+  // Billing can only be reached by scrolling past a wall of Soon pills.
+  {
+    key: 'team',
+    caption: 'ACCOUNT',
+    label: 'Team & roles',
+    icon: icContacts,
+    to: '/team'
+  },
+  {
+    key: 'billing',
+    label: 'Billing',
+    icon: icActivation,
+    to: '/billing'
   },
   {
     key: 'audiences',

@@ -27,6 +27,16 @@
     <!-- Underline tabs switch the page's primary content; the pill row below
          filters one list. That is exactly the split TabNav documents, and the two
          shapes are what stop a filter reading like a navigation change. -->
+    <!-- Where this screen sits in first-run setup. One line only; the
+         full tracker is on the Dashboard, deliberately in one place. -->
+    <SetupReminderStrip
+      step="source"
+      :steps="setupSteps"
+      :total="setupTotal"
+      :complete="setupComplete"
+      :unavailable="setupUnavailable"
+    />
+
     <TabNav v-model="view" :tabs="viewTabs" />
 
     <ConnectorCatalog v-if="view === 'connectors'" />
@@ -70,9 +80,13 @@
           />
         </template>
 
-        <template #cell-eventCountLastHour="{ value }">
-          {{ formatCount(value) }}
-        </template>
+        <!-- `formatCount` already reads a missing value as an em dash, and it
+             has to stay that way here: the backend's Source record carries no
+             per-hour counter (it is a `sources.json` field), so a `?? 0` would
+             report a measured zero for every live source. -->
+        <template #cell-eventCountLastHour="{ value }">{{
+          formatCount(value)
+        }}</template>
 
         <template #cell-actions="{ row }">
           <div class="flex items-center justify-end gap-2">
@@ -138,6 +152,8 @@ import StatusBadge from '@/components/ui/StatusBadge.vue'
 import EmptyState from '@/components/ui/EmptyState.vue'
 import ToolbarSearch from '@/components/ui/ToolbarSearch.vue'
 import ConfirmDialog from '@/components/ui/ConfirmDialog.vue'
+import SetupReminderStrip from '@/components/shell/SetupReminderStrip.vue'
+import { useSetupProgress } from '@/composables/useSetupProgress'
 import ConnectorCatalog from '@/components/sources/ConnectorCatalog.vue'
 import { useTemplates } from '@/composables/useTemplates'
 import {
@@ -146,6 +162,17 @@ import {
   useSources
 } from '@/composables/useSources'
 import { notifyMutationResult } from '@/composables/useMutationFeedback'
+
+// The reminder strip needs the same three counts the Dashboard tracker
+// derives. Read here rather than passed down: this page has no parent to
+// pass it, and the reads are cached by the browser for the round trip.
+const {
+  steps: setupSteps,
+  total: setupTotal,
+  complete: setupComplete,
+  unavailable: setupUnavailable,
+  load: loadSetupProgress
+} = useSetupProgress()
 
 const router = useRouter()
 const route = useRoute()
@@ -303,5 +330,10 @@ async function remove() {
   })
 }
 
-onMounted(load)
+onMounted(() => {
+  load()
+  // Deliberately not awaited alongside `load()`: the strip is secondary, and a
+  // slow setup read must not hold the table's first paint.
+  loadSetupProgress()
+})
 </script>

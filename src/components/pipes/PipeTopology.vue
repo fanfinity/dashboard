@@ -34,7 +34,13 @@
                 :label="link.pipe.isEnabled ? 'Enabled' : 'Paused'"
               />
             </span>
-            <span class="block text-xs text-subtle"
+            <!-- The pipeline record has no delivery counter, and
+                 `formatCount` reads a missing one as 0 — which would report
+                 "0 deliveries / hr" about every live pipe as if it were
+                 measured. The list view's column is guarded the same way. -->
+            <span
+              v-if="link.pipe.deliveryCountLastHour != null"
+              class="block text-xs text-subtle"
               >{{ formatCount(link.pipe.deliveryCountLastHour) }} deliveries /
               hr</span
             >

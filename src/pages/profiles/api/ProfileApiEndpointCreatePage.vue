@@ -40,7 +40,7 @@
       </template>
     </EmptyState>
 
-    <form v-else class="flex max-w-4xl flex-col gap-4" @submit.prevent="submit">
+    <form v-else class="grid max-w-4xl gap-4" @submit.prevent="submit">
       <FormSection
         title="Details"
         description="How this endpoint appears in lists, and the path callers will hit."
@@ -209,7 +209,7 @@
         </FormField>
       </FormSection>
 
-      <div class="flex flex-wrap items-center gap-2">
+      <StickyActionBar>
         <button
           type="submit"
           :disabled="saving"
@@ -227,7 +227,7 @@
         <p class="text-xs text-subtle"
           >Nothing is persisted yet — there is no backend behind this form.</p
         >
-      </div>
+      </StickyActionBar>
     </form>
   </q-page>
 </template>
@@ -243,6 +243,7 @@ import NoticeBanner from '@/components/ui/NoticeBanner.vue'
 import LoadingState from '@/components/ui/LoadingState.vue'
 import ErrorState from '@/components/ui/ErrorState.vue'
 import EmptyState from '@/components/ui/EmptyState.vue'
+import StickyActionBar from '@/components/ui/StickyActionBar.vue'
 import ProfileApiIdentifierPicker from '@/components/profiles/api/ProfileApiIdentifierPicker.vue'
 import ProfileApiAttributePicker from '@/components/profiles/api/ProfileApiAttributePicker.vue'
 import {

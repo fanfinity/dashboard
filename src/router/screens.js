@@ -71,6 +71,13 @@ export const screens = [
     issue: 22
   },
   {
+    path: '/billing',
+    name: 'billing',
+    component: 'account/BillingPage.vue',
+    title: 'Billing',
+    group: 'billing'
+  },
+  {
     path: '/catalogs',
     name: 'catalogs',
     component: 'engage/content/CatalogsListPage.vue',
@@ -229,6 +236,13 @@ export const screens = [
     title: 'Surveys — list view',
     group: 'engage',
     issue: 66
+  },
+  {
+    path: '/team',
+    name: 'team',
+    component: 'account/TeamPage.vue',
+    title: 'Team & roles',
+    group: 'team'
   },
   {
     path: '/warehouse-models',

@@ -40,7 +40,7 @@ names.
 | Path                         | What                                                           |
 | ---------------------------- | -------------------------------------------------------------- |
 | `src/css/sfere.css`          | The token layer: `@theme` tokens + seven `@utility` treatments |
-| `src/components/ui/`         | 39 components. The kit every screen is built from              |
+| `src/components/ui/`         | 40 components. The kit every screen is built from              |
 | `src/components/sfere-docs/` | Doc-page scaffolding. **Not** part of the kit                  |
 | `src/pages/design-system/`   | The showcase page itself                                       |
 | `public/brand/`              | Logo lockups and the mark, as real SVG files                   |
@@ -237,7 +237,7 @@ marketing site and are what the first group is composed out of.
 
 ### Screen primitives
 
-Sixteen of the 39 carry the filenames of the components they replaced, so that
+Sixteen of the 40 carry the filenames of the components they replaced, so that
 every screen picked up a Sfere implementation without an import changing. What
 each one is underneath:
 
@@ -399,7 +399,7 @@ the company prompting Claude Design gets the Sfere palette and typefaces by
 default.
 
 **Only the tokens cross over — the component kit does not.** Claude Design's
-agent builds in React; `src/components/ui/` is 39 Vue SFCs and cannot be
+agent builds in React; `src/components/ui/` is 40 Vue SFCs and cannot be
 imported there. The uploaded `_ds_bundle.js` is an empty namespace and says so.
 Anyone using it composes their own components from the tokens.
 

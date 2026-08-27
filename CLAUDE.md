@@ -24,6 +24,14 @@ single quotes, printWidth 80, `arrowParens: avoid`, no trailing commas. oxlint r
 over the whole repo — `CLAUDE.md`, `docs/**`, `public/data/*.json` and `scripts/` included.
 Linting only `src/` is how a green local run turns into a red CI run.
 
+**In Markdown, never let a hard wrap land inside an inline code span.** oxfmt formats
+`docs/**` and `CLAUDE.md` too, and a continuation line that starts at column 0 — which is
+what wrapping `` `flex-wrap: nowrap` `` mid-span produced in `docs/ui-conventions.md` — ends
+the list item it sits in. oxfmt then reindents the rest of that item on **every** pass, so it
+is not idempotent there: `oxfmt` followed by `oxfmt --check` still fails, and running the
+formatter is not the fix. Keep the span whole on one line and indent the continuation to the
+list marker's width.
+
 There is **no unit-test runner**. The behavioural gate is `pnpm smoke:dist`, which builds,
 serves `dist/spa`, signs in for real, walks every route in the screen manifest, and fails on any
 console error, uncaught error, rendered `ErrorState`, unresolved route, or missing `<h1>`.
@@ -119,23 +127,54 @@ Hash mode has one consequence worth internalising: the whole route lives after t
 so an in-page `href="#some-id"` **replaces the route** instead of scrolling. Anchor navigation
 has to go through `scrollIntoView` — see `src/pages/design-system/DesignSystemPage.vue`.
 
-### Three Quasar/Tailwind cascade collisions
+### Six Quasar/Tailwind cascade collisions
 
 Tailwind v4 emits utilities into `@layer utilities`; Quasar's base stylesheet is **unlayered**,
-and unlayered CSS beats layered CSS regardless of specificity. All three of these have cost real
+and unlayered CSS beats layered CSS regardless of specificity. All six of these have cost real
 time:
 
 1. **Headings need the important _suffix_** — `text-2xl!`, never `!text-2xl`. Covered at length
    in `docs/ui-conventions.md` rules 2–3.
-2. **A bare `hidden` can never be turned back on.** Quasar ships
-   `.hidden { display: none !important }`, so `class="hidden lg:block"` is permanently hidden at
-   every width. Use the inverse variant — `class="max-lg:hidden"` — which generates a class name
-   Quasar does not define. If an element is inexplicably invisible, look for a bare `hidden`.
+2. **A bare `hidden` can never be turned back on** — and neither can `rotate-90`. Quasar ships
+   `.hidden { display: none !important }` and `.rotate-90 { transform: rotate(90deg) }`, both
+   unlayered, so `class="hidden lg:block"` is permanently hidden at every width and
+   `class="rotate-90 sm:rotate-0"` is permanently rotated (which is why `PipeFlow.vue`'s arrows
+   pointed _down_ between three side-by-side boxes). Use the inverse variant —
+   `max-lg:hidden`, `max-sm:rotate-90` — which generates a class name Quasar does not define.
+   The tell: a utility that works in its "on" breakpoint and refuses to switch off.
 3. **A `q-dialog` child is capped at 560px, and `mt-auto` does nothing on a bare block.** Quasar
    ships `.q-dialog__inner--minimized > div { max-width: 560px }` and margins on unclassed block
    elements, both unlayered. A three-column picker in a dialog silently renders as
    two-and-a-bit columns, and auto margins are ignored, until the suffix goes on:
-   `w-[820px]!`, `mt-auto!`. `PersonaQuestion.vue` needs both.
+   `w-[820px]!`, `mt-auto!`. `PersonaQuestion.vue` needs both. **`w-[Npx]!` alone is not
+   enough** — the Quasar rule is a `max-width`, so the override has to be one too:
+   `w-[min(720px,92vw)]! max-w-[min(720px,92vw)]!`, as on `/team` and `/billing`. A flat pixel
+   max-width would stop the dialog shrinking on a narrow window, hence the `min()`.
+4. **`class="flex"` wraps, and `flex-nowrap` cannot stop it.** Quasar's `.flex` is
+   `display:flex; flex-wrap:wrap`, unlayered, so _every_ flex container in this repo wraps and
+   the layered `flex-nowrap` utility loses to it. The symptom is a `justify-between` row whose
+   label jumps **above** its control once the text gets long — which means it ships looking fine
+   and breaks on the copy edit. Fix: `min-w-0 flex-1` on the child that should give way (that
+   sets `flex-basis: 0` and removes the wrap decision), `shrink-0` on the one that must not.
+   Full worked example in `docs/ui-conventions.md` rule 10.
+5. **`mt-*` on a `<p>` does nothing** — this is #3's margin problem, and it is the one that
+   silently degrades a card. Every `<p>` carries Quasar's unlayered `margin-bottom: 16px`, and a
+   layered `mt-3` on it computes to `margin-top: 0`, so a card spaced `mt-3` / `mt-1.5` / `mt-3`
+   renders as a flat 16px rhythm ignoring all three — plus sixteen pixels of dead space under the
+   last line, which knocks its footer off the baseline the cards beside it sit on. It ships
+   looking merely loose, and editing `mt-3` to `mt-4` changes nothing. Space cards with grid
+   `gap` (no Quasar counterpart, so it applies) and pin the footer with `grid-rows-[1fr_auto]` —
+   not `mt-auto!`, which resolves per flex line inside #4's wrapping flex.
+   `docs/ui-conventions.md` rule 11; `SourceIntentPicker.vue` is the worked example.
+6. **`auto-fit` grid tracks measure a card at min-content and keep the answer.** An
+   `auto-fit` track is min-content-sized in the first pass, and the min-content height of a
+   `SelectableCard` — a #4 wrapping flex — at that width is enormous, so the row keeps it:
+   `grid-cols-[repeat(auto-fit,minmax(260px,1fr))]` turned 219px cards into **637px at every
+   viewport** on `/sources/new`, with columns still resolving to a normal 328px. Stay on
+   `repeat(N,minmax(0,1fr))`, which is what `sm:grid-cols-2` expands to. Where the viewport is
+   the wrong question — the sidebar collapses without changing it, so one 1024px window has two
+   content widths — put a container query in front of those tracks (`@container` +
+   `@min-[52rem]:grid-cols-3`). `docs/ui-conventions.md` rule 12.
 
 ## Screen manifest — routes are generated, not hand-written
 
@@ -158,9 +197,47 @@ section, and it is the feature-activation key that decides whether the route ren
 page or `ComingSoonPanel`. `routes.js` throws at module load if a `group` has no entry in
 `src/config/features.js`.
 
+**The connector catalog is connectable**: picking a card in `/sources?tab=connectors` opens
+`ConnectorConnectPanel.vue` above the grid — named credential fields for Firebase, MongoDB,
+Shopify, Stripe and GA4, a generic JSON box for the rest, plus a sync schedule. The field specs
+live in `src/config/connectorCredentials.js` because `GET /v1/connectors` returns a name, a
+package id and a licence but **no credential schema**; that file is what a real per-connector
+schema replaces. There is no `POST .../connectors` endpoint, so the panel validates for real and
+reports what it _would_ send — and it emits **field names only**, never values, so no page above
+it can log a credential. The file input is a drop target that reads no bytes.
+
+**`/sources/new` is a three-step guided flow, not a form**: an intent picker
+(`src/config/sourceIntents.js` — six plain-English intents like "a website", each resolving to
+template ids), the existing details form, then Install & confirm. **One page, three steps**,
+because the steps share state — the intent picks the template, the template names the source, and
+the created source is what the install guide needs a key from. Three routes would mean threading
+that through query params, and a reload mid-flow would land on step 3 with nothing to install.
+
+`SourceInstallGuide.vue` renders step 3 _and_ the source detail page's "Setup instructions" tab —
+one component, two entry points, because someone who closed the tab mid-setup wants exactly the
+same page a week later. Its snippets live in `src/lib/sourceInstallSnippets.js` for the reason
+`webSdkSnippet.js` does: an SFC `<script>` block ends at the first literal closing script tag.
+Its verification asks the backend whether a real event arrived (`listSourceEvents`); the
+proposal's "paste your URL and we'll look for the script" checker was **not** built, because the
+CSP blocks that cross-origin fetch and it would only prove the tag is on the page.
+
 The product backlog (54 screens, GitHub issues #16–#69) is scaffolded: every screen already
 exists as a stub page at its final path. Implementing one means **rewriting that file in place**,
 never creating a file and registering a route.
+
+**The sidebar has an ACCOUNT section**, between FANS and ACTIVATE: `/team` (members, roles and
+the domain-match approval queue) and `/billing` (plan, usage, add-ons, invoices). It sits above
+the four not-yet-built sections rather than below them on purpose — ACTIVATE, ENGAGE, MEASURE
+and SYSTEM are the longest part of the rail, and a live row buried under a wall of `Soon` pills
+can only be reached by scrolling. `team` and `billing` are two keys rather than one `account`
+key because Billing is role-restricted in a way the roster is not.
+
+Neither has a backend: `useTeam()` and `useBilling()` pass no `api` option, so they read the
+bundled fixtures in Demo mode and report `apiMissing` in the default real mode, and both pages
+say which switch shows the shape. Settings → Members still exists and still reads `users.json`;
+`/team` is the fuller surface (approvals, role reference, per-row role changes) and the two
+should be merged the day the members endpoint ships — not before, since merging them now would
+mean picking which of two fixtures is canonical.
 
 One place the nav deliberately departs from one-row-per-route: **Connectors is a tab on
 `/sources`**, not a screen. Browsing connector _types_ is a step in adding a source, so it lives
@@ -172,8 +249,8 @@ back in the sidebar, which is exactly what this undid.
 ## Feature activation — most of the sidebar is switched off
 
 `enabled: true` in `features.js` today covers **Dashboard, Live events, Sources, Destinations,
-Pipes, Settings, Warehouse, Monitoring, Profiles, Secrets** and **Authorizations** — eleven
-top-level keys, not six. Two of those are partly on: Warehouse and Profiles each gate their own
+Pipes, Settings, Warehouse, Monitoring, Profiles, Secrets, Authorizations, Team** and
+**Billing** — thirteen top-level keys, not six. Two of those are partly on: Warehouse and Profiles each gate their own
 children by a separate key (`dwh-syncs`, `warehouse-models`, `identity-resolution`, `attributes`,
 `profile-api`, `live-profile-syncs`, `profile-dwh-syncs`), so switching the parent on only exposes
 the child screens whose own key is _also_ `true` — right now that's just Warehouse connections and
@@ -245,6 +322,34 @@ row: support and handover docs have to be able to say "click Pipes" and be right
 entitlements' job, and that mechanism stays separate — as does feature activation, which answers
 "is it built yet?".
 
+### Two other first-run surfaces
+
+**The setup tracker** (`useSetupProgress.js` + `components/shell/SetupProgressPanel.vue`) answers
+"source → destination → pipe, how far am I?" It is **derived, never stored**: three list reads,
+no `setupComplete` flag anywhere, because a flag can disagree with reality the moment someone
+deletes their only pipe. All three domains have live endpoints, so unlike most of the app it is
+accurate in the default real mode. It lives on the Dashboard **and nowhere else** — Sources,
+Destinations and Pipes each render the one-line `SetupReminderStrip` pointing back at it, because
+four copies of the same three steps is four things to keep in agreement. The strip shows the step
+the _workspace_ is on, not the step the screen is; it hides itself once all three exist. The
+panel is dismissible only after that, and the dismissal is `localStorage`.
+
+**The post-auth interstitial** (`components/onboarding/AccountSetupOverlay.vue`) covers the gap
+between a successful sign-in and the dashboard, when the session settles, `/v1/me` is read and
+the acting account resolves. It runs for a fixed **2.5s** (`TOTAL_MS`), long enough that its four
+step labels can be read rather than flashed — it used to be a random 1.1–2s, which made the same
+sign-in feel different each time. Still a courtesy transition, not a fake loading screen, so the
+number is a deliberate ceiling and not somewhere to hide slow work. Like the persona question it is an overlay, not
+a route — a `/setting-up` route would need a guard exception and would be a second place the auth
+redirect has to agree with. It mounts only _after_ auth succeeds, so it can never stand between a
+bad password and its error message.
+
+**Three selectors on `/login` are load-bearing**: `scripts/smoke.mjs` drives
+`input[type=email]`, `input[type=password]` and `button[type=submit]` with Playwright's strict
+matching. Keep exactly one of each — that is why sign-up has no confirm-password field, and why
+work-email validation was dropped rather than added (it blocks contractors and agencies for a
+benefit the backend gets from the address either way).
+
 **Settings → Your role** (`SettingsPersonaPanel.vue`) is the other surface, so changing the answer
 never means re-running a tour, and `Ask me again` clears it. Both surfaces render the same three
 cards and the same marks from `PersonaIcon.vue` — drawn there rather than reused from
@@ -253,19 +358,20 @@ attribute and cannot take the colour of the chip they sit in.
 
 ## UI primitives
 
-`src/components/ui/` is **the** component kit — 39 components, all built on the Sfere token
+`src/components/ui/` is **the** component kit — 40 components, all built on the Sfere token
 layer. **Use them; do not re-implement their markup and do not copy their class strings into a
 page.** Read `docs/ui-conventions.md` before writing any new screen.
 
 Two naming schemes live in the folder, for a reason worth knowing:
 
-- **16 screen primitives keep the names the screens already imported** — `PageHeader`,
+- **17 screen primitives carry plain, unprefixed names** — `PageHeader`,
   `DataTable`, `EmptyState`, `ErrorState`, `LoadingState`, `StatusBadge`, `CardPanel`,
   `NoticeBanner`, `StatCard`, `TabNav`, `FormField`, `FormSection`, `ConfirmDialog`,
-  `DefinitionList`, `SelectableCard`, `ToolbarSearch`. Keeping the filenames is what let the
-  Sfere implementations replace the originals across 104 files without rewriting 571 imports.
-  A few of those names are now worse than what they hold (`CardPanel` is a card, `NoticeBanner`
-  is an alert); that was the price of the swap.
+  `DefinitionList`, `SelectableCard`, `ToolbarSearch` and `StickyActionBar`. Sixteen of them
+  keep the names the screens already imported, which is what let the Sfere implementations
+  replace the originals across 104 files without rewriting 571 imports; `StickyActionBar` is
+  newer and simply describes what it does. A few of the older names are now worse than what
+  they hold (`CardPanel` is a card, `NoticeBanner` is an alert); that was the price of the swap.
 - **23 keep their `Sfere*` names** — `SfereButton`, `SfereInput`, `SfereTable`, `SfereSection`,
   `SfereFeatureCard` and friends. These have no pre-Sfere counterpart, and the prefix keeps
   `SfereTable` distinguishable from a bare `<table>` and from `QTable`.
@@ -277,7 +383,7 @@ would leave the only behavioural gate in the repo with nothing to assert on.
 ## The Sfere design system
 
 `src/css/sfere.css` holds the token layer, measured off the live marketing site
-(<https://sfere.io>) rather than eyeballed, and `src/components/ui/` holds the 39-component kit
+(<https://sfere.io>) rather than eyeballed, and `src/components/ui/` holds the 40-component kit
 built on it. Browse the whole thing at **`#/design-system`** (hash mode — not `/design-system`);
 no sign-in required.
 
@@ -441,6 +547,22 @@ exists to prevent.`sendMutation()`and`fetchCollection()`resolve`path` the same w
    screen, adapted into the three mock payload shapes rather than read through
    `useMockResource`). **Wired to a drafted endpoint that does not exist yet**:
    `useConnectorCatalog()` (`/v1/connectors`). Everything else has no `api` at all.
+
+   **The fixture is wider than the endpoint, and that is the bug class to look for
+   on the three live domains.** `pipes.json` carries `version`, `sourceName`,
+   `eventDestinationName`, `hasFunctionCode` and `deliveryCountLastHour`; the backend's
+   `Pipeline` is nine fields and has none of them. `sources.json` and `destinations.json`
+   invent the same `version`, plus `pipeCount` and the per-hour counters. Wiring a screen to
+   a real endpoint therefore does not finish at `api: { path }` — **every field the page
+   reads has to exist in the `200` schema**, or it renders a value nobody measured.
+   How it fails is what makes it expensive: `` `v${x}` `` prints the literal `vundefined`
+   and gets reported, while `formatCount(undefined)` prints a confident `0` and a falsy
+   `hasFunctionCode` prints "Pass-through — events are delivered unchanged", both as
+   assertions of fact. Silence is the worse failure. Where the ids are on the record the
+   labels are recoverable — `usePipes()`'s `joinEnds()` resolves a pipe's two ends out of
+   the live Sources and Destinations collections and skips both reads in Demo mode, which
+   is the pattern to copy. Where nothing backs the field, say so (`'—'`, "Not known") or
+   drop the control; do not let `formatCount` decide.
 
    Grep the merged `openapi/fanfinity-api.json` before adding an `api` path — `/v1/dashboard`
    and `/v1/errors` were drafted flat and shipped account-scoped and merged, which is exactly

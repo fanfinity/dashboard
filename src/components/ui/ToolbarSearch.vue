@@ -49,7 +49,13 @@ const props = defineProps({
 
 const emit = defineEmits(['update:modelValue'])
 
+// A DEFINITE width, not `w-full max-w-[280px]`. In a PageHeader the actions
+// group is content-sized (`shrink-0`), so a percentage width has nothing to
+// resolve against and the box collapsed to ~80px — unusable, and it was the
+// reason the whole actions row used to wrap onto a second line instead. A fixed
+// basis lets the group report a real max-content width; `max-w-full` still lets
+// it shrink inside a narrow container.
 const widthClass = computed(() =>
-  props.block ? 'w-full' : 'w-full max-w-[280px]'
+  props.block ? 'w-full' : 'w-[280px] max-w-full'
 )
 </script>

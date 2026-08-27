@@ -262,5 +262,39 @@
       "license": "MIT",
       "connectorSubtype": "api"
     }
+  },
+  {
+    "id": "jitsucom/source-firebase",
+    "packageId": "jitsucom/source-firebase",
+    "packageType": "airbyte",
+    "iconUrl": null,
+    "sortIndex": 90,
+    "meta": {
+      "name": "Firebase",
+      "license": "MIT",
+      "connectorSubtype": "api"
+    }
+  },
+  {
+    "id": "jitsucom/source-attio",
+    "packageId": "jitsucom/source-attio",
+    "packageType": "airbyte",
+    "iconUrl": null,
+    "meta": {
+      "name": "Attio",
+      "license": "MIT",
+      "connectorSubtype": "api"
+    }
+  },
+  {
+    "id": "linear-airbyte-source",
+    "packageId": "linear-airbyte-source",
+    "packageType": "airbyte",
+    "iconUrl": null,
+    "meta": {
+      "name": "Linear",
+      "license": "MIT",
+      "connectorSubtype": "api"
+    }
   }
 ]

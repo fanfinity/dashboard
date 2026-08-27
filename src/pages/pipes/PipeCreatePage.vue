@@ -82,7 +82,7 @@
       </div>
     </div>
 
-    <form v-else class="flex max-w-3xl flex-col gap-4" @submit.prevent="submit">
+    <form v-else class="grid max-w-3xl gap-4" @submit.prevent="submit">
       <FormSection
         title="Basics"
         description="How this pipe appears in the list and in monitoring."
@@ -202,7 +202,7 @@
         />
       </CardPanel>
 
-      <div class="flex items-center gap-2">
+      <StickyActionBar>
         <button
           type="submit"
           :disabled="saving"
@@ -217,7 +217,7 @@
         >
           Cancel
         </button>
-      </div>
+      </StickyActionBar>
     </form>
   </q-page>
 </template>
@@ -234,6 +234,7 @@ import FormField from '@/components/ui/FormField.vue'
 import FormSection from '@/components/ui/FormSection.vue'
 import LoadingState from '@/components/ui/LoadingState.vue'
 import StatusBadge from '@/components/ui/StatusBadge.vue'
+import StickyActionBar from '@/components/ui/StickyActionBar.vue'
 import PipeFlow from '@/components/pipes/PipeFlow.vue'
 import { makePipeId, usePipes } from '@/composables/usePipes'
 import { useSources } from '@/composables/useSources'

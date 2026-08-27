@@ -136,11 +136,165 @@ the smoke test can assert on a single selector across every route.
    `DataTable` does this for you. A form or detail page must do it by hand with
    `LoadingState` / `ErrorState` / `EmptyState`.
 
+10. **`class="flex"` wraps, and `flex-nowrap` cannot stop it.** Quasar ships an
+    unlayered `.flex { display: flex; flex-wrap: wrap }`, so every `flex` in this
+    repo is a _wrapping_ flex container, and Tailwind's layered `flex-nowrap`
+    loses to it the same way a layered `text-2xl` loses to Quasar's `h2`. The
+    symptom is a `justify-between` row where the label suddenly sits **above**
+    the control instead of beside it — and it only appears once the text is long
+    enough, which is why it usually ships.
+
+    Give the child that should absorb the slack `min-w-0 flex-1`. That sets
+    `flex-basis: 0`, which removes the wrap decision entirely rather than
+    fighting the cascade:
+
+    ```html
+    <!-- wrong: wraps as soon as the paragraph is wide -->
+    <div class="flex items-start justify-between gap-4">
+      <div><p>A long explanation of what this toggle does…</p></div>
+      <SfereToggle v-model="on" />
+    </div>
+
+    <!-- right -->
+    <div class="flex items-start justify-between gap-4">
+      <div class="min-w-0 flex-1"><p>A long explanation…</p></div>
+      <SfereToggle v-model="on" />
+    </div>
+    ```
+
+    `flex-nowrap!` would also work, but `min-w-0 flex-1` is what you want anyway:
+    it makes `truncate` behave on the child, and it says which side is meant to
+    give way. Use `shrink-0` on the side that must keep its intrinsic width.
+
+11. **`mt-*` on a `<p>` does nothing, so space cards with `gap`, not margins.**
+    Quasar's unlayered paragraph rule wins twice over: every `<p>` in this repo
+    carries `margin-bottom: 16px`, and a layered `mt-3` on it computes to
+    `margin-top: 0`. A card written as `icon` / `mt-3 title` / `mt-1.5 body` /
+    `mt-3 footer` therefore renders as a flat 16px rhythm that ignores all three
+    values — **including sixteen pixels of dead space under the last line**,
+    which is what knocks a card's footer off the baseline its neighbours sit on.
+    It ships looking merely loose, and the next person edits `mt-3` to `mt-4` and
+    sees nothing change.
+
+    Lay the card out with a grid instead. Grid `gap` has no Quasar counterpart, so
+    it applies, and it is also how you pin a footer:
+
+    ```html
+    <!-- wrong: none of these margins are the ones that render -->
+    <SelectableCard>
+      <span class="chip">…</span>
+      <p class="mt-3 text-sm">Title</p>
+      <p class="mt-1.5 text-xs">Body copy of any length.</p>
+      <p class="mt-3 text-xs">Outcome →</p>
+    </SelectableCard>
+
+    <!-- right: gap for rhythm, `1fr auto` for the footer, `m-0!` to kill the
+         inert margin so it stops adding itself to the gap -->
+    <SelectableCard>
+      <div class="grid h-full w-full grid-rows-[1fr_auto] gap-5">
+        <div class="grid content-start gap-3.5">
+          <span class="chip">…</span>
+          <div class="grid min-w-0 gap-1.5">
+            <p class="m-0! text-sm">Title</p>
+            <p class="m-0! text-xs">Body copy of any length.</p>
+          </div>
+        </div>
+        <div class="border-t border-sfere-line pt-4">Outcome →</div>
+      </div>
+    </SelectableCard>
+    ```
+
+    Reach for the grid row rather than `mt-auto!`: `SelectableCard`'s own `flex`
+    is Quasar's _wrapping_ flex (rule 10), and auto margins in a wrapping column
+    container resolve per flex line. `grid-rows-[1fr_auto]` puts the footer on the
+    bottom edge by construction, so a row of cards stays aligned through any copy
+    edit. `SourceIntentPicker.vue` is the worked example.
+
+12. **Do not size a card grid with `auto-fit`.** `grid-cols-1 sm:grid-cols-2` and
+    friends expand to `repeat(N, minmax(0, 1fr))`, which is safe.
+    `grid-cols-[repeat(auto-fit,minmax(260px,1fr))]` is not: an `auto-fit` track
+    is min-content-sized in the first pass, the min-content height of a
+    `SelectableCard` (a Quasar wrapping flex, rule 10) at that width is enormous,
+    and the row keeps the tall measurement. Measured on `/sources/new`: 219px
+    cards became **637px at every viewport**, columns still resolving to a
+    perfectly normal 328px, so nothing about the width looks wrong.
+
+    When a viewport breakpoint is the wrong question — `MainLayout`'s sidebar
+    collapses without changing the viewport width, so the same 1024px window has
+    two very different content widths — use a **container query** over explicit
+    tracks:
+
+    ```html
+    <div class="@container">
+      <div
+        class="grid grid-cols-1 gap-5 @min-[34rem]:grid-cols-2 @min-[52rem]:grid-cols-3"
+      ></div
+    ></div>
+    ```
+
+    For a picker whose card count is data-driven and small, a growing flex row
+    (`flex flex-wrap gap-5` + `max-w-full grow basis-64` on each card) beats fixed
+    tracks: two cards take half the row each instead of two thirds with a hole
+    beside them. `SourceTemplatePicker.vue` is the worked example.
+
+    One thing the gutter owes the card: **match it to the card's own padding.**
+    `gap-3` against `p-5` is what makes a grid read as crowded rather than as a
+    set of choices.
+
+13. **Never put an `@container` inside `class="flex flex-col"`.** Rule 10's
+    collision has a second, worse form. Quasar's unlayered `.flex` sets
+    `flex-wrap: wrap`, so `flex flex-col` is a _wrapping column_ flex — and a
+    child carrying `container-type: inline-size` inside one is measured at
+    min-content height and keeps the answer, exactly as rule 12's `auto-fit`
+    track does. Measured on `/sources/new`: the 458px intent-card grid rendered
+    as a **2314px** block, i.e. roughly 1850px of blank page under step 1, with
+    the cards themselves at a perfectly correct 219px. Setting
+    `flex-wrap: nowrap` on the parent alone collapsed it to 458px and the
+    document from 2762px to 906px.
+
+    Use `grid gap-N` for the wrapper instead. Grid `gap` has no Quasar
+    counterpart so it applies (rule 11), and a grid parent measures the
+    container child at its content height. `SourceIntentPicker.vue` is the
+    worked example.
+
+    The tell is a page that scrolls far past its content with nothing in the
+    gap, where every individual element measures correctly. Check the ancestor
+    chain of the `@container`, not the cards.
+
+14. **A form's submit row is `StickyActionBar`, not a bare `<div class="flex">`.**
+    House rule, not a per-screen choice: a long create form used to hide its own
+    Create button below the fold, so submitting meant scrolling to the end and
+    hoping. The bar is `sticky bottom-[var(--app-footer-h,0px)]` — pulled up into
+    view while its natural position is below the fold, settling exactly at the
+    end of the form once you reach it.
+
+    Three things it needs from the screen:
+
+    - **Put it last in the `<form>`.** Sticky resolves against the parent's
+      padding box, so the form is the travel range. A trailing "nothing is
+      persisted yet" note goes _inside_ the bar (`min-w-0 flex-1`), not after it.
+    - **The form container must be `grid`, not `flex flex-col`** — same reason as
+      rule 13, and a wrapping column flex resolves the bar's position per flex
+      line.
+    - **`align="end"`** for the single-Continue step of a guided flow;
+      the default `start` for the usual primary-then-secondary row.
+
+    The offset is a variable rather than `0` because `DemoModeBanner` is a
+    `q-footer` fixed to the viewport bottom, and sticky offsets resolve against
+    the viewport, not against the padding `q-page-container` reserves for it.
+    `MainLayout` publishes the banner's height on `.q-layout` as
+    `--app-footer-h`; it is `0px` in real-data mode.
+
+    Not every `type="submit"` wants this. `/login` is a centred card outside
+    `MainLayout`, Profile search is a filter row rather than a create, and the
+    Settings panels each hold several independent forms — stacking a sticky bar
+    per panel would dock several of them at once.
+
 ---
 
 ## House rules for screens
 
-Rules 1–9 are about the primitives. These are about how a screen uses them, and
+Rules 1–14 are about the primitives. These are about how a screen uses them, and
 every one of them is a bug wave 1 hit or narrowly avoided.
 
 ### A missing `:id` is empty, not an error

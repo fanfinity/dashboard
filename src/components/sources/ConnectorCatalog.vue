@@ -25,7 +25,7 @@
     />
 
     <EmptyState
-      v-else-if="!filteredGroups.length"
+      v-else-if="!filteredGroups.length && !selected"
       :title="emptyTitle"
       :description="emptyDescription"
     >
@@ -39,7 +39,18 @@
       </template>
     </EmptyState>
 
-    <div v-else class="flex flex-col gap-8">
+    <!-- Picking a card opens the connect form here, above the grid, and marks
+         the chosen card selected. Not a dialog: the credential help text runs to
+         several lines per field, and a 560px-capped q-dialog is the wrong shape
+         for a form whose real content is instructions. -->
+    <ConnectorConnectPanel
+      v-if="selected"
+      :connector="selected"
+      @cancel="selected = null"
+      @connect="onConnect"
+    />
+
+    <div v-if="!loading && !error" class="flex flex-col gap-8">
       <section v-for="group in filteredGroups" :key="group.key">
         <h2
           class="mb-3 text-xs! font-semibold! uppercase tracking-[0.4px]! text-subtle"
@@ -54,6 +65,7 @@
             v-for="item in group.items"
             :key="item.id"
             :connector="item"
+            :selected="selected?.id === item.id"
             @select="onSelect"
           />
         </div>
@@ -67,6 +79,7 @@ import { computed, onMounted, ref } from 'vue'
 import { useQuasar } from 'quasar'
 
 import ConnectorCard from '@/components/ConnectorCard.vue'
+import ConnectorConnectPanel from '@/components/sources/ConnectorConnectPanel.vue'
 import ToolbarSearch from '@/components/ui/ToolbarSearch.vue'
 import LoadingState from '@/components/ui/LoadingState.vue'
 import ErrorState from '@/components/ui/ErrorState.vue'
@@ -85,6 +98,7 @@ import { useConnectorCatalog } from '@/composables/useConnectorCatalog'
 const $q = useQuasar()
 const { connectors, loading, error, apiMissing, load } = useConnectorCatalog()
 const query = ref('')
+const selected = ref(null)
 
 // Order + human labels for connectorSubtype values returned by the API.
 const SUBTYPES = [
@@ -156,12 +170,26 @@ function titleCase(s) {
 }
 
 function onSelect(connector) {
-  // Browse-only for now. Wiring an actual sync (config form, credentials, version)
-  // attaches here once the deployment's API keys are provided.
+  selected.value = connector
+  // The panel renders above the grid, so scroll it into view rather than leaving
+  // someone looking at an unchanged screen after a click. Hash-mode routing means
+  // an in-page anchor would replace the route, so this has to be scrollIntoView.
+  requestAnimationFrame(() => {
+    document
+      .querySelector('[data-connector-connect]')
+      ?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  })
+}
+
+// The credential VALUES never reach this handler — the panel emits field names
+// only, so nothing here can log a secret by accident.
+function onConnect({ connector, schedule, provided }) {
   $q.notify({
-    message: `${connector.meta?.name || connector.packageId} — connecting sources is coming soon`,
+    message: `${connector.meta?.name || connector.packageId} is not connectable yet`,
+    caption: `Would send ${provided.length} credential field${provided.length === 1 ? '' : 's'} and a ${schedule} sync schedule to POST /v1/accounts/{account}/connectors, which is not built.`,
     color: 'dark',
-    timeout: 2000
+    position: 'top-right',
+    timeout: 4000
   })
 }
 

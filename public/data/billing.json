@@ -1,0 +1,99 @@
+{
+  "plan": {
+    "name": "Growth",
+    "priceLabel": "$499",
+    "period": "month",
+    "renewsOn": "2026-09-25T00:00:00.000Z",
+    "includes": [
+      { "label": "Sources & connectors", "value": "Unlimited" },
+      { "label": "ClickHouse warehouse", "value": "Included" },
+      { "label": "Team members", "value": "Up to 10" },
+      { "label": "Event retention", "value": "90 days" }
+    ]
+  },
+  "usage": [
+    {
+      "key": "events",
+      "label": "Events this month",
+      "used": 4180000,
+      "limit": 10000000,
+      "unit": "events"
+    },
+    {
+      "key": "profiles",
+      "label": "Resolved profiles",
+      "used": 312400,
+      "limit": 1000000,
+      "unit": "profiles"
+    },
+    {
+      "key": "members",
+      "label": "Team members",
+      "used": 6,
+      "limit": 10,
+      "unit": "seats"
+    }
+  ],
+  "addOns": [
+    {
+      "id": "addon_snowflake",
+      "name": "Snowflake warehouse",
+      "description": "A second warehouse connection beyond the included ClickHouse.",
+      "priceLabel": "$150",
+      "period": "month",
+      "active": true
+    },
+    {
+      "id": "addon_bigquery",
+      "name": "BigQuery warehouse",
+      "description": "Stream resolved events into a Google BigQuery dataset.",
+      "priceLabel": "$150",
+      "period": "month",
+      "active": false
+    },
+    {
+      "id": "addon_retention",
+      "name": "Extended retention",
+      "description": "Raise raw event retention from 90 days to 400.",
+      "priceLabel": "$220",
+      "period": "month",
+      "active": false
+    }
+  ],
+  "paymentMethod": {
+    "brand": "VISA",
+    "last4": "4242",
+    "expiry": "08/28",
+    "billingEmail": "finance@sfere.io"
+  },
+  "invoices": [
+    {
+      "id": "inv_2026_08",
+      "issuedAt": "2026-08-01T00:00:00.000Z",
+      "description": "Growth plan + Snowflake add-on",
+      "amountLabel": "$649.00",
+      "status": "paid"
+    },
+    {
+      "id": "inv_2026_07",
+      "issuedAt": "2026-07-01T00:00:00.000Z",
+      "description": "Growth plan + Snowflake add-on",
+      "amountLabel": "$649.00",
+      "status": "paid"
+    },
+    {
+      "id": "inv_2026_06",
+      "issuedAt": "2026-06-01T00:00:00.000Z",
+      "description": "Growth plan",
+      "amountLabel": "$499.00",
+      "status": "paid"
+    },
+    {
+      "id": "inv_2026_05",
+      "issuedAt": "2026-05-01T00:00:00.000Z",
+      "description": "Growth plan",
+      "amountLabel": "$499.00",
+      "status": "paid"
+    }
+  ]
+}

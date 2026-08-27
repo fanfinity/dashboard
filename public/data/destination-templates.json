@@ -1,5 +1,623 @@
 [
   {
+    "id": "bigquery",
+    "name": "BigQuery",
+    "category": "Data warehouse",
+    "licensing": "addon",
+    "description": "Google's serverless SQL warehouse. Billed by bytes scanned.",
+    "tags": ["warehouse", "add-on"],
+    "icon": "bigquery",
+    "paramsSchema": {
+      "type": "object",
+      "properties": {
+        "project_id": {
+          "type": "string",
+          "description": "GCP project holding the dataset."
+        },
+        "dataset": {
+          "type": "string",
+          "description": "Dataset the event tables land in."
+        },
+        "location": {
+          "type": "string",
+          "description": "Dataset location, e.g. EU or us-central1."
+        }
+      },
+      "required": ["project_id", "dataset"],
+      "additionalProperties": false
+    },
+    "secrets": [
+      {
+        "keyPrefix": "BIGQUERY_SERVICE_ACCOUNT_JSON",
+        "description": "Service account key JSON with BigQuery Data Editor on the dataset."
+      }
+    ],
+    "version": "2026-08-20",
+    "destinationType": "event_destination",
+    "defaults": {
+      "name": "BigQuery",
+      "description": "Google's serverless SQL warehouse. Billed by bytes scanned."
+    }
+  },
+  {
+    "id": "clickhouse",
+    "name": "ClickHouse",
+    "category": "Data warehouse",
+    "licensing": "included",
+    "description": "Open-source column store built for analytical queries. Provisioned for you on every plan \u2014 no credentials to enter.",
+    "tags": ["warehouse", "included"],
+    "icon": "clickhouse",
+    "paramsSchema": {
+      "type": "object",
+      "properties": {
+        "database": {
+          "type": "string",
+          "description": "Per-account database. Created automatically; override only if you know why."
+        },
+        "table_prefix": {
+          "type": "string",
+          "description": "Prefix for the event tables, e.g. \"raw_\"."
+        }
+      },
+      "required": [],
+      "additionalProperties": false
+    },
+    "secrets": [],
+    "version": "2026-08-20",
+    "destinationType": "event_destination",
+    "defaults": {
+      "name": "ClickHouse",
+      "description": "Open-source column store built for analytical queries. Provisioned for you on every plan \u2014 no credentials to enter."
+    }
+  },
+  {
+    "id": "mongodb-dest",
+    "name": "MongoDB",
+    "category": "Data warehouse",
+    "licensing": "addon",
+    "description": "Document store. Events land as one document per event.",
+    "tags": ["warehouse", "add-on"],
+    "icon": "mongodb",
+    "paramsSchema": {
+      "type": "object",
+      "properties": {
+        "database": {
+          "type": "string",
+          "description": "Database to write into."
+        },
+        "collection": {
+          "type": "string",
+          "description": "Collection for the event documents."
+        }
+      },
+      "required": ["database", "collection"],
+      "additionalProperties": false
+    },
+    "secrets": [
+      {
+        "keyPrefix": "MONGODB_CONNECTION_STRING",
+        "description": "Full mongodb+srv:// connection string including credentials."
+      }
+    ],
+    "version": "2026-08-20",
+    "destinationType": "event_destination",
+    "defaults": {
+      "name": "MongoDB",
+      "description": "Document store. Events land as one document per event."
+    }
+  },
+  {
+    "id": "motherduck",
+    "name": "MotherDuck",
+    "category": "Data warehouse",
+    "licensing": "addon",
+    "description": "DuckDB in the cloud. Fast on a laptop, scales to terabytes.",
+    "tags": ["warehouse", "add-on"],
+    "icon": "motherduck",
+    "paramsSchema": {
+      "type": "object",
+      "properties": {
+        "database": {
+          "type": "string",
+          "description": "MotherDuck database name."
+        }
+      },
+      "required": ["database"],
+      "additionalProperties": false
+    },
+    "secrets": [
+      {
+        "keyPrefix": "MOTHERDUCK_TOKEN",
+        "description": "Service token from the MotherDuck console."
+      }
+    ],
+    "version": "2026-08-20",
+    "destinationType": "event_destination",
+    "defaults": {
+      "name": "MotherDuck",
+      "description": "DuckDB in the cloud. Fast on a laptop, scales to terabytes."
+    }
+  },
+  {
+    "id": "mysql",
+    "name": "MySQL",
+    "category": "Data warehouse",
+    "licensing": "addon",
+    "description": "The other popular open-source relational database.",
+    "tags": ["warehouse", "add-on"],
+    "icon": "mysql",
+    "paramsSchema": {
+      "type": "object",
+      "properties": {
+        "database": {
+          "type": "string",
+          "description": "Database to write into."
+        },
+        "schema_name": {
+          "type": "string",
+          "description": "Schema (or dataset) for the event tables."
+        },
+        "host": {
+          "type": "string",
+          "description": "Hostname of the cluster."
+        },
+        "port": {
+          "type": "string",
+          "description": "Port. Leave blank for the provider default."
+        },
+        "username": {
+          "type": "string",
+          "description": "User Sfere connects as."
+        }
+      },
+      "required": ["host", "database", "username"],
+      "additionalProperties": false
+    },
+    "secrets": [
+      {
+        "keyPrefix": "MYSQL_PASSWORD",
+        "description": "Password for the MySQL user."
+      }
+    ],
+    "version": "2026-08-20",
+    "destinationType": "event_destination",
+    "defaults": {
+      "name": "MySQL",
+      "description": "The other popular open-source relational database."
+    }
+  },
+  {
+    "id": "postgres",
+    "name": "Postgres",
+    "category": "Data warehouse",
+    "licensing": "addon",
+    "description": "The open-source relational database. A good first warehouse at modest volume.",
+    "tags": ["warehouse", "add-on"],
+    "icon": "postgres",
+    "paramsSchema": {
+      "type": "object",
+      "properties": {
+        "database": {
+          "type": "string",
+          "description": "Database to write into."
+        },
+        "schema_name": {
+          "type": "string",
+          "description": "Schema (or dataset) for the event tables."
+        },
+        "host": {
+          "type": "string",
+          "description": "Hostname of the cluster."
+        },
+        "port": {
+          "type": "string",
+          "description": "Port. Leave blank for the provider default."
+        },
+        "username": {
+          "type": "string",
+          "description": "User Sfere connects as."
+        },
+        "ssl_mode": {
+          "type": "string",
+          "description": "One of disable, require, verify-full."
+        }
+      },
+      "required": ["host", "database", "username"],
+      "additionalProperties": false
+    },
+    "secrets": [
+      {
+        "keyPrefix": "POSTGRES_PASSWORD",
+        "description": "Password for the user above."
+      }
+    ],
+    "version": "2026-08-20",
+    "destinationType": "event_destination",
+    "defaults": {
+      "name": "Postgres",
+      "description": "The open-source relational database. A good first warehouse at modest volume."
+    }
+  },
+  {
+    "id": "redshift",
+    "name": "Redshift",
+    "category": "Data warehouse",
+    "licensing": "addon",
+    "description": "Amazon's warehouse for BI workloads, loaded through S3 staging.",
+    "tags": ["warehouse", "add-on"],
+    "icon": "redshift",
+    "paramsSchema": {
+      "type": "object",
+      "properties": {
+        "database": {
+          "type": "string",
+          "description": "Database to write into."
+        },
+        "schema_name": {
+          "type": "string",
+          "description": "Schema (or dataset) for the event tables."
+        },
+        "host": {
+          "type": "string",
+          "description": "Hostname of the cluster."
+        },
+        "port": {
+          "type": "string",
+          "description": "Port. Leave blank for the provider default."
+        },
+        "username": {
+          "type": "string",
+          "description": "User Sfere connects as."
+        },
+        "s3_staging_bucket": {
+          "type": "string",
+          "description": "Bucket used to stage load files."
+        }
+      },
+      "required": ["host", "database", "username", "s3_staging_bucket"],
+      "additionalProperties": false
+    },
+    "secrets": [
+      {
+        "keyPrefix": "REDSHIFT_PASSWORD",
+        "description": "Password for the Redshift user."
+      }
+    ],
+    "version": "2026-08-20",
+    "destinationType": "event_destination",
+    "defaults": {
+      "name": "Redshift",
+      "description": "Amazon's warehouse for BI workloads, loaded through S3 staging."
+    }
+  },
+  {
+    "id": "snowflake",
+    "name": "Snowflake",
+    "category": "Data warehouse",
+    "licensing": "addon",
+    "description": "Independent cloud warehouse with compute-based pricing.",
+    "tags": ["warehouse", "add-on"],
+    "icon": "snowflake",
+    "paramsSchema": {
+      "type": "object",
+      "properties": {
+        "account": {
+          "type": "string",
+          "description": "Your Snowflake account identifier, e.g. xy12345.eu-central-1."
+        },
+        "warehouse": {
+          "type": "string",
+          "description": "Compute warehouse to run the loads on."
+        },
+        "database": {
+          "type": "string",
+          "description": "Target database."
+        },
+        "schema_name": {
+          "type": "string",
+          "description": "Target schema. Defaults to PUBLIC."
+        },
+        "username": {
+          "type": "string",
+          "description": "Snowflake user Sfere authenticates as."
+        },
+        "auth_method": {
+          "type": "string",
+          "description": "Either key-pair (recommended) or password."
+        }
+      },
+      "required": ["account", "warehouse", "database", "username"],
+      "additionalProperties": false
+    },
+    "secrets": [
+      {
+        "keyPrefix": "SNOWFLAKE_PRIVATE_KEY",
+        "description": "PEM private key for key-pair auth, or the account password if you chose password auth."
+      },
+      {
+        "keyPrefix": "SNOWFLAKE_KEY_PASSPHRASE",
+        "description": "Passphrase protecting the private key. Leave blank if it has none."
+      }
+    ],
+    "version": "2026-08-20",
+    "destinationType": "event_destination",
+    "defaults": {
+      "name": "Snowflake",
+      "description": "Independent cloud warehouse with compute-based pricing."
+    }
+  },
+  {
+    "id": "amplitude",
+    "name": "Amplitude",
+    "category": "Product analytics",
+    "licensing": "standard",
+    "description": "Product analytics, behavioural cohorts and experiments.",
+    "tags": ["analytics"],
+    "icon": "amplitude",
+    "paramsSchema": {
+      "type": "object",
+      "properties": {
+        "eu_residency": {
+          "type": "boolean",
+          "description": "Use the EU ingestion endpoint."
+        },
+        "min_id_length": {
+          "type": "string",
+          "description": "Override the minimum id length Amplitude accepts."
+        }
+      },
+      "required": [],
+      "additionalProperties": false
+    },
+    "secrets": [
+      {
+        "keyPrefix": "AMPLITUDE_API_KEY",
+        "description": "Project API key from Amplitude settings."
+      }
+    ],
+    "version": "2026-08-20",
+    "destinationType": "event_destination",
+    "defaults": {
+      "name": "Amplitude",
+      "description": "Product analytics, behavioural cohorts and experiments."
+    }
+  },
+  {
+    "id": "braze",
+    "name": "Braze",
+    "category": "Product analytics",
+    "licensing": "standard",
+    "description": "Customer engagement across push, email and in-app.",
+    "tags": ["engagement"],
+    "icon": "braze",
+    "paramsSchema": {
+      "type": "object",
+      "properties": {
+        "rest_endpoint": {
+          "type": "string",
+          "description": "Your Braze REST endpoint, e.g. rest.fra-01.braze.eu."
+        }
+      },
+      "required": ["rest_endpoint"],
+      "additionalProperties": false
+    },
+    "secrets": [
+      {
+        "keyPrefix": "BRAZE_REST_API_KEY",
+        "description": "REST API key with users.track permission."
+      }
+    ],
+    "version": "2026-08-20",
+    "destinationType": "event_destination",
+    "defaults": {
+      "name": "Braze",
+      "description": "Customer engagement across push, email and in-app."
+    }
+  },
+  {
+    "id": "ga4",
+    "name": "Google Analytics 4",
+    "category": "Product analytics",
+    "licensing": "standard",
+    "description": "GA4 Measurement Protocol \u2014 server-side traffic and conversion events.",
+    "tags": ["analytics", "ads"],
+    "icon": "ga4",
+    "paramsSchema": {
+      "type": "object",
+      "properties": {
+        "measurement_id": {
+          "type": "string",
+          "description": "GA4 measurement id, e.g. G-XXXXXXX."
+        },
+        "debug_mode": {
+          "type": "boolean",
+          "description": "Send to the GA4 debug endpoint instead."
+        }
+      },
+      "required": ["measurement_id"],
+      "additionalProperties": false
+    },
+    "secrets": [
+      {
+        "keyPrefix": "GA4_API_SECRET",
+        "description": "Measurement Protocol API secret."
+      }
+    ],
+    "version": "2026-08-20",
+    "destinationType": "event_destination",
+    "defaults": {
+      "name": "Google Analytics 4",
+      "description": "GA4 Measurement Protocol \u2014 server-side traffic and conversion events."
+    }
+  },
+  {
+    "id": "intercom",
+    "name": "Intercom",
+    "category": "Product analytics",
+    "licensing": "standard",
+    "description": "Updates Intercom contacts and companies on identify and group calls.",
+    "tags": ["support", "crm"],
+    "icon": "intercom",
+    "paramsSchema": {
+      "type": "object",
+      "properties": {
+        "region": {
+          "type": "string",
+          "description": "One of us, eu or au."
+        }
+      },
+      "required": [],
+      "additionalProperties": false
+    },
+    "secrets": [
+      {
+        "keyPrefix": "INTERCOM_ACCESS_TOKEN",
+        "description": "Access token with write scope on contacts."
+      }
+    ],
+    "version": "2026-08-20",
+    "destinationType": "event_destination",
+    "defaults": {
+      "name": "Intercom",
+      "description": "Updates Intercom contacts and companies on identify and group calls."
+    }
+  },
+  {
+    "id": "june",
+    "name": "June.so",
+    "category": "Product analytics",
+    "licensing": "standard",
+    "description": "Opinionated product analytics for B2B SaaS.",
+    "tags": ["analytics"],
+    "icon": "june",
+    "paramsSchema": {
+      "type": "object",
+      "properties": {},
+      "required": [],
+      "additionalProperties": false
+    },
+    "secrets": [
+      {
+        "keyPrefix": "JUNE_WRITE_KEY",
+        "description": "Workspace write key from June."
+      }
+    ],
+    "version": "2026-08-20",
+    "destinationType": "event_destination",
+    "defaults": {
+      "name": "June.so",
+      "description": "Opinionated product analytics for B2B SaaS."
+    }
+  },
+  {
+    "id": "mixpanel",
+    "name": "Mixpanel",
+    "category": "Product analytics",
+    "licensing": "standard",
+    "description": "Product analytics with funnels, retention and cohorts.",
+    "tags": ["analytics"],
+    "icon": "mixpanel",
+    "paramsSchema": {
+      "type": "object",
+      "properties": {
+        "project_id": {
+          "type": "string",
+          "description": "Mixpanel project id."
+        },
+        "eu_residency": {
+          "type": "boolean",
+          "description": "Send to the EU data-residency endpoint."
+        }
+      },
+      "required": ["project_id"],
+      "additionalProperties": false
+    },
+    "secrets": [
+      {
+        "keyPrefix": "MIXPANEL_SERVICE_ACCOUNT",
+        "description": "Service account secret with ingestion scope."
+      }
+    ],
+    "version": "2026-08-20",
+    "destinationType": "event_destination",
+    "defaults": {
+      "name": "Mixpanel",
+      "description": "Product analytics with funnels, retention and cohorts."
+    }
+  },
+  {
+    "id": "posthog",
+    "name": "PostHog",
+    "category": "Product analytics",
+    "licensing": "standard",
+    "description": "Open-source product analytics, cloud or self-hosted.",
+    "tags": ["analytics"],
+    "icon": "posthog",
+    "paramsSchema": {
+      "type": "object",
+      "properties": {
+        "host": {
+          "type": "string",
+          "description": "Instance URL. Leave blank for PostHog Cloud."
+        },
+        "enable_group_analytics": {
+          "type": "boolean",
+          "description": "Map group calls onto PostHog groups."
+        }
+      },
+      "required": [],
+      "additionalProperties": false
+    },
+    "secrets": [
+      {
+        "keyPrefix": "POSTHOG_PROJECT_API_KEY",
+        "description": "Project API key."
+      }
+    ],
+    "version": "2026-08-20",
+    "destinationType": "event_destination",
+    "defaults": {
+      "name": "PostHog",
+      "description": "Open-source product analytics, cloud or self-hosted."
+    }
+  },
+  {
+    "id": "google-ads",
+    "name": "Google Ads",
+    "description": "Upload offline conversions and customer match lists to Google Ads.",
+    "destinationType": "event_destination",
+    "version": "2026-04-10",
+    "icon": "google-ads",
+    "tags": ["ads", "conversions"],
+    "defaults": {
+      "name": "Google Ads",
+      "description": "Offline conversions for Google Ads."
+    },
+    "secrets": [
+      {
+        "keyPrefix": "GOOGLE_ADS_DEVELOPER_TOKEN",
+        "description": "Google Ads API developer token."
+      }
+    ],
+    "paramsSchema": {
+      "type": "object",
+      "properties": {
+        "customer_id": {
+          "type": "string",
+          "description": "Google Ads customer id, digits only."
+        },
+        "conversion_action_id": {
+          "type": "string",
+          "description": "Conversion action to attribute to."
+        }
+      },
+      "required": ["customer_id"],
+      "additionalProperties": false
+    },
+    "category": "Advertising",
+    "licensing": "standard"
+  },
+  {
     "id": "meta-conversions-api",
     "name": "Meta Conversions API",
     "description": "Send server-side conversions to Meta for ads attribution and retargeting.",
@@ -35,7 +653,9 @@
       },
       "required": ["pixel_id"],
       "additionalProperties": false
-    }
+    },
+    "category": "Advertising",
+    "licensing": "standard"
   },
   {
     "id": "tiktok-events-api",
@@ -69,6 +689,330 @@
       },
       "required": ["event_source_id"],
       "additionalProperties": false
+    },
+    "category": "Advertising",
+    "licensing": "standard"
+  },
+  {
+    "id": "hubspot",
+    "name": "HubSpot",
+    "category": "CRM",
+    "licensing": "standard",
+    "description": "Creates and updates HubSpot contacts and companies from resolved profiles.",
+    "tags": ["crm"],
+    "icon": "hubspot",
+    "paramsSchema": {
+      "type": "object",
+      "properties": {
+        "create_missing_contacts": {
+          "type": "boolean",
+          "description": "Create a contact when no match is found."
+        },
+        "company_property": {
+          "type": "string",
+          "description": "Property used to match companies."
+        }
+      },
+      "required": [],
+      "additionalProperties": false
+    },
+    "secrets": [
+      {
+        "keyPrefix": "HUBSPOT_PRIVATE_APP_TOKEN",
+        "description": "Private app token with CRM write scopes."
+      }
+    ],
+    "version": "2026-08-20",
+    "destinationType": "event_destination",
+    "defaults": {
+      "name": "HubSpot",
+      "description": "Creates and updates HubSpot contacts and companies from resolved profiles."
+    }
+  },
+  {
+    "id": "salesforce",
+    "name": "Salesforce",
+    "category": "CRM",
+    "licensing": "standard",
+    "description": "Writes leads and contacts into Salesforce Sales Cloud.",
+    "tags": ["crm"],
+    "icon": "salesforce",
+    "paramsSchema": {
+      "type": "object",
+      "properties": {
+        "instance_url": {
+          "type": "string",
+          "description": "Your instance URL, e.g. https://acme.my.salesforce.com."
+        },
+        "sobject": {
+          "type": "string",
+          "description": "Object to write, e.g. Lead or Contact."
+        }
+      },
+      "required": ["instance_url", "sobject"],
+      "additionalProperties": false
+    },
+    "secrets": [
+      {
+        "keyPrefix": "SALESFORCE_CLIENT_SECRET",
+        "description": "Connected app client secret."
+      },
+      {
+        "keyPrefix": "SALESFORCE_REFRESH_TOKEN",
+        "description": "OAuth refresh token for the integration user."
+      }
+    ],
+    "version": "2026-08-20",
+    "destinationType": "event_destination",
+    "defaults": {
+      "name": "Salesforce",
+      "description": "Writes leads and contacts into Salesforce Sales Cloud."
+    }
+  },
+  {
+    "id": "s3",
+    "name": "Amazon S3",
+    "description": "Batch routed events to newline-delimited JSON objects in an S3 bucket.",
+    "destinationType": "event_destination",
+    "version": "2026-05-30",
+    "icon": "s3",
+    "tags": ["storage", "archive"],
+    "defaults": {
+      "name": "Amazon S3",
+      "description": "Cold archive of routed events."
+    },
+    "secrets": [
+      {
+        "keyPrefix": "AWS_ACCESS_KEY_ID",
+        "description": "IAM access key id."
+      },
+      {
+        "keyPrefix": "AWS_SECRET_ACCESS_KEY",
+        "description": "IAM secret access key."
+      }
+    ],
+    "paramsSchema": {
+      "type": "object",
+      "properties": {
+        "bucket": {
+          "type": "string",
+          "description": "Target bucket name."
+        },
+        "prefix": {
+          "type": "string",
+          "description": "Key prefix for written objects."
+        },
+        "region": {
+          "type": "string",
+          "description": "AWS region of the bucket."
+        }
+      },
+      "required": ["bucket", "region"],
+      "additionalProperties": false
+    },
+    "category": "Object storage",
+    "licensing": "standard"
+  },
+  {
+    "id": "gcs",
+    "name": "Google Cloud Storage",
+    "category": "Object storage",
+    "licensing": "standard",
+    "description": "Archive raw events as newline-delimited JSON in a GCS bucket.",
+    "tags": ["storage", "archive"],
+    "icon": "gcs",
+    "paramsSchema": {
+      "type": "object",
+      "properties": {
+        "bucket": {
+          "type": "string",
+          "description": "Bucket name."
+        },
+        "path_prefix": {
+          "type": "string",
+          "description": "Key prefix, e.g. sfere/events/."
+        },
+        "compression": {
+          "type": "string",
+          "description": "One of none, gzip."
+        }
+      },
+      "required": ["bucket"],
+      "additionalProperties": false
+    },
+    "secrets": [
+      {
+        "keyPrefix": "GCS_SERVICE_ACCOUNT_JSON",
+        "description": "Service account key with objectCreator on the bucket."
+      }
+    ],
+    "version": "2026-08-20",
+    "destinationType": "event_destination",
+    "defaults": {
+      "name": "Google Cloud Storage",
+      "description": "Archive raw events as newline-delimited JSON in a GCS bucket."
+    }
+  },
+  {
+    "id": "tag",
+    "name": "Custom tag",
+    "category": "Device destinations",
+    "licensing": "standard",
+    "description": "Injects your own HTML or JS into the page \u2014 any pixel the catalog does not cover yet.",
+    "tags": ["device", "custom"],
+    "icon": "tag",
+    "paramsSchema": {
+      "type": "object",
+      "properties": {
+        "html": {
+          "type": "string",
+          "description": "The markup to inject. Runs on every page the Web SDK loads on."
+        }
+      },
+      "required": ["html"],
+      "additionalProperties": false
+    },
+    "secrets": [],
+    "version": "2026-08-20",
+    "destinationType": "event_destination",
+    "defaults": {
+      "name": "Custom tag",
+      "description": "Injects your own HTML or JS into the page \u2014 any pixel the catalog does not cover yet."
+    }
+  },
+  {
+    "id": "ga4-device",
+    "name": "GA4 (device mode)",
+    "category": "Device destinations",
+    "licensing": "standard",
+    "description": "Loads the GA4 client-side snippet through the Web SDK instead of sending server-side.",
+    "tags": ["device", "ads"],
+    "icon": "ga4",
+    "paramsSchema": {
+      "type": "object",
+      "properties": {
+        "measurement_id": {
+          "type": "string",
+          "description": "GA4 measurement id."
+        }
+      },
+      "required": ["measurement_id"],
+      "additionalProperties": false
+    },
+    "secrets": [],
+    "version": "2026-08-20",
+    "destinationType": "event_destination",
+    "defaults": {
+      "name": "GA4 (device mode)",
+      "description": "Loads the GA4 client-side snippet through the Web SDK instead of sending server-side."
+    }
+  },
+  {
+    "id": "gtm",
+    "name": "Google Tag Manager",
+    "category": "Device destinations",
+    "licensing": "standard",
+    "description": "Installs the GTM container so your marketing team can manage tags themselves.",
+    "tags": ["device"],
+    "icon": "gtm",
+    "paramsSchema": {
+      "type": "object",
+      "properties": {
+        "container_id": {
+          "type": "string",
+          "description": "GTM container id, e.g. GTM-XXXXXX."
+        }
+      },
+      "required": ["container_id"],
+      "additionalProperties": false
+    },
+    "secrets": [],
+    "version": "2026-08-20",
+    "destinationType": "event_destination",
+    "defaults": {
+      "name": "Google Tag Manager",
+      "description": "Installs the GTM container so your marketing team can manage tags themselves."
+    }
+  },
+  {
+    "id": "logrocket",
+    "name": "LogRocket",
+    "category": "Device destinations",
+    "licensing": "standard",
+    "description": "Session replay, so you can watch what a broken funnel actually looked like.",
+    "tags": ["device", "support"],
+    "icon": "logrocket",
+    "paramsSchema": {
+      "type": "object",
+      "properties": {
+        "app_id": {
+          "type": "string",
+          "description": "LogRocket app id."
+        }
+      },
+      "required": ["app_id"],
+      "additionalProperties": false
+    },
+    "secrets": [],
+    "version": "2026-08-20",
+    "destinationType": "event_destination",
+    "defaults": {
+      "name": "LogRocket",
+      "description": "Session replay, so you can watch what a broken funnel actually looked like."
+    }
+  },
+  {
+    "id": "devnull",
+    "name": "/dev/null",
+    "category": "Special",
+    "licensing": "standard",
+    "description": "Sends events nowhere. For testing a pipe or running a transform with no delivery.",
+    "tags": ["custom", "testing"],
+    "icon": "devnull",
+    "paramsSchema": {
+      "type": "object",
+      "properties": {},
+      "required": [],
+      "additionalProperties": false
+    },
+    "secrets": [],
+    "version": "2026-08-20",
+    "destinationType": "event_destination",
+    "defaults": {
+      "name": "/dev/null",
+      "description": "Sends events nowhere. For testing a pipe or running a transform with no delivery."
+    }
+  },
+  {
+    "id": "segment",
+    "name": "Segment",
+    "category": "Special",
+    "licensing": "standard",
+    "description": "Forwards events to any Segment-compatible endpoint. Useful while migrating.",
+    "tags": ["custom"],
+    "icon": "segment",
+    "paramsSchema": {
+      "type": "object",
+      "properties": {
+        "endpoint": {
+          "type": "string",
+          "description": "Segment-compatible HTTP endpoint."
+        }
+      },
+      "required": ["endpoint"],
+      "additionalProperties": false
+    },
+    "secrets": [
+      {
+        "keyPrefix": "SEGMENT_WRITE_KEY",
+        "description": "Write key for the receiving source."
+      }
+    ],
+    "version": "2026-08-20",
+    "destinationType": "event_destination",
+    "defaults": {
+      "name": "Segment",
+      "description": "Forwards events to any Segment-compatible endpoint. Useful while migrating."
     }
   },
   {
@@ -79,7 +1023,10 @@
     "version": "2026-05-30",
     "icon": "webhook",
     "tags": ["custom", "http"],
-    "defaults": { "name": "Webhook", "description": "Custom HTTPS webhook." },
+    "defaults": {
+      "name": "Webhook",
+      "description": "Custom HTTPS webhook."
+    },
     "secrets": [
       {
         "keyPrefix": "WEBHOOK_SIGNING_SECRET",
@@ -100,76 +1047,8 @@
       },
       "required": ["url"],
       "additionalProperties": false
-    }
-  },
-  {
-    "id": "s3",
-    "name": "Amazon S3",
-    "description": "Batch routed events to newline-delimited JSON objects in an S3 bucket.",
-    "destinationType": "event_destination",
-    "version": "2026-05-30",
-    "icon": "s3",
-    "tags": ["storage", "archive"],
-    "defaults": {
-      "name": "Amazon S3",
-      "description": "Cold archive of routed events."
     },
-    "secrets": [
-      { "keyPrefix": "AWS_ACCESS_KEY_ID", "description": "IAM access key id." },
-      {
-        "keyPrefix": "AWS_SECRET_ACCESS_KEY",
-        "description": "IAM secret access key."
-      }
-    ],
-    "paramsSchema": {
-      "type": "object",
-      "properties": {
-        "bucket": { "type": "string", "description": "Target bucket name." },
-        "prefix": {
-          "type": "string",
-          "description": "Key prefix for written objects."
-        },
-        "region": {
-          "type": "string",
-          "description": "AWS region of the bucket."
-        }
-      },
-      "required": ["bucket", "region"],
-      "additionalProperties": false
-    }
-  },
-  {
-    "id": "google-ads",
-    "name": "Google Ads",
-    "description": "Upload offline conversions and customer match lists to Google Ads.",
-    "destinationType": "event_destination",
-    "version": "2026-04-10",
-    "icon": "google-ads",
-    "tags": ["ads", "conversions"],
-    "defaults": {
-      "name": "Google Ads",
-      "description": "Offline conversions for Google Ads."
-    },
-    "secrets": [
-      {
-        "keyPrefix": "GOOGLE_ADS_DEVELOPER_TOKEN",
-        "description": "Google Ads API developer token."
-      }
-    ],
-    "paramsSchema": {
-      "type": "object",
-      "properties": {
-        "customer_id": {
-          "type": "string",
-          "description": "Google Ads customer id, digits only."
-        },
-        "conversion_action_id": {
-          "type": "string",
-          "description": "Conversion action to attribute to."
-        }
-      },
-      "required": ["customer_id"],
-      "additionalProperties": false
-    }
+    "category": "Special",
+    "licensing": "standard"
   }
 ]
