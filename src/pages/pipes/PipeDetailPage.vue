@@ -1,25 +1,21 @@
 <template>
   <q-page class="p-6">
     <PageHeader :title="pipe?.name || 'Pipe'" :subtitle="subtitle">
+      <!-- The noun is the <h1> beside them, so both state actions are drawn
+           rather than spelled; SfereIconButton carries the phrase to the
+           tooltip and to assistive tech. Each one asks before it acts. -->
       <template v-if="pipe" #actions>
-        <button
-          class="flex h-9 items-center gap-1.5 rounded-lg border border-line2 bg-white px-3 text-sm text-ink shadow-sm hover:bg-fill"
-          @click="router.push({ name: 'pipes' })"
-        >
-          All pipes
-        </button>
-        <button
-          class="flex h-9 items-center gap-1.5 rounded-lg border border-line2 bg-white px-3 text-sm text-ink shadow-sm hover:bg-fill"
-          @click="toggle"
-        >
-          {{ pipe.isEnabled ? 'Pause pipe' : 'Enable pipe' }}
-        </button>
-        <button
-          class="rounded-lg bg-rose-600 px-3.5 py-1.5 text-sm font-medium text-white shadow-sm hover:opacity-90"
+        <SfereIconButton
+          :icon="pipe.isEnabled ? 'pause' : 'play'"
+          :label="pipe.isEnabled ? 'Pause this pipe' : 'Enable this pipe'"
+          @click="confirmToggle = true"
+        />
+        <SfereIconButton
+          icon="trash"
+          label="Delete this pipe"
+          variant="danger"
           @click="confirmDelete = true"
-        >
-          Delete
-        </button>
+        />
       </template>
     </PageHeader>
 
@@ -191,6 +187,19 @@
       </CardPanel>
     </div>
 
+    <!-- The header icons carry no sentence of their own, so the dialog is where
+         the consequence is written. Pausing is reversible, so it is deliberately
+         not `destructive` — a red button on a routine confirm teaches people to
+         click through red buttons. -->
+    <ConfirmDialog
+      v-if="pipe"
+      v-model="confirmToggle"
+      :title="pipe.isEnabled ? 'Pause this pipe?' : 'Enable this pipe?'"
+      :message="toggleMessage"
+      :confirm-label="pipe.isEnabled ? 'Pause pipe' : 'Enable pipe'"
+      @confirm="toggle"
+    />
+
     <ConfirmDialog
       v-if="pipe"
       v-model="confirmDelete"
@@ -210,6 +219,7 @@ import { useQuasar } from 'quasar'
 import PageHeader from '@/components/ui/PageHeader.vue'
 import CardPanel from '@/components/ui/CardPanel.vue'
 import ConfirmDialog from '@/components/ui/ConfirmDialog.vue'
+import SfereIconButton from '@/components/ui/SfereIconButton.vue'
 import DefinitionList from '@/components/ui/DefinitionList.vue'
 import EmptyState from '@/components/ui/EmptyState.vue'
 import ErrorState from '@/components/ui/ErrorState.vue'
@@ -260,6 +270,7 @@ async function load() {
 
 const tab = ref('overview')
 const confirmDelete = ref(false)
+const confirmToggle = ref(false)
 
 const routeId = computed(() => String(route.params.id ?? ''))
 
@@ -375,6 +386,17 @@ const tabs = computed(() => [
   { key: 'configuration', label: 'Configuration' },
   { key: 'related', label: 'Related', count: related.value.length }
 ])
+
+// The pipe's two ends are what the reader is actually deciding about, so the
+// sentence names them rather than repeating the pipe's own name twice.
+const toggleMessage = computed(() => {
+  const p = pipe.value
+  if (!p) return ''
+  const to = p.eventDestinationName || p.eventDestinationId || 'its destination'
+  return p.isEnabled
+    ? `“${p.name}” stops delivering to ${to} straight away. Events keep arriving at the source; they just are not routed on. You can enable it again at any time.`
+    : `“${p.name}” starts delivering to ${to} straight away.`
+})
 
 async function toggle() {
   const next = !pipe.value.isEnabled

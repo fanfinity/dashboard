@@ -6,12 +6,6 @@
     >
       <template #actions>
         <button
-          class="flex h-9 items-center gap-1.5 rounded-lg border border-line2 bg-white px-3 text-sm text-ink shadow-sm hover:bg-fill"
-          @click="router.push({ name: 'pipes' })"
-        >
-          All pipes
-        </button>
-        <button
           :disabled="!items.length"
           class="rounded-lg bg-rose-600 px-3.5 py-1.5 text-sm font-medium text-white shadow-sm hover:opacity-90 disabled:opacity-50"
           @click="confirmEmpty = true"
@@ -156,7 +150,6 @@
 
 <script setup>
 import { computed, onMounted, ref } from 'vue'
-import { useRouter } from 'vue-router'
 import { useQuasar } from 'quasar'
 import PageHeader from '@/components/ui/PageHeader.vue'
 import ConfirmDialog from '@/components/ui/ConfirmDialog.vue'
@@ -166,7 +159,6 @@ import StatusBadge from '@/components/ui/StatusBadge.vue'
 import { formatDate } from '@/composables/usePipes'
 import { usePipesTrash } from '@/composables/usePipesTrash'
 
-const router = useRouter()
 const $q = useQuasar()
 
 const { items, loading, error, load, restore, purge, purgeAll } =

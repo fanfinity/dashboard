@@ -6,18 +6,17 @@
     >
       <template #actions>
         <ToolbarSearch v-model="query" placeholder="Search connections..." />
-        <button
-          class="flex h-9 items-center gap-1.5 rounded-lg border border-line2 bg-white px-3 text-sm text-ink shadow-sm hover:bg-fill"
-          @click="router.push({ name: 'dwh-connections-trash' })"
-        >
-          Trash
-        </button>
-        <button
-          class="flex h-9 items-center gap-1.5 rounded-lg bg-brand px-3.5 text-sm font-medium text-white shadow-sm hover:opacity-90"
-          @click="router.push({ name: 'dwh-connections-new' })"
-        >
-          New connection
-        </button>
+        <SfereIconButton
+          icon="trash"
+          label="Trash"
+          :to="{ name: 'dwh-connections-trash' }"
+        />
+        <SfereIconButton
+          icon="plus"
+          label="New connection"
+          variant="primary"
+          :to="{ name: 'dwh-connections-new' }"
+        />
       </template>
     </PageHeader>
 
@@ -85,6 +84,7 @@
       :rows="visible"
       :loading="loading"
       :error="error"
+      :api-missing="apiMissing"
       row-key="id"
       clickable-rows
       @retry="load"
@@ -210,6 +210,7 @@ import StatusBadge from '@/components/ui/StatusBadge.vue'
 import EmptyState from '@/components/ui/EmptyState.vue'
 import NoticeBanner from '@/components/ui/NoticeBanner.vue'
 import ToolbarSearch from '@/components/ui/ToolbarSearch.vue'
+import SfereIconButton from '@/components/ui/SfereIconButton.vue'
 import ConfirmDialog from '@/components/ui/ConfirmDialog.vue'
 import DwhConnectionDetailDialog from '@/components/warehouse/connections/DwhConnectionDetailDialog.vue'
 import {
@@ -230,6 +231,7 @@ const {
   connections,
   loading,
   error,
+  apiMissing,
   load,
   setPrimary,
   applyTestResult,

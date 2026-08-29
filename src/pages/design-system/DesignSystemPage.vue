@@ -97,7 +97,7 @@
             <StatCard
               bare
               label="Components"
-              value="39"
+              value="42"
               hint="src/components/ui/"
             />
             <StatCard

@@ -1,26 +1,26 @@
 <template>
   <q-page class="p-6">
     <PageHeader :title="source?.name || 'Source'" :subtitle="subtitle">
+      <!-- The noun is the <h1> beside them, so the two state actions are drawn
+           rather than spelled (SfereIconButton carries the word to the tooltip
+           and to assistive tech). Going back to the list is not one of them any
+           more: PageHeader renders that from the screen manifest's `parent`, in
+           the same place on all 23 sub-screens. -->
       <template #actions>
-        <button
-          class="flex h-9 items-center gap-1.5 rounded-lg border border-line2 bg-white px-3 text-sm text-ink shadow-sm hover:bg-fill"
-          @click="router.push({ name: 'sources' })"
-        >
-          All sources
-        </button>
         <template v-if="source">
-          <button
-            class="flex h-9 items-center gap-1.5 rounded-lg border border-line2 bg-white px-3 text-sm text-ink shadow-sm hover:bg-fill"
-            @click="toggle"
-          >
-            {{ source.isEnabled ? 'Pause' : 'Enable' }}
-          </button>
-          <button
-            class="flex h-9 items-center gap-1.5 rounded-lg bg-rose-600 px-3.5 text-sm font-medium text-white shadow-sm hover:opacity-90"
+          <SfereIconButton
+            :icon="source.isEnabled ? 'pause' : 'play'"
+            :label="
+              source.isEnabled ? 'Pause this source' : 'Enable this source'
+            "
+            @click="confirmToggle = true"
+          />
+          <SfereIconButton
+            icon="trash"
+            label="Delete this source"
+            variant="danger"
             @click="confirmDelete = true"
-          >
-            Delete
-          </button>
+          />
         </template>
       </template>
     </PageHeader>
@@ -52,27 +52,24 @@
     </EmptyState>
 
     <div v-else class="flex flex-col gap-5">
-      <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      <!-- Every card here is measured. The four it replaced were fixture-only
+           fields the backend's Source does not carry: `version` printed the
+           literal "vundefined", and the three counts printed an em dash on
+           every real source. The pipe count is the same joined list the
+           "Destinations & pipes" tab counts, so the row and the tab can never
+           disagree. -->
+      <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
         <StatCard
-          label="Events (last hour)"
-          :value="formatCount(source.eventCountLastHour)"
+          label="Status"
+          :value="source.isEnabled ? 'Enabled' : 'Paused'"
+          :hint="sourceTypeLabel(source.sourceType)"
         />
+        <StatCard label="Pipes" :value="pipeCountLabel" :hint="pipesHint" />
         <StatCard
-          label="Event types"
-          :value="formatCount(source.eventTypeCount)"
+          label="Created"
+          :value="formatDate(source.createdAt)"
+          :hint="updatedHint"
         />
-        <StatCard label="Pipes" :value="formatCount(source.pipeCount)" />
-        <StatCard label="Config version" :value="`v${source.version}`" />
-      </div>
-
-      <div v-if="upgradeText" class="flex flex-wrap items-center gap-3">
-        <StatusBadge tone="warn" :label="upgradeText" />
-        <button
-          class="rounded-lg border border-line2 bg-white px-3 py-1.5 text-sm font-medium text-brand hover:bg-fill"
-          @click="upgrade"
-        >
-          Upgrade template
-        </button>
       </div>
 
       <ZidSetupWizard
@@ -109,6 +106,7 @@
       <SourceInstallGuide
         v-else-if="tab === 'setup'"
         :source="source"
+        :delivers-to="deliversTo"
         @copy="copyValue"
       />
 
@@ -138,49 +136,21 @@
       />
 
       <SourceSyncPanel v-else-if="tab === 'sync'" :source="source" />
-
-      <template v-else>
-        <LoadingState v-if="templatesLoading" variant="form" :rows="3" />
-
-        <ErrorState
-          v-else-if="templatesError"
-          title="Couldn't load the source templates."
-          :message="templatesError"
-          @retry="loadTemplates"
-        />
-
-        <EmptyState
-          v-else-if="!template"
-          title="Not created from a template"
-          description="This source was configured by hand, so there is no template to track or upgrade."
-        />
-
-        <CardPanel v-else>
-          <template #header>
-            <span class="text-sm font-semibold text-ink">{{
-              template.name
-            }}</span>
-            <StatusBadge
-              :tone="upgradeText ? 'warn' : 'success'"
-              :label="upgradeText || 'Up to date'"
-            />
-          </template>
-
-          <p class="text-sm text-muted">{{ template.description }}</p>
-
-          <div class="mt-4 flex flex-wrap gap-2">
-            <StatusBadge
-              v-for="t in template.tags"
-              :key="t"
-              tone="neutral"
-              :label="t"
-            />
-          </div>
-
-          <DefinitionList :items="templateFacts" :columns="2" class="mt-5" />
-        </CardPanel>
-      </template>
     </div>
+
+    <!-- Both state actions ask first, and say what the click does. The header
+         icons carry no sentence of their own, so the dialog is where the
+         consequence is written; pausing is reversible, so it is not
+         `destructive` — a red button on a routine confirm teaches people to
+         click through red buttons. -->
+    <ConfirmDialog
+      v-if="source"
+      v-model="confirmToggle"
+      :title="source.isEnabled ? 'Pause this source?' : 'Enable this source?'"
+      :message="toggleMessage"
+      :confirm-label="source.isEnabled ? 'Pause source' : 'Enable source'"
+      @confirm="toggle"
+    />
 
     <ConfirmDialog
       v-model="confirmDelete"
@@ -198,6 +168,7 @@ import { computed, onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useQuasar } from 'quasar'
 import PageHeader from '@/components/ui/PageHeader.vue'
+import SfereIconButton from '@/components/ui/SfereIconButton.vue'
 import TabNav from '@/components/ui/TabNav.vue'
 import CardPanel from '@/components/ui/CardPanel.vue'
 import DefinitionList from '@/components/ui/DefinitionList.vue'
@@ -215,12 +186,11 @@ import SourceSyncPanel from '@/components/sources/SourceSyncPanel.vue'
 import ZidSetupWizard from '@/components/sources/ZidSetupWizard.vue'
 import WebSdkSetupPanel from '@/components/sources/WebSdkSetupPanel.vue'
 import { useDataSource } from '@/composables/useDataSource'
-import { useTemplates } from '@/composables/useTemplates'
 import {
   formatCount,
+  formatDate,
   formatDateTime,
   sourceTypeLabel,
-  useSourceTemplates,
   useSources
 } from '@/composables/useSources'
 import { notifyMutationResult } from '@/composables/useMutationFeedback'
@@ -229,7 +199,6 @@ import { usePipes } from '@/composables/usePipes'
 const route = useRoute()
 const router = useRouter()
 const $q = useQuasar()
-const { upgradeLabel } = useTemplates()
 
 const {
   sources,
@@ -240,16 +209,6 @@ const {
   remove: removeSource
 } = useSources()
 
-// The template catalog is supporting detail: a failure there degrades one tab
-// rather than the page, so it keeps its own error and its own Retry.
-const {
-  templates,
-  loading: templatesLoading,
-  error: templatesError,
-  load: loadTemplates,
-  findById: findTemplate
-} = useSourceTemplates()
-
 const { isReal } = useDataSource()
 
 // Passed to the Zid wizard so its "Authorize with Zid" button can open the
@@ -258,11 +217,19 @@ const zidAppUrl = import.meta.env.VITE_ZID_APP_URL || ''
 
 const tab = ref('overview')
 const confirmDelete = ref(false)
+const confirmToggle = ref(false)
 
 // Ordered as a setup journey, not alphabetically: what is it → how do I wire it
 // → is anything arriving → where does it go → the knobs. "Ingest" became
 // "Setup instructions" because that is what someone opening this tab is looking
 // for, and it now renders the full multi-platform guide rather than one snippet.
+//
+// There is deliberately no Template tab. `SourceCreate` accepts a `template_id`
+// and `Source` does not return one, so the template a source was made from is
+// write-only as far as this screen is concerned — the tab could only ever say
+// "no template on record", and the upgrade badge and "Upgrade template" button
+// that sat with it compared two versions the backend has never sent. Bring them
+// back when `Source` carries the template, not before.
 const tabs = computed(() => [
   { key: 'overview', label: 'Overview' },
   { key: 'setup', label: 'Setup instructions' },
@@ -273,8 +240,7 @@ const tabs = computed(() => [
     count: sourcePipes.value.length
   },
   { key: 'sync', label: 'Syncs' },
-  { key: 'settings', label: 'Settings' },
-  { key: 'template', label: 'Template' }
+  { key: 'settings', label: 'Settings' }
 ])
 
 // The Zid go-live steps (authorize → connect webhooks → first sync) hit the
@@ -314,10 +280,33 @@ const sourcePipes = computed(() =>
   source.value ? allPipes.value.filter(p => p.sourceId === source.value.id) : []
 )
 
-const template = computed(() =>
-  source.value && templates.value.length
-    ? findTemplate(source.value.templateId)
-    : null
+// Where this source's events already go, for the setup tab's "events are
+// arriving" result. Read off the pipes this page has already loaded and joined,
+// so it costs nothing extra. Empty while the pipes read is still in flight or
+// failed — the guide falls back to its generic "add a destination" line rather
+// than claiming a destination that may not exist. An enabled pipe only: a paused
+// one is not delivering, and saying it is would be the confident-zero mistake in
+// sentence form.
+const deliversTo = computed(() => {
+  const live = sourcePipes.value.find(p => p.isEnabled)
+  return live?.eventDestinationName || ''
+})
+
+// The pipes read is its own request, and it is allowed to be in flight, to
+// fail, or to have no endpoint behind it. A bare `.length` would print a
+// confident 0 for all three — the same lie `vundefined` told, only quieter.
+const pipeCountLabel = computed(() =>
+  pipesLoading.value || pipesError.value || pipesApiMissing.value
+    ? '—'
+    : formatCount(sourcePipes.value.length)
+)
+
+const pipesHint = computed(() =>
+  deliversTo.value ? `Delivering to ${deliversTo.value}` : ''
+)
+
+const updatedHint = computed(() =>
+  source.value?.updatedAt ? `Updated ${formatDate(source.value.updatedAt)}` : ''
 )
 
 const subtitle = computed(() => {
@@ -328,10 +317,6 @@ const subtitle = computed(() => {
     : type
 })
 
-const upgradeText = computed(() =>
-  source.value ? upgradeLabel(source.value) : ''
-)
-
 const facts = computed(() => {
   const s = source.value
   if (!s) return []
@@ -339,29 +324,18 @@ const facts = computed(() => {
     { label: 'Slug', value: s.slug },
     { label: 'Source id', value: s.id },
     { label: 'Type', value: sourceTypeLabel(s.sourceType) },
-    { label: 'Template', value: s.templateId ?? 'Hand-configured' },
-    // A blank value is DefinitionList's own em dash, so nothing is pre-filled
-    // here any more.
-    { label: 'Template version', value: s.templateVersion },
     { label: 'Created', value: formatDateTime(s.createdAt) },
     { label: 'Last updated', value: formatDateTime(s.updatedAt) },
     { label: 'Description', value: s.description }
   ]
 })
 
-const templateFacts = computed(() => {
+const toggleMessage = computed(() => {
   const s = source.value
-  const t = template.value
-  if (!s || !t) return []
-  return [
-    { label: 'Running version', value: s.templateVersion },
-    { label: 'Latest version', value: s.latestTemplateVersion },
-    { label: 'Event types', value: formatCount(t.eventTypeCount) },
-    {
-      label: 'Real-time attributes',
-      value: formatCount(t.realtimeAttributeCount)
-    }
-  ]
+  if (!s) return ''
+  return s.isEnabled
+    ? `“${s.name}” stops collecting events straight away. Anything already delivered stays where it is, and you can enable it again at any time.`
+    : `“${s.name}” starts collecting events again straight away.`
 })
 
 const deleteMessage = computed(() =>
@@ -388,12 +362,6 @@ async function toggle() {
     success: `${s.name} ${wasEnabled ? 'paused' : 'enabled'}`,
     apiMissing: `Can't ${wasEnabled ? 'pause' : 'enable'} ${s.name} yet.`
   })
-}
-
-function upgrade() {
-  notifyLocal(
-    `${source.value.name} would upgrade to template ${source.value.latestTemplateVersion}`
-  )
 }
 
 async function remove() {
@@ -449,7 +417,6 @@ function onStrictMode(value) {
 
 onMounted(() => {
   load()
-  loadTemplates()
   loadPipes()
 })
 </script>

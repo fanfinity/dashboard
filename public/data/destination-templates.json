@@ -44,6 +44,7 @@
     "name": "ClickHouse",
     "category": "Data warehouse",
     "licensing": "included",
+    "provisioned": true,
     "description": "Open-source column store built for analytical queries. Provisioned for you on every plan \u2014 no credentials to enter.",
     "tags": ["warehouse", "included"],
     "icon": "clickhouse",

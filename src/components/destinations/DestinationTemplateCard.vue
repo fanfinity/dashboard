@@ -2,11 +2,11 @@
   <SelectableCard :selected="selected" @select="emit('select', template)">
     <div class="flex w-full items-start justify-between gap-2">
       <p class="text-sm font-medium text-ink">{{ template.name }}</p>
-      <!-- Licensing outranks the version here. In a 29-template catalog the
-           question every reader has is "does this cost extra?", and the version
-           string answers a question nobody is asking until after they have
-           picked. `standard` renders nothing — a badge on everything is a badge
-           on nothing. -->
+      <!-- In a 28-template catalog the question every reader has is "does this
+           cost extra?". `standard` renders nothing — a badge on everything is a
+           badge on nothing. `included` is unused today (the one included
+           template is provisioned, so the picker never renders a card for it)
+           and stays for the next one that is not. -->
       <StatusBadge v-if="licence" :tone="licence.tone" :label="licence.label" />
     </div>
     <p
@@ -14,6 +14,11 @@
       class="mt-1.5 text-xs leading-5 text-muted"
       >{{ template.description }}</p
     >
+    <!-- No `template.version` here. It is a real field — the list and detail
+         screens compare a destination's `templateVersion` against it to offer
+         an upgrade — but on a card you have not created anything from it is an
+         unlabelled date answering nothing: you can only ever create the latest.
+         Every card carrying one made it read as a property of the product. -->
     <div class="mt-3 flex flex-wrap items-center gap-1">
       <StatusBadge
         v-for="tag in template.tags ?? []"
@@ -21,9 +26,6 @@
         tone="neutral"
         :label="tag"
       />
-      <span class="ml-auto font-sfere-mono text-sfere-label text-subtle">{{
-        template.version
-      }}</span>
     </div>
   </SelectableCard>
 </template>

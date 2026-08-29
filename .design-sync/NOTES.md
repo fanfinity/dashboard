@@ -6,7 +6,7 @@ Repo-specific gotchas for anyone re-running the claude.ai/design sync.
 
 - **`/design-sync`'s converter targets React design systems only** (stated in
   `non-storybook/SKILL.md`: "a non-React DS has nothing for the claude.ai/design
-  agent to build with"). Sfere is 39 Vue SFCs on Quasar and the repo has zero
+  agent to build with"). Sfere is 42 Vue SFCs on Quasar and the repo has zero
   React, so `package-build.mjs` is not runnable here and never will be.
 - The bundle is produced by **`tools/build-design-sync-bundle.mjs`** instead,
   which emits the same output contract by hand. It lives in `tools/`, where

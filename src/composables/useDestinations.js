@@ -115,18 +115,6 @@ export function useDestinationTemplates() {
 }
 
 /**
- * Every pipe in the workspace. The detail screen filters this on
- * `eventDestinationId` to show what feeds a destination — `pipeCount` on the
- * destination record is guaranteed to agree with that count.
- *
- * @returns {{ pipes: import('vue').Ref<object[]>, loading: import('vue').Ref<boolean>, error: import('vue').Ref<string|null>, load: () => Promise<void> }}
- */
-export function useDestinationPipes() {
-  const { data, loading, error, load } = useMockResource('pipes')
-  return { pipes: data, loading, error, load }
-}
-
-/**
  * Soft-deleted destinations — the `destinations` slice of the shared trash file.
  *
  * @returns {{ deleted: import('vue').Ref<object[]>, loading: import('vue').Ref<boolean>, error: import('vue').Ref<string|null>, load: () => Promise<void> }}

@@ -9,23 +9,14 @@
     @update:model-value="v => emit('update:modelValue', v)"
   >
     <template #leading>
-      <svg
-        class="size-4"
-        viewBox="0 0 256 256"
-        fill="currentColor"
-        aria-hidden="true"
-      >
-        <path d="M192 112a80 80 0 1 1-80-80a80 80 0 0 1 80 80" opacity="0.2" />
-        <path
-          d="m229.66 218.34l-50.07-50.06a88.11 88.11 0 1 0-11.31 11.31l50.06 50.07a8 8 0 0 0 11.32-11.32M40 112a72 72 0 1 1 72 72a72.08 72.08 0 0 1-72-72"
-        />
-      </svg>
+      <SfereIcon name="search" />
     </template>
   </SfereInput>
 </template>
 
 <script setup>
 import { computed } from 'vue'
+import SfereIcon from './SfereIcon.vue'
 import SfereInput from './SfereInput.vue'
 
 // The filter box that sits in a PageHeader `actions` slot or a
@@ -33,9 +24,11 @@ import SfereInput from './SfereInput.vue'
 // box in the product is the same width and carries the same glyph — the two
 // screens that hand-rolled one before this existed were 280px and 320px.
 //
-// The icon is inline SVG rather than an import from `src/assets/`: the kit does
-// not reach into app assets, and the CSP plus `assetsInlineLimit: 0` rule out a
-// data: URI anyway (same reason SfereSpinner draws its own circle).
+// The glyph comes from SfereIcon, whose registry this magnifier used to be a
+// hand-inlined copy of. Still inline SVG rather than an import from
+// `src/assets/`: the kit does not reach into app assets, and the CSP plus
+// `assetsInlineLimit: 0` rule out a data: URI anyway (same reason SfereSpinner
+// draws its own circle).
 //
 // `type="search"` gives the native clear affordance in WebKit for free.
 const props = defineProps({

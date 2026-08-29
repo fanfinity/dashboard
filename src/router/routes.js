@@ -12,6 +12,8 @@ import { FEATURE_KEYS } from '@/config/features'
 // each route had its own inline `() => import(...)`.
 const pages = import.meta.glob('../pages/**/*.vue')
 
+const screenNames = new Set(allScreens.map(s => s.name))
+
 const children = allScreens.map(screen => {
   const key = `../pages/${screen.component}`
   const component = pages[key]
@@ -32,12 +34,27 @@ const children = allScreens.map(screen => {
     )
   }
 
+  // meta.parent is the back target PageHeader renders, and a router-link to a
+  // route name that does not exist logs a console warning — which is one of the
+  // things `pnpm smoke:dist` fails on. Same idiom as the two throws above: catch
+  // a renamed or mistyped parent at module load, not on the screen.
+  if (screen.parent && !screenNames.has(screen.parent.name)) {
+    throw new Error(
+      `screens.js points ${screen.path} back at '${screen.parent.name}', which is not a screen name in screens.js`
+    )
+  }
+
   return {
     // Children of the '/' layout route take relative paths.
     path: screen.path === '/' ? '' : screen.path.slice(1),
     name: screen.name,
     component,
-    meta: { title: screen.title, group: screen.group, issue: screen.issue }
+    meta: {
+      title: screen.title,
+      group: screen.group,
+      issue: screen.issue,
+      parent: screen.parent ?? null
+    }
   }
 })
 

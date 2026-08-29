@@ -469,6 +469,7 @@ Page title block. Sits at the top of every `q-page`.
 | `subtitle` | String  | `''`    | **the purpose line.** One sentence, on every screen  |
 | `eyebrow`  | String  | `''`    | section label above the title — `Collect`, `Act`     |
 | `onDark`   | Boolean | `false` | only for a header inside a `SfereSection tone="ink"` |
+| `back`     | Object  | —       | back target override; see below. `null` suppresses   |
 
 | Slot       | Scope | Notes                                          |
 | ---------- | ----- | ---------------------------------------------- |
@@ -477,6 +478,31 @@ Page title block. Sits at the top of every `q-page`.
 | `actions`  | —     | right-hand buttons / search box                |
 
 No events.
+
+**The back link is not something a page passes.** `PageHeader` reads
+`route.meta.parent` — the `parent: { name, label }` field on the screen's entry
+in `src/router/screens.js` — and renders `← <label>` above the `<h1>` on every
+screen that has one. Give a sub-screen its back link by declaring the parent in
+the manifest, not by adding a button to the header's `#actions`; a page that does
+both ships two ways back on one row, which is what the seven hand-rolled
+"All sources" / "All pipes" buttons were.
+
+Three consequences worth keeping:
+
+- **Top-level screens get no back link, on purpose.** The sidebar is their nav
+  and their row is already highlighted. An arrow there points nowhere.
+- **It is a `router-link`, above the title, never beside it.** Beside it would
+  have to align a control against an `items-start` row whose first text is a 24px
+  cap height, and it would compete with `#actions` on the same line. Above it,
+  the `<h1>` is still the first heading on the page — which is what
+  `scripts/smoke.mjs` asserts on.
+- **It is not `router.back()`.** History is empty on a cold load, which is every
+  deep link and every route the smoke run visits, so the case where the control
+  matters most is the case history cannot answer.
+
+Pass `back` only to override the manifest — an object to point somewhere else,
+`null` to suppress it on a screen that has a parent but should not offer the trip
+back mid-flow.
 
 ### EmptyState.vue
 

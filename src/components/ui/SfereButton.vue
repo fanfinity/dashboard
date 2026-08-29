@@ -19,27 +19,21 @@
 <script setup>
 import { computed } from 'vue'
 import SfereSpinner from './SfereSpinner.vue'
+import {
+  SFERE_BUTTON_VARIANTS,
+  SFERE_BUTTON_VARIANT_NAMES
+} from './sfereButtonVariants.js'
 
 // The Sfere action. Pills, not rounded rectangles — that shape is the single
 // most load-bearing decision in the kit, which is why there is no `square` prop.
 //
-// `primary` and `white` are the two calls to action; `secondary`/`ghost` and
-// `outlineLight` are their quiet counterparts on light and dark surfaces
-// respectively. Pairing a light-surface variant with a dark section (or the
-// reverse) is the one way to get this component wrong.
+// The variant palette lives in `sfereButtonVariants.js` because SfereIconButton
+// draws from the same one; see that file for what each variant is for.
 const props = defineProps({
   variant: {
     type: String,
     default: 'primary',
-    validator: v =>
-      [
-        'primary',
-        'secondary',
-        'ghost',
-        'danger',
-        'white',
-        'outlineLight'
-      ].includes(v)
+    validator: v => SFERE_BUTTON_VARIANT_NAMES.includes(v)
   },
   size: {
     type: String,
@@ -81,28 +75,13 @@ const SIZES = {
   lg: 'gap-2 px-6 py-3 text-sfere-body'
 }
 
-const VARIANTS = {
-  primary:
-    'bg-sfere-brand-fill text-white shadow-sfere-btn hover:bg-sfere-brand-text focus-visible:ring-sfere-500/60',
-  secondary:
-    'border border-sfere-line bg-sfere-surface text-sfere-fg hover:border-sfere-300 hover:text-sfere-brand-text focus-visible:ring-sfere-500/60',
-  ghost: 'text-sfere-fg hover:bg-sfere-fill focus-visible:ring-sfere-500/60',
-  danger:
-    'bg-sfere-danger text-white hover:bg-rose-700 focus-visible:ring-rose-500/60',
-  // On-ink pair. `white` is the primary action on a dark section.
-  white:
-    'bg-white text-sfere-plum hover:bg-sfere-50 focus-visible:ring-white/70 focus-visible:ring-offset-transparent',
-  outlineLight:
-    'border border-sfere-hairline-strong text-white hover:bg-white/10 focus-visible:ring-white/70 focus-visible:ring-offset-transparent'
-}
-
 const classes = computed(() => [
   'inline-flex items-center justify-center rounded-full font-semibold leading-none',
   'transition duration-200 ease-sfere-ui select-none',
   'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2',
   'disabled:cursor-not-allowed disabled:opacity-50',
   SIZES[props.size],
-  VARIANTS[props.variant],
+  SFERE_BUTTON_VARIANTS[props.variant],
   props.block && 'w-full',
   inert.value && 'cursor-not-allowed opacity-50',
   // Only a link needs this. A <button> is already stopped by its own `disabled`

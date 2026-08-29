@@ -7,12 +7,6 @@
       <template #actions>
         <ToolbarSearch v-model="query" placeholder="Search trash..." />
         <button
-          class="flex h-9 items-center gap-1.5 rounded-lg border border-line2 bg-white px-3 text-sm text-ink shadow-sm hover:bg-fill"
-          @click="router.push({ name: 'attributes' })"
-        >
-          All attributes
-        </button>
-        <button
           :disabled="!items.length"
           class="flex h-9 items-center gap-1.5 rounded-lg bg-rose-600 px-3.5 text-sm font-medium text-white shadow-sm hover:opacity-90 disabled:opacity-50"
           @click="confirmEmpty = true"
@@ -98,7 +92,6 @@
 
 <script setup>
 import { computed, onMounted, ref } from 'vue'
-import { useRouter } from 'vue-router'
 import { useQuasar } from 'quasar'
 import PageHeader from '@/components/ui/PageHeader.vue'
 import DataTable from '@/components/ui/DataTable.vue'
@@ -113,7 +106,6 @@ import {
 } from '@/composables/useAttributes'
 import { useAttributesTrash } from '@/composables/useAttributesTrash'
 
-const router = useRouter()
 const $q = useQuasar()
 const { items, loading, error, load, restore, purge, purgeAll } =
   useAttributesTrash()

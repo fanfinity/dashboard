@@ -1,10 +1,29 @@
 <template>
   <div class="flex flex-col gap-4">
+    <!-- The included warehouse is not an option in the grid below — there is
+         nothing for anyone to configure — so it is said here instead. Rendered
+         from the record rather than hardcoded, so the day a second template is
+         marked `provisioned` it appears without a code change. -->
     <NoticeBanner
+      v-for="t in provisioned"
+      :key="t.id"
       tone="info"
-      title="A warehouse comes with the plan"
-      message="ClickHouse is included on every plan and needs no credentials — it is provisioned per account when you create it. The other warehouses are add-ons, marked below; everything else is included at no extra cost."
-    />
+      :title="`${t.name} comes with your plan — we provide it for you`"
+      :message="provisionedMessage(t)"
+    >
+      <div class="flex flex-wrap items-center gap-1.5">
+        <StatusBadge tone="success" label="Included" />
+        <!-- `included` is already the badge to the left of these; a template
+             tagged with its own licence would otherwise read "Included …
+             included". -->
+        <StatusBadge
+          v-for="tag in otherTags(t)"
+          :key="tag"
+          tone="neutral"
+          :label="tag"
+        />
+      </div>
+    </NoticeBanner>
 
     <div class="flex flex-wrap items-center gap-2">
       <ToolbarSearch
@@ -48,8 +67,12 @@
 
     <EmptyState
       v-else
-      title="No destinations match"
-      :description="`None of the ${templates.length} destinations match your search or filter.`"
+      :title="
+        provisionedMatches.length
+          ? 'Nothing to create for that one'
+          : 'No destinations match'
+      "
+      :description="emptyDescription"
     >
       <template #cta>
         <SfereButton variant="secondary" size="sm" @click="reset"
@@ -64,20 +87,26 @@
 import { computed, ref, watch } from 'vue'
 import EmptyState from '@/components/ui/EmptyState.vue'
 import NoticeBanner from '@/components/ui/NoticeBanner.vue'
+import StatusBadge from '@/components/ui/StatusBadge.vue'
 import TabNav from '@/components/ui/TabNav.vue'
 import ToolbarSearch from '@/components/ui/ToolbarSearch.vue'
 import SfereButton from '@/components/ui/SfereButton.vue'
 import DestinationTemplateCard from '@/components/destinations/DestinationTemplateCard.vue'
 
-// The destinations catalog, grouped. A flat 29-card grid is a wall: nobody
-// scanning it can tell that eight of them are warehouses and four are
+// The destinations catalog, grouped. A flat 28-card grid is a wall: nobody
+// scanning it can tell that seven of them are warehouses and four are
 // client-side tags. Grouping by `category` is the difference between browsing
 // and hunting.
 //
+// A template marked `provisioned` never reaches the grid: we run it for the
+// account, so "create one" is not a thing anyone can do with it. It becomes the
+// notice above the catalog instead — see `pickable` / `provisioned` below, which
+// every count on this screen is derived from so the tab totals cannot disagree
+// with the cards.
+//
 // The group order is fixed here rather than derived from the data, because
-// alphabetical would open on Advertising and the warehouse — the thing most
-// people are here for, and the only one with an included tier — would be
-// halfway down.
+// alphabetical would open on Advertising and the warehouses — the thing most
+// people are here for — would be halfway down.
 const props = defineProps({
   templates: { type: Array, default: () => [] },
   query: { type: String, default: '' }
@@ -94,6 +123,20 @@ const CATEGORY_ORDER = [
   'Device destinations',
   'Special'
 ]
+
+// Split once, at the top: everything below reads `pickable`, never `templates`.
+const provisioned = computed(() => props.templates.filter(t => t.provisioned))
+const pickable = computed(() => props.templates.filter(t => !t.provisioned))
+
+// The record's own description carries the "no credentials" half; this adds why
+// it is absent from the grid, and what the rest of the catalog costs.
+function provisionedMessage(t) {
+  return `${t.description} It is not in the catalog below because there is nothing for you to create. The other warehouses are add-ons, marked below; everything else is included at no extra cost.`
+}
+
+function otherTags(t) {
+  return (t.tags ?? []).filter(tag => tag.toLowerCase() !== 'included')
+}
 
 const category = ref('all')
 const localQuery = ref(props.query)
@@ -115,32 +158,48 @@ function categoryOf(t) {
 }
 
 const presentCategories = computed(() => {
-  const seen = new Set(props.templates.map(categoryOf))
+  const seen = new Set(pickable.value.map(categoryOf))
   const ordered = CATEGORY_ORDER.filter(c => seen.has(c))
   const extra = [...seen].filter(c => !CATEGORY_ORDER.includes(c)).sort()
   return [...ordered, ...extra]
 })
 
 const categoryTabs = computed(() => [
-  { key: 'all', label: 'All', count: props.templates.length },
+  { key: 'all', label: 'All', count: pickable.value.length },
   ...presentCategories.value.map(c => ({
     key: c,
     label: c,
-    count: props.templates.filter(t => categoryOf(t) === c).length
+    count: pickable.value.filter(t => categoryOf(t) === c).length
   }))
 ])
 
-const matching = computed(() => {
+// One predicate for both lists, so a search for a provisioned template can be
+// recognised by exactly the rule that hid it from the grid.
+function matchesFilters(t) {
   const q = localQuery.value.trim().toLowerCase()
-  return props.templates.filter(t => {
-    if (category.value !== 'all' && categoryOf(t) !== category.value) {
-      return false
-    }
-    if (!q) return true
-    return [t.name, t.description, categoryOf(t), ...(t.tags ?? [])]
-      .filter(Boolean)
-      .some(field => String(field).toLowerCase().includes(q))
-  })
+  if (category.value !== 'all' && categoryOf(t) !== category.value) return false
+  if (!q) return true
+  return [t.name, t.description, categoryOf(t), ...(t.tags ?? [])]
+    .filter(Boolean)
+    .some(field => String(field).toLowerCase().includes(q))
+}
+
+const matching = computed(() => pickable.value.filter(matchesFilters))
+
+// "clickhouse" is the single likeliest thing anyone types here, and it now
+// matches nothing in the grid. Without this the empty state would answer the
+// one search the notice above it already answers — with "none of the 28
+// destinations match", which reads as "we do not have it".
+const provisionedMatches = computed(() =>
+  provisioned.value.filter(matchesFilters)
+)
+
+const emptyDescription = computed(() => {
+  const names = provisionedMatches.value.map(t => t.name)
+  if (!names.length) {
+    return `None of the ${pickable.value.length} destinations match your search or filter.`
+  }
+  return `${names.join(' and ')} comes with your plan — see the note above; there is nothing to create for it. Nothing else in the catalog matches your search or filter.`
 })
 
 const groups = computed(() =>

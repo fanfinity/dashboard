@@ -1,20 +1,7 @@
 import { ref } from 'vue'
 import { customFetch } from '@/api/mutator'
+import { camelizeKeys } from '@/lib/apiShape'
 import { useMe } from '@/composables/useMe'
-
-/**
- * Convert snake_case keys to camelCase (shallow, for a flat object).
- * Mirrors useSourcesAPI's camelize so sync payloads match the rest of the UI.
- */
-function camelize(obj) {
-  if (!obj || typeof obj !== 'object') return obj
-  const out = {}
-  for (const [k, v] of Object.entries(obj)) {
-    const key = k.replace(/_([a-z])/g, (_, c) => c.toUpperCase())
-    out[key] = v
-  }
-  return out
-}
 
 /**
  * API-backed composable for source sync controls.
@@ -44,7 +31,7 @@ export function useSourceSyncAPI() {
         body: JSON.stringify(body)
       }
     )
-    const run = camelize(res.data)
+    const run = camelizeKeys(res.data)
     runs.value = [run, ...runs.value]
     return run
   }
@@ -62,7 +49,7 @@ export function useSourceSyncAPI() {
         `/v1/accounts/${accountId}/sources/${sourceId}/sync-runs?size=100`
       )
       // Most-recent first: the backend orders by (created_at, id) ascending.
-      runs.value = (res.data.items ?? []).map(camelize).reverse()
+      runs.value = (res.data.items ?? []).map(camelizeKeys).reverse()
     } catch (e) {
       error.value = e.message || 'Failed to load sync history'
       runs.value = []

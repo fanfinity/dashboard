@@ -217,7 +217,15 @@ const props = defineProps({
   // `preview` means the source was never persisted (mock data mode). The
   // snippets are still correct shape, but the key is not a real key and the
   // event check has nothing to ask, so both say so rather than failing oddly.
-  preview: { type: Boolean, default: false }
+  preview: { type: Boolean, default: false },
+  // Where this source's events already land, when something has established
+  // that. Creating a web or Zid source provisions a ClickHouse destination and
+  // the pipe feeding it, so "add a destination next" is wrong advice for most
+  // sources that reach this component — but it is still right for a cloud app,
+  // and for a source whose pipe nobody looked up. Empty string means "not
+  // established", not "there is none", which is why the caller passes a name
+  // rather than this deriving one from the source type.
+  deliversTo: { type: String, default: '' }
 })
 
 const emit = defineEmits(['copy', 'verified'])
@@ -266,6 +274,14 @@ const verifiedMessage = computed(() =>
   props.preview
     ? 'Simulated for this preview — no events were actually received, because nothing was saved to the backend.'
     : 'A real event reached this source, so the whole path — snippet, key, ingest — is working end to end.'
+)
+
+// The sentence after "N events received". Two different truths, and the old copy
+// only ever told one of them.
+const arrivedNext = computed(() =>
+  props.deliversTo
+    ? `They are already being delivered to ${props.deliversTo} — nothing else to set up.`
+    : 'Nothing else to do here — add a destination next so they have somewhere to go.'
 )
 
 const FIXES = [
@@ -317,7 +333,7 @@ async function check() {
       result.value = {
         tone: 'success',
         title: 'Events are arriving',
-        message: `${data.total} event${data.total === 1 ? '' : 's'} received so far. Nothing else to do here — add a destination next so they have somewhere to go.`
+        message: `${data.total} event${data.total === 1 ? '' : 's'} received so far. ${arrivedNext.value}`
       }
       emit('verified')
     } else {
