@@ -16,12 +16,6 @@
         >
           Change template
         </button>
-        <button
-          class="flex h-9 items-center gap-1.5 rounded-lg border border-line2 bg-white px-3 text-sm text-ink shadow-sm hover:bg-fill"
-          @click="router.push({ name: 'destinations' })"
-        >
-          Cancel
-        </button>
       </template>
     </PageHeader>
 
@@ -163,8 +157,8 @@
           Cancel
         </button>
         <p v-if="!isReal" class="min-w-0 flex-1 text-xs text-subtle"
-          >Local preview — switch Settings → Data source to “real” to provision
-          a ClickHouse destination on the backend.</p
+          >Local preview — switch Settings → Data source to “real” to create
+          this destination on the backend.</p
         >
       </StickyActionBar>
     </form>
@@ -215,9 +209,11 @@ const requiredParams = computed(
   () => selected.value?.paramsSchema?.required ?? []
 )
 
-const templateBadgeLabel = computed(() =>
-  selected.value ? `${selected.value.id} · ${selected.value.version}` : ''
-)
+// The template's id, not `id · version`: a create always uses the current
+// version of the template, so stamping a date on it here dresses up a constant
+// as a choice. The version becomes visible once there is something to compare
+// it to — the upgrade badge on the list and detail screens.
+const templateBadgeLabel = computed(() => selected.value?.id ?? '')
 
 function blankErrors() {
   return { name: '', params: {}, secrets: {} }

@@ -40,7 +40,7 @@ names.
 | Path                         | What                                                           |
 | ---------------------------- | -------------------------------------------------------------- |
 | `src/css/sfere.css`          | The token layer: `@theme` tokens + seven `@utility` treatments |
-| `src/components/ui/`         | 40 components. The kit every screen is built from              |
+| `src/components/ui/`         | 42 components. The kit every screen is built from              |
 | `src/components/sfere-docs/` | Doc-page scaffolding. **Not** part of the kit                  |
 | `src/pages/design-system/`   | The showcase page itself                                       |
 | `public/brand/`              | Logo lockups and the mark, as real SVG files                   |
@@ -207,7 +207,7 @@ inexplicably invisible, check for a bare `hidden`.
 
 ## Components
 
-39, in `src/components/ui/`, imported by path:
+42, in `src/components/ui/`, imported by path:
 
 ```js
 import SfereButton from '@/components/ui/SfereButton.vue'
@@ -221,9 +221,10 @@ the data and hands down strings. The one carve-out is a declarative
 **Screen primitives** — `PageHeader` `DataTable` `ErrorState` `LoadingState`
 `EmptyState` `FormSection` `FormField` `ConfirmDialog` `DefinitionList`
 `SelectableCard` `ToolbarSearch` `CardPanel` `NoticeBanner` `StatCard`
-`StatusBadge` `TabNav`
-**Actions & markers** — `SfereButton` `SfereLinkArrow` `SferePill`
-`SfereEyebrow` `SfereIconChip` `SfereAvatar` `SfereKbd` `SfereTooltip`
+`StatusBadge` `TabNav` `StickyActionBar`
+**Actions & markers** — `SfereButton` `SfereIconButton` `SfereIcon`
+`SfereLinkArrow` `SferePill` `SfereEyebrow` `SfereIconChip` `SfereAvatar`
+`SfereKbd` `SfereTooltip`
 **Forms** — `SfereInput` `SfereSelect` `SfereTextarea` `SfereToggle`
 `SfereCheckbox`
 **Surfaces & data** — `SfereSection` `SfereSectionHeading` `SfereFeatureCard`
@@ -235,9 +236,58 @@ the data and hands down strings. The one carve-out is a declarative
 The first group is the one every screen is built from; the rest came from the
 marketing site and are what the first group is composed out of.
 
+### Icon-only actions
+
+`SfereIconButton` is `SfereButton` with the label moved off the surface, for the
+one case that earns it: a toolbar action whose noun is already the page title.
+Every list screen pairs a Trash and a New button under an `<h1>` that names what
+they act on, so the words were restating the heading beside them.
+
+Four things it does that a hand-rolled icon button will not:
+
+- **`label` is required**, and it is both the `aria-label` and the tooltip text.
+  A CSS-only hover bubble reaches neither a screen reader nor a touch user, so
+  the tooltip is never the only carrier — which is what `SfereTooltip`'s own
+  header comment asks of anything that wraps it.
+- **The tooltip defaults to `bottom`.** There is no positioning engine in
+  `SfereTooltip`; the usual home for this button is a `PageHeader` at the very
+  top of the page, where a bubble placed above renders off the viewport.
+- **`grid place-items-center`, not `flex`.** Quasar's unlayered `.flex` forces
+  `flex-wrap: wrap` and the layered `flex-nowrap` utility loses to it —
+  `docs/ui-conventions.md` rule 10. `SfereIconChip` centres its glyph the same
+  way for the same reason.
+- **`md` is 40px square**, matching `SfereInput`, so it sits on the same
+  baseline as the `ToolbarSearch` box it shares a header row with.
+
+The variants come from `sfereButtonVariants.js`, which `SfereButton` reads too.
+One palette, two components: a labelled and an unlabelled action in the same
+toolbar cannot drift apart.
+
+Reach for it only where the icon is guessable from the page it is on. Empty-state
+calls to action, form submits and destructive confirmations keep their words.
+
+### The glyph registry
+
+`SfereIcon` draws one entry from `src/components/ui/sfereIcons.js`, which is path
+data and nothing else — every glyph on Phosphor's 256 grid, so `size-4` means one
+optical size across the kit, and an optional 20% wash behind the solid path for
+the duotone treatment. Icons whose shape is already a stroke (plus, arrows) carry
+no wash.
+
+Inline path data rather than files: `img-src 'self'` blocks a remote asset and
+`assetsInlineLimit: 0` blocks a data URI, and an `<svg>` inherits `currentColor`
+so one entry serves a brand-filled button and a white one without a second copy.
+This is the same reasoning `SfereSpinner` draws its own circle on, and
+`ToolbarSearch` now takes its magnifier from here instead of holding a
+hand-inlined duplicate.
+
+Every icon is `aria-hidden` with `focusable="false"` and takes no `title` prop —
+it is decorative beside a label, or the whole content of a control that carries
+its own. Adding a glyph means one entry in that file; nothing else changes.
+
 ### Screen primitives
 
-Sixteen of the 40 carry the filenames of the components they replaced, so that
+Sixteen of the 42 carry the filenames of the components they replaced, so that
 every screen picked up a Sfere implementation without an import changing. What
 each one is underneath:
 
@@ -399,7 +449,7 @@ the company prompting Claude Design gets the Sfere palette and typefaces by
 default.
 
 **Only the tokens cross over — the component kit does not.** Claude Design's
-agent builds in React; `src/components/ui/` is 40 Vue SFCs and cannot be
+agent builds in React; `src/components/ui/` is 42 Vue SFCs and cannot be
 imported there. The uploaded `_ds_bundle.js` is an empty namespace and says so.
 Anyone using it composes their own components from the tokens.
 

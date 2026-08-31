@@ -8,6 +8,25 @@
          every screen renders, so the bug was every screen's. See
          docs/ui-conventions.md rule 10. -->
     <div class="min-w-0 flex-1">
+      <!-- The back link sits ABOVE the title, not beside it. Beside it would
+           have to align a 40px control against an `items-start` row whose first
+           text is a 24px cap height, and it would compete with the actions group
+           on the same line. Above, it reads as the trail it is. It is an <a>, so
+           the <h1> underneath is still the first heading on the page — which is
+           what scripts/smoke.mjs asserts on. -->
+      <SfereButton
+        v-if="backTarget"
+        :to="{ name: backTarget.name }"
+        variant="ghost"
+        size="sm"
+        class="-ml-4 mb-1.5"
+      >
+        <template #icon>
+          <SfereIcon name="arrow-left" size="sm" />
+        </template>
+        {{ backTarget.label }}
+      </SfereButton>
+
       <SfereEyebrow
         v-if="eyebrow"
         :label="eyebrow"
@@ -35,7 +54,10 @@
 
 <script setup>
 import { computed } from 'vue'
+import { useRoute } from 'vue-router'
 import SfereEyebrow from './SfereEyebrow.vue'
+import SfereButton from './SfereButton.vue'
+import SfereIcon from './SfereIcon.vue'
 
 // The top of every screen. This is the component that renders the literal <h1>
 // scripts/smoke.mjs requires on every route, so a page built from this kit uses
@@ -58,7 +80,23 @@ const props = defineProps({
   // A section label above the title — 'Collect', 'Act', 'Prove'. Says where in
   // the product you are without a second line of prose.
   eyebrow: { type: String, default: '' },
-  onDark: { type: Boolean, default: false }
+  onDark: { type: Boolean, default: false },
+  // Where "back" goes, as `{ name, label }`. Left undefined — the normal case —
+  // the header reads `route.meta.parent` from the screen manifest, so a screen
+  // gets its back link by being declared a child rather than by remembering to
+  // pass a prop. Pass an object to override the target, or `null` to suppress it
+  // on a screen that has a parent but should not offer the trip back.
+  back: { type: [Object, null], default: undefined }
+})
+
+// This is the one route-aware thing in the kit. The alternative was 23 pages
+// each hand-rolling the same link, which is how the seven that had one ended up
+// with three different labels for it.
+const route = useRoute()
+
+const backTarget = computed(() => {
+  if (props.back !== undefined) return props.back
+  return route.meta?.parent ?? null
 })
 
 const titleClasses = computed(() => [

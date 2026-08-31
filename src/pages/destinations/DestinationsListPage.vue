@@ -6,18 +6,17 @@
     >
       <template #actions>
         <ToolbarSearch v-model="query" placeholder="Search destinations..." />
-        <button
-          class="flex h-9 items-center gap-1.5 rounded-lg border border-line2 bg-white px-3 text-sm text-ink shadow-sm hover:bg-fill"
-          @click="router.push({ name: 'destinations-trash' })"
-        >
-          Trash
-        </button>
-        <button
-          class="flex h-9 items-center gap-1.5 rounded-lg bg-brand px-3.5 text-sm font-medium text-white shadow-sm hover:opacity-90"
-          @click="router.push({ name: 'destinations-new' })"
-        >
-          New destination
-        </button>
+        <SfereIconButton
+          icon="trash"
+          label="Trash"
+          :to="{ name: 'destinations-trash' }"
+        />
+        <SfereIconButton
+          icon="plus"
+          label="New destination"
+          variant="primary"
+          :to="{ name: 'destinations-new' }"
+        />
       </template>
     </PageHeader>
 
@@ -73,7 +72,7 @@
       <template #cell-actions="{ row }">
         <button
           class="rounded-lg border border-line2 bg-white px-3 py-1.5 text-sm font-medium text-brand hover:bg-fill"
-          @click.stop="toggle(row)"
+          @click.stop="askToggle(row)"
         >
           {{ row.isEnabled ? 'Pause' : 'Enable' }}
         </button>
@@ -115,6 +114,13 @@
         </EmptyState>
       </template>
     </DataTable>
+    <ConfirmDialog
+      v-model="confirmToggle"
+      :title="toggleTitle"
+      :message="toggleMessage"
+      :confirm-label="toggleConfirmLabel"
+      @confirm="toggle"
+    />
   </q-page>
 </template>
 
@@ -126,10 +132,12 @@ import PageHeader from '@/components/ui/PageHeader.vue'
 import SetupReminderStrip from '@/components/shell/SetupReminderStrip.vue'
 import { useSetupProgress } from '@/composables/useSetupProgress'
 import TabNav from '@/components/ui/TabNav.vue'
+import ConfirmDialog from '@/components/ui/ConfirmDialog.vue'
 import DataTable from '@/components/ui/DataTable.vue'
 import EmptyState from '@/components/ui/EmptyState.vue'
 import StatusBadge from '@/components/ui/StatusBadge.vue'
 import ToolbarSearch from '@/components/ui/ToolbarSearch.vue'
+import SfereIconButton from '@/components/ui/SfereIconButton.vue'
 import DestinationTemplateBadge from '@/components/destinations/DestinationTemplateBadge.vue'
 import {
   formatCount,
@@ -218,7 +226,43 @@ function open(row) {
   router.push({ name: 'destinations-detail', params: { id: row.id } })
 }
 
-async function toggle(row) {
+const confirmToggle = ref(false)
+const toggleTarget = ref(null)
+
+// Pausing asks first, the same as it does on the detail screens: a row action
+// carries no sentence of its own, so the dialog is where the consequence is
+// written and where the record gets named. Not `destructive` — pausing is
+// reversible, and a red button on a routine confirm teaches people to click
+// through red buttons.
+//
+// Its own ref rather than sharing `target` with the delete flow: two dialogs
+// reading one row is how a confirm ends up acting on the wrong record. The row
+// is left in place after the confirm rather than nulled, so the message does
+// not blank out while the dialog fades.
+function askToggle(row) {
+  toggleTarget.value = row
+  confirmToggle.value = true
+}
+
+const toggleTitle = computed(() =>
+  toggleTarget.value?.isEnabled ? 'Pause deliveries?' : 'Enable deliveries?'
+)
+
+const toggleConfirmLabel = computed(() =>
+  toggleTarget.value?.isEnabled ? 'Pause deliveries' : 'Enable'
+)
+
+const toggleMessage = computed(() => {
+  const row = toggleTarget.value
+  if (!row) return ''
+  return row.isEnabled
+    ? `Pipes stop routing events into “${row.name}” straight away. Nothing already delivered is removed, and you can enable it again at any time.`
+    : `Pipes start routing events into “${row.name}” again straight away.`
+})
+
+async function toggle() {
+  const row = toggleTarget.value
+  if (!row) return
   const next = !row.isEnabled
   const res = await setEnabled(row.id, next)
   notifyMutationResult($q, res, {

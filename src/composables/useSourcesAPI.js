@@ -1,6 +1,7 @@
 import { ref } from 'vue'
 import { createSource, connectZidSource } from '@/api/fanfinity'
 import { customFetch } from '@/api/mutator'
+import { camelizeKeys } from '@/lib/apiShape'
 import { currentAccount, waitForAccount } from '@/composables/useMe'
 
 /**
@@ -11,8 +12,8 @@ import { currentAccount, waitForAccount } from '@/composables/useMe'
  * a create/connect is inherently a real operation with no mock equivalent, so
  * callers gate it on `useDataSource().isReal` themselves before invoking.
  *
- * Wraps the generated fetchers so the account id and error normalisation live
- * in one place:
+ * Wraps the generated fetchers so the account id, key-case normalisation and
+ * error normalisation live in one place:
  *   POST /v1/accounts/{account}/sources                    (createSource)
  *   POST /v1/accounts/{account}/sources/{source}/connect-zid (connectZidSource)
  */
@@ -32,7 +33,14 @@ export function useSourcesAPI() {
    * the backend provisions the Jitsu site + write key from the account's
    * workspace as part of this call.
    *
-   * @returns {Promise<object>} the created Source (snake_case, straight from the API)
+   * The response is camelized before it leaves here, the same way the list read
+   * is (`pageItems` in useSources). It is not a nicety: the write key the
+   * backend just issued arrives as `write_key`, and the install guide the create
+   * flow steps into reads `source.writeKey`. Returning the raw payload made a
+   * freshly created source render "provisioning…" and a `your-write-key`
+   * placeholder in every snippet, for a key that had in fact been issued.
+   *
+   * @returns {Promise<object>} the created Source, camelCase (so `writeKey`)
    */
   async function create({
     name,
@@ -52,7 +60,7 @@ export function useSourcesAPI() {
         template_id: templateId,
         store_id: storeId
       })
-      return data
+      return camelizeKeys(data)
     } catch (e) {
       error.value = e.message || 'Failed to create source'
       throw e
@@ -71,7 +79,7 @@ export function useSourcesAPI() {
   async function connectZid(sourceId) {
     const id = await accountId()
     const { data } = await connectZidSource(id, sourceId)
-    return data
+    return camelizeKeys(data)
   }
 
   /**

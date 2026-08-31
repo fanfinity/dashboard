@@ -197,6 +197,30 @@ section, and it is the feature-activation key that decides whether the route ren
 page or `ComingSoonPanel`. `routes.js` throws at module load if a `group` has no entry in
 `src/config/features.js`.
 
+**A screen's `parent` field is the back button.** `parent: { name, label }` names the screen
+this one drills down from, `routes.js` forwards it as `meta.parent`, and `PageHeader` renders
+`← <label>` above the `<h1>` — so all 23 sub-screens (`/x/new`, `/x/trash`, `/x/:id`) get one
+control in one place, and a page never hand-rolls a header nav button. That replaced seven of
+them on the detail and trash screens, plus a header `Cancel` or `All models` on every create page,
+which between them called the same trip four different things and were missing entirely from the
+rest; if you find yourself adding an "All sources" button to `#actions`, the manifest entry is
+what is missing. A create page's docked `StickyActionBar` "Back to X" is a **different**
+affordance — the form's own cancel, at the bottom, next to submit — and stays.
+
+Three parts of it are deliberate. It is **declared, not derived**: not from the path, because
+`/profiles/search` and `/channels/email` have no `/profiles` or `/channels` route to return to;
+and not from the parent's `title`, because those read `Warehouse Models — list view` while the
+sidebar says `Warehouse models`, and a back button has to say what the nav says. It is **not
+`router.back()`** — history is empty on a cold load, which is every deep link from Slack and
+every route `scripts/smoke.mjs` visits, so the case where the control matters most is the case
+history cannot answer; `routes.js` throws at module load if `parent.name` is not a screen, since
+a `router-link` to an unknown name logs the console warning smoke fails on. And **top-level
+screens have no `parent` on purpose** — the sidebar is their nav and their row is already lit.
+
+This makes `PageHeader` the one route-aware component in the kit. It takes a `back` prop to
+override the manifest, or `null` to suppress the link on a screen that has a parent but should
+not offer the trip back; see `docs/ui-conventions.md` under `PageHeader.vue`.
+
 **The connector catalog is connectable**: picking a card in `/sources?tab=connectors` opens
 `ConnectorConnectPanel.vue` above the grid — named credential fields for Firebase, MongoDB,
 Shopify, Stripe and GA4, a generic JSON box for the rest, plus a sync schedule. The field specs
@@ -212,6 +236,29 @@ template ids), the existing details form, then Install & confirm. **One page, th
 because the steps share state — the intent picks the template, the template names the source, and
 the created source is what the install guide needs a key from. Three routes would mean threading
 that through query params, and a reload mid-flow would land on step 3 with nothing to install.
+
+**Step 3 leads with what the backend already did, not with homework.** For a `web` or `zid`
+source the create call also provisioned the ClickHouse destination and the pipe joining it, so
+`ProvisionedPipePanel.vue` sits above the install guide and reveals that source → pipe →
+destination chain node by node — and the screen's primary action becomes "Open this source"
+rather than "Add a destination", which used to send people to build a second warehouse by hand.
+**It is told twice, as a moment and as a record.** `SourceProvisionedOverlay.vue` covers the
+screen for two seconds and draws the chain lighting up; `ProvisionedPipePanel.vue` holds the same
+three nodes inline above the install guide, permanently, for whoever blinked or tabbed away. The
+overlay is the exception the write key allows, not a licence for a longer one: it leaves on its
+own, has **no button** — the timer is the contract, and a click anywhere or Esc skips it — renders
+**no `<h1>`** (PageHeader owns the page's, and
+`pnpm smoke:dist` asserts on the first one), and is teleported to `body` because `fixed`
+resolves against a transformed ancestor and step 3 has several.
+
+**Both open on `state === 'found'`, never on "a source was created".** That is what keeps them
+honest and what keeps the overlay off the write key: three of the seven templates provision
+nothing, and an overlay keyed to the create call would sit there through
+`useSourceProvisioning`'s retry (1.2s) before discovering it had nothing to say — on exactly the
+sources with no pipe. Keying both to the lookup settling also means the reveal starts from
+nothing lit, rather than the card appearing fully lit. See the provisioning table under Data
+architecture for which source types this applies to; the panel, the overlay and the CTA all
+follow the lookup rather than the type.
 
 `SourceInstallGuide.vue` renders step 3 _and_ the source detail page's "Setup instructions" tab —
 one component, two entry points, because someone who closed the tab mid-setup wants exactly the
@@ -358,7 +405,7 @@ attribute and cannot take the colour of the chip they sit in.
 
 ## UI primitives
 
-`src/components/ui/` is **the** component kit — 40 components, all built on the Sfere token
+`src/components/ui/` is **the** component kit — 42 components, all built on the Sfere token
 layer. **Use them; do not re-implement their markup and do not copy their class strings into a
 page.** Read `docs/ui-conventions.md` before writing any new screen.
 
@@ -372,7 +419,7 @@ Two naming schemes live in the folder, for a reason worth knowing:
   replace the originals across 104 files without rewriting 571 imports; `StickyActionBar` is
   newer and simply describes what it does. A few of the older names are now worse than what
   they hold (`CardPanel` is a card, `NoticeBanner` is an alert); that was the price of the swap.
-- **23 keep their `Sfere*` names** — `SfereButton`, `SfereInput`, `SfereTable`, `SfereSection`,
+- **25 keep their `Sfere*` names** — `SfereButton`, `SfereInput`, `SfereTable`, `SfereSection`,
   `SfereFeatureCard` and friends. These have no pre-Sfere counterpart, and the prefix keeps
   `SfereTable` distinguishable from a bare `<table>` and from `QTable`.
 
@@ -380,10 +427,57 @@ This is not only about consistency: `scripts/smoke.mjs` detects a broken screen 
 the single `[data-smoke="error"]` selector that `ErrorState` renders. Hand-rolled error blocks
 would leave the only behavioural gate in the repo with nothing to assert on.
 
+**Icon-only actions go through `SfereIconButton`, and its glyph comes from `SfereIcon`.** Every
+list screen's toolbar pairs a Trash and a New button whose noun is already the `<h1>` beside
+them, so those two are drawn rather than spelled — ten screens' worth, previously ten
+hand-rolled `<button>` elements with the palette pasted in. Two rules the component enforces
+rather than documents: `label` is required and feeds **both** the `aria-label` and the tooltip,
+because a CSS-only hover bubble reaches neither a screen reader nor a touch user; and the
+tooltip defaults to `bottom`, since `SfereTooltip` has no positioning engine and a `PageHeader`
+sits at the top of the viewport. The glyphs live in `src/components/ui/sfereIcons.js` as path
+data on one 256 grid — inline, because `img-src 'self'` and `assetsInlineLimit: 0` rule out both
+a remote file and a data URI, and because `currentColor` is what lets one entry serve a
+brand-filled button and a white one. The button palette itself is `sfereButtonVariants.js`,
+shared with `SfereButton` so a labelled and an unlabelled action can never drift apart.
+
+**The three detail screens' headers are the other case**: Source, Destination and Pipe each pair
+a `pause`/`play` toggle with a `trash`, both icon-only, because the record's name is the `<h1>`
+they sit beside. Those two carry a rule the list toolbars do not — **every one of them opens a
+`ConfirmDialog` first, and that dialog is where the sentence lives.** An icon states no
+consequence, so "Pause" that acts on the click asks someone to guess whether events are dropped
+or queued; the dialog says so, names the record, and says it is reversible. Pausing is therefore
+**not** `destructive` — only delete is — and it confirms in **both** directions, because a
+control that asks on the way down and not on the way back up is worse than one that always asks.
+Anything else that turns an action into a glyph inherits both halves: the tooltip/`aria-label`
+and the confirm-with-a-description, unless there is a stated reason not to.
+
+An icon-only control is the **exception**, not the house style: it is right where the page
+already names the noun, and wrong anywhere the action is not guessable from its shape. Empty
+states, form submits and destructive confirmations keep their words — and so do row-level
+actions in a `DataTable`, where the noun that matters is _which row_, not the `<h1>`.
+
+**But the confirm rule is not tied to the icons: every state change asks first, everywhere.**
+The row-level Pause/Enable on the **twelve** list screens that have one — Sources,
+Destinations, Pipes, Profile API, Profile DWH syncs, Live profile syncs, Warehouse models, DWH
+syncs, and the four dark Engage screens (Goals, Catalogs, Email campaigns, Audiences) — opens
+the same `ConfirmDialog` its Delete already did. Email campaigns is the one keyed on
+`row.status === 'sending'` rather than `isEnabled`, so a new screen should check which of the
+two it holds rather than assuming. Three things each of those screens does that a
+new one has to copy: the dialog holds **its own `toggleTarget` ref** rather than sharing the
+delete flow's `target` — two dialogs reading one row is how a confirm acts on the wrong record;
+the row is **left in place after the confirm** rather than nulled, so the message does not blank
+out while the dialog fades; and the copy is **written for that screen**, naming what stops and
+where ("stops copying events from `raw_web_events` into Snowflake Production"), because a
+generic "Are you sure?" is the thing this replaced. Only Delete is `destructive`.
+
+One caution on that copy: several of these screens have no backend, so a sentence about what
+happens to data _while_ something is paused — queued, replayed, backfilled — is a claim nothing
+measured. Say what stops and what is left alone; do not promise a resume behaviour.
+
 ## The Sfere design system
 
 `src/css/sfere.css` holds the token layer, measured off the live marketing site
-(<https://sfere.io>) rather than eyeballed, and `src/components/ui/` holds the 40-component kit
+(<https://sfere.io>) rather than eyeballed, and `src/components/ui/` holds the 42-component kit
 built on it. Browse the whole thing at **`#/design-system`** (hash mode — not `/design-system`);
 no sign-in required.
 
@@ -539,7 +633,13 @@ exists to prevent.`sendMutation()`and`fetchCollection()`resolve`path` the same w
    leave a create form with nothing to pick.
 
    **Wired to a real endpoint today**: `useSources()`, `useDestinations()` and `usePipes()`
-   (`/v1/accounts/{account_id}/sources|destinations|pipelines`), plus the per-source panels
+   (`/v1/accounts/{account_id}/sources|destinations|pipelines`) — **`usePipes()` is how any
+   screen reads pipelines, not just the Pipes ones.** The Destination detail page used to call a
+   `useDestinationPipes()` wrapper that passed no `api`, so in real mode it answered `apiMissing`
+   with an empty array and the screen reported "No pipes deliver here yet" plus a count of 0 on a
+   destination that may have had several. That export is deleted; a screen wanting a subset
+   filters `usePipes()`, which also joins each pipe's two ends so `sourceName` resolves. Plus the
+   per-source panels
    PR-side (`useSourceSyncAPI`, `useSourceDataAPI`, `usePipelineFunctions`),
    `useLiveEvents()` (`/v1/accounts/{account_id}/events/live`, with the same account's
    `/sources` behind the stream selector) and `useDashboardHome()`
@@ -582,7 +682,36 @@ exists to prevent.`sendMutation()`and`fetchCollection()`resolve`path` the same w
    the backend provisions a Jitsu site and write key for a source, a per-account ClickHouse
    database for a destination, the delivery link for a pipeline — so creates go through the
    orval-generated client in `useSourcesAPI` / `useDestinationsAPI` / `usePipelinesAPI`, and
-   the create pages gate on `isReal` and say plainly that mock mode saves nothing. Everything
+   the create pages gate on `isReal` and say plainly that mock mode saves nothing.
+
+   **`POST .../sources` builds a whole pipeline, but only for two of the four source types.**
+   Measured against staging on 2026-08-27, not inferred — one source created per type, both
+   collections read immediately after:
+
+   | `source_type`  | templates                            | destination                                              | pipeline                |
+   | -------------- | ------------------------------------ | -------------------------------------------------------- | ----------------------- |
+   | `web`          | `web-sdk`                            | `"{name} — ClickHouse"`, db `web_{source8}_{account8}`   | `"{name} → ClickHouse"` |
+   | `zid`          | `zid`                                | `"{name} — ClickHouse"`, db `store_{storeId}_{account8}` | `"{name} → ClickHouse"` |
+   | `event_stream` | `ios-sdk`, `android-sdk`, `http-api` | none                                                     | none                    |
+   | `cloud_app`    | `shopify`, `stripe`                  | none                                                     | none                    |
+
+   All of it is **synchronous** — both records are present on the very next read, so nothing
+   needs polling. Two consequences. First, a `web` or `zid` user finishes all three setup steps
+   by doing one, so any screen telling them to "add a destination" next is wrong; `/sources/new`
+   step 3 renders `ProvisionedPipePanel.vue` instead and re-points its primary action.
+   Second — and this is the part to preserve — **that panel is driven by
+   `useSourceProvisioning()`, which finds the pipe rather than deriving it from the type.**
+   `Source` carries no `destination_id` or `pipeline_id` and `listPipelines` takes no
+   `source_id` filter, so the lookup is: list pipelines, match `source_id`, resolve the
+   destination. Three of the seven templates provision nothing, so a hardcoded "we connected
+   your warehouse" would be a confident lie on an iOS SDK source and would contradict the
+   install guide's own "Nothing to install" on a Shopify one. `state` distinguishes `none`
+   ("the backend built none") from `unavailable` ("the read failed") for the same reason.
+
+   One rough edge worth knowing: `DELETE` on a source cascades its pipeline away but **leaves
+   the auto-provisioned destination behind**, so deleting and recreating a source accumulates
+   orphaned ClickHouse destinations. That is backend behaviour, not something the dashboard
+   works around. Everything
    flatter — enable/pause, soft-delete — goes through **`sendMutation()`** (`useMockResource.js`),
    the write-side counterpart to the reads: a no-op in `mock` mode (the caller applies its own
    local mutation), the account-scoped `PATCH`/`DELETE` in `real` mode. It returns a

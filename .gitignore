@@ -51,3 +51,7 @@ ds-bundle/
 .firebase/
 firebase-debug.log*
 firebase-debug.*.log
+
+# Ad-hoc screenshots captured while checking a screen — root level only,
+# so real assets under src/assets and public/ are unaffected.
+/*.png

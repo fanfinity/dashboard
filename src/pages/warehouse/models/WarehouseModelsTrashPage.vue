@@ -7,12 +7,6 @@
       <template #actions>
         <ToolbarSearch v-model="query" placeholder="Search trash..." />
         <button
-          class="flex h-9 items-center gap-1.5 rounded-lg border border-line2 bg-white px-3 text-sm text-ink shadow-sm hover:bg-fill"
-          @click="router.push({ name: 'warehouse-models' })"
-        >
-          All models
-        </button>
-        <button
           :disabled="!items.length"
           class="flex h-9 items-center gap-1.5 rounded-lg bg-rose-600 px-3.5 text-sm font-medium text-white shadow-sm hover:opacity-90 disabled:opacity-50"
           @click="confirmEmpty = true"

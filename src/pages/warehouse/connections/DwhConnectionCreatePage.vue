@@ -3,16 +3,7 @@
     <PageHeader
       title="New warehouse connection"
       subtitle="Pick an engine, then give Sfere a service user that can read your tables."
-    >
-      <template #actions>
-        <button
-          class="flex h-9 items-center gap-1.5 rounded-lg border border-line2 bg-white px-3 text-sm text-ink shadow-sm hover:bg-fill"
-          @click="router.push({ name: 'dwh-connections' })"
-        >
-          Cancel
-        </button>
-      </template>
-    </PageHeader>
+    />
 
     <!-- The existing connections are this screen's one remote resource: they
          decide whether the name is already taken and whether this is the first

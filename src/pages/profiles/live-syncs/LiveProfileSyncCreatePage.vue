@@ -3,16 +3,7 @@
     <PageHeader
       title="New live profile sync"
       subtitle="Pick the audience to deliver, where it lands, and the identifier the destination matches profiles on."
-    >
-      <template #actions>
-        <button
-          class="flex h-9 items-center gap-1.5 rounded-lg border border-line2 bg-white px-3 text-sm text-ink shadow-sm hover:bg-fill"
-          @click="router.push({ name: 'live-profile-syncs' })"
-        >
-          Cancel
-        </button>
-      </template>
-    </PageHeader>
+    />
 
     <!-- The audience is the primary resource: without one there is nothing to
          deliver, so its three non-populated states own the whole page. The

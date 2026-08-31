@@ -3,16 +3,7 @@
     <PageHeader
       title="New Profile API endpoint"
       subtitle="Name the lookup, choose what a caller may search by, and choose what comes back."
-    >
-      <template #actions>
-        <button
-          class="flex h-9 items-center gap-1.5 rounded-lg border border-line2 bg-white px-3 text-sm text-ink shadow-sm hover:bg-fill"
-          @click="router.push({ name: 'profile-api' })"
-        >
-          Cancel
-        </button>
-      </template>
-    </PageHeader>
+    />
 
     <LoadingState v-if="loading" variant="form" :rows="6" />
 

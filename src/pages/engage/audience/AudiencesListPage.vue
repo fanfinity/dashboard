@@ -120,7 +120,7 @@
           <template v-else>
             <button
               class="rounded-lg border border-line2 bg-white px-3 py-1.5 text-sm font-medium text-brand hover:bg-fill"
-              @click.stop="toggle(row)"
+              @click.stop="askToggle(row)"
             >
               {{ row.isEnabled ? 'Pause' : 'Enable' }}
             </button>
@@ -200,6 +200,13 @@
       confirm-label="Move to trash"
       destructive
       @confirm="remove"
+    />
+    <ConfirmDialog
+      v-model="confirmToggle"
+      :title="toggleTitle"
+      :message="toggleMessage"
+      :confirm-label="toggleConfirmLabel"
+      @confirm="toggle"
     />
   </q-page>
 </template>
@@ -467,7 +474,41 @@ function inspect(row) {
   showDetail.value = true
 }
 
-function toggle(row) {
+const confirmToggle = ref(false)
+const toggleTarget = ref(null)
+
+// Pausing asks first, the same as it does on every other list screen and on the
+// detail screens: a row action carries no sentence of its own, so the dialog is
+// where the consequence is written and where the record gets named. Not
+// `destructive` — pausing is reversible. Its own ref rather than sharing the
+// delete flow's `target`, and the row is left in place after the confirm so the
+// message does not blank out while the dialog fades.
+function askToggle(row) {
+  toggleTarget.value = row
+  confirmToggle.value = true
+}
+
+const toggleTitle = computed(() =>
+  toggleTarget.value?.isEnabled
+    ? 'Pause this audience?'
+    : 'Activate this audience?'
+)
+
+const toggleConfirmLabel = computed(() =>
+  toggleTarget.value?.isEnabled ? 'Pause audience' : 'Activate audience'
+)
+
+const toggleMessage = computed(() => {
+  const row = toggleTarget.value
+  if (!row) return ''
+  return row.isEnabled
+    ? `“${row.name}” stops being re-evaluated, so the ${pluralize(row.destinationCount ?? 0, 'destination')} and ${pluralize(row.goalCount ?? 0, 'goal')} reading it keep its ${formatCount(row.profileCount)} profiles as they stand until you activate it again.`
+    : `“${row.name}” starts being re-evaluated again, and what reads it follows the profiles moving in and out.`
+})
+
+function toggle() {
+  const row = toggleTarget.value
+  if (!row) return
   setEnabled(row.id, !row.isEnabled)
   toast(`${row.name} ${row.isEnabled ? 'paused' : 'activated'}`)
 }

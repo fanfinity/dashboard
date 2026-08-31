@@ -53,6 +53,50 @@
     </DocSpecimen>
 
     <DocSpecimen
+      title="SfereIconButton"
+      usage="A toolbar action whose noun is already on the page — Trash and New sit under an h1 that names what they act on. label is required and is both the aria-label and the tooltip, so the word survives for a screen reader even though the surface shows a glyph. Never use one where the action is not guessable from its icon: a labelled button is the default, this is the exception."
+      code='<SfereIconButton icon="trash" label="Trash" to="/pipes/trash" />
+<SfereIconButton icon="plus" label="New pipe" variant="primary" to="/pipes/new" />'
+    >
+      <div class="flex flex-col gap-5">
+        <div class="flex flex-wrap items-center gap-3">
+          <SfereIconButton icon="trash" label="Trash" />
+          <SfereIconButton icon="plus" label="New pipe" variant="primary" />
+          <SfereIconButton icon="arrow-left" label="Back" variant="ghost" />
+          <SfereIconButton
+            icon="trash"
+            label="Delete forever"
+            variant="danger"
+          />
+        </div>
+        <div class="flex flex-wrap items-center gap-3">
+          <SfereIconButton icon="plus" label="Small" size="sm" />
+          <SfereIconButton icon="plus" label="Medium" size="md" />
+          <SfereIconButton icon="plus" label="Large" size="lg" />
+          <SfereIconButton icon="plus" label="Saving" loading />
+          <SfereIconButton icon="plus" label="Disabled" disabled />
+        </div>
+      </div>
+    </DocSpecimen>
+
+    <DocSpecimen
+      title="SfereIcon"
+      usage="The glyph registry in sfereIcons.js — every icon on one 256 grid, drawn with currentColor so the same entry works on a brand fill and on white. Always aria-hidden: it is decorative beside a label, or the whole content of a control that carries its own."
+      code='<SfereIcon name="trash" />'
+    >
+      <div class="flex flex-wrap items-center gap-6 text-sfere-fg-muted">
+        <div
+          v-for="name in iconNames"
+          :key="name"
+          class="flex flex-col items-center gap-2"
+        >
+          <SfereIcon :name="name" size="lg" />
+          <span class="font-sfere-mono text-sfere-xs">{{ name }}</span>
+        </div>
+      </div>
+    </DocSpecimen>
+
+    <DocSpecimen
       title="SfereLinkArrow"
       usage="The tertiary action. Use it to leave a card for more detail; never as the only way to complete a task."
       code='<SfereLinkArrow label="See how it works" href="#" />'
@@ -141,9 +185,14 @@ import DocSpecimen from '../DocSpecimen.vue'
 import SfereAvatar from '@/components/ui/SfereAvatar.vue'
 import StatusBadge from '@/components/ui/StatusBadge.vue'
 import SfereButton from '@/components/ui/SfereButton.vue'
+import SfereIcon from '@/components/ui/SfereIcon.vue'
+import SfereIconButton from '@/components/ui/SfereIconButton.vue'
 import SfereIconChip from '@/components/ui/SfereIconChip.vue'
 import SfereKbd from '@/components/ui/SfereKbd.vue'
 import SfereLinkArrow from '@/components/ui/SfereLinkArrow.vue'
 import SferePill from '@/components/ui/SferePill.vue'
 import SfereTooltip from '@/components/ui/SfereTooltip.vue'
+import { SFERE_ICON_NAMES } from '@/components/ui/sfereIcons.js'
+
+const iconNames = SFERE_ICON_NAMES
 </script>

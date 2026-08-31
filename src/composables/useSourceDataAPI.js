@@ -1,20 +1,8 @@
 import { ref } from 'vue'
 import { listSourceEvents as fetchSourceEvents } from '@/api/fanfinity'
 import { customFetch } from '@/api/mutator'
+import { camelizeKeys } from '@/lib/apiShape'
 import { useMe } from '@/composables/useMe'
-
-/**
- * Convert snake_case keys to camelCase (shallow).
- */
-function camelize(obj) {
-  if (!obj || typeof obj !== 'object') return obj
-  const out = {}
-  for (const [k, v] of Object.entries(obj)) {
-    const key = k.replace(/_([a-z])/g, (_, c) => c.toUpperCase())
-    out[key] = v
-  }
-  return out
-}
 
 /**
  * Map an EventSummary (event_name / event_type / event_timestamp) onto the
@@ -69,7 +57,7 @@ export function useSourceDataAPI() {
         `${_base(sourceId)}/customers?page=${page}&size=${size}`
       )
       const data = res.data
-      customers.value = (data.items ?? []).map(camelize)
+      customers.value = (data.items ?? []).map(camelizeKeys)
       customersTotal.value = data.total ?? 0
     } catch (e) {
       customersError.value = e.message || 'Failed to load customers'
@@ -88,7 +76,7 @@ export function useSourceDataAPI() {
         `${_base(sourceId)}/orders?page=${page}&size=${size}`
       )
       const data = res.data
-      orders.value = (data.items ?? []).map(camelize)
+      orders.value = (data.items ?? []).map(camelizeKeys)
       ordersTotal.value = data.total ?? 0
     } catch (e) {
       ordersError.value = e.message || 'Failed to load orders'

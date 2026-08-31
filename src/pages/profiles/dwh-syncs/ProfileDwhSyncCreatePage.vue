@@ -3,16 +3,7 @@
     <PageHeader
       title="New profile DWH sync"
       subtitle="Write the resolved profile set into a warehouse table on a schedule."
-    >
-      <template #actions>
-        <button
-          class="flex h-9 items-center gap-1.5 rounded-lg border border-line2 bg-white px-3 text-sm text-ink shadow-sm hover:bg-fill"
-          @click="router.push({ name: 'profile-dwh-syncs' })"
-        >
-          Cancel
-        </button>
-      </template>
-    </PageHeader>
+    />
 
     <!-- The warehouse connections are the primary resource: without one there
          is nothing to create. The attribute and identifier catalogs are

@@ -6,18 +6,17 @@
     >
       <template #actions>
         <ToolbarSearch v-model="query" placeholder="Search pipes..." />
-        <button
-          class="flex h-9 items-center gap-1.5 rounded-lg border border-line2 bg-white px-3 text-sm text-ink shadow-sm hover:bg-fill"
-          @click="router.push({ name: 'pipes-trash' })"
-        >
-          Trash
-        </button>
-        <button
-          class="flex h-9 items-center gap-1.5 rounded-lg bg-brand px-3.5 text-sm font-medium text-white shadow-sm hover:opacity-90"
-          @click="router.push({ name: 'pipes-new' })"
-        >
-          New pipe
-        </button>
+        <SfereIconButton
+          icon="trash"
+          label="Trash"
+          :to="{ name: 'pipes-trash' }"
+        />
+        <SfereIconButton
+          icon="plus"
+          label="New pipe"
+          variant="primary"
+          :to="{ name: 'pipes-new' }"
+        />
       </template>
     </PageHeader>
 
@@ -101,7 +100,7 @@
       <template #cell-actions="{ row }">
         <button
           class="rounded-lg border border-line2 bg-white px-3 py-1.5 text-sm font-medium text-brand hover:bg-fill"
-          @click.stop="toggle(row)"
+          @click.stop="askToggle(row)"
         >
           {{ row.isEnabled ? 'Pause' : 'Enable' }}
         </button>
@@ -183,6 +182,13 @@
         @select="open"
       />
     </template>
+    <ConfirmDialog
+      v-model="confirmToggle"
+      :title="toggleTitle"
+      :message="toggleMessage"
+      :confirm-label="toggleConfirmLabel"
+      @confirm="toggle"
+    />
   </q-page>
 </template>
 
@@ -193,6 +199,7 @@ import { useQuasar } from 'quasar'
 import PageHeader from '@/components/ui/PageHeader.vue'
 import SetupReminderStrip from '@/components/shell/SetupReminderStrip.vue'
 import { useSetupProgress } from '@/composables/useSetupProgress'
+import ConfirmDialog from '@/components/ui/ConfirmDialog.vue'
 import DataTable from '@/components/ui/DataTable.vue'
 import EmptyState from '@/components/ui/EmptyState.vue'
 import ErrorState from '@/components/ui/ErrorState.vue'
@@ -201,6 +208,7 @@ import StatCard from '@/components/ui/StatCard.vue'
 import StatusBadge from '@/components/ui/StatusBadge.vue'
 import TabNav from '@/components/ui/TabNav.vue'
 import ToolbarSearch from '@/components/ui/ToolbarSearch.vue'
+import SfereIconButton from '@/components/ui/SfereIconButton.vue'
 import PipeTopology from '@/components/pipes/PipeTopology.vue'
 import { useDiagram } from '@/composables/useDiagram'
 import { formatCount, formatDate, usePipes } from '@/composables/usePipes'
@@ -298,7 +306,43 @@ function open(pipe) {
   router.push({ name: 'pipes-detail', params: { id: pipe.id } })
 }
 
-async function toggle(pipe) {
+const confirmToggle = ref(false)
+const toggleTarget = ref(null)
+
+// Pausing asks first, the same as it does on the detail screens: a row action
+// carries no sentence of its own, so the dialog is where the consequence is
+// written and where the record gets named. Not `destructive` — pausing is
+// reversible, and a red button on a routine confirm teaches people to click
+// through red buttons.
+//
+// Its own ref rather than sharing `target` with the delete flow: two dialogs
+// reading one row is how a confirm ends up acting on the wrong record. The row
+// is left in place after the confirm rather than nulled, so the message does
+// not blank out while the dialog fades.
+function askToggle(row) {
+  toggleTarget.value = row
+  confirmToggle.value = true
+}
+
+const toggleTitle = computed(() =>
+  toggleTarget.value?.isEnabled ? 'Pause this pipe?' : 'Enable this pipe?'
+)
+
+const toggleConfirmLabel = computed(() =>
+  toggleTarget.value?.isEnabled ? 'Pause pipe' : 'Enable pipe'
+)
+
+const toggleMessage = computed(() => {
+  const row = toggleTarget.value
+  if (!row) return ''
+  return row.isEnabled
+    ? `“${row.name}” stops delivering to ${row.eventDestinationName || row.eventDestinationId || 'its destination'} straight away. Events keep arriving at the source; they just are not routed on.`
+    : `“${row.name}” starts delivering to ${row.eventDestinationName || row.eventDestinationId || 'its destination'} again straight away.`
+})
+
+async function toggle() {
+  const pipe = toggleTarget.value
+  if (!pipe) return
   const next = !pipe.isEnabled
   const res = await setEnabled(pipe.id, next)
   notifyMutationResult($q, res, {

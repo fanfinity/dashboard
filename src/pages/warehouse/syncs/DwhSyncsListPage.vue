@@ -6,18 +6,17 @@
     >
       <template #actions>
         <ToolbarSearch v-model="query" placeholder="Search syncs..." />
-        <button
-          class="flex h-9 items-center gap-1.5 rounded-lg border border-line2 bg-white px-3 text-sm text-ink shadow-sm hover:bg-fill"
-          @click="router.push({ name: 'dwh-syncs-trash' })"
-        >
-          Trash
-        </button>
-        <button
-          class="flex h-9 items-center gap-1.5 rounded-lg bg-brand px-3.5 text-sm font-medium text-white shadow-sm hover:opacity-90"
-          @click="router.push({ name: 'dwh-syncs-new' })"
-        >
-          New sync
-        </button>
+        <SfereIconButton
+          icon="trash"
+          label="Trash"
+          :to="{ name: 'dwh-syncs-trash' }"
+        />
+        <SfereIconButton
+          icon="plus"
+          label="New sync"
+          variant="primary"
+          :to="{ name: 'dwh-syncs-new' }"
+        />
       </template>
     </PageHeader>
 
@@ -132,7 +131,7 @@
         <div class="flex items-center justify-end gap-2">
           <button
             class="rounded-lg border border-line2 bg-white px-3 py-1.5 text-sm font-medium text-brand hover:bg-fill"
-            @click.stop="toggle(row)"
+            @click.stop="askToggle(row)"
           >
             {{ row.isEnabled ? 'Pause' : 'Enable' }}
           </button>
@@ -194,6 +193,13 @@
       destructive
       @confirm="remove"
     />
+    <ConfirmDialog
+      v-model="confirmToggle"
+      :title="toggleTitle"
+      :message="toggleMessage"
+      :confirm-label="toggleConfirmLabel"
+      @confirm="toggle"
+    />
   </q-page>
 </template>
 
@@ -208,6 +214,7 @@ import StatusBadge from '@/components/ui/StatusBadge.vue'
 import EmptyState from '@/components/ui/EmptyState.vue'
 import NoticeBanner from '@/components/ui/NoticeBanner.vue'
 import ToolbarSearch from '@/components/ui/ToolbarSearch.vue'
+import SfereIconButton from '@/components/ui/SfereIconButton.vue'
 import ConfirmDialog from '@/components/ui/ConfirmDialog.vue'
 import DwhSyncDetailDialog from '@/components/warehouse/syncs/DwhSyncDetailDialog.vue'
 import {
@@ -359,7 +366,43 @@ function inspect(row) {
   showDetail.value = true
 }
 
-function toggle(row) {
+const confirmToggle = ref(false)
+const toggleTarget = ref(null)
+
+// Pausing asks first, the same as it does on the detail screens: a row action
+// carries no sentence of its own, so the dialog is where the consequence is
+// written and where the record gets named. Not `destructive` — pausing is
+// reversible, and a red button on a routine confirm teaches people to click
+// through red buttons.
+//
+// Its own ref rather than sharing `target` with the delete flow: two dialogs
+// reading one row is how a confirm ends up acting on the wrong record. The row
+// is left in place after the confirm rather than nulled, so the message does
+// not blank out while the dialog fades.
+function askToggle(row) {
+  toggleTarget.value = row
+  confirmToggle.value = true
+}
+
+const toggleTitle = computed(() =>
+  toggleTarget.value?.isEnabled ? 'Pause this sync?' : 'Enable this sync?'
+)
+
+const toggleConfirmLabel = computed(() =>
+  toggleTarget.value?.isEnabled ? 'Pause sync' : 'Enable sync'
+)
+
+const toggleMessage = computed(() => {
+  const row = toggleTarget.value
+  if (!row) return ''
+  return row.isEnabled
+    ? `“${row.name}” stops copying events from ${row.sourceTable} into ${row.dwhConnectionName} — no scheduled run starts while it is paused. Rows it has already written are left alone.`
+    : `“${row.name}” goes back on its schedule and copies from ${row.sourceTable} into ${row.dwhConnectionName} on its next run.`
+})
+
+function toggle() {
+  const row = toggleTarget.value
+  if (!row) return
   setEnabled(row.id, !row.isEnabled)
   toast(`“${row.name}” ${row.isEnabled ? 'paused' : 'enabled'}`)
 }

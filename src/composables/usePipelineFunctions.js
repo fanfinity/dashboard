@@ -1,20 +1,7 @@
 import { ref } from 'vue'
 import { customFetch } from '@/api/mutator'
+import { camelizeKeys } from '@/lib/apiShape'
 import { currentAccount, waitForAccount } from '@/composables/useMe'
-
-/**
- * Convert snake_case keys to camelCase (shallow, for a flat object).
- * Mirrors useSourceSyncAPI's camelize.
- */
-function camelize(obj) {
-  if (!obj || typeof obj !== 'object') return obj
-  const out = {}
-  for (const [k, v] of Object.entries(obj)) {
-    const key = k.replace(/_([a-z])/g, (_, c) => c.toUpperCase())
-    out[key] = v
-  }
-  return out
-}
 
 /**
  * API-backed composable for the Jitsu functions attached to a pipeline.
@@ -46,7 +33,7 @@ export function usePipelineFunctions() {
     error.value = null
     try {
       const res = await customFetch(await baseUrl(pipelineId))
-      functions.value = (res.data.items ?? []).map(camelize)
+      functions.value = (res.data.items ?? []).map(camelizeKeys)
     } catch (e) {
       error.value = e.message || 'Failed to load functions'
       functions.value = []
@@ -62,7 +49,7 @@ export function usePipelineFunctions() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ code })
     })
-    const updated = camelize(res.data)
+    const updated = camelizeKeys(res.data)
     const idx = functions.value.findIndex(f => f.functionId === functionId)
     if (idx !== -1) functions.value[idx] = updated
     return updated
@@ -73,7 +60,7 @@ export function usePipelineFunctions() {
     const res = await customFetch(`${base}/${functionId}/reset`, {
       method: 'POST'
     })
-    const updated = camelize(res.data)
+    const updated = camelizeKeys(res.data)
     const idx = functions.value.findIndex(f => f.functionId === functionId)
     if (idx !== -1) functions.value[idx] = updated
     return updated

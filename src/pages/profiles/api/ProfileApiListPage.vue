@@ -6,18 +6,17 @@
     >
       <template #actions>
         <ToolbarSearch v-model="query" placeholder="Search endpoints..." />
-        <button
-          class="flex h-9 items-center gap-1.5 rounded-lg border border-line2 bg-white px-3 text-sm text-ink shadow-sm hover:bg-fill"
-          @click="router.push({ name: 'profile-api-endpoints-trash' })"
-        >
-          Trash
-        </button>
-        <button
-          class="flex h-9 items-center gap-1.5 rounded-lg bg-brand px-3.5 text-sm font-medium text-white shadow-sm hover:opacity-90"
-          @click="router.push({ name: 'profile-api-endpoints-new' })"
-        >
-          New endpoint
-        </button>
+        <SfereIconButton
+          icon="trash"
+          label="Trash"
+          :to="{ name: 'profile-api-endpoints-trash' }"
+        />
+        <SfereIconButton
+          icon="plus"
+          label="New endpoint"
+          variant="primary"
+          :to="{ name: 'profile-api-endpoints-new' }"
+        />
       </template>
     </PageHeader>
 
@@ -89,7 +88,7 @@
         <div class="flex items-center justify-end gap-2">
           <button
             class="rounded-lg border border-line2 bg-white px-3 py-1.5 text-sm font-medium text-brand hover:bg-fill"
-            @click.stop="toggle(row)"
+            @click.stop="askToggle(row)"
           >
             {{ row.isEnabled ? 'Pause' : 'Enable' }}
           </button>
@@ -151,6 +150,13 @@
       destructive
       @confirm="remove"
     />
+    <ConfirmDialog
+      v-model="confirmToggle"
+      :title="toggleTitle"
+      :message="toggleMessage"
+      :confirm-label="toggleConfirmLabel"
+      @confirm="toggle"
+    />
   </q-page>
 </template>
 
@@ -165,6 +171,7 @@ import StatCard from '@/components/ui/StatCard.vue'
 import StatusBadge from '@/components/ui/StatusBadge.vue'
 import EmptyState from '@/components/ui/EmptyState.vue'
 import ToolbarSearch from '@/components/ui/ToolbarSearch.vue'
+import SfereIconButton from '@/components/ui/SfereIconButton.vue'
 import ConfirmDialog from '@/components/ui/ConfirmDialog.vue'
 import ProfileApiAccessPanel from '@/components/profiles/api/ProfileApiAccessPanel.vue'
 import ProfileApiTokensPanel from '@/components/profiles/api/ProfileApiTokensPanel.vue'
@@ -321,7 +328,45 @@ function notifyLocal(message) {
   })
 }
 
-function toggle(row) {
+const confirmToggle = ref(false)
+const toggleTarget = ref(null)
+
+// Pausing asks first, the same as it does on the detail screens: a row action
+// carries no sentence of its own, so the dialog is where the consequence is
+// written and where the record gets named. Not `destructive` — pausing is
+// reversible, and a red button on a routine confirm teaches people to click
+// through red buttons.
+//
+// Its own ref rather than sharing `target` with the delete flow: two dialogs
+// reading one row is how a confirm ends up acting on the wrong record. The row
+// is left in place after the confirm rather than nulled, so the message does
+// not blank out while the dialog fades.
+function askToggle(row) {
+  toggleTarget.value = row
+  confirmToggle.value = true
+}
+
+const toggleTitle = computed(() =>
+  toggleTarget.value?.isEnabled
+    ? 'Pause this endpoint?'
+    : 'Enable this endpoint?'
+)
+
+const toggleConfirmLabel = computed(() =>
+  toggleTarget.value?.isEnabled ? 'Pause endpoint' : 'Enable endpoint'
+)
+
+const toggleMessage = computed(() => {
+  const row = toggleTarget.value
+  if (!row) return ''
+  return row.isEnabled
+    ? `“${row.name}” stops answering at ${row.path} straight away — callers get nothing back until it is enabled again.`
+    : `“${row.name}” starts answering at ${row.path} again straight away.`
+})
+
+function toggle() {
+  const row = toggleTarget.value
+  if (!row) return
   setEnabled(row.id, !row.isEnabled)
   notifyLocal(`${row.name} ${row.isEnabled ? 'paused' : 'enabled'}`)
 }

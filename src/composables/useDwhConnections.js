@@ -316,6 +316,7 @@ export function useDwhConnectionToasts() {
  *   connections: import('vue').Ref<Array>,
  *   loading: import('vue').Ref<boolean>,
  *   error: import('vue').Ref<string|null>,
+ *   apiMissing: import('vue').Ref<boolean>,
  *   load: () => Promise<void>,
  *   findById: (id: string) => object|null,
  *   setPrimary: (id: string) => void,
@@ -324,7 +325,7 @@ export function useDwhConnectionToasts() {
  * }}
  *
  * @example
- * const { connections, loading, error, load } = useDwhConnections()
+ * const { connections, loading, error, apiMissing, load } = useDwhConnections()
  * onMounted(load)
  */
 export function useDwhConnections() {
@@ -332,6 +333,7 @@ export function useDwhConnections() {
     data: connections,
     loading,
     error,
+    apiMissing,
     load
   } = useMockResource('dwh-connections')
 
@@ -370,6 +372,7 @@ export function useDwhConnections() {
     connections,
     loading,
     error,
+    apiMissing,
     load,
     findById,
     setPrimary,

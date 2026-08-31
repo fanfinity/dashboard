@@ -15,6 +15,9 @@
 //   title        shown in nav + <h1>; also route meta.title
 //   group        nav group key AND feature-activation key — see below
 //   issue        GitHub issue implementing this screen
+//   parent       { name, label } of the screen this one drills down FROM — the
+//                back target PageHeader renders. Omit on a top-level screen
+//                (the sidebar is its nav, and a back arrow there points nowhere)
 //   smokeParams  params substituted by scripts/smoke.mjs; ids MUST exist in public/data/
 //
 // ORDER MATTERS: static paths precede dynamic ones, so /sources/new wins over
@@ -28,6 +31,17 @@
 // was only a label and is not harmless now that it gates the route. routes.js
 // throws at module load if a group here has no entry in features.js, which is
 // what keeps the two files from drifting apart again.
+
+// `parent` IS THE BACK BUTTON, and it is declared rather than derived, twice
+// over. Not from the path, because '/profiles/search' and '/channels/email' have
+// no '/profiles' or '/channels' route to return to; and not from the parent's own
+// `title`, because those read 'Warehouse Models — list view' while the sidebar
+// says 'Warehouse models' and a back button has to say what the nav says.
+//
+// Deliberately NOT history: router.back() is empty on a cold load, which is every
+// deep link from Slack and every route scripts/smoke.mjs visits, so the one place
+// the control matters most is the one place history cannot answer. routes.js
+// throws at module load if `parent.name` is not a screen here.
 
 export const screens = [
   {
@@ -258,6 +272,7 @@ export const screens = [
     component: 'profiles/attributes/AttributeCreatePage.vue',
     title: 'Attributes — create form',
     group: 'profiles',
+    parent: { name: 'attributes', label: 'Attributes' },
     issue: 19
   },
   {
@@ -266,6 +281,7 @@ export const screens = [
     component: 'profiles/attributes/AttributesTrashPage.vue',
     title: 'Attributes — trash & restore',
     group: 'profiles',
+    parent: { name: 'attributes', label: 'Attributes' },
     issue: 20
   },
   {
@@ -290,6 +306,7 @@ export const screens = [
     component: 'destinations/DestinationCreatePage.vue',
     title: 'Destinations — create form',
     group: 'destinations',
+    parent: { name: 'destinations', label: 'Destinations' },
     issue: 30
   },
   {
@@ -298,6 +315,7 @@ export const screens = [
     component: 'destinations/DestinationsTrashPage.vue',
     title: 'Destinations — trash & restore',
     group: 'destinations',
+    parent: { name: 'destinations', label: 'Destinations' },
     issue: 31
   },
   {
@@ -306,6 +324,7 @@ export const screens = [
     component: 'warehouse/connections/DwhConnectionCreatePage.vue',
     title: 'DWH Connections — create form',
     group: 'warehouse',
+    parent: { name: 'dwh-connections', label: 'Warehouse connections' },
     issue: 33
   },
   {
@@ -314,6 +333,7 @@ export const screens = [
     component: 'warehouse/connections/DwhConnectionsTrashPage.vue',
     title: 'DWH Connections — trash & restore',
     group: 'warehouse',
+    parent: { name: 'dwh-connections', label: 'Warehouse connections' },
     issue: 34
   },
   {
@@ -322,6 +342,7 @@ export const screens = [
     component: 'warehouse/syncs/DwhSyncCreatePage.vue',
     title: 'DWH Syncs — create form',
     group: 'warehouse',
+    parent: { name: 'dwh-syncs', label: 'DWH syncs' },
     issue: 36
   },
   {
@@ -330,6 +351,7 @@ export const screens = [
     component: 'warehouse/syncs/DwhSyncsTrashPage.vue',
     title: 'DWH Syncs — trash & restore',
     group: 'warehouse',
+    parent: { name: 'dwh-syncs', label: 'DWH syncs' },
     issue: 37
   },
   {
@@ -346,6 +368,7 @@ export const screens = [
     component: 'profiles/live-syncs/LiveProfileSyncCreatePage.vue',
     title: 'Live Profile Syncs — create form',
     group: 'profiles',
+    parent: { name: 'live-profile-syncs', label: 'Live profile syncs' },
     issue: 45
   },
   {
@@ -354,6 +377,7 @@ export const screens = [
     component: 'profiles/live-syncs/LiveProfileSyncsTrashPage.vue',
     title: 'Live Profile Syncs — trash & restore',
     group: 'profiles',
+    parent: { name: 'live-profile-syncs', label: 'Live profile syncs' },
     issue: 46
   },
   {
@@ -362,6 +386,7 @@ export const screens = [
     component: 'pipes/PipeCreatePage.vue',
     title: 'Pipes — create form',
     group: 'pipes',
+    parent: { name: 'pipes', label: 'Pipes' },
     issue: 49
   },
   {
@@ -370,6 +395,7 @@ export const screens = [
     component: 'pipes/PipesTrashPage.vue',
     title: 'Pipes — trash & restore',
     group: 'pipes',
+    parent: { name: 'pipes', label: 'Pipes' },
     issue: 50
   },
   {
@@ -378,6 +404,7 @@ export const screens = [
     component: 'profiles/api/ProfileApiEndpointCreatePage.vue',
     title: 'Profile API Endpoints — create form',
     group: 'profiles',
+    parent: { name: 'profile-api', label: 'Profile API' },
     issue: 52
   },
   {
@@ -386,6 +413,7 @@ export const screens = [
     component: 'profiles/api/ProfileApiEndpointsTrashPage.vue',
     title: 'Profile API Endpoints — trash & restore',
     group: 'profiles',
+    parent: { name: 'profile-api', label: 'Profile API' },
     issue: 53
   },
   {
@@ -394,6 +422,7 @@ export const screens = [
     component: 'profiles/dwh-syncs/ProfileDwhSyncCreatePage.vue',
     title: 'Profile DWH Syncs — create form',
     group: 'profiles',
+    parent: { name: 'profile-dwh-syncs', label: 'Profile DWH syncs' },
     issue: 55
   },
   {
@@ -402,6 +431,7 @@ export const screens = [
     component: 'profiles/dwh-syncs/ProfileDwhSyncsTrashPage.vue',
     title: 'Profile DWH Syncs — trash & restore',
     group: 'profiles',
+    parent: { name: 'profile-dwh-syncs', label: 'Profile DWH syncs' },
     issue: 56
   },
   {
@@ -426,6 +456,7 @@ export const screens = [
     component: 'sources/SourceCreatePage.vue',
     title: 'Sources — create form',
     group: 'sources',
+    parent: { name: 'sources', label: 'Sources' },
     issue: 64
   },
   {
@@ -434,6 +465,7 @@ export const screens = [
     component: 'sources/SourcesTrashPage.vue',
     title: 'Sources — trash & restore',
     group: 'sources',
+    parent: { name: 'sources', label: 'Sources' },
     issue: 65
   },
   {
@@ -442,6 +474,7 @@ export const screens = [
     component: 'warehouse/models/WarehouseModelCreatePage.vue',
     title: 'Warehouse Models — create form',
     group: 'warehouse',
+    parent: { name: 'warehouse-models', label: 'Warehouse models' },
     issue: 68
   },
   {
@@ -450,6 +483,7 @@ export const screens = [
     component: 'warehouse/models/WarehouseModelsTrashPage.vue',
     title: 'Warehouse Models — trash & restore',
     group: 'warehouse',
+    parent: { name: 'warehouse-models', label: 'Warehouse models' },
     issue: 69
   },
   {
@@ -458,6 +492,7 @@ export const screens = [
     component: 'destinations/DestinationDetailPage.vue',
     title: 'Destinations — detail view',
     group: 'destinations',
+    parent: { name: 'destinations', label: 'Destinations' },
     issue: 29,
     smokeParams: { id: 'dst_snowflake' }
   },
@@ -467,6 +502,7 @@ export const screens = [
     component: 'pipes/PipeDetailPage.vue',
     title: 'Pipes — detail view',
     group: 'pipes',
+    parent: { name: 'pipes', label: 'Pipes' },
     issue: 48,
     smokeParams: { id: 'pipe_web_to_snowflake' }
   },
@@ -476,6 +512,7 @@ export const screens = [
     component: 'sources/SourceDetailPage.vue',
     title: 'Sources — detail view',
     group: 'sources',
+    parent: { name: 'sources', label: 'Sources' },
     issue: 63,
     smokeParams: { id: 'src_web_sdk' }
   }

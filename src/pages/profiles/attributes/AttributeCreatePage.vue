@@ -3,16 +3,7 @@
     <PageHeader
       title="New attribute"
       subtitle="Define a computed field on the fan profile: where its value comes from, how it is aggregated, and what it writes."
-    >
-      <template #actions>
-        <button
-          class="flex h-9 items-center gap-1.5 rounded-lg border border-line2 bg-white px-3 text-sm text-ink shadow-sm hover:bg-fill"
-          @click="router.push({ name: 'attributes' })"
-        >
-          All attributes
-        </button>
-      </template>
-    </PageHeader>
+    />
 
     <LoadingState v-if="loading" variant="form" :rows="6" />
 

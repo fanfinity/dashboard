@@ -78,7 +78,7 @@
           <button
             v-if="row.status !== 'completed'"
             class="rounded-lg border border-line2 bg-white px-3 py-1.5 text-sm font-medium text-brand hover:bg-fill"
-            @click.stop="toggle(row)"
+            @click.stop="askToggle(row)"
           >
             {{ row.status === 'sending' ? 'Pause' : 'Resume' }}
           </button>
@@ -127,6 +127,13 @@
       @close="selectedId = ''"
       @retry-assets="loadAssets"
     />
+    <ConfirmDialog
+      v-model="confirmToggle"
+      :title="toggleTitle"
+      :message="toggleMessage"
+      :confirm-label="toggleConfirmLabel"
+      @confirm="toggle"
+    />
   </q-page>
 </template>
 
@@ -136,6 +143,7 @@ import { useRouter } from 'vue-router'
 import { useQuasar } from 'quasar'
 import PageHeader from '@/components/ui/PageHeader.vue'
 import TabNav from '@/components/ui/TabNav.vue'
+import ConfirmDialog from '@/components/ui/ConfirmDialog.vue'
 import DataTable from '@/components/ui/DataTable.vue'
 import StatCard from '@/components/ui/StatCard.vue'
 import StatusBadge from '@/components/ui/StatusBadge.vue'
@@ -326,7 +334,43 @@ function notifyLocal(message) {
   })
 }
 
-function toggle(row) {
+const confirmToggle = ref(false)
+const toggleTarget = ref(null)
+
+// Pausing asks first, the same as it does on every other list screen and on the
+// detail screens: a row action carries no sentence of its own, so the dialog is
+// where the consequence is written and where the record gets named. Not
+// `destructive` — pausing is reversible. Its own ref rather than sharing the
+// delete flow's `target`, and the row is left in place after the confirm so the
+// message does not blank out while the dialog fades.
+function askToggle(row) {
+  toggleTarget.value = row
+  confirmToggle.value = true
+}
+
+const toggleTitle = computed(() =>
+  toggleTarget.value?.status === 'sending'
+    ? 'Pause this campaign?'
+    : 'Resume this campaign?'
+)
+
+const toggleConfirmLabel = computed(() =>
+  toggleTarget.value?.status === 'sending'
+    ? 'Pause campaign'
+    : 'Resume campaign'
+)
+
+const toggleMessage = computed(() => {
+  const row = toggleTarget.value
+  if (!row) return ''
+  return row.status === 'sending'
+    ? `“${row.name}” stops sending to ${row.audienceName} straight away. Mail already sent is not recalled.`
+    : `“${row.name}” starts sending to ${row.audienceName} again straight away.`
+})
+
+function toggle() {
+  const row = toggleTarget.value
+  if (!row) return
   const next = row.status === 'sending' ? 'paused' : 'sending'
   setStatus(row.id, next)
   notifyLocal(`${row.name} ${next === 'paused' ? 'paused' : 'resumed'}`)

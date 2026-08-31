@@ -13,18 +13,23 @@
          showing. -->
     <PageHeader :title="headerTitle" :subtitle="headerSubtitle">
       <template #actions>
+        <!-- The header action follows what the workspace actually needs next.
+             A source whose warehouse and pipe the backend already provisioned
+             needs neither, so pointing at `destinations-new` there invites a
+             duplicate; the source itself is the useful destination. See
+             `suggestAddDestination` for why an unfinished or failed lookup gets
+             the neutral action rather than the prompt. -->
         <SfereButton
-          v-if="step === 'install'"
+          v-if="step === 'install' && !suggestAddDestination"
+          size="sm"
+          :to="{ name: 'sources-detail', params: { id: created.id } }"
+          >Open this source →</SfereButton
+        >
+        <SfereButton
+          v-else-if="step === 'install'"
           size="sm"
           :to="{ name: 'destinations-new' }"
           >Add a destination →</SfereButton
-        >
-        <SfereButton
-          v-else
-          variant="secondary"
-          size="sm"
-          @click="router.push({ name: 'sources' })"
-          >Cancel</SfereButton
         >
       </template>
     </PageHeader>
@@ -270,26 +275,77 @@
         message="You are in Demo data mode, so this source exists only on this screen. The snippets below are the right shape but the key is not a real key. Switch Settings → Data source to real and create it again to go live."
       />
 
+      <!-- What the backend already did, above the instructions. Creating a web
+           or Zid source provisions its ClickHouse destination and the pipe
+           joining the two in the same call, so by the time this step renders the
+           workspace has finished all three setup steps — and until now the
+           screen's primary action still said "Add a destination", sending people
+           to build a second one by hand.
+           Skipped in preview: nothing was saved, so there is no pipe to find and
+           the "Nothing was saved" banner above already owns that story. -->
+      <!-- The moment, and then the record. The overlay is the few seconds where
+           the chain draws itself over the whole screen; the panel below holds
+           the same three nodes permanently, for whoever blinked, tabbed away, or
+           comes back to this from the source's Setup instructions tab. Both are
+           driven by the one lookup and both open only on `found`, so neither can
+           claim a pipe for a source that got none. -->
+      <SourceProvisionedOverlay
+        v-if="!preview"
+        :state="provisioningState"
+        :source="created"
+        :pipe="provisionedPipe"
+        :destination="provisionedDestination"
+      />
+
+      <ProvisionedPipePanel
+        v-if="!preview"
+        :state="provisioningState"
+        :source="created"
+        :pipe="provisionedPipe"
+        :destination="provisionedDestination"
+      />
+
       <SourceInstallGuide
         :source="created"
         :preview="preview"
+        :delivers-to="deliversTo"
         @copy="copyValue"
         @verified="onVerified"
       />
 
+      <!-- Same rule as the header, one step further: when the pipe exists, the
+           primary is the source and "Add another destination" demotes to a
+           ghost, because a second warehouse is a real thing someone might want
+           and a wrong thing to lead with. -->
+      <!-- The plain trip back left this row when PageHeader started rendering
+           `← Sources` from the manifest: a button whose label only names where
+           it goes is navigation, and navigation belongs in one place. "I'll
+           finish this later" stays, because it is not that — it says leaving
+           the flow unfinished is a fine thing to do, which no back arrow says. -->
       <StickyActionBar>
-        <SfereButton :to="{ name: 'destinations-new' }"
-          >Add a destination →</SfereButton
-        >
-        <SfereButton
-          v-if="!preview"
-          variant="secondary"
-          :to="{ name: 'sources-detail', params: { id: created.id } }"
-          >Open this source</SfereButton
-        >
-        <SfereButton variant="ghost" :to="{ name: 'sources' }"
-          >I'll finish this later</SfereButton
-        >
+        <template v-if="!suggestAddDestination">
+          <SfereButton
+            :to="{ name: 'sources-detail', params: { id: created.id } }"
+            >Open this source →</SfereButton
+          >
+          <SfereButton variant="ghost" :to="{ name: 'destinations-new' }"
+            >Add another destination</SfereButton
+          >
+        </template>
+        <template v-else>
+          <SfereButton :to="{ name: 'destinations-new' }"
+            >Add a destination →</SfereButton
+          >
+          <SfereButton
+            v-if="!preview"
+            variant="secondary"
+            :to="{ name: 'sources-detail', params: { id: created.id } }"
+            >Open this source</SfereButton
+          >
+          <SfereButton variant="ghost" :to="{ name: 'sources' }"
+            >I'll finish this later</SfereButton
+          >
+        </template>
       </StickyActionBar>
     </div>
   </q-page>
@@ -314,10 +370,13 @@ import StickyActionBar from '@/components/ui/StickyActionBar.vue'
 import SetupStepper from '@/components/sources/SetupStepper.vue'
 import SourceIntentPicker from '@/components/sources/SourceIntentPicker.vue'
 import SourceInstallGuide from '@/components/sources/SourceInstallGuide.vue'
+import ProvisionedPipePanel from '@/components/sources/ProvisionedPipePanel.vue'
+import SourceProvisionedOverlay from '@/components/sources/SourceProvisionedOverlay.vue'
 import SourceTemplatePicker from '@/components/sources/SourceTemplatePicker.vue'
 import { intentByKey } from '@/config/sourceIntents'
 import { slugify, useSourceTemplates } from '@/composables/useSources'
 import { useSourcesAPI } from '@/composables/useSourcesAPI'
+import { useSourceProvisioning } from '@/composables/useSourceProvisioning'
 import { useDataSource } from '@/composables/useDataSource'
 
 const router = useRouter()
@@ -325,6 +384,17 @@ const $q = useQuasar()
 const { templates, loading, error, load, findById } = useSourceTemplates()
 const { isReal } = useDataSource()
 const { create: createSourceReal } = useSourcesAPI()
+
+// What the create call built besides the source. Discovered, never assumed — a
+// `cloud_app` source gets no destination and no pipe, so the answer decides both
+// the panel and this screen's primary action.
+const {
+  state: provisioningState,
+  pipe: provisionedPipe,
+  destination: provisionedDestination,
+  provisioned,
+  discover: discoverProvisioning
+} = useSourceProvisioning()
 
 const STEPS = [
   { key: 'intent', label: 'What are you connecting?' },
@@ -406,6 +476,29 @@ const headerSubtitle = computed(() => {
     return 'This creates the place your events land. Setup instructions come right after.'
   }
   return "Tell us what you're tracking — we'll show you exactly what to do next."
+})
+
+// The primary action on step 3. "Add a destination" is only right when we KNOW
+// there is not one — so it is gated on the lookup having actually answered `none`.
+// A lookup still in flight, or one that failed, must not invite a duplicate
+// warehouse next to a notice saying we probably built one; and gating this way
+// means the button can only ever move from the safe answer to the specific one,
+// never from "don't add" to "add" under someone's cursor. Preview mode saved
+// nothing, so the original prompt stands there.
+const suggestAddDestination = computed(
+  () => preview.value || provisioningState.value === 'none'
+)
+
+// Handed to the install guide so its "events are arriving" result can name where
+// they are already landing instead of telling someone to add a destination they
+// were given. Empty until the pipe is found — the guide keeps its original copy
+// then, which is still right for a cloud app and for a lookup that failed.
+const deliversTo = computed(() => {
+  // Enabled, not merely provisioned. A paused pipe delivers nothing, so naming
+  // where events "are being delivered" would be false — the backend creates it
+  // enabled today, which makes this unreachable rather than unnecessary.
+  if (!provisioned.value || !provisionedPipe.value?.isEnabled) return ''
+  return provisionedDestination.value?.name || 'its warehouse'
 })
 
 const slugHint = computed(
@@ -510,18 +603,27 @@ async function submit() {
         timeout: 2500
       })
 
-      // The backend owns the write key and the type; the template id is ours and
-      // is what picks the right snippets, so carry it across explicitly rather
-      // than hoping the response echoes it.
+      // The backend owns the write key; the template id and the type are ours.
+      // Both are carried across explicitly rather than read off the response:
+      // `SourceCreate.source_type` defaults to `zid` server-side, so a payload
+      // that coerced or defaulted the type would put browser install snippets
+      // and a write-key row in front of a pull-only cloud app whose key will
+      // never exist. The local value is what the picked template actually says.
       created.value = {
         ...result,
         templateId: form.templateId,
-        sourceType: result.sourceType ?? sourceType,
+        sourceType: sourceType ?? result.sourceType ?? null,
         slug: result.slug ?? form.slug.trim(),
         name: result.name ?? form.name.trim()
       }
       preview.value = false
       step.value = 'install'
+
+      // Deliberately not awaited. The install guide and the write key are what
+      // this step is for, and they are ready now; the pipe panel is additional
+      // and slots in above them when the read answers. Awaiting it would hold
+      // the whole step behind two list calls.
+      discoverProvisioning(created.value.id)
     } catch (e) {
       $q.notify({
         message: `Couldn't create source: ${e.message || 'request failed'}`,
@@ -575,7 +677,12 @@ function onVerified() {
   if (preview.value) return
   $q.notify({
     message: 'Source verified — events are arriving',
-    caption: 'Add a destination next so they have somewhere to go.',
+    // The caption used to hand out homework that was already done. Where a pipe
+    // was provisioned the events have somewhere to go, and saying so is the
+    // whole point of confirming.
+    caption: deliversTo.value
+      ? `They are being delivered to ${deliversTo.value}. Nothing else to set up.`
+      : 'Add a destination next so they have somewhere to go.',
     color: 'positive',
     position: 'top-right',
     timeout: 3000
