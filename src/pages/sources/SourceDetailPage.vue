@@ -126,12 +126,7 @@
       <SourceSettingsPanel
         v-else-if="tab === 'settings'"
         :source="source"
-        @save="saveDetails"
         @copy="copyValue"
-        @rotate="onRotate"
-        @revoke="onRevoke"
-        @issue-server-key="onIssueServerKey"
-        @strict-mode="onStrictMode"
         @delete="confirmDelete = true"
       />
 
@@ -152,11 +147,18 @@
       @confirm="toggle"
     />
 
+    <!-- One verb for this action, everywhere it appears — the icon tooltip,
+         the Settings danger zone, the list row and this dialog all say Delete.
+         It used to open as "Move source to trash", which named an outcome the
+         backend does not produce: DELETE on a source is a hard 204, there is no
+         restore endpoint, and the deleted record never reached the Trash screen
+         someone was then told to look in. When soft delete ships, this reverts
+         to the trash wording in one edit — see `deleteMessage`. -->
     <ConfirmDialog
       v-model="confirmDelete"
-      title="Move source to trash?"
+      :title="deleteTitle"
       :message="deleteMessage"
-      confirm-label="Move to trash"
+      confirm-label="Delete source"
       destructive
       @confirm="remove"
     />
@@ -338,21 +340,19 @@ const toggleMessage = computed(() => {
     : `“${s.name}” starts collecting events again straight away.`
 })
 
-const deleteMessage = computed(() =>
-  source.value
-    ? `“${source.value.name}” stops collecting events and moves to the trash, where it can be restored for 30 days.`
-    : ''
+const deleteTitle = computed(() =>
+  source.value ? `Delete “${source.value.name}”?` : 'Delete this source?'
 )
 
-// Nothing here persists — say so in the toast rather than implying a save.
-function notifyLocal(message) {
-  $q.notify({
-    message,
-    caption: 'Local preview only — no backend is connected yet.',
-    color: 'dark',
-    timeout: 2500
-  })
-}
+// The last sentence is the interim one. Restoring a deleted source needs a
+// backend that keeps one, and none of that exists yet — no soft delete, no
+// trash listing, no restore. Promising 30 days of recovery over a hard DELETE
+// is the one wrong thing a destructive confirm can say.
+const deleteMessage = computed(() =>
+  source.value
+    ? `“${source.value.name}” stops collecting events straight away, and any pipe reading from it stops delivering. Events already written to a destination are untouched — they live in the warehouse, not here. Restoring from trash is not available yet, so this cannot be undone.`
+    : ''
+)
 
 async function toggle() {
   const s = source.value
@@ -368,7 +368,7 @@ async function remove() {
   const s = source.value
   const res = await removeSource(s.id)
   notifyMutationResult($q, res, {
-    success: `${s.name} moved to trash`,
+    success: `${s.name} deleted`,
     apiMissing: `Can't delete ${s.name} yet.`
   })
   if (res.ok) router.push({ name: 'sources' })
@@ -388,31 +388,6 @@ async function copyValue({ label, value }) {
 
 function openPipe(pipe) {
   router.push({ name: 'pipes-detail', params: { id: pipe.id } })
-}
-
-// Renaming a source has no endpoint yet — there is no PATCH for name or
-// description, only for `is_enabled`. Rather than fake a save, say what would
-// happen. Same for the three key actions and strict mode below: each is a real
-// product decision with no backend behind it, and a silent no-op that looks
-// like a success is the one outcome worth avoiding.
-function saveDetails({ name }) {
-  notifyLocal(`“${name}” would be saved`)
-}
-
-function onRotate(kind) {
-  notifyLocal(`The ${kind} write key would be rotated`)
-}
-
-function onRevoke() {
-  notifyLocal('That key would be revoked')
-}
-
-function onIssueServerKey() {
-  notifyLocal('A server-to-server key would be issued')
-}
-
-function onStrictMode(value) {
-  notifyLocal(`Strict mode would be turned ${value ? 'on' : 'off'}`)
 }
 
 onMounted(() => {

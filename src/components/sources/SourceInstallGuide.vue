@@ -25,7 +25,7 @@
           <p class="text-sm font-semibold text-ink"
             >Verified — {{ source.name }} is live</p
           >
-          <p class="mt-1 text-sm text-muted">{{ verifiedMessage }}</p>
+          <p class="mt-1! text-sm text-muted">{{ verifiedMessage }}</p>
         </div>
       </div>
     </CardPanel>
@@ -84,18 +84,26 @@
       />
 
       <CardPanel>
-        <TabNav v-model="method" :tabs="methodTabs" />
+        <!-- A source is only offered the methods that fit it, so a mobile
+             source has exactly one. A one-item tab bar is decoration that looks
+             like a choice, so it is not rendered — the lede below already names
+             the method. -->
+        <TabNav
+          v-if="methodTabs.length > 1"
+          v-model="method"
+          :tabs="methodTabs"
+        />
 
-        <p v-if="active?.lede" class="mb-4 text-sm text-muted">{{
+        <p v-if="active?.lede" class="mb-4! text-sm text-muted">{{
           active.lede
         }}</p>
 
         <div class="flex flex-col gap-5">
           <div v-for="(block, i) in active?.blocks ?? []" :key="i">
-            <p v-if="block.title" class="mb-1 text-sm font-medium text-ink">{{
+            <p v-if="block.title" class="mb-1! text-sm font-medium text-ink">{{
               block.title
             }}</p>
-            <p v-if="block.body" class="mb-2 text-xs text-muted">{{
+            <p v-if="block.body" class="mb-2! text-xs text-muted">{{
               block.body
             }}</p>
             <SfereCode :code="block.code" :filename="block.filename">
@@ -119,7 +127,7 @@
         <!-- Optional attributes, for the tab that has them. A table rather than
              prose: the reader is scanning for one row, not reading. -->
         <div v-if="active?.attributes?.length" class="mt-5">
-          <p class="mb-2 text-sm font-medium text-ink">Optional attributes</p>
+          <p class="mb-2! text-sm font-medium text-ink">Optional attributes</p>
           <SfereTable
             :columns="ATTRIBUTE_COLUMNS"
             :rows="active.attributes"
@@ -133,7 +141,7 @@
           </SfereTable>
         </div>
 
-        <p v-if="active?.note" class="mt-4 text-xs text-muted">{{
+        <p v-if="active?.note" class="mt-4! text-xs text-muted">{{
           active.note
         }}</p>
       </CardPanel>

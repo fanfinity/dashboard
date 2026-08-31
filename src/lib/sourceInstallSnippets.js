@@ -136,7 +136,7 @@ export function browserMethods(source) {
     {
       key: 'native',
       label: 'Native apps',
-      lede: 'Building for iOS or Android instead? Same event model, one SDK per platform.',
+      lede: 'One SDK per platform, same event model on both.',
       blocks: [
         {
           filename: 'AppDelegate.swift',
@@ -158,35 +158,57 @@ export function browserMethods(source) {
   ]
 }
 
-/** Native-first ordering, for a source created from a mobile SDK template. */
-export function nativeMethods(source) {
-  const all = browserMethods(source)
-  const order = ['native', 'npm', 'http', 'html', 'react']
-  return order.map(k => all.find(m => m.key === k)).filter(Boolean)
+// Which methods a source is offered, keyed by the template it was created from.
+//
+// A NARROWING, not a re-ordering. The tabs used to show all five for everyone
+// and merely lead with the likely one, which reads as five equally valid ways
+// to install — but a website has no `AppDelegate.swift` to paste into and a
+// mobile app has no `<head>`, so an irrelevant tab is not a harmless extra. It
+// is a wrong answer sitting beside the right one, and someone following it
+// spends an afternoon before finding out.
+const METHODS_BY_TEMPLATE = {
+  'web-sdk': ['html', 'react', 'npm'],
+  'ios-sdk': ['native'],
+  'android-sdk': ['native'],
+  // `npm` as well as `http`: the same package runs in Node, so a backend that
+  // would rather not hand-roll the POST has somewhere to go. React and the
+  // script tag are removed for the same reason Native is removed from a
+  // website.
+  'http-api': ['http', 'npm']
 }
 
-/** Server-first ordering, for an HTTP API source. */
-export function serverMethods(source) {
-  const all = browserMethods(source)
-  const order = ['http', 'npm', 'native', 'html', 'react']
-  return order.map(k => all.find(m => m.key === k)).filter(Boolean)
+// The fallback signal, for a source whose template is not on the record.
+const METHODS_BY_SOURCE_TYPE = {
+  web: ['html', 'react', 'npm'],
+  // A cloud app is polled, not pushed to — the component renders its "nothing
+  // to install" copy instead of an empty tab bar.
+  cloud_app: [],
+  // Deliberately NOT narrowed. `event_stream` covers ios-sdk, android-sdk and
+  // http-api, so on a record carrying only a source type these three are
+  // indistinguishable. Showing five tabs is worse than showing one; telling a
+  // mobile source it is an HTTP backend would be worse still.
+  event_stream: ['native', 'http', 'npm', 'html', 'react']
 }
+
+const ALL_METHOD_KEYS = ['html', 'react', 'npm', 'http', 'native']
 
 /**
- * Which set of methods a source should be shown, from the template it was
- * created from. A cloud app gets none — it is polled, not pushed to — and the
- * component renders its connector copy instead of an empty tab bar.
+ * Which set of methods a source should be shown.
+ *
+ * `templateId` is the exact signal and the create flow has it, because it is
+ * what the flow just picked. The source DETAIL screen usually does not: the
+ * backend's `SourceCreate` accepts a `template_id` but its `Source` never
+ * returns one, so the template is write-only as far as a re-read is concerned.
+ * Closing that gap is a one-field backend change, not something to reconstruct
+ * here — see the `event_stream` note above.
  */
 export function methodsForSource(source) {
-  const templateId = source?.templateId
-  const type = source?.sourceType
-
-  if (type === 'cloud_app') return []
-  if (templateId === 'ios-sdk' || templateId === 'android-sdk') {
-    return nativeMethods(source)
-  }
-  if (templateId === 'http-api') return serverMethods(source)
-  return browserMethods(source)
+  const all = browserMethods(source)
+  const keys =
+    METHODS_BY_TEMPLATE[source?.templateId] ??
+    METHODS_BY_SOURCE_TYPE[source?.sourceType] ??
+    ALL_METHOD_KEYS
+  return keys.map(k => all.find(m => m.key === k)).filter(Boolean)
 }
 
 export default methodsForSource

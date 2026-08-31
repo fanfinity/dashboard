@@ -142,6 +142,10 @@ time:
    pointed _down_ between three side-by-side boxes). Use the inverse variant —
    `max-lg:hidden`, `max-sm:rotate-90` — which generates a class name Quasar does not define.
    The tell: a utility that works in its "on" breakpoint and refuses to switch off.
+   The same `!important` form owns the disabled look: `[disabled] { opacity: .6; cursor:
+not-allowed }`, so `disabled:opacity-45` and `disabled:cursor-not-allowed` are dead classes
+   everywhere in this repo. A disabled state you actually control has to change something
+   Quasar does not set — a colour, say. `SfereToggle` is the worked example.
 3. **A `q-dialog` child is capped at 560px, and `mt-auto` does nothing on a bare block.** Quasar
    ships `.q-dialog__inner--minimized > div { max-width: 560px }` and margins on unclassed block
    elements, both unlayered. A three-column picker in a dialog silently renders as
@@ -267,6 +271,21 @@ same page a week later. Its snippets live in `src/lib/sourceInstallSnippets.js` 
 Its verification asks the backend whether a real event arrived (`listSourceEvents`); the
 proposal's "paste your URL and we'll look for the script" checker was **not** built, because the
 CSP blocks that cross-origin fetch and it would only prove the tag is on the page.
+
+**The method tabs are a narrowing, not a re-ordering**, and `methodsForSource()` is the table
+that does it: a website gets HTML / React / NPM, a mobile source gets Native apps alone, an HTTP
+API source gets HTTP / NPM. It used to show all five to everyone and merely lead with the likely
+one, which reads as five equally valid ways to install — a website has no `AppDelegate.swift` to
+paste into, so an irrelevant tab is a wrong answer sitting beside the right one. A source
+narrowed to one method renders **no `TabNav`**; a one-item tab bar is decoration that looks like
+a choice.
+
+The signal is `templateId`, and **only the create flow reliably has it**: `SourceCreate` accepts
+a `template_id` but the `Source` record never returns one, so a re-read carries only
+`source_type`. `web` and `cloud_app` are exact, but `event_stream` covers `ios-sdk`,
+`android-sdk` _and_ `http-api` — indistinguishable — so that branch deliberately keeps all five
+tabs rather than guessing. **Returning `template_id` on `Source` is the one-field backend change
+that closes it**; do not reconstruct the template from a slug or a local cache.
 
 The product backlog (54 screens, GitHub issues #16–#69) is scaffolded: every screen already
 exists as a stub page at its final path. Implementing one means **rewriting that file in place**,
@@ -722,6 +741,29 @@ exists to prevent.`sendMutation()`and`fetchCollection()`resolve`path` the same w
    their local mutation only after `ok: true`. `PATCH`/`DELETE` bodies and responses are
    snake_case (`{ is_enabled }`), hence `camelizeKeys` on the way back in. Trash restore/purge
    stays local-only everywhere — the trash has no endpoint at all yet.
+
+   **That last sentence is why Sources says "Delete", not "Move to trash".**
+   `DELETE /v1/accounts/{account}/sources/{id}` is a hard `204`: no soft delete, no trash
+   listing, no restore. The confirm dialogs used to open as "Move source to trash?" and promise
+   30 days of recovery, then send the user to a Trash screen that could not have the record —
+   which is the failure this file warns about elsewhere, in its most expensive form. The
+   Sources list, the detail header and the Settings danger zone now share one verb and one
+   sentence, and each says restoring is not available yet. **Flip all of them back the day the
+   backend soft-deletes** — the wording is the product direction, it is just ahead of the API.
+   The nine `use*Trash.js` composables all read `trash.json` with no `api`, so they must
+   forward `apiMissing` and the screen must pass it to `DataTable`; `useSourcesTrash` swallowed
+   it, and the screen answered "Trash is empty — no source has been deleted in the last 30
+   days", which is a measured-sounding claim about a collection nobody asked for. The other
+   eight still swallow it.
+
+   **A source's Settings tab is read-only except Delete**, and says so in a banner rather than
+   in a toast. `SourceUpdate` carries `is_enabled` and nothing else, and `Source` has no
+   `description`, no strict-mode flag and no server-key list — so renaming, rotating a write
+   key, revoking one, issuing a server-to-server key and Strict mode are all disabled controls.
+   They used to fire a "would be saved" toast, which is indistinguishable from one describing a
+   save. Rotation's helper text also described an impossible order ("update your snippet first,
+   then rotate" — the new key does not exist until the rotation issues it); it now states the
+   real sequence and that there is no endpoint behind it.
 
    **`pnpm smoke:dist` now walks all 54 routes against whatever `VITE_API_BASE` points at**,
    because that is what the default mode does. It used to be hermetic. If you need the old

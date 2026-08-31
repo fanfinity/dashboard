@@ -26,7 +26,7 @@ import { useMockResource } from '@/composables/useMockResource'
  * Origin every endpoint path hangs off. One constant so the list screen, the
  * curl snippet and the create screen's slug preview cannot drift apart.
  */
-export const PROFILE_API_BASE_URL = 'https://api.fanfinity.io'
+export const PROFILE_API_BASE_URL = 'https://api.sfere.io'
 
 /** Path prefix a new endpoint's slug is mounted under. */
 export const PROFILE_API_PATH_PREFIX = '/v1/profile'
