@@ -1,5 +1,18 @@
 <template>
-  <q-dialog :model-value="open" persistent>
+  <!-- Explicit fade in and out, rather than Quasar's default `scale`.
+       QA saw a frame of the card overlapping the dashboard on close: the
+       default hide is a transform-based scale-out that runs against a backdrop
+       fading on its own curve, so for a moment a shrinking card sits over
+       already-visible page content. A fade moves nothing, so there is nothing
+       to catch mid-flight, and 180ms is short enough that the answer feels
+       acted on rather than animated. -->
+  <q-dialog
+    :model-value="open"
+    persistent
+    transition-show="fade"
+    transition-hide="fade"
+    :transition-duration="180"
+  >
     <div
       role="dialog"
       aria-modal="true"

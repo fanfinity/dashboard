@@ -120,8 +120,8 @@ CSS v4** (via `@tailwindcss/vite` + PostCSS) used alongside Quasar's own compone
 both `app.scss` and `tailwind.css` are loaded. Charts use ApexCharts (`vue3-apexcharts`).
 
 Router uses **hash mode** (`vueRouterMode: 'hash'` in `quasar.config.js`). The `@/` alias maps
-to `src/`. All app routes are children of `src/layouts/MainLayout.vue`, except `/login` and
-`/design-system`, which are top-level and unauthenticated.
+to `src/`. All app routes are children of `src/layouts/MainLayout.vue`, except `/login`,
+`/signup` and `/design-system`, which are top-level and unauthenticated.
 
 Hash mode has one consequence worth internalising: the whole route lives after the first `#`,
 so an in-page `href="#some-id"` **replaces the route** instead of scrolling. Anchor navigation
@@ -421,21 +421,70 @@ four copies of the same three steps is four things to keep in agreement. The str
 the _workspace_ is on, not the step the screen is; it hides itself once all three exist. The
 panel is dismissible only after that, and the dismissal is `localStorage`.
 
-**The post-auth interstitial** (`components/onboarding/AccountSetupOverlay.vue`) covers the gap
-between a successful sign-in and the dashboard, when the session settles, `/v1/me` is read and
-the acting account resolves. It runs for a fixed **2.5s** (`TOTAL_MS`), long enough that its four
-step labels can be read rather than flashed — it used to be a random 1.1–2s, which made the same
-sign-in feel different each time. Still a courtesy transition, not a fake loading screen, so the
-number is a deliberate ceiling and not somewhere to hide slow work. Like the persona question it is an overlay, not
-a route — a `/setting-up` route would need a guard exception and would be a second place the auth
-redirect has to agree with. It mounts only _after_ auth succeeds, so it can never stand between a
-bad password and its error message.
+**The post-registration interstitial** (`components/onboarding/AccountSetupOverlay.vue`) covers
+the gap between a created account and the dashboard, when the session settles, `/v1/me` is read
+and the acting account resolves. It runs for a fixed **2.5s** (`TOTAL_MS`), long enough that its
+four step labels can be read rather than flashed — it used to be a random 1.1–2s, which made the
+same sign-in feel different each time. Still a courtesy transition, not a fake loading screen, so
+the number is a deliberate ceiling and not somewhere to hide slow work. Like the persona question
+it is an overlay, not a route — a `/setting-up` route would need a guard exception and would be a
+second place the auth redirect has to agree with. It mounts only _after_ auth succeeds, so it can
+never stand between a bad password and its error message.
+
+**It is sign-up only**, and that is the fix to a QA finding rather than an optimisation. It used
+to run on sign-in too, so a returning user was told "Setting up your account" and "Opening your
+workspace" on their hundredth visit, and waited 2.5s for a sentence that was not true of them.
+`LoginPage` mounts it on the sign-up branch and sends a sign-in straight to its destination. If a
+returning-user transition is ever wanted it needs its own copy; do not soften this one to cover
+both.
+
+**Sign-in and sign-up are two routes over one component.** `/login` and `/signup` are separate
+entries in `routes.js` both pointing at `LoginPage.vue`, which reads `route.name` to decide which
+form it is. They used to be one route and a client-side toggle, so sign-up had no address: not
+linkable from a marketing CTA, invisible to the back button, and every page-view landing on
+`/login` whichever form the person saw. Both carry `redirect` across the switch, so someone
+bounced off a deep link who decides to register still lands where they were going. Neither
+belongs in `screens.js` — that would nest them under `MainLayout`, behind the auth guard.
+
+**Both forms validate on submit and say what is wrong.** `src/lib/authValidation.js` holds the
+rules; `FormField`'s `error` and `SfereInput`'s `invalid` render them, and the first failing
+field takes focus. The submit button is enabled unless a request is in flight — it used to be
+disabled until both fields passed, which is what QA filed as "invalid input is rejected
+completely silently": a control that does nothing and explains nothing leaves no way to find out
+what is wrong with what you typed. Two things there are worth not undoing. `FormField`'s
+`required` prop is **decorative** — it draws an asterisk and never reaches the input, and
+`SfereInput` declares its props rather than falling through, so a `required` attribute would land
+on the wrapper `<div>`; the JS check is the only check. And the form is `novalidate`, because a
+native bubble vanishes on the next keystroke and cannot say the sign-up-specific things about
+passwords.
+
+**The sign-up password rule is a UX guardrail, not a security control.** Minimum 8 characters, at
+least three of {lower case, upper case, digit, symbol}, and a short in-repo denylist of the
+passwords that top every breach corpus, plus a live strength meter. All of it runs in the
+browser: `POST /v1/register` still accepts `12345678`, and anything posting there directly
+bypasses the lot. Real enforcement is a backend ask, written up with the other three in
+`todos/backend-ask-auth-onboarding.md`. Sign-in checks only that a password was typed — applying
+the new rule there would lock out every account that predates it while telling people their own
+password is invalid.
+
+**A personal email warns, it does not block.** A consumer domain (`gmail.com` and friends) gets a
+non-blocking amber note saying teammates on that domain will not be matched into the workspace.
+This is not a reversal of the dropped work-email _validation_ — rejecting those addresses blocks
+contractors and agencies for a benefit the backend gets from the address either way, and that
+stays dropped. The warning states the one real consequence instead.
+
+**There is no "Forgot password?" link, deliberately.** No `/v1/auth/password-reset` exists, so
+there is nothing to link to and a control that opens an apology is worse than an absence. Same
+reasoning for email verification and domain-matched workspaces: both are in the QA report, both
+need endpoints, and neither has a placeholder in the UI.
 
 **Three selectors on `/login` are load-bearing**: `scripts/smoke.mjs` drives
 `input[type=email]`, `input[type=password]` and `button[type=submit]` with Playwright's strict
 matching. Keep exactly one of each — that is why sign-up has no confirm-password field, and why
-work-email validation was dropped rather than added (it blocks contractors and agencies for a
-benefit the backend gets from the address either way).
+the password show/hide toggle is `type="button"` and the input starts as `type="password"`. A
+bare `<button>` inside a `<form>` submits by default, so an unmarked toggle would give the gate
+two matches for `button[type=submit]` and fail sign-in for all 54 routes before a single screen
+rendered.
 
 **Settings → Your role** (`SettingsPersonaPanel.vue`) is the other surface, so changing the answer
 never means re-running a tour, and `Ask me again` clears it. Both surfaces render the same three
@@ -948,7 +997,7 @@ removes the mismatch and makes the backend the single source of truth for the Fi
   a failed refresh clears the session so the guard bounces to `/login`.
 - `src/router/index.js`'s `beforeEach` gates `requiresAuth` routes on `isAuthenticated`
   (token presence), then confirms a backend account via `waitForAccount()`; a missing account
-  clears tokens and redirects to `/login`. `/login` carries no `requiresAuth` meta.
+  clears tokens and redirects to `/login`. neither `/login` nor `/signup` carries `requiresAuth` meta.
 
 The access token is a short-lived (~1h) Firebase ID token; the backend also returns a refresh
 token so sessions survive past that. **Multi-tenancy is now a backend concern** — the dashboard

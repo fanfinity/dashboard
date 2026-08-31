@@ -1,9 +1,18 @@
 <template>
-  <!-- The bridge between "signed in" and "dashboard". It exists because the
-       backend does several real things at that moment — settles the session,
-       reads /v1/me, resolves the acting account — and a blank white flash while
-       that happens reads as a stall. Showing the work is honest and it is the
-       first impression of the product.
+  <!-- The bridge between "account created" and "dashboard", and SIGN-UP ONLY.
+       It exists because registration does several real things at that moment —
+       provisions the account, settles the session, reads /v1/me, resolves the
+       acting account — and a blank white flash while that happens reads as a
+       stall. Showing the work is honest and it is the first impression of the
+       product.
+
+       It used to run on sign-in too, which QA filed: a returning user has
+       nothing being set up, so "Setting up your account" and "Opening your
+       workspace" were first-run copy shown to someone on their hundredth visit,
+       and the 2.5s was a delay pretending to be work. LoginPage now mounts this
+       on the sign-up branch alone and sends a sign-in straight to its
+       destination. If a returning-user transition is ever wanted, it needs its
+       own copy — do not soften this one to cover both.
 
        DELIBERATELY NOT A ROUTE. A /setting-up route would need a guard exception,
        would be linkable, and would be a second place the auth redirect has to
@@ -150,7 +159,8 @@ import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import SfereLogo from '@/components/ui/SfereLogo.vue'
 import SfereSpinner from '@/components/ui/SfereSpinner.vue'
 
-// Fixed at 2.5s, on purpose: this is a courtesy transition, and a sub-second
+// Fixed at 2.5s, on purpose: this is a courtesy transition on the one occasion
+// it is true — a new account really is being provisioned — and a sub-second
 // flash of four reassuring step labels reads as a glitch rather than as work.
 // It used to be a random 1.1-2s, which made the same sign-in feel different
 // every time; one duration everyone gets is the calmer trade.

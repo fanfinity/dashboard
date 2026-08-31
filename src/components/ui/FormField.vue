@@ -10,14 +10,22 @@
 
     <slot />
 
+    <!-- `role="alert"` so a validation message that appears after a failed
+         submit is announced rather than silently painted. The id lets the
+         control point at it with aria-describedby (see SfereInput's
+         `described-by`), which is what associates the two for a screen reader
+         re-reading the field later. -->
     <p
       v-if="error"
+      :id="errorId"
+      role="alert"
       :class="['text-sfere-xs', onDark ? 'text-rose-300' : 'text-sfere-danger']"
     >
       {{ error }}
     </p>
     <p
       v-else-if="hint"
+      :id="hintId"
       :class="[
         'text-sfere-xs',
         onDark ? 'text-white/50' : 'text-sfere-fg-muted'
@@ -46,6 +54,13 @@ const props = defineProps({
   forId: { type: String, default: '' },
   onDark: { type: Boolean, default: false }
 })
+
+// Derived from `forId` rather than taken as props: a field already has one
+// identifier, and asking callers for three is how two of them drift apart.
+const errorId = computed(() =>
+  props.forId ? `${props.forId}-error` : undefined
+)
+const hintId = computed(() => (props.forId ? `${props.forId}-hint` : undefined))
 
 const labelClasses = computed(() => [
   'text-sfere-sm font-medium',

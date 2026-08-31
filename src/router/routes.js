@@ -59,9 +59,24 @@ const children = allScreens.map(screen => {
 })
 
 const routes = [
+  // Sign-in and sign-up are two routes over one component, deliberately.
+  //
+  // They used to be one route and a client-side toggle, which meant sign-up had
+  // no address: it could not be linked from a marketing CTA, the browser's back
+  // button did not move between the two views, and every page-view landed on
+  // /login whichever form the person actually saw. LoginPage reads `route.name`
+  // to decide which of the two it is rendering.
+  //
+  // Neither carries `requiresAuth` — they are the way in — and neither belongs
+  // in screens.js, which would nest them under MainLayout behind the auth guard.
   {
     path: '/login',
     name: 'login',
+    component: () => import('@/pages/LoginPage.vue')
+  },
+  {
+    path: '/signup',
+    name: 'signup',
     component: () => import('@/pages/LoginPage.vue')
   },
 

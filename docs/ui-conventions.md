@@ -979,7 +979,7 @@ Label + control + hint/error. The control goes in the slot, so a page can use
 | `label`    | String  | `''`    |                                        |
 | `hint`     | String  | `''`    | suppressed while `error` is set        |
 | `error`    | String  | `''`    | replaces the hint rather than stacking |
-| `required` | Boolean | `false` | appends a danger asterisk              |
+| `required` | Boolean | `false` | **decorative** — see below             |
 | `optional` | Boolean | `false` | marks the field optional instead       |
 | `forId`    | String  | `''`    | **not `for`** — `for` is a JS keyword  |
 | `onDark`   | Boolean | `false` |                                        |
@@ -999,6 +999,36 @@ rather than a raw `<input>`:
   <SfereInput id="pipe-name" v-model="name" placeholder="e.g. Club shop" />
 </FormField>
 ```
+
+**`required` draws an asterisk and validates nothing.** It never reaches the
+control, and it cannot: `SfereInput` declares its props rather than letting
+attributes fall through, so a `required` written on the component would land on
+the positioning wrapper `<div>` and do nothing at all. A form that needs a value
+has to check for one in JS and set `:error`. This is not a gap to be plugged
+later — a native `required` raises an OS-styled bubble that vanishes on the next
+keystroke, which is not the message any screen in this app wants to show.
+
+The error and hint paragraphs are given ids derived from `for-id`
+(`<for-id>-error`, `<for-id>-hint`), and the error carries `role="alert"` so a
+message that appears after a failed submit is announced rather than silently
+painted. Point the control at whichever is showing with `SfereInput`'s
+`described-by`, which is what associates the two for a screen reader re-reading
+the field later:
+
+```html
+<FormField label="Work email" for-id="login-email" :error="emailError">
+  <SfereInput
+    id="login-email"
+    v-model="email"
+    :invalid="Boolean(emailError)"
+    :described-by="emailError ? 'login-email-error' : ''"
+  />
+</FormField>
+```
+
+`src/pages/LoginPage.vue` is the worked example: validate on submit, set the
+error, focus the first field that failed, and clear the message the moment the
+value it judged changes.
 
 ### ConfirmDialog.vue
 
