@@ -40,6 +40,16 @@ loads `.env` itself** via `process.loadEnvFile()`, so bare `pnpm smoke:dist` wor
 shell. That call does not overwrite variables already set, so `--env-file=.env` and a
 workflow's `env:` block still win where they are used.
 
+**It asserts a route only after the network has gone quiet twice**, and that is not belt and
+braces. Almost every composable awaits `waitForAccount()` before it can build an account-scoped
+URL, so its fetch is issued only once `GET /v1/me` has settled — and a single
+`waitForLoadState('networkidle')` resolves _inside_ that gap, so the route gets asserted before
+the request that would have failed it was even sent. Measured: in real mode the same nine-route
+run reported between one and seven console-error failures on identical code. `settle()` idles,
+pauses 400ms, then idles again; the same run is now byte-identical across repeats. **Do not
+collapse it back to one wait** — a gate that fails a random subset also passes a random subset,
+and the second half is the one that hurts.
+
 **It serves on port 9000, and that is load-bearing, not a default nobody thought about.**
 Sign-in is a real cross-origin `POST` to `VITE_API_BASE` now, so the browser's origin has to be
 one the backend's `CORS_ALLOW_ORIGINS` names — and the only localhost origin staging accepts is
@@ -177,7 +187,7 @@ not-allowed }`, so `disabled:opacity-45` and `disabled:cursor-not-allowed` are d
    `.sfere-flush > p` for a container that already spaces its children with `gap`. There is
    deliberately **no blanket `p { margin: 0 }`**: stacked prose still wants its rhythm, and
    the smoke gate cannot see a spacing regression, so a global reset would be an unverifiable
-   change to all 54 screens at once.
+   change to all 60 screens at once.
 6. **`auto-fit` grid tracks measure a card at min-content and keep the answer.** An
    `auto-fit` track is min-content-sized in the first pass, and the min-content height of a
    `SelectableCard` — a #4 wrapping flex — at that width is enormous, so the row keeps it:
@@ -310,7 +320,18 @@ that closes it**; do not reconstruct the template from a slug or a local cache.
 
 The product backlog (54 screens, GitHub issues #16–#69) is scaffolded: every screen already
 exists as a stub page at its final path. Implementing one means **rewriting that file in place**,
-never creating a file and registering a route.
+never creating a file and registering a route. The manifest itself is **60 screens** now — the
+backlog count is the issue count, not the route count, and the two have not matched since
+`/team`, `/billing` and the Functions screens were added outside it.
+
+**Functions is the newest top-level section** (`/functions`, `/functions/new`, `/functions/:id`),
+sitting under Pipes because a function is what runs _on_ a pipe's events. Two things about it
+worth knowing before touching either: `usePipelineFunctions()` is the per-pipe **attachment**
+list and `useFunctions()` is the account **library**, and the same function can be attached to
+several pipes — so they are not two names for one thing. And `reorder()` takes the **complete**
+list of attached ids; omitting one is a `422`, not a detach, which is why `move()` exists rather
+than a swap helper. `/profile-builders` is the fourth new screen, a child under Profiles gated by
+its own `profile-builders` key.
 
 **The sidebar has an ACCOUNT section**, between FANS and ACTIVATE: `/team` (members, roles and
 the domain-match approval queue) and `/billing` (plan, usage, add-ons, invoices). It sits above
@@ -336,12 +357,13 @@ back in the sidebar, which is exactly what this undid.
 ## Feature activation — most of the sidebar is switched off
 
 `enabled: true` in `features.js` today covers **Dashboard, Live events, Sources, Destinations,
-Pipes, Settings, Warehouse, Monitoring, Profiles, Secrets, Authorizations, Team** and
-**Billing** — thirteen top-level keys, not six. Two of those are partly on: Warehouse and Profiles each gate their own
+Pipes, Functions, Settings, Warehouse, Monitoring, Profiles, Secrets, Authorizations, Team** and
+**Billing** — fourteen top-level keys, not six. Two of those are partly on: Warehouse and Profiles each gate their own
 children by a separate key (`dwh-syncs`, `warehouse-models`, `identity-resolution`, `attributes`,
-`profile-api`, `live-profile-syncs`, `profile-dwh-syncs`), so switching the parent on only exposes
-the child screens whose own key is _also_ `true` — right now that's just Warehouse connections and
-Profile search, everything else under those two stays a `Soon` row. Audiences, Campaigns, Engage,
+`profile-builders`, `profile-api`, `live-profile-syncs`, `profile-dwh-syncs`), so switching the
+parent on only exposes the child screens whose own key is _also_ `true` — right now that's
+Warehouse connections, Profile search and Profile builders, everything else under those two stays
+a `Soon` row. Audiences, Campaigns, Engage,
 Reporting and Demo lab remain fully dark and get switched on one at a time as they become real.
 
 `src/config/features.js` is the registry — pure data, one entry per module, `enabled` being the
@@ -371,7 +393,7 @@ of** `<router-view>` when `route.meta.group` is inactive. Deliberately not a `be
 guard can only redirect, which throws away the URL you asked for. This way the address survives,
 the real page component never mounts (so nothing it fetches on mount runs), and
 `ComingSoonPanel` renders the screen's own title as a real `<h1>` — which is what lets
-`pnpm smoke:dist` keep walking **all 54 routes** instead of being narrowed to the active few.
+`pnpm smoke:dist` keep walking **all 60 routes** instead of being narrowed to the active few.
 Any new gating must preserve that; a redirect would silently drop the gate to ~6 routes.
 
 ## Onboarding — one question, asked once
@@ -383,7 +405,7 @@ numbers"). `src/config/personas.js` is the registry — pure data, no imports, s
 
 **The question is an overlay over a fully-rendered Home, never a route.** A `/welcome` route
 would replace `MainLayout`, so `[data-smoke="nav"]` would never appear and `pnpm smoke:dist`
-would fail at sign-in for all 54 routes rather than on one screen. Three consequences that any
+would fail at sign-in for all 60 routes rather than on one screen. Three consequences that any
 change here has to preserve: the page beneath stays mounted and visible, the overlay renders
 **no `<h1>`** (smoke asserts on the first one, which belongs to the page), and it opens **only on
 `/`** — a deep link to `/errors` from Slack must not be met by a modal demanding a role.
@@ -483,7 +505,7 @@ need endpoints, and neither has a placeholder in the UI.
 matching. Keep exactly one of each — that is why sign-up has no confirm-password field, and why
 the password show/hide toggle is `type="button"` and the input starts as `type="password"`. A
 bare `<button>` inside a `<form>` submits by default, so an unmarked toggle would give the gate
-two matches for `button[type=submit]` and fail sign-in for all 54 routes before a single screen
+two matches for `button[type=submit]` and fail sign-in for all 60 routes before a single screen
 rendered.
 
 **Settings → Your role** (`SettingsPersonaPanel.vue`) is the other surface, so changing the answer
@@ -524,7 +546,7 @@ reports `NOT_KNOWN` regardless of the fallback — that is a different failure.
 
 The wider copy rule that goes with it: **an em dash is punctuation, and the UI keeps very few
 of them.** Page subtitles, banners, toasts, validation messages and status lines were
-rewritten to sentences, colons or parentheses across all 54 screens, `public/data/*.json` and
+rewritten to sentences, colons or parentheses across every screen, `public/data/*.json` and
 the screen manifest — `screens.js` titles used to read `Warehouse Models — list view` and now
 read `Warehouse models`, which matters because that string is the real `<h1>`
 `ComingSoonPanel` renders. `src/components/sfere-docs/**` (the `/design-system` reference
@@ -532,16 +554,17 @@ page) is the deliberate exception: it is long-form editorial prose, not product 
 
 ## UI primitives
 
-`src/components/ui/` is **the** component kit — 42 components, all built on the Sfere token
+`src/components/ui/` is **the** component kit — 43 components, all built on the Sfere token
 layer. **Use them; do not re-implement their markup and do not copy their class strings into a
 page.** Read `docs/ui-conventions.md` before writing any new screen.
 
 Two naming schemes live in the folder, for a reason worth knowing:
 
-- **17 screen primitives carry plain, unprefixed names** — `PageHeader`,
+- **18 screen primitives carry plain, unprefixed names** — `PageHeader`,
   `DataTable`, `EmptyState`, `ErrorState`, `LoadingState`, `StatusBadge`, `CardPanel`,
   `NoticeBanner`, `StatCard`, `TabNav`, `FormField`, `FormSection`, `ConfirmDialog`,
-  `DefinitionList`, `SelectableCard`, `ToolbarSearch` and `StickyActionBar`. Sixteen of them
+  `DefinitionList`, `SelectableCard`, `ToolbarSearch`, `StickyActionBar` and
+  `SecretRevealDialog`. Sixteen of them
   keep the names the screens already imported, which is what let the Sfere implementations
   replace the originals across 104 files without rewriting 571 imports; `StickyActionBar` is
   newer and simply describes what it does. A few of the older names are now worse than what
@@ -583,6 +606,18 @@ already names the noun, and wrong anywhere the action is not guessable from its 
 states, form submits and destructive confirmations keep their words — and so do row-level
 actions in a `DataTable`, where the noun that matters is _which row_, not the `<h1>`.
 
+**A secret the backend returns once goes through `SecretRevealDialog`, and its rules are the
+opposite of every other dialog's.** `ApiTokenCreated` and `WriteKeyCreated` carry a `plaintext`
+alongside the record; every later read carries a masked prefix, so the create response is the
+only moment the value exists anywhere. The dialog is therefore `persistent`, has **no Cancel and
+no `v-close-popup`**, and its one button says it is the last time — because a stray click on the
+backdrop is otherwise an unrecoverable loss the person had no way to see coming. Two
+implementation notes it will bite you on: the width has to be a **literal** utility pair
+(`w-[min(620px,92vw)]! max-w-[min(620px,92vw)]!`) since Tailwind v4 extracts class names from
+source text and a runtime-built `` `w-[${n}]!` `` is never generated, leaving Quasar's unlayered
+560px cap in charge (collision #3); and the close glyph is inlined rather than taken from
+`sfereIcons.js`, which has no `close` entry.
+
 **But the confirm rule is not tied to the icons: every state change asks first, everywhere.**
 The row-level Pause/Enable on the **twelve** list screens that have one — Sources,
 Destinations, Pipes, Profile API, Profile DWH syncs, Live profile syncs, Warehouse models, DWH
@@ -604,7 +639,7 @@ measured. Say what stops and what is left alone; do not promise a resume behavio
 ## The Sfere design system
 
 `src/css/sfere.css` holds the token layer, measured off the live marketing site
-(<https://sfere.io>) rather than eyeballed, and `src/components/ui/` holds the 42-component kit
+(<https://sfere.io>) rather than eyeballed, and `src/components/ui/` holds the 43-component kit
 built on it. Browse the whole thing at **`#/design-system`** (hash mode — not `/design-system`);
 no sign-in required.
 
@@ -615,7 +650,7 @@ so Quasar's own controls match. **Never hardcode a hex in a screen** — that is
 brand changed, and the alias layer only works if nothing bypasses it.
 
 **There is one kit.** The pre-Sfere primitives were replaced in place, not deprecated alongside
-it: all 54 screens now render Sfere components.
+it: all 60 screens now render Sfere components.
 
 Rules for touching it:
 
@@ -678,7 +713,7 @@ Nothing in this repo is off-limits to edit. But a handful of files are load-bear
 changing one changes every screen at once, so they are worth a moment's thought and a line in the
 commit message rather than a drive-by edit mid-task:
 
-`src/router/**` (the manifest generates all 54 routes) · `src/layouts/MainLayout.vue` (the nav
+`src/router/**` (the manifest generates all 60 routes) · `src/layouts/MainLayout.vue` (the nav
 is the IA, and the feature gate lives in its `q-page-container`) · `src/components/ui/**` (the
 kit) · `src/config/features.js` + `src/composables/useFeatures.js` (which modules are switched
 on at all) · `src/composables/{useMockResource,useEntitlements,useDiagram,useTemplates}.js` (the
@@ -772,8 +807,36 @@ exists to prevent.`sendMutation()`and`fetchCollection()`resolve`path` the same w
    `/sources` behind the stream selector) and `useDashboardHome()`
    (`/v1/accounts/{account_id}/dashboard` — one aggregate call that feeds the whole home
    screen, adapted into the three mock payload shapes rather than read through
-   `useMockResource`). **Wired to a drafted endpoint that does not exist yet**:
-   `useConnectorCatalog()` (`/v1/connectors`). Everything else has no `api` at all.
+   `useMockResource`).
+
+   **Then thirty more, wired against backend PR #16 (`feat: jitsu proxy`) before it merged** —
+   see `docs/backend-pr16-implementation.md` for the endpoint-by-endpoint list and
+   `docs/backend-pr16-integration.md` for the review it came out of. The readers:
+   `useIdentifierTypes()` (`…/identifier-types` — **one** reader, which replaced seven copies of
+   `useMockResource('identifier-types')`, so a missing endpoint there reaches eight screens),
+   `useMonitoringHealth()` (`…/health`), `useDiagram()` (`…/pipelines/diagram`),
+   `useApiTokens()` (`…/api-tokens`), `useFunctions()` (`…/functions`),
+   `useProfileBuilders()` (`…/profile-builders`), `useIngestDomains()` (`…/domains`),
+   `useNotificationChannels()` (`…/notification-channels`), `useConnectorImages()`
+   (`…/connector-images`), `useZidConnections()`, `useSourceWriteKeys()`,
+   `useSourceIngestSettings()`, `useSourceCatalogAPI()`, `useDestinationBrowser()`
+   (`…/destinations/{id}/tables`, `…/query`, `…/test`), `useTeam()` (`…/members`), and
+   `usePipelineFunctions()`'s new attach/detach/reorder half.
+
+   **That is a merge-order constraint, not just a list.** Ten of those endpoints do not exist on
+   `api-staging` until PR #16 lands, and a wired-but-missing endpoint answers `404` — which the
+   app handles as `apiMissing`, but which Chromium logs as a console error, which
+   `scripts/smoke.mjs` fails on. Measured: `SMOKE_DATA_SOURCE=real` is **44/60** today and
+   **60/60** in the default local `mock` mode. So the backend PR merges first, staging deploys,
+   then this. Do **not** buy a green run by adding a `404` pattern to `IGNORED_CONSOLE`.
+
+   **Wired to a drafted endpoint that does not exist yet**: `useConnectorCatalog()`
+   (`/v1/connectors`, `/v1/connectors/{id}/spec`). Everything else has no `api` at all.
+
+   **Two write-once plaintexts** live behind these: `ApiTokenCreated.plaintext` and
+   `WriteKeyCreated.plaintext`. The create response is the only time the value exists — every
+   later read carries a masked prefix — so both render through `SecretRevealDialog`; see the UI
+   primitives section.
 
    **The fixture is wider than the endpoint, and that is the bug class to look for
    on the three live domains.** `pipes.json` carries `version`, `sourceName`,
@@ -864,16 +927,24 @@ exists to prevent.`sendMutation()`and`fetchCollection()`resolve`path` the same w
    days", which is a measured-sounding claim about a collection nobody asked for. The other
    eight still swallow it.
 
-   **A source's Settings tab is read-only except Delete**, and says so in a banner rather than
-   in a toast. `SourceUpdate` carries `is_enabled` and nothing else, and `Source` has no
-   `description`, no strict-mode flag and no server-key list — so renaming, rotating a write
-   key, revoking one, issuing a server-to-server key and Strict mode are all disabled controls.
-   They used to fire a "would be saved" toast, which is indistinguishable from one describing a
-   save. Rotation's helper text also described an impossible order ("update your snippet first,
-   then rotate" — the new key does not exist until the rotation issues it); it now states the
-   real sequence and that there is no endpoint behind it.
+   **A source's Settings tab is now mostly real, and the banner narrowed with it.** PR #16
+   closed three of the five things that used to be disabled controls there: write keys are a
+   full CRUD list (`…/sources/{id}/write-keys`, mint / list / revoke), a server-to-server key is
+   one of the kinds that endpoint mints, and Strict mode is a field on the real ingest settings
+   (`…/sources/{id}/ingest-settings`). What is left disabled is **renaming** — `SourceUpdate`
+   still carries `is_enabled` and nothing else — so the banner says "Renaming a source is not
+   available yet" rather than the old blanket read-only claim. Nothing there fires a "would be
+   saved" toast: a toast indistinguishable from one describing a real save is what this
+   replaced, and a control with no endpoint behind it stays disabled and says why.
 
-   **`pnpm smoke:dist` now walks all 54 routes against whatever `VITE_API_BASE` points at**,
+   **`…/write-keys` answers `400`, not `404`, on a source with no Jitsu site**, which is an
+   ordinary state for three of the seven templates. The shared gate reads any non-404 as a real
+   failure and would render a red `ErrorState` for it, so `useSourceWriteKeys()` is hand-written
+   fetching rather than a `useMockResource` call: it branches `400` to a `noSite` flag the panel
+   explains, `404` to `apiMissing`, and everything else to `error`. `hasIngestSettings(source)`
+   is the matching narrowing on the other panel — `source_type === 'web'` and nothing else.
+
+   **`pnpm smoke:dist` now walks all 60 routes against whatever `VITE_API_BASE` points at**,
    because that is what the default mode does. It used to be hermetic. If you need the old
    behaviour, set `sfere_data_source_mode` to `mock` in the browser profile the run uses, or
    flip the default — do not add a smoke-only branch to `useDataSource`, which would mean the

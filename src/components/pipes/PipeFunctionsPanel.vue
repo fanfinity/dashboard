@@ -1,11 +1,33 @@
 <template>
   <CardPanel v-if="apiAvailable">
     <template #header>
-      <span class="text-sm font-medium text-ink">Functions</span>
-      <span class="text-xs text-subtle">
-        {{ functions.length }}
-        {{ functions.length === 1 ? 'function' : 'functions' }} on this pipe
-      </span>
+      <div class="min-w-0 flex-1">
+        <span class="text-sm font-medium text-ink">Functions</span>
+        <p class="mt-0.5! text-xs text-subtle">
+          {{ functions.length }}
+          {{ functions.length === 1 ? 'function' : 'functions' }} on this pipe,
+          run top to bottom
+        </p>
+      </div>
+      <!-- Attaching is a real write now (`POST …/pipelines/{id}/functions`,
+           backend PR #16). Only functions not already on this pipe are offered:
+           the same function twice in one chain is not a thing anyone means. -->
+      <div v-if="attachable.length" class="flex shrink-0 items-center gap-2">
+        <SfereSelect
+          v-model="attachChoice"
+          :options="attachOptions"
+          class="w-56"
+          aria-label="Function to attach"
+        />
+        <SfereButton
+          size="sm"
+          variant="secondary"
+          :loading="attaching"
+          :disabled="!attachChoice"
+          @click="onAttach"
+          >Attach</SfereButton
+        >
+      </div>
     </template>
 
     <LoadingState v-if="loading" variant="form" :rows="3" />
@@ -24,7 +46,7 @@
 
     <div v-else class="flex flex-col gap-5">
       <div
-        v-for="fn in functions"
+        v-for="(fn, index) in functions"
         :key="fn.functionId"
         class="flex flex-col gap-3 rounded-xl border border-line2 bg-white p-4"
       >
@@ -37,12 +59,42 @@
             label="New default available. Reset to upgrade"
           />
           <span class="ml-auto flex items-center gap-2">
+            <!-- Order matters: these run in sequence, so a filter placed after
+                 a transform sees the transformed event. Reordering sends the
+                 COMPLETE id list — `reorderPipelineFunctions` 422s on a partial
+                 one rather than treating an omission as a detach — which is why
+                 this calls `move()` instead of assembling an array here. -->
+            <button
+              class="rounded-lg border border-line2 bg-white px-2.5 py-1.5 text-xs font-medium text-muted hover:bg-fill disabled:opacity-40"
+              :disabled="index === 0 || Boolean(busy[fn.functionId])"
+              aria-label="Move earlier in the chain"
+              @click="onMove(fn, -1)"
+            >
+              ↑
+            </button>
+            <button
+              class="rounded-lg border border-line2 bg-white px-2.5 py-1.5 text-xs font-medium text-muted hover:bg-fill disabled:opacity-40"
+              :disabled="
+                index === functions.length - 1 || Boolean(busy[fn.functionId])
+              "
+              aria-label="Move later in the chain"
+              @click="onMove(fn, 1)"
+            >
+              ↓
+            </button>
             <button
               class="rounded-lg border border-line2 bg-white px-3 py-1.5 text-xs font-medium text-muted hover:bg-fill disabled:opacity-40"
               :disabled="busy[fn.functionId]"
               @click="resetFunction(fn)"
             >
               Reset to default
+            </button>
+            <button
+              class="rounded-lg border border-line2 bg-white px-3 py-1.5 text-xs font-medium text-rose-600 hover:bg-fill disabled:opacity-40"
+              :disabled="busy[fn.functionId]"
+              @click="askDetach(fn)"
+            >
+              Detach
             </button>
             <button
               class="rounded-lg bg-brand px-3 py-1.5 text-xs font-medium text-white shadow-sm hover:opacity-90 disabled:opacity-40"
@@ -135,21 +187,39 @@
       </div>
 
       <p class="text-xs text-subtle">
-        These functions also appear in the Jitsu console, linked to this pipe's
-        connection, so edits made there show up here and vice versa.
+        These run in the order shown, each receiving what the one above
+        returned. A function that returns nothing drops the event, so anything
+        below it never sees that event at all.
       </p>
     </div>
+
+    <ConfirmDialog
+      v-model="detachOpen"
+      :title="
+        detachTarget
+          ? `Detach “${detachTarget.name}”?`
+          : 'Detach this function?'
+      "
+      :message="detachMessage"
+      confirm-label="Detach function"
+      destructive
+      @confirm="onDetach"
+    />
   </CardPanel>
 </template>
 
 <script setup>
-import { reactive, ref, watch } from 'vue'
+import { computed, onMounted, reactive, ref, watch } from 'vue'
 import { useQuasar } from 'quasar'
 import CardPanel from '@/components/ui/CardPanel.vue'
+import ConfirmDialog from '@/components/ui/ConfirmDialog.vue'
 import ErrorState from '@/components/ui/ErrorState.vue'
 import LoadingState from '@/components/ui/LoadingState.vue'
 import StatusBadge from '@/components/ui/StatusBadge.vue'
+import SfereButton from '@/components/ui/SfereButton.vue'
+import SfereSelect from '@/components/ui/SfereSelect.vue'
 import { usePipelineFunctions } from '@/composables/usePipelineFunctions'
+import { useFunctions } from '@/composables/useFunctions'
 import { runPipelineFunction } from '@/lib/pipelineFunctionRunner'
 
 const props = defineProps({
@@ -159,7 +229,107 @@ const props = defineProps({
 const emit = defineEmits(['loaded'])
 
 const $q = useQuasar()
-const { functions, loading, error, load, save, reset } = usePipelineFunctions()
+const { functions, loading, error, load, save, reset, attach, detach, move } =
+  usePipelineFunctions()
+
+// The account library, so the attach control can offer something. Read here
+// rather than passed in: this panel is the only place on the pipe screen that
+// needs it, and the list is small.
+const { functions: libraryFunctions, load: loadLibrary } = useFunctions()
+
+const attachChoice = ref('')
+const attaching = ref(false)
+const detachOpen = ref(false)
+const detachTarget = ref(null)
+
+/** Account functions not already on this pipe. */
+const attachable = computed(() => {
+  const attached = new Set(functions.value.map(f => f.functionId))
+  return libraryFunctions.value.filter(f => !attached.has(f.id))
+})
+
+const attachOptions = computed(() =>
+  attachable.value.map(f => ({ value: f.id, label: f.name }))
+)
+
+const detachMessage = computed(() => {
+  const fn = detachTarget.value
+  if (!fn) return ''
+  return `“${fn.name}” stops running on this pipe from the next event onwards. The function itself is not deleted — it stays in Functions and on any other pipe it is attached to, so you can attach it back here at any time.`
+})
+
+async function onAttach() {
+  if (!attachChoice.value) return
+  attaching.value = true
+  try {
+    // No `position`: a function added to an existing chain goes last, which is
+    // what "add a step" means almost every time. Reorder afterwards if not.
+    await attach(props.pipelineId, attachChoice.value)
+    const name =
+      libraryFunctions.value.find(f => f.id === attachChoice.value)?.name ??
+      'Function'
+    attachChoice.value = ''
+    $q.notify({
+      message: `${name} attached, last in the chain`,
+      color: 'dark',
+      position: 'top-right',
+      timeout: 3000
+    })
+  } catch (e) {
+    $q.notify({
+      message: e.message || 'Could not attach that function.',
+      color: 'dark',
+      position: 'top-right',
+      timeout: 5000
+    })
+  } finally {
+    attaching.value = false
+  }
+}
+
+function askDetach(fn) {
+  detachTarget.value = fn
+  detachOpen.value = true
+}
+
+async function onDetach() {
+  const fn = detachTarget.value
+  if (!fn) return
+  try {
+    await detach(props.pipelineId, fn.functionId)
+    $q.notify({
+      message: `${fn.name} detached`,
+      color: 'dark',
+      position: 'top-right',
+      timeout: 3000
+    })
+  } catch (e) {
+    $q.notify({
+      message: e.message || 'Could not detach that function.',
+      color: 'dark',
+      position: 'top-right',
+      timeout: 5000
+    })
+  }
+  // `detachTarget` is deliberately left set — the dialog's message must not
+  // blank out while it fades. `askDetach` overwrites it next time.
+}
+
+async function onMove(fn, delta) {
+  busy[fn.functionId] = 'move'
+  try {
+    await move(props.pipelineId, fn.functionId, delta)
+  } catch (e) {
+    $q.notify({
+      message: e.message || 'Could not change the order.',
+      color: 'dark',
+      position: 'top-right',
+      timeout: 5000
+    })
+  } finally {
+    busy[fn.functionId] = null
+  }
+}
 
 // Editable copies keyed by function id; `functions` holds the last-saved code.
 const drafts = reactive({})
@@ -283,4 +453,10 @@ function outcomeLabel(outcome) {
 function pretty(value) {
   return JSON.stringify(value, null, 2)
 }
+
+// The attach control needs the account library. Loaded once on mount rather
+// than per pipe: the library is account-scoped, not pipeline-scoped.
+onMounted(() => {
+  if (props.apiAvailable) loadLibrary()
+})
 </script>

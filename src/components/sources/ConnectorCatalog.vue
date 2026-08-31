@@ -1,9 +1,14 @@
 <template>
   <div class="flex flex-col gap-4">
-    <!-- The catalog has its own search: it filters a few hundred connector
-         *types* served by GET /v1/connectors, which has nothing to do with the
-         search over this account's configured sources on the sibling tab. Two
-         boxes for two haystacks. -->
+    <!-- The catalog has its own search: it filters the connector *types*
+         served by GET /v1/connectors, which has nothing to do with the search
+         over this account's configured sources on the sibling tab. Two boxes
+         for two haystacks.
+
+         It used to say "a few hundred", which was true of the fixture and is
+         not true of the endpoint: the live catalog is the Zid cloud app plus
+         the Airbyte connectors already hosted on Jitsu. The number is left out
+         rather than restated, because it is a list that grows. -->
     <div class="flex flex-wrap items-center justify-between gap-3">
       <!-- max-w keeps the copy from claiming the whole row and pushing the
            search box onto a line of its own. -->
@@ -96,43 +101,57 @@ import { useConnectorCatalog } from '@/composables/useConnectorCatalog'
 // ErrorState is the only thing that renders [data-smoke="error"], so a failed
 // catalog load used to be invisible to scripts/smoke.mjs.
 const $q = useQuasar()
-const { connectors, loading, error, apiMissing, load } = useConnectorCatalog()
+// `sourceConnectors`, not `connectors`: one live catalog carries both kinds and
+// this is the source half of /sources. A warehouse type is not something you add
+// a source from, and the destination catalog has its own picker.
+const { sourceConnectors, loading, error, apiMissing, load } =
+  useConnectorCatalog()
 const query = ref('')
 const selected = ref(null)
 
-// Order + human labels for connectorSubtype values returned by the API.
-const SUBTYPES = [
-  { key: 'database', label: 'Databases' },
-  { key: 'api', label: 'APIs' },
-  { key: 'file', label: 'Files' },
-  { key: 'custom image', label: 'Custom' }
+// Section order. `native`/`airbyte` come off the live record's `protocol`; the
+// four subtypes are what the fixture groups by. One list rather than two
+// because both adapters emit the same `category`, and a key that is not here
+// simply sorts last under its own label.
+const CATEGORY_ORDER = [
+  'native',
+  'airbyte',
+  'database',
+  'api',
+  'file',
+  'custom image'
 ]
 
 const filteredGroups = computed(() => {
   const q = query.value.trim().toLowerCase()
-  const matches = connectors.value.filter(s => {
+  const matches = sourceConnectors.value.filter(c => {
     if (!q) return true
-    const name = (s.meta?.name || '').toLowerCase()
-    return name.includes(q) || s.packageId.toLowerCase().includes(q)
+    return (
+      c.name.toLowerCase().includes(q) ||
+      c.packageId.toLowerCase().includes(q) ||
+      c.description.toLowerCase().includes(q) ||
+      c.tags.some(tag => tag.toLowerCase().includes(q))
+    )
   })
 
   const byKey = new Map()
-  for (const s of matches) {
-    const key = s.meta?.connectorSubtype || 'other'
-    if (!byKey.has(key)) byKey.set(key, [])
-    byKey.get(key).push(s)
+  for (const c of matches) {
+    if (!byKey.has(c.category)) byKey.set(c.category, [])
+    byKey.get(c.category).push(c)
   }
 
-  const order = SUBTYPES.map(t => t.key)
   const keys = [...byKey.keys()].sort((a, b) => {
-    const ia = order.indexOf(a)
-    const ib = order.indexOf(b)
-    return (ia === -1 ? order.length : ia) - (ib === -1 ? order.length : ib)
+    const ia = CATEGORY_ORDER.indexOf(a)
+    const ib = CATEGORY_ORDER.indexOf(b)
+    return (
+      (ia === -1 ? CATEGORY_ORDER.length : ia) -
+      (ib === -1 ? CATEGORY_ORDER.length : ib)
+    )
   })
 
   return keys.map(key => ({
     key,
-    label: SUBTYPES.find(t => t.key === key)?.label || titleCase(key),
+    label: byKey.get(key)[0].categoryLabel || titleCase(key),
     items: byKey.get(key).sort(sortBySalience)
   }))
 })
@@ -148,21 +167,22 @@ const emptyTitle = computed(() => {
 
 const emptyDescription = computed(() => {
   if (apiMissing.value) {
-    return 'GET /v1/connectors is not built yet. Switch Settings → Data source back to Demo data to browse the catalog.'
+    return 'GET /v1/connectors did not answer on this backend. It is live as of backend PR #16, so this means the deployment predates it. Switch Settings → Data source to Demo data to browse the catalog meanwhile.'
   }
   return query.value
     ? `Nothing in the catalog matches “${query.value}”.`
     : 'The catalog came back empty. Retry in a moment.'
 })
 
-// Popular connectors carry a higher sortIndex; fall back to alphabetical.
+// Popular connectors carry a higher sortIndex (fixture only); then anything
+// pickable before anything `coming_soon`, so the roadmap entries sit at the
+// bottom of their section rather than interleaved with what works today.
 function sortBySalience(a, b) {
   const sa = a.sortIndex ?? -1
   const sb = b.sortIndex ?? -1
   if (sa !== sb) return sb - sa
-  return (a.meta?.name || a.packageId).localeCompare(
-    b.meta?.name || b.packageId
-  )
+  if (a.selectable !== b.selectable) return a.selectable ? -1 : 1
+  return a.name.localeCompare(b.name)
 }
 
 function titleCase(s) {
@@ -183,10 +203,15 @@ function onSelect(connector) {
 
 // The credential VALUES never reach this handler — the panel emits field names
 // only, so nothing here can log a secret by accident.
-function onConnect({ connector, schedule, provided }) {
+function onConnect({ connector, schedule, mode, schemaSource, provided }) {
+  const modePart = mode ? `, a ${mode.replace('_', ' ')} sync mode` : ''
+  const sourcePart =
+    schemaSource === 'live'
+      ? "The field list came from the connector's own config schema."
+      : 'The field list is the in-repo fallback; no config schema came back.'
   $q.notify({
-    message: `${connector.meta?.name || connector.packageId} is not connectable yet`,
-    caption: `Would send ${provided.length} credential field${provided.length === 1 ? '' : 's'} and a ${schedule} sync schedule to POST /v1/accounts/{account}/connectors, which is not built.`,
+    message: `${connector.name} is not connectable yet`,
+    caption: `Would send ${provided.length} credential field${provided.length === 1 ? '' : 's'}${modePart} and a ${schedule} sync schedule to POST /v1/accounts/{account}/connectors, which is still not built. ${sourcePart}`,
     color: 'dark',
     position: 'top-right',
     timeout: 4000

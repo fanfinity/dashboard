@@ -39,7 +39,7 @@
     <EmptyState
       v-else-if="apiMissing"
       title="No members API yet"
-      description="The workspace roster and the domain-match approval queue are not served by the backend yet. Switch Settings → Data source to Demo data to walk the shape this screen is built against."
+      description="The roster endpoint did not answer for this account. It is real — GET /v1/accounts/{account}/members — so this usually means the account has not settled yet. Switch Settings → Data source to Demo data to walk the shape this screen is built against."
     >
       <template #cta>
         <SfereButton variant="secondary" :to="{ name: 'settings' }"
@@ -54,21 +54,35 @@
         <StatCard
           label="Active members"
           :value="activeCount"
-          :hint="seatHint"
+          :hint="
+            hasStatus
+              ? seatHint
+              : `${seatHint}. A member record carries no status, so this counts every row.`
+          "
         />
+        <!-- NOT a confident 0. Nothing on the backend tracks a pending
+             member — no state on a membership, no domain-match table, no route
+             — so "nobody is waiting" is a claim rather than a reading. The two
+             answers are genuinely different and only one of them is available. -->
         <StatCard
           label="Awaiting approval"
-          :value="pending.length"
+          :value="approvalsAvailable ? String(pending.length) : NOT_KNOWN"
           :hint="
-            pending.length
-              ? 'They can see nothing until you approve them.'
-              : 'Nobody is waiting.'
+            approvalsAvailable
+              ? pending.length
+                ? 'They can see nothing until you approve them.'
+                : 'Nobody is waiting.'
+              : 'No endpoint tracks domain-matched joiners yet.'
           "
         />
         <StatCard
           label="Pending invitations"
-          :value="invitedCount"
-          hint="Invited, not yet signed in."
+          :value="invitedCount === null ? NOT_KNOWN : String(invitedCount)"
+          :hint="
+            invitedCount === null
+              ? 'A member record carries no status field.'
+              : 'Invited, not yet signed in.'
+          "
         />
       </div>
 
@@ -160,18 +174,25 @@
           />
         </template>
 
+        <!-- `Member` is `{user, role}` and nothing else, so a real row has no
+             status to show. An "Active" badge here would be the app asserting
+             something the backend never sent. -->
         <template #cell-status="{ row }">
           <StatusBadge
+            v-if="row.status"
             :tone="row.status === 'active' ? 'success' : 'warn'"
             :label="row.status === 'active' ? 'Active' : 'Invited'"
           />
+          <span v-else class="text-muted">{{ NOT_KNOWN }}</span>
         </template>
 
         <template #cell-lastActiveAt="{ row }">
           <span class="text-muted">{{
-            row.status === 'active'
-              ? formatAgo(row.lastActiveAt, NEVER)
-              : `Invited ${formatAgo(row.invitedAt)}`
+            !row.status
+              ? NOT_KNOWN
+              : row.status === 'active'
+                ? formatAgo(row.lastActiveAt, NEVER)
+                : `Invited ${formatAgo(row.invitedAt)}`
           }}</span>
         </template>
 
@@ -183,13 +204,22 @@
               >Workspace owner</span
             >
             <template v-else>
+              <!-- There is no `PATCH …/members/{id}`: the only member writes
+                   are add and remove. Disabled rather than firing a toast that
+                   reads like a save. The tooltip on the row's own text below
+                   carries the reason; the banner states it once for the page. -->
               <SfereSelect
                 :model-value="row.role"
                 :options="roleOptions"
                 class="w-40"
+                :disabled="!canChangeRole"
                 @update:model-value="v => changeRole(row.id, v)"
               />
-              <SfereButton variant="ghost" size="sm" @click="ask(row)"
+              <SfereButton
+                variant="ghost"
+                size="sm"
+                :disabled="isLastOwner(row)"
+                @click="ask(row)"
                 >Remove</SfereButton
               >
             </template>
@@ -197,11 +227,11 @@
         </template>
       </DataTable>
 
-      <NoticeBanner
-        tone="info"
-        title="Roles are not enforced by the backend yet"
-        message="This screen is the agreed shape for members, roles and domain-match approvals. Changes made here are local to this browser until the members API ships."
-      />
+      <!-- Narrowed rather than dropped. The roster and its add/remove writes
+           are real; what is still missing is a role change and the approval
+           queue. A banner that overstates what is missing misleads as much as
+           one that understates it. -->
+      <NoticeBanner tone="info" :title="bannerTitle" :message="bannerMessage" />
     </div>
 
     <!-- Role reference. A dialog rather than a permanent column because it is
@@ -317,7 +347,7 @@
 </template>
 
 <script setup>
-import { NEVER } from '@/lib/emptyValue'
+import { NEVER, NOT_KNOWN } from '@/lib/emptyValue'
 import { computed, onMounted, reactive, ref } from 'vue'
 import { useQuasar } from 'quasar'
 import PageHeader from '@/components/ui/PageHeader.vue'
@@ -336,6 +366,7 @@ import SfereButton from '@/components/ui/SfereButton.vue'
 import SfereInput from '@/components/ui/SfereInput.vue'
 import SfereSelect from '@/components/ui/SfereSelect.vue'
 import { formatAgo, useTeam } from '@/composables/useTeam'
+import { notifyMutationResult } from '@/composables/useMutationFeedback'
 
 const $q = useQuasar()
 
@@ -344,11 +375,15 @@ const {
   pending,
   roles,
   assignableRoles,
+  approvalsAvailable,
+  canChangeRole,
+  isLastOwner,
   roleLabel,
   loading,
   error,
   apiMissing,
   load,
+  invite: inviteMember,
   approve,
   decline,
   changeRole,
@@ -381,11 +416,34 @@ const columns = [
   { key: 'actions', label: '', align: 'right' }
 ]
 
-const activeCount = computed(
-  () => members.value.filter(m => m.status === 'active').length
+// Both counts are derived from `status`, which a real `Member` does not carry.
+// So they answer null in real mode rather than 0 — an "Active members: 0" on a
+// roster that just rendered four rows is the kind of confident zero that gets
+// believed. `members.length` is the honest headline there, and it is what the
+// seat hint already says.
+const hasStatus = computed(() => members.value.some(m => m.status))
+
+const activeCount = computed(() =>
+  hasStatus.value
+    ? String(members.value.filter(m => m.status === 'active').length)
+    : String(members.value.length)
 )
-const invitedCount = computed(
-  () => members.value.filter(m => m.status === 'invited').length
+const invitedCount = computed(() =>
+  hasStatus.value
+    ? members.value.filter(m => m.status === 'invited').length
+    : null
+)
+
+const bannerTitle = computed(() =>
+  canChangeRole.value
+    ? 'Roles are not enforced by the backend yet'
+    : 'Two things on this screen have no endpoint'
+)
+
+const bannerMessage = computed(() =>
+  canChangeRole.value
+    ? 'This screen is the agreed shape for members, roles and domain-match approvals. Changes made here are local to this browser while Demo data mode is on.'
+    : 'The roster is live, and adding or removing a member writes for real. Changing an existing member’s role has no endpoint — the only member writes are add and remove — so that control is disabled. The domain-match approval queue has no endpoint either: nothing on the backend records who signed up with a matching domain, which is why the count above reads “Not known” rather than zero.'
 )
 
 const seatHint = computed(() => `${members.value.length} of 10 seats used`)
@@ -414,7 +472,8 @@ function onApprove(joiner) {
   delete draftRole[joiner.id]
   $q.notify({
     message: `${joiner.name} approved as ${roleLabel(role)}`,
-    caption: 'Local to this browser. The members API is not live yet.',
+    caption:
+      'Local to this browser. Nothing on the backend records a domain-matched joiner, so there is no approval to send.',
     color: 'dark',
     position: 'top-right'
   })
@@ -430,16 +489,24 @@ function onDecline(joiner) {
   })
 }
 
-function invite() {
-  $q.notify({
-    message: `Invitation drafted for ${inviteEmail.value}`,
-    caption: 'Nothing was sent. There is no invitations endpoint yet.',
-    color: 'dark',
-    position: 'top-right'
+// `POST /v1/accounts/{account}/members` is real, so this adds a member rather
+// than drafting one. The backend creates a shell user if none exists for the
+// email and activates the membership when that person first signs in — so the
+// success line says "added", not "invited by email": nothing sends a mail.
+async function invite() {
+  const email = inviteEmail.value.trim()
+  const role = inviteRole.value
+  if (!email || !role) return
+  const res = await inviteMember({ email, role })
+  notifyMutationResult($q, res, {
+    success: `${email} added as ${roleLabel(role)}`,
+    apiMissing: `Can't add ${email} yet.`
   })
-  inviteOpen.value = false
-  inviteEmail.value = ''
-  inviteRole.value = ''
+  if (res.ok) {
+    inviteOpen.value = false
+    inviteEmail.value = ''
+    inviteRole.value = ''
+  }
 }
 
 function ask(row) {
@@ -447,9 +514,21 @@ function ask(row) {
   confirmRemove.value = true
 }
 
-function remove() {
-  if (target.value) removeMember(target.value.id)
-  target.value = null
+// `DELETE …/members/{user_id}` is real, so the toast has to be able to say the
+// three things that can happen rather than one. The backend refuses the last
+// owner (`LastOwnerError`) and refuses removing someone who outranks you
+// (`RoleNotAllowedError`); both come back as a 4xx with a message, which
+// `notifyMutationResult` shows rather than swallowing.
+async function remove() {
+  const row = target.value
+  if (!row) return
+  const res = await removeMember(row.id)
+  notifyMutationResult($q, res, {
+    success: `${row.name} removed`,
+    apiMissing: `Can't remove ${row.name} yet.`
+  })
+  // Left in place rather than nulled here: the message must not blank out while
+  // the dialog fades. `ask()` overwrites it on the next open.
 }
 
 onMounted(async () => {

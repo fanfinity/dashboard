@@ -533,6 +533,16 @@ const navGroups = [
     to: '/destinations'
   },
   { key: 'pipes', label: 'Pipes', icon: icIntegrations, to: '/pipes' },
+  // Its own row rather than a child of Pipes: a function belongs to the account
+  // and can run on several pipes, so nesting it under one of them would say the
+  // wrong thing about what it is. Placed straight after Pipes because that is
+  // where it is used.
+  {
+    key: 'functions',
+    label: 'Functions',
+    icon: icIntegrations,
+    to: '/functions'
+  },
   {
     key: 'warehouse',
     label: 'Warehouse',
@@ -569,6 +579,11 @@ const navGroups = [
         key: 'identity-resolution'
       },
       { label: 'Attributes', to: '/attributes', key: 'attributes' },
+      {
+        label: 'Profile builders',
+        to: '/profile-builders',
+        key: 'profile-builders'
+      },
       { label: 'Profile API', to: '/profile-api', key: 'profile-api' },
       {
         label: 'Live profile syncs',

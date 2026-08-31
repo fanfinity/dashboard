@@ -237,7 +237,7 @@ export function useMockResource(name, options = {}) {
  * `useMutationFeedback.js`, which is the one shared toast for all three
  * outcomes.
  *
- * @param {{ method: 'POST'|'PATCH'|'DELETE', path: string|(() => string|null), body?: object }} args
+ * @param {{ method: 'POST'|'PUT'|'PATCH'|'DELETE', path: string|(() => string|null), body?: object }} args
  *   `path` takes the same two forms as `useMockResource`'s `api.path`; a
  *   function is resolved after the acting account settles, and a null result
  *   reads as `apiMissing` with no request made.
@@ -264,8 +264,8 @@ export async function sendMutation({ method, path, body }) {
   const headers = {}
   if (body !== undefined) headers['Content-Type'] = 'application/json'
   // Required by every POST in the draft (Idempotency-Key parameter) so a
-  // dropped-response retry can't double-create; PATCH/DELETE don't need one
-  // (repeating either converges to the same state).
+  // dropped-response retry can't double-create; PUT/PATCH/DELETE don't need one
+  // (repeating any of them converges to the same state).
   if (method === 'POST') headers['Idempotency-Key'] = crypto.randomUUID()
 
   try {

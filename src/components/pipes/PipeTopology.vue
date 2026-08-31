@@ -11,7 +11,15 @@
             :label="group.source.isEnabled ? 'Enabled' : 'Paused'"
           />
         </div>
-        <p class="shrink-0 text-xs text-subtle"
+        <!-- Guarded for the same reason the pipe's delivery line below is:
+             the diagram endpoint carries no per-source event counter (its
+             `events_in_window` is a documented `0` until ClickHouse is wired),
+             so an unguarded formatCount would print "Not known events / hr"
+             against every source in real mode and a measured-looking figure
+             only in Demo. Absent is better than either. -->
+        <p
+          v-if="group.source.eventCountLastHour != null"
+          class="shrink-0 text-xs text-subtle"
           >{{ formatCount(group.source.eventCountLastHour) }} events / hr</p
         >
       </template>

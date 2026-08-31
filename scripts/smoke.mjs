@@ -216,17 +216,39 @@ try {
   process.exit(1)
 }
 
+// Reaching `networkidle` once is not enough, and the gap it misses is the normal
+// case here rather than an edge one. Almost every composable awaits
+// `waitForAccount()` before it builds an account-scoped URL, so its fetch starts
+// only after `GET /v1/me` has settled — and the window between the page's own
+// assets going quiet and that fetch firing is long enough that the first
+// `networkidle` resolves inside it. The route then gets asserted before the
+// request that would have failed it was even sent.
+//
+// Measured, not theorised: in real mode against staging, the same nine-route run
+// reported anywhere between one and seven console-error failures depending on
+// timing, on identical code. A gate that fails a random subset is worse than a
+// slow one, because it also *passes* a random subset.
+//
+// So: idle, pause long enough for a deferred fetch to be issued, then idle again.
+// ~400ms per route, which is the price of the gate meaning what it says.
+async function settle() {
+  for (const pause of [0, 400]) {
+    if (pause) await page.waitForTimeout(pause)
+    try {
+      await page.waitForLoadState('networkidle', { timeout: 10000 })
+    } catch {
+      // A page that polls never goes idle; that is not a failure on its own.
+    }
+  }
+}
+
 if (SHOTS) mkdirSync('.playwright', { recursive: true })
 
 const failures = []
 for (const t of targets) {
   bucket = []
   await page.goto(`${BASE}/#${t.url}`, { waitUntil: 'domcontentloaded' })
-  try {
-    await page.waitForLoadState('networkidle', { timeout: 10000 })
-  } catch {
-    // A page that polls never goes idle; that is not a failure on its own.
-  }
+  await settle()
 
   const problems = [...bucket]
   if (await page.locator('[data-smoke="not-found"]').count()) {

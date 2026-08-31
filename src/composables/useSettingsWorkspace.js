@@ -167,29 +167,18 @@ export function useSettingsMembers() {
 }
 
 /**
- * Machine API tokens. Secondary on `/settings`, same as members.
+ * Machine API tokens.
  *
- * Only the last four characters of a token are stored, so revoking is the only
- * write worth having — there is nothing to re-show.
+ * @deprecated Import `useApiTokens()` from `@/composables/useApiTokens`.
  *
- * @returns {{
- *   tokens: import('vue').Ref<Array>,
- *   loading: import('vue').Ref<boolean>,
- *   error: import('vue').Ref<string|null>,
- *   load: () => Promise<void>,
- *   revoke: (id: string) => void
- * }}
+ * `GET/POST /v1/accounts/{account}/api-tokens` and `DELETE …/api-tokens/{id}`
+ * went live in backend PR #16, so the mock-only reader that used to sit here was
+ * replaced rather than wired. The live collection needs two things this shape
+ * could not express: a create that returns a write-once plaintext, and a revoke
+ * that DELETES the row rather than flagging `isRevoked` — the backend keeps no
+ * tombstone.
+ *
+ * Kept as an alias so an import this change missed resolves to the live
+ * composable instead of to a fixture reader that quietly disagrees with it.
  */
-export function useSettingsApiTokens() {
-  const { data: tokens, loading, error, load } = useMockResource('api-tokens')
-
-  function revoke(id) {
-    tokens.value = tokens.value.map(t =>
-      t.id === id
-        ? { ...t, isRevoked: true, revokedAt: new Date().toISOString() }
-        : t
-    )
-  }
-
-  return { tokens, loading, error, load, revoke }
-}
+export { useApiTokens as useSettingsApiTokens } from '@/composables/useApiTokens'

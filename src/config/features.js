@@ -59,6 +59,13 @@ export const FEATURES = [
     enabled: true
   },
   {
+    key: 'functions',
+    label: 'Functions',
+    description:
+      'Code that runs on an event as it travels a pipe: reshape it, drop it, or add to it.',
+    enabled: true
+  },
+  {
     // The switchboard cannot switch itself off — `locked` renders its toggle
     // disabled. Without this, one click makes Feature activation unreachable and
     // the only way back is clearing localStorage by hand.
@@ -99,6 +106,13 @@ export const FEATURES = [
     label: 'Attributes',
     description: 'Fan profile attributes.',
     enabled: false
+  },
+  {
+    key: 'profile-builders',
+    label: 'Profile builders',
+    description:
+      'The identity-stitching configuration: which identifiers a profile is built from, and in what order of trust.',
+    enabled: true
   },
   {
     key: 'profile-api',

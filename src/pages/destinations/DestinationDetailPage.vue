@@ -115,7 +115,81 @@
         />
       </div>
 
-      <div class="grid grid-cols-1 gap-5 xl:grid-cols-3">
+      <TabNav v-model="tab" :tabs="tabs" />
+
+      <!-- Connection test sits above the tabs' content rather than inside one:
+           "does this destination still answer" is the question you have on
+           arrival, whichever tab you then open. A FAILED test renders here as a
+           red panel with the backend's own message — never as ErrorState, which
+           the smoke gate reads as a broken screen. -->
+      <CardPanel v-if="!isMock">
+        <template #header>
+          <div class="min-w-0 flex-1">
+            <span class="text-sm font-semibold text-ink">Connection</span>
+            <p class="mt-0.5! text-xs text-muted"
+              >Checks the stored configuration against the warehouse. Reads
+              nothing and writes nothing.</p
+            >
+          </div>
+          <SfereButton
+            class="shrink-0"
+            size="sm"
+            variant="secondary"
+            :loading="testing"
+            @click="onTest"
+            >Test connection</SfereButton
+          >
+        </template>
+
+        <p v-if="!testResult" class="text-sm text-muted"
+          >Not tested in this session.</p
+        >
+        <NoticeBanner
+          v-else-if="testResult.ok"
+          tone="success"
+          title="The connection works"
+          :message="testMessage"
+        />
+        <NoticeBanner
+          v-else
+          tone="danger"
+          title="The connection failed"
+          :message="
+            testResult.error ||
+            'The warehouse refused the stored configuration and gave no reason.'
+          "
+        />
+      </CardPanel>
+
+      <DestinationTablesPanel
+        v-if="tab === 'tables'"
+        :tables="tables"
+        :tables-loading="tablesLoading"
+        :tables-error="tablesError"
+        :tables-api-missing="tablesApiMissing"
+        :selected-table="selectedTable"
+        :rows-page="rowsPage"
+        :rows-loading="rowsLoading"
+        :rows-error="rowsError"
+        :rows-api-missing="rowsApiMissing"
+        @reload-tables="loadTables(destination.id)"
+        @select-table="onSelectTable"
+        @close-table="selectedTable = ''"
+        @reload-rows="reloadRows"
+        @page="onRowsPage"
+      />
+
+      <DestinationQueryPanel
+        v-else-if="tab === 'query'"
+        :result="queryResult"
+        :querying="querying"
+        :error="queryError"
+        :api-missing="queryApiMissing"
+        :tables="tables"
+        @run="onRunQuery"
+      />
+
+      <div v-else class="grid grid-cols-1 gap-5 xl:grid-cols-3">
         <!-- Inbound pipes: everything routing events into this destination. -->
         <section class="flex flex-col gap-3 xl:col-span-2">
           <h2 class="text-sm! font-semibold! tracking-[-0.35px]! text-ink"
@@ -250,12 +324,18 @@
 
 <script setup>
 import { NOT_KNOWN } from '@/lib/emptyValue'
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useQuasar } from 'quasar'
 import PageHeader from '@/components/ui/PageHeader.vue'
 import CardPanel from '@/components/ui/CardPanel.vue'
 import DataTable from '@/components/ui/DataTable.vue'
+import TabNav from '@/components/ui/TabNav.vue'
+import NoticeBanner from '@/components/ui/NoticeBanner.vue'
+import SfereButton from '@/components/ui/SfereButton.vue'
+import DestinationTablesPanel from '@/components/destinations/DestinationTablesPanel.vue'
+import DestinationQueryPanel from '@/components/destinations/DestinationQueryPanel.vue'
+import { useDestinationBrowser } from '@/composables/useDestinationBrowser'
 import DefinitionList from '@/components/ui/DefinitionList.vue'
 import StatCard from '@/components/ui/StatCard.vue'
 import StatusBadge from '@/components/ui/StatusBadge.vue'
@@ -275,6 +355,7 @@ import {
 } from '@/composables/useDestinations'
 import { usePipes } from '@/composables/usePipes'
 import { notifyMutationResult } from '@/composables/useMutationFeedback'
+import { useDataSource } from '@/composables/useDataSource'
 
 const route = useRoute()
 const router = useRouter()
@@ -315,6 +396,114 @@ const id = computed(() => String(route.params.id ?? ''))
 // smoke run treats as a broken screen.
 const destination = computed(
   () => destinations.value.find(d => d.id === id.value) ?? null
+)
+
+// -------------------------------------------------- warehouse browser + test
+
+// Four routes, all live as of backend PR #16: the table list, one table's rows,
+// a read-only SELECT, and a connection test. They are what turn this screen from
+// a record of a destination into a way of looking inside it — which is the
+// question someone opening it usually has.
+const { isMock } = useDataSource()
+
+const {
+  tables,
+  tablesLoading,
+  tablesError,
+  tablesApiMissing,
+  loadTables,
+  rowsPage,
+  rowsLoading,
+  rowsError,
+  rowsApiMissing,
+  loadRows,
+  queryResult,
+  querying,
+  queryError,
+  queryApiMissing,
+  runQuery,
+  testResult,
+  testing,
+  testConnection
+} = useDestinationBrowser()
+
+const tab = ref('overview')
+const selectedTable = ref('')
+
+// The SQL console reads the table list as its schema tree, so both tabs need it
+// and neither should fetch it twice. `listDestinationTables` returns columns as
+// well as names, which is what makes one call enough.
+const tabs = computed(() => [
+  { key: 'overview', label: 'Overview' },
+  {
+    key: 'tables',
+    label: 'Tables',
+    count: tablesApiMissing.value ? undefined : tables.value.length
+  },
+  { key: 'query', label: 'SQL console' }
+])
+
+const testMessage = computed(() => {
+  const r = testResult.value
+  if (!r) return ''
+  const latency =
+    r.latencyMs == null
+      ? 'The backend did not report a round-trip time.'
+      : `Round trip ${formatCount(r.latencyMs)}ms.`
+  return `Checked ${formatDateTime(r.checkedAt, NOT_KNOWN)}. ${latency}`
+})
+
+async function onTest() {
+  const res = await testConnection(id.value)
+  // Only a failed REQUEST reaches a toast. A failed TEST is reported in the
+  // panel, with the warehouse's own reason.
+  if (!res.ok) {
+    notifyMutationResult($q, res, {
+      success: '',
+      apiMissing: "Can't test this connection yet."
+    })
+  }
+}
+
+function onSelectTable(name) {
+  selectedTable.value = name
+  loadRows(id.value, name, { page: 1 })
+}
+
+function reloadRows() {
+  if (selectedTable.value) {
+    loadRows(id.value, selectedTable.value, {
+      page: rowsPage.value?.page ?? 1
+    })
+  }
+}
+
+function onRowsPage(page) {
+  if (selectedTable.value) loadRows(id.value, selectedTable.value, { page })
+}
+
+async function onRunQuery({ sql, limit }) {
+  const res = await runQuery(id.value, { sql, limit })
+  // The query's own error renders on the field in the panel; a missing endpoint
+  // is the only thing worth a toast here.
+  if (!res?.ok && res?.apiMissing) {
+    notifyMutationResult($q, res, {
+      success: '',
+      apiMissing: "Can't run a query yet."
+    })
+  }
+}
+
+// The table list backs two tabs, so it is read once the destination resolves
+// rather than on entering a tab — otherwise the SQL console's schema tree is
+// empty until someone has visited Tables first.
+watch(
+  id,
+  value => {
+    if (value && !isMock.value) loadTables(value)
+    selectedTable.value = ''
+  },
+  { immediate: true }
 )
 
 // The backend spells the type in snake_case (`event_destination`,

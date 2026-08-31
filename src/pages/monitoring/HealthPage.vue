@@ -32,7 +32,16 @@
       @retry="refresh"
     />
 
-    <!-- 3. Empty — nothing is running yet. A first run, not a fault. -->
+    <!-- 3. No endpoint. Distinct from empty: `GET …/health` is live on the
+         backend, so this only shows before an account has settled or against a
+         deployment that predates it. -->
+    <EmptyState
+      v-else-if="apiMissing"
+      title="No API yet"
+      description="Pipeline health has no endpoint on this backend. Switch Settings → Data source to Demo data to see the shape of this screen."
+    />
+
+    <!-- 4. Empty — nothing is running yet. A first run, not a fault. -->
     <EmptyState
       v-else-if="isEmpty"
       title="No pipeline stages are reporting"
@@ -47,7 +56,7 @@
       </template>
     </EmptyState>
 
-    <!-- 4. Populated -->
+    <!-- 5. Populated -->
     <div v-else class="flex flex-col gap-4">
       <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <StatCard
@@ -68,7 +77,18 @@
         :message="notice.message"
       />
 
-      <section class="flex flex-col gap-3">
+      <!-- Names the gap once, so the "Not known" cards above are explained
+           rather than looking like a failed read. The backend collects no queue
+           telemetry and has no heartbeat endpoint; saying so beats four
+           unexplained dashes, and beats a fabricated zero by more. -->
+      <NoticeBanner
+        v-if="unmeasured"
+        tone="info"
+        :title="unmeasured.title"
+        :message="unmeasured.message"
+      />
+
+      <section v-if="queuesMeasured" class="flex flex-col gap-3">
         <div>
           <h2 class="text-sm! font-semibold! tracking-[-0.35px]! text-ink"
             >Pipeline stages</h2
@@ -89,7 +109,10 @@
         </div>
       </section>
 
-      <CardPanel>
+      <!-- Dropped entirely rather than rendered empty when there is no
+           heartbeat to read. An empty "Worker checks" panel says the checks ran
+           and found nothing; there are no checks. -->
+      <CardPanel v-if="heartbeatMeasured">
         <div class="mb-3 flex flex-wrap items-baseline justify-between gap-2">
           <div>
             <h2 class="text-sm! font-semibold! tracking-[-0.35px]! text-ink"
@@ -128,12 +151,16 @@ import { useMonitoringHealth } from '@/composables/useMonitoringHealth'
 const {
   loading,
   error,
+  apiMissing,
   load,
   stages,
   runs,
   hasMoreRuns,
   statCards,
   notice,
+  queuesMeasured,
+  heartbeatMeasured,
+  unmeasured,
   updatedAtLabel,
   isEmpty
 } = useMonitoringHealth()

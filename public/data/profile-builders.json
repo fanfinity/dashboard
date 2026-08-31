@@ -1,0 +1,32 @@
+[
+  {
+    "id": "pb_fan_profile",
+    "accountId": "acc_sfere_demo",
+    "name": "Fan profile",
+    "slug": "fan-profile",
+    "isEnabled": true,
+    "destinationId": "dst_snowflake",
+    "identifierTypes": ["email", "phone", "user_id", "anonymous_id"],
+    "code": null,
+    "cron": "0 * * * *",
+    "lastRunAt": "2026-08-31T05:00:00.000Z",
+    "profileCount": 148213,
+    "createdAt": "2026-04-11T10:00:00.000Z",
+    "updatedAt": "2026-08-20T09:15:00.000Z"
+  },
+  {
+    "id": "pb_device_only",
+    "accountId": "acc_sfere_demo",
+    "name": "Anonymous device profile",
+    "slug": "anonymous-device-profile",
+    "isEnabled": false,
+    "destinationId": null,
+    "identifierTypes": ["device_id", "anonymous_id"],
+    "code": null,
+    "cron": null,
+    "lastRunAt": null,
+    "profileCount": null,
+    "createdAt": "2026-08-05T13:20:00.000Z",
+    "updatedAt": "2026-08-05T13:20:00.000Z"
+  }
+]

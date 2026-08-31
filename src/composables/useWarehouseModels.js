@@ -1,6 +1,7 @@
 import { NOT_KNOWN } from '@/lib/emptyValue'
 import { computed } from 'vue'
 import { useMockResource } from '@/composables/useMockResource'
+import { useIdentifierTypes } from '@/composables/useIdentifierTypes'
 
 /**
  * Warehouse models = a named select against a warehouse connection whose result
@@ -483,11 +484,11 @@ export function useWarehouseModelContext() {
   } = useMockResource('attributes')
 
   const {
-    data: identifierTypes,
+    identifierTypes,
     loading: identifiersLoading,
     error: identifiersError,
     load: loadIdentifierTypes
-  } = useMockResource('identifier-types')
+  } = useIdentifierTypes()
 
   const loading = computed(
     () =>

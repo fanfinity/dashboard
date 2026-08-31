@@ -104,6 +104,11 @@ const CORE_KEYS = [
   'sources',
   'destinations',
   'pipes',
+  // Added with the functions screens (backend PR #16 shipped the full CRUD).
+  // This list is manual on purpose and is the one thing a new shipped-active
+  // module has to be added to, or it renders under "Backlog modules" while
+  // being live everywhere else.
+  'functions',
   'settings',
   'warehouse',
   'monitoring',

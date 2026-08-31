@@ -156,6 +156,36 @@ export const screens = [
     issue: 40
   },
   {
+    path: '/functions',
+    name: 'functions',
+    component: 'functions/FunctionsListPage.vue',
+    title: 'Functions',
+    group: 'functions',
+    issue: 48
+  },
+  {
+    path: '/functions/new',
+    name: 'functions-new',
+    component: 'functions/FunctionCreatePage.vue',
+    title: 'Write a function',
+    group: 'functions',
+    parent: { name: 'functions', label: 'Functions' },
+    issue: 48
+  },
+  {
+    path: '/functions/:id',
+    name: 'functions-detail',
+    component: 'functions/FunctionDetailPage.vue',
+    title: 'Function detail',
+    group: 'functions',
+    parent: { name: 'functions', label: 'Functions' },
+    issue: 48,
+    // Has to resolve in public/data/functions.json — the smoke run walks this
+    // route in whatever data-source mode the profile is in, and an id that
+    // matches nothing renders the not-found EmptyState rather than the screen.
+    smokeParams: { id: 'fn_drop_internal' }
+  },
+  {
     path: '/goals',
     name: 'goals',
     component: 'engage/audience/GoalsListPage.vue',
@@ -200,6 +230,17 @@ export const screens = [
     name: 'profile-api',
     component: 'profiles/api/ProfileApiListPage.vue',
     title: 'Profile API',
+    group: 'profiles',
+    issue: 51
+  },
+  {
+    path: '/profile-builders',
+    name: 'profile-builders',
+    component: 'profiles/builders/ProfileBuildersListPage.vue',
+    title: 'Profile builders',
+    // `profiles`, matching every other screen under that module: the sidebar's
+    // per-child key (`profile-builders` in features.js) gates the nav row, and
+    // the screen's `group` is what MainLayout's feature gate reads.
     group: 'profiles',
     issue: 51
   },
