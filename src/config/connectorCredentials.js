@@ -30,7 +30,7 @@ export const CONNECTOR_SCHEDULES = SCHEDULES
 const SPECS = [
   {
     match: 'firebase',
-    lede: 'One-time setup by whoever owns the Firebase project. It pulls the web, iOS and Android events already landing there — no new SDK on your side.',
+    lede: 'One-time setup by whoever owns the Firebase project. It pulls the web, iOS and Android events already landing there, with no new SDK on your side.',
     fields: [
       {
         key: 'project_id',

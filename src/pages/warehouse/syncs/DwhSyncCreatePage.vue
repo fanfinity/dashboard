@@ -74,7 +74,7 @@
           v-else-if="!sourceOptions.length"
           variant="inline"
           title="No sources yet"
-          description="Connect a source first — there are no events for a sync to copy."
+          description="Connect a source first. There are no events for a sync to copy."
         />
 
         <FormField
@@ -82,7 +82,7 @@
           label="Source"
           required
           :error="errors.sourceId"
-          hint="Searchable — start typing to filter."
+          hint="Searchable. Start typing to filter."
         >
           <q-select
             v-model="form.sourceId"
@@ -224,8 +224,8 @@
           Cancel
         </button>
         <p class="min-w-0 flex-1 text-xs text-subtle"
-          >No backend is connected to this screen yet — creating a sync updates
-          this session only and is gone on reload.</p
+          >No backend is connected to this screen yet, so creating a sync
+          updates this session only and is gone on reload.</p
         >
       </StickyActionBar>
     </form>

@@ -97,7 +97,7 @@ export function useSetupProgress() {
       key: 'destination',
       label: 'Add a destination',
       done: 'Somewhere for the data to land',
-      todo: 'Pick where the events should go — a warehouse, a tool, a webhook.',
+      todo: 'Pick where the events should go: a warehouse, a tool, a webhook.',
       to: { name: 'destinations-new' },
       cta: 'Add a destination',
       count: c => c.destinations

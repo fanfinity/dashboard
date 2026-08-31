@@ -79,7 +79,7 @@
         <EmptyState
           v-else
           title="No surveys yet"
-          description="A survey asks one audience a short question in-product — a renewal reason, a favourite player, a shirt size — and writes the answer back to the fan's profile."
+          description="A survey asks one audience a short question in-product (a renewal reason, a favourite player, a shirt size) and writes the answer back to the fan's profile."
         >
           <template #cta>
             <button

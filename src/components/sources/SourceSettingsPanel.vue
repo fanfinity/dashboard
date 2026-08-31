@@ -11,7 +11,7 @@
     <NoticeBanner
       tone="warn"
       title="Most of this tab is read-only for now"
-      message="Renaming a source, rotating or revoking a key, issuing a server-to-server key and Strict mode all need backend endpoints that do not exist yet, so those controls are disabled rather than silently doing nothing. Pausing a source and deleting it both work today — pause is in the header, delete is at the bottom of this page."
+      message="Renaming a source, rotating or revoking a key, issuing a server-to-server key and Strict mode all need backend endpoints that do not exist yet, so those controls are disabled rather than silently doing nothing. Pausing a source and deleting it both work today: pause is in the header, delete is at the bottom of this page."
     />
 
     <FormSection
@@ -33,7 +33,7 @@
         label="Description"
         optional
         for-id="settings-source-description"
-        hint="Not stored on a source yet — the backend record has no description field."
+        hint="Not stored on a source yet. The backend record has no description field."
       >
         <SfereTextarea
           id="settings-source-description"
@@ -47,7 +47,7 @@
         <div class="flex items-center gap-3">
           <SfereButton size="sm" disabled>Save changes</SfereButton>
           <p class="text-xs text-subtle"
-            >Nothing to save to yet — a source update accepts its enabled flag
+            >Nothing to save to yet. A source update accepts its enabled flag
             and nothing else.</p
           >
         </div>
@@ -65,8 +65,8 @@
               >Browser write keys</span
             >
             <p class="mt-0.5! text-xs text-muted"
-              >Public by design — safe in client-side code, the same way a
-              Google Analytics id is.</p
+              >Public by design, so it is safe in client-side code, the same way
+              a Google Analytics id is.</p
             >
           </div>
           <StatusBadge tone="neutral" :label="`${browserKeys.length} active`" />
@@ -95,7 +95,7 @@
           </div>
         </div>
         <p v-else class="text-sm text-muted"
-          >No browser key yet — one is issued when the source is provisioned.</p
+          >No browser key yet. One is issued when the source is provisioned.</p
         >
 
         <!-- The old line here read "Update your snippet first, then rotate",
@@ -108,10 +108,10 @@
           <p class="text-xs text-muted"
             >Rotating issues a new key immediately and stops accepting the old
             one, so the order is: rotate, copy the new key into your snippet,
-            then redeploy. Plan for the gap between those steps — every client
-            still on the old key is dropped for its length. Not available yet:
-            there is no rotate endpoint, and there is no overlap period to offer
-            until there is.</p
+            then redeploy. Plan for the gap between those steps, because every
+            client still on the old key is dropped for its length. Not available
+            yet: there is no rotate endpoint, and there is no overlap period to
+            offer until there is.</p
           >
         </template>
       </CardPanel>
@@ -123,7 +123,7 @@
               >Server-to-server keys</span
             >
             <p class="mt-0.5! text-xs text-muted"
-              >Private. For backend calls only — never in client-side code.</p
+              >Private. For backend calls only, never in client-side code.</p
             >
           </div>
           <StatusBadge tone="neutral" :label="`${serverKeys.length} active`" />
@@ -172,8 +172,8 @@
               landing somewhere quietly wrong.
             </p>
             <p class="mt-2! text-xs text-subtle">
-              Not available yet — a source record carries no strict-mode flag,
-              so there is nothing to read or write.
+              Not available yet. A source record carries no strict-mode flag, so
+              there is nothing to read or write.
             </p>
           </div>
           <SfereToggle
@@ -194,7 +194,7 @@
       <p class="text-sm font-semibold text-sfere-danger">Delete this source</p>
       <p class="mt-1! max-w-2xl text-sm text-sfere-danger/85">
         Collection stops immediately and any pipe reading from it stops
-        delivering. Events already written to a destination are not touched —
+        delivering. Events already written to a destination are not touched;
         they live in the warehouse, not here. Restoring a deleted source is not
         available yet, so this cannot be undone.
       </p>

@@ -27,7 +27,7 @@
       class="mb-4"
       tone="info"
       title="Generic credentials form"
-      :message="`The catalog does not describe what ${connector.meta?.name || 'this connector'} needs yet, so this asks for raw JSON. The named connectors — Firebase, MongoDB, Shopify, Stripe, GA4 — have proper fields.`"
+      :message="`The catalog does not describe what ${connector.meta?.name || 'this connector'} needs yet, so this asks for raw JSON. The named connectors (Firebase, MongoDB, Shopify, Stripe, GA4) have proper fields.`"
     />
 
     <div class="flex flex-col gap-4">
@@ -107,7 +107,7 @@
           >Cancel</SfereButton
         >
         <p class="text-xs text-subtle"
-          >No connector endpoint yet — this validates the form and reports what
+          >No connector endpoint yet. This validates the form and reports what
           it would send.</p
         >
       </div>

@@ -1,3 +1,4 @@
+import { NOT_KNOWN } from '@/lib/emptyValue'
 import { computed } from 'vue'
 import { useMockResource } from '@/composables/useMockResource'
 
@@ -54,7 +55,7 @@ export function useBilling() {
 /** 4180000 -> "4.18M". Compact because these sit in a meter label. */
 export function formatUsage(value) {
   const n = Number(value)
-  if (!Number.isFinite(n)) return '—'
+  if (!Number.isFinite(n)) return NOT_KNOWN
   if (n >= 1_000_000)
     return `${(n / 1_000_000).toFixed(2).replace(/\.?0+$/, '')}M`
   if (n >= 1_000) return `${(n / 1_000).toFixed(1).replace(/\.0$/, '')}K`

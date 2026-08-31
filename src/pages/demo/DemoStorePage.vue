@@ -84,7 +84,7 @@
 
       <FormSection
         title="1 · Pick a product"
-        description="Whatever is selected here is the product every event describes — its id, price and category all travel in the payload."
+        description="Whatever is selected here is the product every event describes. Its id, price and category all travel in the payload."
       >
         <div class="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
           <DemoProductCard
@@ -138,7 +138,7 @@
         <div class="min-w-0 xl:col-span-2">
           <p class="mb-2 text-xs text-subtle">
             A real storefront would push to the endpoint below with this write
-            key. The Demo Store only pretends to — it writes straight into the
+            key. The Demo Store only pretends to; it writes straight into the
             inspector instead.
           </p>
           <SourceIngestPanel :source="source" @copy="copyValue" />
@@ -161,7 +161,7 @@
               v-if="!events.length"
               variant="inline"
               title="No events fired yet"
-              description="Pick a product, then fire an event — it lands here and in the inspector."
+              description="Pick a product, then fire an event. It lands here and in the inspector."
             />
 
             <ol v-else class="flex flex-col divide-y divide-line">
@@ -368,7 +368,7 @@ function fire(action, { quiet = false } = {}) {
 function notifyLocal(message) {
   $q.notify({
     message,
-    caption: 'Simulated locally — nothing was ingested.',
+    caption: 'Simulated locally. Nothing was ingested.',
     color: 'dark',
     timeout: 2000
   })
@@ -404,7 +404,7 @@ async function copyValue({ label, value }) {
   try {
     await navigator.clipboard.writeText(value)
   } catch {
-    message = `Couldn't copy the ${label.toLowerCase()} — select it and copy by hand.`
+    message = `Couldn't copy the ${label.toLowerCase()}. Select it and copy by hand.`
   }
   $q.notify({ message, color: 'dark', timeout: 2500 })
 }

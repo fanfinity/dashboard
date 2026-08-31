@@ -73,9 +73,11 @@
            backend's pipeline record carries only the two ids. An end that has
            since been deleted has neither, hence the em dash. -->
       <template #cell-route="{ row }">
-        <span class="text-ink">{{ row.sourceName || '—' }}</span>
+        <span class="text-ink">{{ row.sourceName || NOT_KNOWN }}</span>
         <span class="px-1.5 text-subtle">→</span>
-        <span class="text-ink">{{ row.eventDestinationName || '—' }}</span>
+        <span class="text-ink">{{
+          row.eventDestinationName || NOT_KNOWN
+        }}</span>
       </template>
 
       <!-- `formatCount` reads a missing count as 0, which is right for a real
@@ -83,7 +85,7 @@
            counter at all, so a live pipe would report "0 deliveries / hr" as
            a fact. -->
       <template #cell-deliveryCountLastHour="{ value }">
-        {{ value == null ? '—' : formatCount(value) }}
+        {{ value == null ? NOT_KNOWN : formatCount(value) }}
       </template>
 
       <template #cell-isEnabled="{ value }">
@@ -193,6 +195,7 @@
 </template>
 
 <script setup>
+import { NOT_KNOWN } from '@/lib/emptyValue'
 import { computed, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useQuasar } from 'quasar'

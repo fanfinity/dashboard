@@ -49,7 +49,7 @@
             id="live-sync-name"
             v-model="form.name"
             type="text"
-            placeholder="e.g. Meta custom audience — VIP"
+            placeholder="e.g. Meta custom audience for VIPs"
             class="h-9 rounded-lg border border-line2 bg-white px-2.5 text-sm text-ink outline-none placeholder:text-subtle"
           />
         </FormField>
@@ -63,7 +63,7 @@
           label="Audience"
           required
           :error="errors.audienceId"
-          hint="Only one audience per sync — create a second sync for a second audience."
+          hint="Only one audience per sync. Create a second sync for a second audience."
         >
           <q-select
             v-model="form.audienceId"
@@ -233,7 +233,7 @@
           Cancel
         </button>
         <p class="text-xs text-subtle"
-          >Nothing is persisted yet — there is no backend behind this form.</p
+          >Nothing is persisted yet. There is no backend behind this form.</p
         >
       </StickyActionBar>
     </form>

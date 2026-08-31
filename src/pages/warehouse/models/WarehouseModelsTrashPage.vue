@@ -40,7 +40,7 @@
       </template>
 
       <template #cell-dwhConnectionName="{ row }">
-        <p class="text-ink">{{ row.dwhConnectionName || '—' }}</p>
+        <p class="text-ink">{{ row.dwhConnectionName || NOT_KNOWN }}</p>
         <p class="font-mono text-xs text-subtle">{{ shapeLabel(row) }}</p>
       </template>
 
@@ -52,7 +52,7 @@
       </template>
 
       <template #cell-deletedByName="{ row }">
-        {{ row.deletedByName || row.deletedBy || '—' }}
+        {{ row.deletedByName || row.deletedBy || NOT_KNOWN }}
       </template>
 
       <template #cell-actions="{ row }">
@@ -129,6 +129,7 @@
 </template>
 
 <script setup>
+import { NOT_KNOWN } from '@/lib/emptyValue'
 import { computed, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useQuasar } from 'quasar'
@@ -153,7 +154,7 @@ const target = ref(null)
 
 const RETENTION_DAYS = 30
 
-const noticeMessage = `Only Sfere's copy of the query and its column mapping are removed — the table it reads stays exactly as it is. Restoring a model puts the definition back and recomputes it on the next refresh, so any attribute built on it starts updating again. Deleted models are purged automatically after ${RETENTION_DAYS} days.`
+const noticeMessage = `Only Sfere's copy of the query and its column mapping are removed. The table it reads stays exactly as it is. Restoring a model puts the definition back and recomputes it on the next refresh, so any attribute built on it starts updating again. Deleted models are purged automatically after ${RETENTION_DAYS} days.`
 
 const columns = [
   { key: 'name', label: 'Model', sortable: true },
@@ -192,7 +193,7 @@ function retentionLabel(row) {
   if (Number.isNaN(deleted.getTime())) return ''
   const elapsed = Math.floor((Date.now() - deleted.getTime()) / 86400000)
   const left = RETENTION_DAYS - elapsed
-  if (left <= 0) return 'Past retention — purged on the next sweep'
+  if (left <= 0) return 'Past retention. Purged on the next sweep.'
   return `${left} day${left === 1 ? '' : 's'} left`
 }
 
@@ -200,7 +201,7 @@ function retentionLabel(row) {
 function notifyLocal(message) {
   $q.notify({
     message,
-    caption: 'Local preview only — no backend is connected yet.',
+    caption: 'Local preview only. No backend is connected yet.',
     color: 'dark',
     timeout: 2500
   })

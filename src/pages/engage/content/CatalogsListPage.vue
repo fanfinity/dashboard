@@ -348,7 +348,7 @@ function create() {
 }
 
 function sync(row) {
-  toast(`Sync requested for “${row.name}” — no sync ran.`)
+  toast(`Sync requested for “${row.name}”. No sync ran.`)
 }
 
 const confirmToggle = ref(false)

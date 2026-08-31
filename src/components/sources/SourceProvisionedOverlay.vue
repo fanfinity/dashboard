@@ -277,7 +277,7 @@ const nodes = computed(() => [
 
 const lede = computed(
   () =>
-    `Connecting a source is normally three steps. ${props.source?.name ?? 'This source'} needed one — we set up its warehouse and the pipe feeding it while you waited.`
+    `Connecting a source is normally three steps. ${props.source?.name ?? 'This source'} needed one, because we set up its warehouse and the pipe feeding it while you waited.`
 )
 
 const summary = computed(() => {

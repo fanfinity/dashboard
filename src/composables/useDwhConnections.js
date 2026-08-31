@@ -1,3 +1,4 @@
+import { NOT_KNOWN } from '@/lib/emptyValue'
 import { computed } from 'vue'
 import { useQuasar } from 'quasar'
 import { useMockResource } from '@/composables/useMockResource'
@@ -44,24 +45,24 @@ const TIME = new Intl.DateTimeFormat('en-GB', {
  * `'2026-07-31T05:12:44.220Z'` -> `'31 Jul 2026'`.
  *
  * @param {string|null|undefined} iso
- * @returns {string} `'—'` when absent or unparseable.
+ * @returns {string} `NOT_KNOWN` when absent or unparseable.
  */
-export function formatDate(iso) {
-  if (!iso) return '—'
+export function formatDate(iso, fallback = NOT_KNOWN) {
+  if (!iso) return fallback
   const d = new Date(iso)
-  return Number.isNaN(d.getTime()) ? '—' : DATE.format(d)
+  return Number.isNaN(d.getTime()) ? NOT_KNOWN : DATE.format(d)
 }
 
 /**
  * `'2026-07-31T05:12:44.220Z'` -> `'31 Jul 2026 · 05:12 UTC'`.
  *
  * @param {string|null|undefined} iso
- * @returns {string} `'—'` when absent or unparseable.
+ * @returns {string} `NOT_KNOWN` when absent or unparseable.
  */
-export function formatDateTime(iso) {
-  if (!iso) return '—'
+export function formatDateTime(iso, fallback = NOT_KNOWN) {
+  if (!iso) return fallback
   const d = new Date(iso)
-  if (Number.isNaN(d.getTime())) return '—'
+  if (Number.isNaN(d.getTime())) return NOT_KNOWN
   return `${DATE.format(d)} · ${TIME.format(d)} UTC`
 }
 
@@ -76,7 +77,7 @@ export function formatDateTime(iso) {
  * formatCount(128) // '128'
  */
 export function formatCount(n) {
-  if (n === null || n === undefined || Number.isNaN(Number(n))) return '—'
+  if (n === null || n === undefined || Number.isNaN(Number(n))) return NOT_KNOWN
   return Number(n).toLocaleString('en-GB')
 }
 
@@ -233,7 +234,7 @@ export function formatConnectionError(lastError) {
   const [code, ...rest] = String(lastError).split(':')
   const detail = rest.join(':').trim()
   const label = ERROR_LABELS[code.trim()] ?? code.trim().replace(/_/g, ' ')
-  return detail ? `${label} — ${detail}` : label
+  return detail ? `${label}: ${detail}` : label
 }
 
 /**
@@ -270,14 +271,14 @@ export function simulateConnectionTest(input) {
     return {
       ok: false,
       title: 'Test failed',
-      message: `${formatConnectionError(input.lastError) || 'The last probe did not reach the warehouse.'} Simulated locally — no connection was opened.`
+      message: `${formatConnectionError(input.lastError) || 'The last probe did not reach the warehouse.'} Simulated locally. No connection was opened.`
     }
   }
 
   return {
     ok: true,
     title: 'Test passed',
-    message: `${input.host} looks reachable and the credentials are complete. Simulated locally — no connection was opened.`
+    message: `${input.host} looks reachable and the credentials are complete. Simulated locally. No connection was opened.`
   }
 }
 
@@ -296,7 +297,7 @@ export function useDwhConnectionToasts() {
 
   function toast(
     message,
-    caption = 'Local preview only — no backend is connected yet.'
+    caption = 'Local preview only. No backend is connected yet.'
   ) {
     $q.notify({
       message,

@@ -1,3 +1,4 @@
+import { NOT_KNOWN } from '@/lib/emptyValue'
 import { computed } from 'vue'
 import { useMockResource } from '@/composables/useMockResource'
 import {
@@ -65,7 +66,7 @@ function methodOf(type) {
     ? {
         method: 'Deterministic',
         variant: 'brand',
-        reason: 'Joined on a declared key — an exact match, not an inference.'
+        reason: 'Joined on a declared key. An exact match, not an inference.'
       }
     : {
         method: 'Probabilistic',
@@ -93,7 +94,7 @@ function priorityOf(type, fallback) {
  * A type capped at one per fan is a key; an uncapped one is a hint.
  */
 function uniquenessOf(max) {
-  if (max === 1) return { score: 1, reason: 'One per fan — a unique key.' }
+  if (max === 1) return { score: 1, reason: 'One per fan, so a unique key.' }
   if (max === null || max === undefined) {
     return {
       score: 0.3,
@@ -150,7 +151,7 @@ function corroborationOf(type, profile) {
   const names = matched.map(([, name]) => name).join(', ')
   return {
     score,
-    reason: `Seen on ${matched.length} of ${emitters.size} source(s) that emit it — ${names}.`
+    reason: `Seen on ${matched.length} of ${emitters.size} source(s) that emit it: ${names}.`
   }
 }
 
@@ -265,7 +266,9 @@ export function useProfilesIdentityResolution() {
           ruleCount: eventRules.length + modelRules.length,
           eventRuleCount: eventRules.length,
           modelRuleCount: modelRules.length,
-          coverageLabel: fanCount ? `${carried.profiles} of ${fanCount}` : '—',
+          coverageLabel: fanCount
+            ? `${carried.profiles} of ${fanCount}`
+            : NOT_KNOWN,
           identifierCount: carried.identifiers,
           version: t.version,
           createdAt: formatDate(t.createdAt),
@@ -434,7 +437,7 @@ export function useProfilesIdentityResolution() {
       {
         label: 'Identifier types',
         value: formatNumber(rules.value.length),
-        hint: 'Ranked by precedence — lower wins a conflict.'
+        hint: 'Ranked by precedence. Lower wins a conflict.'
       },
       {
         label: 'Collection rules',

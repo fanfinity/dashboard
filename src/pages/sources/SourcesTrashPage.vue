@@ -104,7 +104,7 @@ const RETENTION_DAYS = 30
 
 const subtitle = computed(() =>
   apiMissing.value
-    ? 'Deleting a source removes it outright today — nothing keeps a copy to restore, so this list stays empty until the backend grows a trash.'
+    ? 'Deleting a source removes it outright today. Nothing keeps a copy to restore, so this list stays empty until the backend grows a trash.'
     : `Deleted sources are kept for ${RETENTION_DAYS} days, then removed for good.`
 )
 
@@ -146,7 +146,7 @@ function retentionLabel(row) {
   if (Number.isNaN(deleted.getTime())) return ''
   const elapsed = Math.floor((Date.now() - deleted.getTime()) / 86400000)
   const left = RETENTION_DAYS - elapsed
-  if (left <= 0) return 'Past retention — purged on the next sweep'
+  if (left <= 0) return 'Past retention. Purged on the next sweep.'
   return `${left} day${left === 1 ? '' : 's'} left`
 }
 
@@ -154,7 +154,7 @@ function retentionLabel(row) {
 function notifyLocal(message) {
   $q.notify({
     message,
-    caption: 'Local preview only — no backend is connected yet.',
+    caption: 'Local preview only. No backend is connected yet.',
     color: 'dark',
     timeout: 2500
   })

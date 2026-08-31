@@ -39,9 +39,7 @@
         class="flex flex-wrap items-center justify-between gap-2 border-t border-line px-3 py-2 text-xs text-subtle"
       >
         <span>{{ sizeLabel }}</span>
-        <span
-          >Sfere only reads — nothing is written back to the warehouse.</span
-        >
+        <span>Sfere only reads. Nothing is written back to the warehouse.</span>
       </div>
     </div>
   </FormField>
@@ -77,7 +75,7 @@ const emit = defineEmits(['update:modelValue', 'validate'])
 const dialectLabel = computed(() => `${props.dialect} · select only`)
 
 const sizeLabel = computed(() => {
-  if (!props.modelValue) return 'Empty — nothing to validate yet'
+  if (!props.modelValue) return 'Empty. Nothing to validate yet.'
   const lines = props.modelValue.split('\n').length
   const chars = props.modelValue.length
   return `${lines} line${lines === 1 ? '' : 's'} · ${chars} character${chars === 1 ? '' : 's'}`

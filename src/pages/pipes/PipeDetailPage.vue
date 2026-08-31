@@ -141,7 +141,7 @@
           </template>
           <PipeParams
             :params="pipe.destinationParams"
-            empty-text="This pipe passes no parameters to its destination — the destination's own defaults apply."
+            empty-text="This pipe passes no parameters to its destination, so the destination's own defaults apply."
           />
         </CardPanel>
 
@@ -213,6 +213,7 @@
 </template>
 
 <script setup>
+import { NOT_KNOWN } from '@/lib/emptyValue'
 import { computed, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useQuasar } from 'quasar'
@@ -297,7 +298,8 @@ const SOURCE_TYPES = {
 }
 
 const sourceTypeLabel = computed(
-  () => SOURCE_TYPES[pipe.value?.sourceType] ?? pipe.value?.sourceType ?? '—'
+  () =>
+    SOURCE_TYPES[pipe.value?.sourceType] ?? pipe.value?.sourceType ?? NOT_KNOWN
 )
 
 // Both halves are optional against a real pipeline — the slug is joined in by
@@ -314,7 +316,7 @@ const sourceHint = computed(() => {
 // real measured zero, a fabricated fact here — so ask before formatting.
 const deliveriesValue = computed(() =>
   pipe.value?.deliveryCountLastHour == null
-    ? '—'
+    ? NOT_KNOWN
     : formatCount(pipe.value.deliveryCountLastHour)
 )
 

@@ -8,7 +8,7 @@
       v-for="t in provisioned"
       :key="t.id"
       tone="info"
-      :title="`${t.name} comes with your plan — we provide it for you`"
+      :title="`${t.name} comes with your plan, so we provide it for you`"
       :message="provisionedMessage(t)"
     >
       <div class="flex flex-wrap items-center gap-1.5">
@@ -199,7 +199,7 @@ const emptyDescription = computed(() => {
   if (!names.length) {
     return `None of the ${pickable.value.length} destinations match your search or filter.`
   }
-  return `${names.join(' and ')} comes with your plan — see the note above; there is nothing to create for it. Nothing else in the catalog matches your search or filter.`
+  return `${names.join(' and ')} comes with your plan. See the note above; there is nothing to create for it. Nothing else in the catalog matches your search or filter.`
 })
 
 const groups = computed(() =>

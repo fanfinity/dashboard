@@ -49,7 +49,7 @@ export function browserMethods(source) {
       attributes: [
         {
           name: 'data-write-key',
-          what: "This source's key. Public by design — it belongs in client-side code."
+          what: "This source's key. Public by design, so it belongs in client-side code."
         },
         {
           name: 'data-user-id',
@@ -119,7 +119,7 @@ export function browserMethods(source) {
     {
       key: 'http',
       label: 'HTTP API',
-      lede: 'No library at all — one POST per event, from anywhere that can make a request.',
+      lede: 'No library at all: one POST per event, from anywhere that can make a request.',
       blocks: [
         {
           filename: 'terminal',

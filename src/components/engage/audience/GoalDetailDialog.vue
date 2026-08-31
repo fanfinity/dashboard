@@ -39,14 +39,14 @@
                 class="rounded bg-fill px-1.5 py-0.5 text-xs text-muted"
                 >{{ j.name }}</span
               >
-              <span v-if="!journeys.length" class="text-subtle">—</span>
+              <span v-if="!journeys.length" class="text-subtle">None</span>
             </div>
           </template>
         </DefinitionList>
       </div>
 
       <template #footer>
-        <p class="text-xs text-subtle">Read-only — demo data.</p>
+        <p class="text-xs text-subtle">Read-only demo data.</p>
         <button
           v-close-popup
           class="rounded-lg border border-line2 bg-white px-3 py-1.5 text-sm font-medium text-brand hover:bg-fill"
@@ -114,7 +114,7 @@ const ATTRIBUTE_KIND = {
 const attributeHint = computed(() => {
   const g = props.goal
   if (!g?.attributeId) {
-    return 'Not bound to an attribute — this goal is tracked manually.'
+    return 'Not bound to an attribute. This goal is tracked manually.'
   }
   const kind = ATTRIBUTE_KIND[props.attribute?.type]
   return kind ? `${kind} · ${g.attributeId}` : g.attributeId
@@ -128,7 +128,7 @@ const facts = computed(() => {
     { label: 'Status', value: g.status },
     {
       label: 'Enabled',
-      value: g.isEnabled ? 'Yes — measured continuously' : 'No — paused'
+      value: g.isEnabled ? 'Yes, measured continuously' : 'No, paused'
     },
     { label: 'Measured', value: g.metric, hint: metricHint(g.metric) },
     { label: 'Attribute', value: g.attributeName, hint: attributeHint.value },
@@ -143,7 +143,7 @@ const facts = computed(() => {
     {
       label: 'Window',
       value: pluralize(g.windowDays ?? 0, 'day'),
-      hint: 'Rolling — the measurement only counts activity inside it.'
+      hint: 'Rolling. The measurement only counts activity inside it.'
     },
     {
       label: 'Attached journeys',
@@ -151,7 +151,7 @@ const facts = computed(() => {
       hint:
         journeys.value.length || !g.attachmentCount
           ? ''
-          : `${g.attachmentCount} attached — names unavailable.`
+          : `${g.attachmentCount} attached. Names unavailable.`
     },
     { label: 'Created', value: formatDateTime(g.createdAt) },
     { label: 'Last updated', value: formatDateTime(g.updatedAt) },

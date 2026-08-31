@@ -1,3 +1,4 @@
+import { NOT_KNOWN, NOT_SET } from '@/lib/emptyValue'
 import { useMockResource } from '@/composables/useMockResource'
 
 /**
@@ -39,7 +40,7 @@ export const PROFILE_API_PATH_PREFIX = '/v1/profile'
  */
 export function formatCount(n) {
   const value = Number(n)
-  if (!Number.isFinite(value)) return '—'
+  if (!Number.isFinite(value)) return NOT_KNOWN
   return value.toLocaleString('en-GB')
 }
 
@@ -52,9 +53,9 @@ export function formatCount(n) {
  * @returns {string}
  */
 export function formatLatency(ms) {
-  if (ms === null || ms === undefined || ms === '') return '—'
+  if (ms === null || ms === undefined || ms === '') return NOT_KNOWN
   const value = Number(ms)
-  if (!Number.isFinite(value)) return '—'
+  if (!Number.isFinite(value)) return NOT_KNOWN
   return `${formatCount(value)} ms`
 }
 
@@ -67,8 +68,8 @@ export function formatLatency(ms) {
  * @param {string|null|undefined} iso
  * @returns {string}
  */
-export function formatDate(iso) {
-  if (!iso) return '—'
+export function formatDate(iso, fallback = NOT_KNOWN) {
+  if (!iso) return fallback
   const d = new Date(iso)
   if (Number.isNaN(d.getTime())) return String(iso)
   return d.toLocaleDateString('en-GB', {
@@ -85,8 +86,8 @@ export function formatDate(iso) {
  * @param {string|null|undefined} iso
  * @returns {string}
  */
-export function formatDateTime(iso) {
-  if (!iso) return '—'
+export function formatDateTime(iso, fallback = NOT_KNOWN) {
+  if (!iso) return fallback
   const d = new Date(iso)
   if (Number.isNaN(d.getTime())) return String(iso)
   const time = d.toLocaleTimeString('en-GB', {
@@ -131,7 +132,7 @@ export function endpointUrl(endpoint) {
  * @returns {string}
  */
 export function maskKey(lastFour, revealed) {
-  if (!lastFour) return '—'
+  if (!lastFour) return NOT_SET
   return revealed ? `ffp_key_••••${lastFour}` : `ffp_key_${'•'.repeat(12)}`
 }
 
@@ -144,7 +145,7 @@ export function maskKey(lastFour, revealed) {
  * @returns {string}
  */
 export function maskToken(preview, revealed) {
-  if (!preview) return '—'
+  if (!preview) return NOT_SET
   if (revealed) return preview
   const [prefix] = String(preview).split('…')
   return `${prefix}${'•'.repeat(12)}`

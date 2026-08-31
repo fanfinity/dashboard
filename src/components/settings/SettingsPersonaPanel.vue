@@ -47,7 +47,7 @@
         <div class="flex flex-wrap items-center justify-between gap-3">
           <p class="max-w-[58ch] text-xs text-subtle">
             It changes what onboarding shows you first, never what the sidebar
-            contains — every screen stays where it is whichever you pick.
+            contains. Every screen stays where it is whichever you pick.
           </p>
           <button
             type="button"
@@ -93,7 +93,7 @@ const {
 // saying one thing, and the sentence belongs next to the choice it qualifies.
 const scopeMessage = computed(() => {
   const where =
-    'Your role is stored in this browser for your account — there is no backend to keep it in yet, so a different browser asks again.'
+    'Your role is stored in this browser for your account. There is no backend to keep it in yet, so a different browser asks again.'
   if (skipped.value)
     return `You skipped the question, so nothing is tailored to you yet. ${where}`
   if (!persona.value) return `No role picked yet. ${where}`
@@ -107,7 +107,7 @@ function onSelect(option) {
   setPersona(option.key)
   $q.notify({
     message: `Your role is now “${option.label}”`,
-    caption: 'This browser only — nothing in the workspace changed.',
+    caption: 'This browser only. Nothing in the workspace changed.',
     color: 'dark',
     timeout: 2500
   })

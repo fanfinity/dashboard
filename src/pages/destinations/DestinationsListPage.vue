@@ -2,7 +2,7 @@
   <q-page class="p-6">
     <PageHeader
       title="Destinations"
-      subtitle="Where routed events are delivered — warehouses, ad platforms and webhooks."
+      subtitle="Where routed events are delivered: warehouses, ad platforms and webhooks."
     >
       <template #actions>
         <ToolbarSearch v-model="query" placeholder="Search destinations..." />

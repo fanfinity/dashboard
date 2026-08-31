@@ -44,7 +44,7 @@
       <template #cell-status="{ row }">
         <StatusBadge
           :tone="statusTone(row.status)"
-          :label="row.status || '—'"
+          :label="row.status || NOT_KNOWN"
         />
       </template>
       <template #cell-counts="{ row }">
@@ -60,6 +60,7 @@
 </template>
 
 <script setup>
+import { NONE, NOT_KNOWN } from '@/lib/emptyValue'
 import { onMounted, ref } from 'vue'
 import CardPanel from '@/components/ui/CardPanel.vue'
 import DataTable from '@/components/ui/DataTable.vue'
@@ -103,11 +104,11 @@ function statusTone(status) {
 }
 
 function countsSummary(counts) {
-  if (!counts || typeof counts !== 'object') return '—'
+  if (!counts || typeof counts !== 'object') return NOT_KNOWN
   const parts = Object.entries(counts)
     .filter(([, v]) => typeof v === 'number')
     .map(([k, v]) => `${k}: ${v}`)
-  return parts.length ? parts.join(' · ') : '—'
+  return parts.length ? parts.join(' · ') : NONE
 }
 
 async function trigger() {

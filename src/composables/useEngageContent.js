@@ -1,3 +1,4 @@
+import { NOT_KNOWN } from '@/lib/emptyValue'
 import { useQuasar } from 'quasar'
 import { useMockResource } from '@/composables/useMockResource'
 
@@ -40,24 +41,24 @@ const TIME = new Intl.DateTimeFormat('en-GB', {
  * `'2026-07-19T14:00:00.000Z'` -> `'19 Jul 2026'`.
  *
  * @param {string|null|undefined} iso
- * @returns {string} `'—'` when absent or unparseable.
+ * @returns {string} `NOT_KNOWN` when absent or unparseable.
  */
-export function formatDate(iso) {
-  if (!iso) return '—'
+export function formatDate(iso, fallback = NOT_KNOWN) {
+  if (!iso) return fallback
   const d = new Date(iso)
-  return Number.isNaN(d.getTime()) ? '—' : DATE.format(d)
+  return Number.isNaN(d.getTime()) ? NOT_KNOWN : DATE.format(d)
 }
 
 /**
  * `'2026-07-31T04:30:00.000Z'` -> `'31 Jul 2026 · 04:30 UTC'`.
  *
  * @param {string|null|undefined} iso
- * @returns {string} `'—'` when absent or unparseable.
+ * @returns {string} `NOT_KNOWN` when absent or unparseable.
  */
-export function formatDateTime(iso) {
-  if (!iso) return '—'
+export function formatDateTime(iso, fallback = NOT_KNOWN) {
+  if (!iso) return fallback
   const d = new Date(iso)
-  if (Number.isNaN(d.getTime())) return '—'
+  if (Number.isNaN(d.getTime())) return NOT_KNOWN
   return `${DATE.format(d)} · ${TIME.format(d)} UTC`
 }
 
@@ -72,7 +73,7 @@ export function formatDateTime(iso) {
  * formatCount(1284) // '1,284'
  */
 export function formatCount(n) {
-  if (n === null || n === undefined || Number.isNaN(Number(n))) return '—'
+  if (n === null || n === undefined || Number.isNaN(Number(n))) return NOT_KNOWN
   return Number(n).toLocaleString('en-GB')
 }
 
@@ -90,7 +91,7 @@ const BYTE_UNITS = ['KB', 'MB', 'GB', 'TB']
  */
 export function formatBytes(bytes) {
   const n = Number(bytes)
-  if (!Number.isFinite(n) || n < 0) return '—'
+  if (!Number.isFinite(n) || n < 0) return NOT_KNOWN
   if (n < 1024) return `${Math.round(n)} B`
   let value = n / 1024
   let unit = 0
@@ -102,14 +103,16 @@ export function formatBytes(bytes) {
 }
 
 /**
- * `1200 × 630`, or an em dash for anything without pixel dimensions (a PDF).
+ * `1200 × 630`, or NOT_KNOWN for anything without pixel dimensions (a PDF).
+ * NOT_KNOWN rather than NONE: the field is simply absent on a non-image asset,
+ * and "Dimensions: None" would assert that it has none.
  *
  * @param {number|null|undefined} width
  * @param {number|null|undefined} height
  * @returns {string}
  */
 export function formatDimensions(width, height) {
-  if (!width || !height) return '—'
+  if (!width || !height) return NOT_KNOWN
   return `${formatCount(width)} × ${formatCount(height)}`
 }
 
@@ -210,7 +213,7 @@ export function useEngageContentToasts() {
   function toast(message) {
     $q.notify({
       message,
-      caption: 'Local preview only — nothing is stored.',
+      caption: 'Local preview only. Nothing is stored.',
       color: 'dark',
       timeout: 2500
     })

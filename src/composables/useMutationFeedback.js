@@ -24,7 +24,7 @@ export function notifyMutationResult($q, result, { success, apiMissing } = {}) {
     $q.notify({
       message: success,
       caption: result.skipped
-        ? 'Local preview only — no backend is connected yet.'
+        ? 'Local preview only. No backend is connected yet.'
         : 'Saved via the API.',
       color: 'dark',
       timeout: 2500

@@ -1,3 +1,4 @@
+import { NOT_KNOWN } from '@/lib/emptyValue'
 import { computed } from 'vue'
 import { useMockResource } from '@/composables/useMockResource'
 
@@ -107,10 +108,10 @@ export function useTeam() {
 }
 
 /** Relative time, coarse on purpose — "3 days ago" beats "3d 4h 12m ago". */
-export function formatAgo(iso) {
-  if (!iso) return '—'
+export function formatAgo(iso, fallback = NOT_KNOWN) {
+  if (!iso) return fallback
   const then = new Date(iso).getTime()
-  if (Number.isNaN(then)) return '—'
+  if (Number.isNaN(then)) return NOT_KNOWN
   const mins = Math.round((Date.now() - then) / 60000)
   if (mins < 1) return 'just now'
   if (mins < 60) return `${mins} min ago`
@@ -125,10 +126,10 @@ export function formatAgo(iso) {
   })
 }
 
-export function formatDate(iso) {
-  if (!iso) return '—'
+export function formatDate(iso, fallback = NOT_KNOWN) {
+  if (!iso) return fallback
   const d = new Date(iso)
-  if (Number.isNaN(d.getTime())) return '—'
+  if (Number.isNaN(d.getTime())) return NOT_KNOWN
   return d.toLocaleDateString(undefined, {
     day: 'numeric',
     month: 'short',

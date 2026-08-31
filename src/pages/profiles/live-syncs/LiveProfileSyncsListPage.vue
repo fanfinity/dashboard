@@ -258,7 +258,7 @@ const enabledCount = computed(
 const pausedHint = computed(() => {
   const paused = syncs.value.length - enabledCount.value
   if (!paused) return 'Every sync is delivering'
-  return `${paused} paused — configuration kept, nothing delivered`
+  return `${paused} paused. Configuration kept, nothing delivered.`
 })
 
 const profilesLastHour = computed(() =>

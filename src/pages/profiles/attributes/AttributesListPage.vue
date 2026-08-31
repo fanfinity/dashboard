@@ -2,7 +2,7 @@
   <q-page class="p-6">
     <PageHeader
       title="Attributes"
-      subtitle="Computed fields on a fan profile — each one derived from event data or a warehouse model."
+      subtitle="Computed fields on a fan profile, each one derived from event data or a warehouse model."
     >
       <template #actions>
         <ToolbarSearch v-model="query" placeholder="Search attributes..." />
@@ -276,7 +276,7 @@ const emptyTitle = computed(() =>
 const emptyDescription = computed(() =>
   attributes.value.length
     ? 'Try a different search term, or switch back to the All tab.'
-    : 'Attributes turn raw fan activity into something an audience can filter on — a lifetime spend, a favourite competition, a last-seen city.'
+    : 'Attributes turn raw fan activity into something an audience can filter on: a lifetime spend, a favourite competition, a last-seen city.'
 )
 
 function clearFilters() {
@@ -288,7 +288,7 @@ function clearFilters() {
 function notifyLocal(message) {
   $q.notify({
     message,
-    caption: 'Local preview only — no backend is connected yet.',
+    caption: 'Local preview only. No backend is connected yet.',
     color: 'dark',
     timeout: 2500
   })

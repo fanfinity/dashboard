@@ -127,10 +127,10 @@ Hash mode has one consequence worth internalising: the whole route lives after t
 so an in-page `href="#some-id"` **replaces the route** instead of scrolling. Anchor navigation
 has to go through `scrollIntoView` — see `src/pages/design-system/DesignSystemPage.vue`.
 
-### Six Quasar/Tailwind cascade collisions
+### Seven Quasar/Tailwind cascade collisions
 
 Tailwind v4 emits utilities into `@layer utilities`; Quasar's base stylesheet is **unlayered**,
-and unlayered CSS beats layered CSS regardless of specificity. All six of these have cost real
+and unlayered CSS beats layered CSS regardless of specificity. All seven of these have cost real
 time:
 
 1. **Headings need the important _suffix_** — `text-2xl!`, never `!text-2xl`. Covered at length
@@ -170,6 +170,14 @@ not-allowed }`, so `disabled:opacity-45` and `disabled:cursor-not-allowed` are d
    `gap` (no Quasar counterpart, so it applies) and pin the footer with `grid-rows-[1fr_auto]` —
    not `mt-auto!`, which resolves per flex line inside #4's wrapping flex.
    `docs/ui-conventions.md` rule 11; `SourceIntentPicker.vue` is the worked example.
+   **Three unlayered rules in `sfere.css` now catch the cases that are never intentional**:
+   `[class~='items-center'] > p` (a paragraph sharing a row with a control — `items-center`
+   centres the _margin_ box, so the text sat 8px high next to every button it was paired
+   with), `p:last-child` (the dead 16px under a card's last line), and the opt-in
+   `.sfere-flush > p` for a container that already spaces its children with `gap`. There is
+   deliberately **no blanket `p { margin: 0 }`**: stacked prose still wants its rhythm, and
+   the smoke gate cannot see a spacing regression, so a global reset would be an unverifiable
+   change to all 54 screens at once.
 6. **`auto-fit` grid tracks measure a card at min-content and keep the answer.** An
    `auto-fit` track is min-content-sized in the first pass, and the min-content height of a
    `SelectableCard` — a #4 wrapping flex — at that width is enormous, so the row keeps it:
@@ -179,6 +187,19 @@ not-allowed }`, so `disabled:opacity-45` and `disabled:cursor-not-allowed` are d
    the wrong question — the sidebar collapses without changing it, so one 1024px window has two
    content widths — put a container query in front of those tracks (`@container` +
    `@min-[52rem]:grid-cols-3`). `docs/ui-conventions.md` rule 12.
+7. **Anything inside `q-header` inherits white text, and that is how the responsive nav
+   disappeared.** Quasar ships unlayered `.q-header { color: #fff }` and unlayered
+   `.q-btn { color: inherit }`, so a layered `text-ink` on the header loses and the button
+   never had a colour of its own — the hamburger was drawn in white on a `bg-white!` bar. It
+   was present, focusable and clickable at every width below 1024px; it was simply invisible,
+   which reads as "this app has no navigation under 1000px" and was filed as exactly that.
+   Two halves to the fix and both are needed: `text-ink!` (important **suffix**) on the
+   header, and a control that carries its own colour — `MainLayout` now uses
+   `SfereIconButton` with a `menu` glyph from `sfereIcons.js` rather than
+   `q-btn icon="menu"`. The same `.q-btn` unlayered `display: inline-flex` also beat the
+   layered `lg:hidden` that was supposed to hide it on desktop, so it showed up beside a
+   permanent sidebar too; `lg:hidden!` is what actually hides it.
+   `docs/ui-conventions.md` rule 15.
 
 ## Screen manifest — routes are generated, not hand-written
 
@@ -421,6 +442,44 @@ never means re-running a tour, and `Ask me again` clears it. Both surfaces rende
 cards and the same marks from `PersonaIcon.vue` — drawn there rather than reused from
 `src/assets/dashboard/`, because those are `<img>` with brand purple baked into a `stroke`
 attribute and cannot take the colour of the chip they sit in.
+
+## Empty values have four words, and none of them is `0`
+
+`src/lib/emptyValue.js` is the vocabulary a screen prints where a value is missing, and it is
+the whole of it: **`NEVER`**, **`NOT_SET`**, **`NOT_KNOWN`**, **`NONE`**. Every one of them
+used to be a bare em dash, in ~145 places, and the same glyph also appeared mid-sentence as
+punctuation — so a `—` in a table cell could not be told apart from a truncated label. QA
+raised the dashes as visual noise; the ambiguity underneath is why this is a module rather
+than a search-and-replace.
+
+Pick by what is true of the data, not by what reads shortest:
+
+| Word        | Means                                                | Example                |
+| ----------- | ---------------------------------------------------- | ---------------------- |
+| `NEVER`     | a dated event that has not happened                  | `Last run: Never`      |
+| `NOT_SET`   | an optional field nobody filled in — user-fixable    | `Next run: Not set`    |
+| `NOT_KNOWN` | nothing measures it: no endpoint, or the read failed | `Events/hr: Not known` |
+| `NONE`      | a collection that is genuinely empty                 | `Tags: None`           |
+
+**A count the backend never sent is `NOT_KNOWN`, never `0`.** That is the same warning the
+fixture-wider-than-the-endpoint note above gives: a formatter printing a confident `0` for
+`undefined` asserts a measurement nobody took, and unlike a visible gap nobody reports it.
+`0` is for a number that was counted and came back zero — `PipelineFlowPanel` prints it.
+
+The date formatters (`formatDate`, `formatDateTime`, `formatAgo`, and friends across the
+`use*` composables) take a **`fallback` second argument defaulting to `NOT_KNOWN`**, because
+one formatter serves both a `createdAt` column and a `lastRunAt` one and only the second can
+honestly say "Never". Pass the word at the call site: `formatDateTime(s.lastRunAt, NEVER)`,
+`formatDate(row.nextRunAt, NOT_SET)`. A date that IS present but will not parse always
+reports `NOT_KNOWN` regardless of the fallback — that is a different failure.
+
+The wider copy rule that goes with it: **an em dash is punctuation, and the UI keeps very few
+of them.** Page subtitles, banners, toasts, validation messages and status lines were
+rewritten to sentences, colons or parentheses across all 54 screens, `public/data/*.json` and
+the screen manifest — `screens.js` titles used to read `Warehouse Models — list view` and now
+read `Warehouse models`, which matters because that string is the real `<h1>`
+`ComingSoonPanel` renders. `src/components/sfere-docs/**` (the `/design-system` reference
+page) is the deliberate exception: it is long-form editorial prose, not product chrome.
 
 ## UI primitives
 

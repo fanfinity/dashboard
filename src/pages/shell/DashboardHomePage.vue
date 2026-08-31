@@ -89,15 +89,16 @@
            immediately, so it sits directly under the headline numbers.
            NoticeBanner's layout was lifted from this block — use it, don't
            re-hand-roll it. -->
+      <!-- Name on its own line, consequence under it. It used to be one line
+           per row hinged on an em dash, and since a provisioned destination is
+           itself named "Testing website — ClickHouse", a row read "Testing
+           website — ClickHouse — Enabled, but no pipe delivers to it": three
+           dashes doing two different jobs in a list meant to be scanned. -->
       <NoticeBanner v-if="attention.length" tone="warn" title="Needs attention">
-        <ul class="flex flex-col gap-1">
-          <li
-            v-for="item in attention"
-            :key="item.id"
-            class="text-sm text-muted"
-          >
-            <span class="font-medium text-ink">{{ item.title }}</span>
-            — {{ item.detail }}
+        <ul class="grid gap-2">
+          <li v-for="item in attention" :key="item.id" class="grid gap-0.5">
+            <span class="text-sm font-medium text-ink">{{ item.title }}</span>
+            <span class="text-sm text-muted">{{ item.detail }}</span>
           </li>
         </ul>
       </NoticeBanner>
@@ -288,7 +289,7 @@ async function refresh() {
 // first event to arrive.
 const emptyDescription = computed(() =>
   setupComplete.value
-    ? 'Your source, destination and pipe are all in place — this fills in as soon as the first events arrive.'
+    ? 'Your source, destination and pipe are all in place. This fills in as soon as the first events arrive.'
     : 'Finish the setup steps above and this screen fills in with live throughput, errors and profiles.'
 )
 

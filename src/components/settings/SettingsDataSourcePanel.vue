@@ -67,7 +67,7 @@ const options = [
     mode: 'mock',
     label: 'Demo data',
     description:
-      'Every screen reads the bundled mock JSON in public/data/ instead. Nothing is saved to a server, and every screen has data — which is what makes this the mode to demo in.'
+      'Every screen reads the bundled mock JSON in public/data/ instead. Nothing is saved to a server, and every screen has data, which is what makes this the mode to demo in.'
   }
 ]
 
@@ -81,7 +81,7 @@ const notice = computed(() => {
       tone: 'info',
       title: 'Reading your real account',
       message:
-        'The default. A screen whose endpoint is still drafted shows "No API yet" rather than silently falling back to mock data — that is deliberate, so a missing backend is never mistaken for a working one.'
+        'The default. A screen whose endpoint is still drafted shows "No API yet" rather than silently falling back to mock data. That is deliberate, so a missing backend is never mistaken for a working one.'
     }
   return {
     // The unusual state now that real is the default, so it gets the badge.

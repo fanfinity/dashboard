@@ -23,7 +23,7 @@
         </span>
         <div>
           <p class="text-sm font-semibold text-ink"
-            >Verified — {{ source.name }} is live</p
+            >Verified. {{ source.name }} is live</p
           >
           <p class="mt-1! text-sm text-muted">{{ verifiedMessage }}</p>
         </div>
@@ -38,8 +38,8 @@
         <StatusBadge tone="neutral" label="Pull source" />
       </template>
       <p class="text-sm text-muted">
-        {{ source.name }} is a cloud app — Sfere signs in and pulls from it on a
-        schedule, so there is no snippet, no write key and no endpoint to wire
+        {{ source.name }} is a cloud app, so Sfere signs in and pulls from it on
+        a schedule, so there is no snippet, no write key and no endpoint to wire
         up. Its credentials live with the connector, and the first sync starts
         on its own.
       </p>
@@ -166,7 +166,7 @@
 
         <p class="text-sm text-muted">
           Load a page with the snippet installed, then check. We look for a real
-          event that reached this source — not just whether the tag is on the
+          event that reached this source, not just whether the tag is on the
           page, because a tag can be present and still be blocked by a consent
           tool or a mistyped key.
         </p>
@@ -280,21 +280,21 @@ const shownKey = computed(() => {
 
 const verifiedMessage = computed(() =>
   props.preview
-    ? 'Simulated for this preview — no events were actually received, because nothing was saved to the backend.'
-    : 'A real event reached this source, so the whole path — snippet, key, ingest — is working end to end.'
+    ? 'Simulated for this preview. No events were actually received, because nothing was saved to the backend.'
+    : 'A real event reached this source, so the whole path (snippet, key, ingest) is working end to end.'
 )
 
 // The sentence after "N events received". Two different truths, and the old copy
 // only ever told one of them.
 const arrivedNext = computed(() =>
   props.deliversTo
-    ? `They are already being delivered to ${props.deliversTo} — nothing else to set up.`
-    : 'Nothing else to do here — add a destination next so they have somewhere to go.'
+    ? `They are already being delivered to ${props.deliversTo}, so there is nothing else to set up.`
+    : 'Nothing else to do here. Add a destination next so they have somewhere to go.'
 )
 
 const FIXES = [
   'Did you save and publish the page after adding the snippet?',
-  'View the page source, not the editor — is the tag actually in the served HTML?',
+  'View the page source, not the editor. Is the tag actually in the served HTML?',
   'Is an ad blocker or a consent tool on that page blocking third-party scripts?',
   'Does the write key in the snippet match the one shown above?',
   'Behind a CDN or a cache? A change can take a few minutes to go live.'

@@ -166,6 +166,7 @@
 </template>
 
 <script setup>
+import { NOT_KNOWN } from '@/lib/emptyValue'
 import { computed, onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useQuasar } from 'quasar'
@@ -299,7 +300,7 @@ const deliversTo = computed(() => {
 // confident 0 for all three — the same lie `vundefined` told, only quieter.
 const pipeCountLabel = computed(() =>
   pipesLoading.value || pipesError.value || pipesApiMissing.value
-    ? '—'
+    ? NOT_KNOWN
     : formatCount(sourcePipes.value.length)
 )
 
@@ -350,7 +351,7 @@ const deleteTitle = computed(() =>
 // is the one wrong thing a destructive confirm can say.
 const deleteMessage = computed(() =>
   source.value
-    ? `“${source.value.name}” stops collecting events straight away, and any pipe reading from it stops delivering. Events already written to a destination are untouched — they live in the warehouse, not here. Restoring from trash is not available yet, so this cannot be undone.`
+    ? `“${source.value.name}” stops collecting events straight away, and any pipe reading from it stops delivering. Events already written to a destination are untouched; they live in the warehouse, not here. Restoring from trash is not available yet, so this cannot be undone.`
     : ''
 )
 
@@ -381,7 +382,7 @@ async function copyValue({ label, value }) {
   try {
     await navigator.clipboard.writeText(value)
   } catch {
-    message = `Couldn't copy the ${label.toLowerCase()} — select it and copy by hand.`
+    message = `Couldn't copy the ${label.toLowerCase()} . Select it and copy by hand.`
   }
   $q.notify({ message, color: 'dark', timeout: 2500 })
 }

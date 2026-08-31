@@ -17,9 +17,10 @@
  * @param {number|null|undefined} n
  * @returns {string}
  */
+import { NOT_KNOWN, NOT_SET } from '@/lib/emptyValue'
 export function formatCount(n) {
   const value = Number(n)
-  if (!Number.isFinite(value)) return '—'
+  if (!Number.isFinite(value)) return NOT_KNOWN
   return value.toLocaleString('en-GB')
 }
 
@@ -29,8 +30,8 @@ export function formatCount(n) {
  * @param {string|null|undefined} iso
  * @returns {string}
  */
-export function formatDate(iso) {
-  if (!iso) return '—'
+export function formatDate(iso, fallback = NOT_KNOWN) {
+  if (!iso) return fallback
   const d = new Date(iso)
   if (Number.isNaN(d.getTime())) return String(iso)
   return d.toLocaleDateString('en-GB', {
@@ -50,8 +51,8 @@ export function formatDate(iso) {
  * @param {string|null|undefined} iso
  * @returns {string}
  */
-export function formatDateTime(iso) {
-  if (!iso) return '—'
+export function formatDateTime(iso, fallback = NOT_KNOWN) {
+  if (!iso) return fallback
   const d = new Date(iso)
   if (Number.isNaN(d.getTime())) return String(iso)
   return `${formatDate(iso)}, ${formatClock(iso)} UTC`
@@ -63,10 +64,10 @@ export function formatDateTime(iso) {
  * @param {string|null|undefined} iso
  * @returns {string}
  */
-export function formatClock(iso) {
-  if (!iso) return '—'
+export function formatClock(iso, fallback = NOT_KNOWN) {
+  if (!iso) return fallback
   const d = new Date(iso)
-  if (Number.isNaN(d.getTime())) return '—'
+  if (Number.isNaN(d.getTime())) return NOT_KNOWN
   return d.toLocaleTimeString('en-GB', {
     hour: '2-digit',
     minute: '2-digit',
@@ -98,7 +99,7 @@ export function dayKey(iso) {
  */
 export function formatPercent(ratio, digits = 1) {
   const value = Number(ratio)
-  if (!Number.isFinite(value)) return '—'
+  if (!Number.isFinite(value)) return NOT_KNOWN
   return `${(value * 100).toFixed(digits)}%`
 }
 
@@ -128,7 +129,7 @@ export function rate(part, total) {
  * @returns {string}
  */
 export function formatWindow(window) {
-  if (!window?.start || !window?.end) return '—'
+  if (!window?.start || !window?.end) return NOT_SET
   const zone = window.timezone ? ` (${window.timezone})` : ''
   return `${window.start} – ${window.end}${zone}`
 }
@@ -160,7 +161,7 @@ export function hasRevealableSecret(value) {
  * @returns {string}
  */
 export function maskSecret(value, revealed) {
-  if (!value) return '—'
+  if (!value) return NOT_SET
   const text = String(value)
   if (revealed) return text
   if (!hasRevealableSecret(text)) return MASK

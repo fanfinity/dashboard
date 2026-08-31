@@ -368,7 +368,7 @@ const deleteTitle = computed(() =>
 // "restorable for 30 days" was a promise nothing kept.
 const deleteMessage = computed(() =>
   target.value
-    ? `“${target.value.name}” stops collecting events straight away, and any pipe reading from it stops delivering. Events already written to a destination are untouched — they live in the warehouse, not here. Restoring from trash is not available yet, so this cannot be undone.`
+    ? `“${target.value.name}” stops collecting events straight away, and any pipe reading from it stops delivering. Events already written to a destination are untouched; they live in the warehouse, not here. Restoring from trash is not available yet, so this cannot be undone.`
     : ''
 )
 

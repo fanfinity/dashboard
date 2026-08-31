@@ -1,5 +1,9 @@
 <template>
-  <SfereTooltip :text="tooltip || label" :placement="tooltipPlacement">
+  <SfereTooltip
+    :text="tooltip || label"
+    :placement="tooltipPlacement"
+    :align="tooltipAlign"
+  >
     <component
       :is="tag"
       v-bind="linkAttrs"
@@ -67,6 +71,19 @@ const props = defineProps({
     type: String,
     default: 'bottom',
     validator: v => ['top', 'bottom'].includes(v)
+  },
+  // `end`, not `center`, and that default is the fix rather than a preference.
+  // A centred bubble sticks out roughly half its own width either side of a
+  // 40px button, and the home of this control is the right end of a PageHeader
+  // actions row — so "Delete this source" ran off the right of the window on
+  // every detail screen. Aligning the bubble's right edge to the button's keeps
+  // it on screen wherever the row ends. Pass `start` for the rare button pinned
+  // to the LEFT edge of the viewport, and `center` where there is room either
+  // side and centred simply looks better.
+  tooltipAlign: {
+    type: String,
+    default: 'end',
+    validator: v => ['center', 'start', 'end'].includes(v)
   }
 })
 

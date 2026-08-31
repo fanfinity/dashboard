@@ -200,7 +200,7 @@ async function registerWebhooks() {
   // Guard: never call connect-zid until tokens are confirmed.
   if (!connected.value && !(await refreshConnected())) {
     verifyMsg.value =
-      'Authorize the store with Zid first — its OAuth tokens are needed to register webhooks.'
+      'Authorize the store with Zid first. Its OAuth tokens are needed to register webhooks.'
     return
   }
   connecting.value = true

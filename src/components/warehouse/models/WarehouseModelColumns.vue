@@ -11,7 +11,7 @@
       v-if="!columns.length"
       variant="inline"
       title="No columns read yet"
-      description="Write the select above and validate it — the columns it produces are listed here."
+      description="Write the select above and validate it. The columns it produces are listed here."
     />
 
     <div v-else class="divide-y divide-line">
@@ -78,7 +78,7 @@ const countLabel = computed(() => {
 
 const checkedLabel = computed(() =>
   props.checkedAt
-    ? `Parsed locally at ${props.checkedAt} — no query was run`
+    ? `Parsed locally at ${props.checkedAt}. No query was run.`
     : 'Read from the select above, not from the warehouse'
 )
 

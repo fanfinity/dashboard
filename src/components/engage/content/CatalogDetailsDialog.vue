@@ -48,7 +48,7 @@
 
           <template #value-last-sync>
             <div class="flex flex-wrap items-center justify-end gap-2">
-              <span>{{ formatDateTime(catalog.lastSyncedAt) }}</span>
+              <span>{{ formatDateTime(catalog.lastSyncedAt, NEVER) }}</span>
               <StatusBadge :tone="syncMeta.variant" :label="syncMeta.label" />
             </div>
           </template>
@@ -64,7 +64,7 @@
                 :label="connectionMeta.label"
               />
             </div>
-            <span v-else class="text-subtle">—</span>
+            <span v-else class="text-subtle">None</span>
           </template>
         </DefinitionList>
       </q-card-section>
@@ -84,6 +84,7 @@
 </template>
 
 <script setup>
+import { NEVER } from '@/lib/emptyValue'
 import { computed } from 'vue'
 import DefinitionList from '@/components/ui/DefinitionList.vue'
 import NoticeBanner from '@/components/ui/NoticeBanner.vue'

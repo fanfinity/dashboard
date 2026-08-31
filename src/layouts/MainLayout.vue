@@ -259,15 +259,28 @@
     </q-drawer>
 
     <!-- Header -->
-    <q-header class="bg-white! text-ink border-b border-line">
+    <!-- `text-ink!` with the important SUFFIX, not a bare `text-ink`: Quasar's
+         `.q-header` is unlayered `color: #fff` and beats any layered utility, so
+         every child that inherits its colour — a `.q-btn` sets `color: inherit`
+         — renders white on this white bar. That is how the nav toggle below
+         became invisible rather than missing. -->
+    <q-header class="bg-white! text-ink! border-b border-line">
       <q-toolbar class="min-h-14! gap-2 px-3 sm:gap-3">
-        <q-btn
-          flat
-          dense
-          round
+        <!-- The only way into the sidebar under 1024px, where q-drawer's
+             `:breakpoint="1023"` turns it into an overlay. It is an
+             SfereIconButton rather than a `q-btn icon="menu"` so its glyph
+             carries its own colour instead of inheriting the header's; the
+             tooltip aligns `start` because this is the one icon button in the
+             app pinned to the LEFT edge, where an end-aligned bubble would hang
+             off the viewport. `lg:hidden!` needs the suffix for the same reason
+             the header's colour does: `.q-btn`-style unlayered display rules
+             outrank a layered `hidden`. -->
+        <SfereIconButton
+          label="Open navigation"
           icon="menu"
-          aria-label="Menu"
-          class="lg:hidden"
+          variant="ghost"
+          class="lg:hidden!"
+          tooltip-align="start"
           @click="leftDrawerOpen = !leftDrawerOpen"
         />
 
@@ -389,6 +402,7 @@ import { useDataSource } from '@/composables/useDataSource'
 import ComingSoonPanel from '@/components/ComingSoonPanel.vue'
 import PersonaQuestion from '@/components/onboarding/PersonaQuestion.vue'
 import DemoModeBanner from '@/components/DemoModeBanner.vue'
+import SfereIconButton from '@/components/ui/SfereIconButton.vue'
 
 import icCollapse from '@/assets/dashboard/ic-collapse.svg'
 import icChevron from '@/assets/dashboard/ic-chevron.svg'
@@ -459,7 +473,7 @@ function navBadge(item) {
 // tooltip carries the same word instead rather than dropping the honesty cue.
 function railLabel(item) {
   const badge = navBadge(item)
-  return badge ? `${item.label} — ${BADGES[badge].label}` : item.label
+  return badge ? `${item.label} (${BADGES[badge].label})` : item.label
 }
 
 // Screens are registered in src/router/screens.js; this list decides what is

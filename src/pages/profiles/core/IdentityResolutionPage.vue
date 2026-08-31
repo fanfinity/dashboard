@@ -36,7 +36,7 @@
     <EmptyState
       v-else-if="isEmpty"
       title="No identifier types configured"
-      description="Identity resolution needs at least one identifier type — an email, a phone number, a browser cookie — before it can decide that two signals belong to the same fan. Connect a source and its identifier rules appear here."
+      description="Identity resolution needs at least one identifier type (an email, a phone number, a browser cookie) before it can decide that two signals belong to the same fan. Connect a source and its identifier rules appear here."
     >
       <template #cta>
         <router-link
@@ -212,13 +212,13 @@ const loaded = ref(false)
 const showSkeleton = computed(() => loading.value && !loaded.value)
 
 const subtitle =
-  'The rules that decide when two identifiers belong to the same fan — and the evidence behind every merge they made.'
+  'The rules that decide when two identifiers belong to the same fan, and the evidence behind every merge they made.'
 
 const probabilisticNotice = computed(
   () =>
     `${probabilisticMerges.value} identifier(s) joined a fan through a ` +
     'device-scoped rule rather than a declared key. Those are the merges to ' +
-    'audit first — a shared browser or a recycled device looks exactly like ' +
+    'audit first: a shared browser or a recycled device looks exactly like ' +
     'one returning fan.'
 )
 

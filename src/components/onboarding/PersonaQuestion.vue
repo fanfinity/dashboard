@@ -14,7 +14,7 @@
           id="persona-question-title"
           class="font-sfere-display! text-xl! font-semibold! leading-7! tracking-[-0.01em]! text-ink"
         >
-          Before we start — what do you do?
+          Before we start, what do you do?
         </h2>
         <p class="max-w-[62ch] text-sm text-muted">
           It sets what you see first. Change it any time in Settings → Your
@@ -88,7 +88,7 @@
           class="flex h-9 shrink-0 items-center gap-1.5 rounded-lg border border-line2 bg-white px-3 text-sm text-ink shadow-sm hover:bg-fill"
           @click="emit('skip')"
         >
-          Skip — just show me the app
+          Skip, just show me the app
         </button>
       </div>
     </div>

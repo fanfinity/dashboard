@@ -93,7 +93,7 @@
         <p class="mt-1.5 text-sm text-muted">
           {{
             isSignUp
-              ? 'Use your work email — it is how we match you to your company workspace.'
+              ? 'Use your work email. It is how we match you to your company workspace.'
               : 'Sign in to pick up where your pipeline left off.'
           }}
         </p>
@@ -223,7 +223,7 @@ const POINTS = [
   },
   {
     title: 'Send it anywhere',
-    body: 'A warehouse, an ad platform, a webhook — a pipe per destination.',
+    body: 'A warehouse, an ad platform, a webhook. One pipe per destination.',
     icon: 'M5 12h14m-6-6 6 6-6 6'
   }
 ]

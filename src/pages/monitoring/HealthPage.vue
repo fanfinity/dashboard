@@ -112,6 +112,7 @@
 </template>
 
 <script setup>
+import { NOT_KNOWN } from '@/lib/emptyValue'
 import { computed, onMounted, ref } from 'vue'
 import CardPanel from '@/components/ui/CardPanel.vue'
 import EmptyState from '@/components/ui/EmptyState.vue'
@@ -142,7 +143,7 @@ const loaded = ref(false)
 const showSkeleton = computed(() => loading.value && !loaded.value)
 
 const subtitle = computed(() =>
-  updatedAtLabel.value === '—'
+  updatedAtLabel.value === NOT_KNOWN
     ? 'Queue depth and worker checks across the pipeline.'
     : `Queue depth and worker checks · updated ${updatedAtLabel.value}`
 )

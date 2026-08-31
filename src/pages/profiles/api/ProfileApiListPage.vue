@@ -322,7 +322,7 @@ function clearFilters() {
 function notifyLocal(message) {
   $q.notify({
     message,
-    caption: 'Local preview only — no backend is connected yet.',
+    caption: 'Local preview only. No backend is connected yet.',
     color: 'dark',
     timeout: 2500
   })
@@ -360,7 +360,7 @@ const toggleMessage = computed(() => {
   const row = toggleTarget.value
   if (!row) return ''
   return row.isEnabled
-    ? `“${row.name}” stops answering at ${row.path} straight away — callers get nothing back until it is enabled again.`
+    ? `“${row.name}” stops answering at ${row.path} straight away, and callers get nothing back until it is enabled again.`
     : `“${row.name}” starts answering at ${row.path} again straight away.`
 })
 
@@ -397,7 +397,7 @@ async function copyValue({ label, value }) {
   try {
     await navigator.clipboard.writeText(value)
   } catch {
-    message = `Couldn't copy the ${label.toLowerCase()} — select it and copy by hand.`
+    message = `Couldn't copy the ${label.toLowerCase()} . Select it and copy by hand.`
   }
   $q.notify({ message, color: 'dark', timeout: 2500 })
 }

@@ -34,7 +34,7 @@
           <StatusBadge
             v-if="fn.templateVersion < fn.latestTemplateVersion"
             tone="brand"
-            label="New default available — reset to upgrade"
+            label="New default available. Reset to upgrade"
           />
           <span class="ml-auto flex items-center gap-2">
             <button
@@ -89,7 +89,7 @@
                 {{ busy[fn.functionId] === 'test' ? 'Running…' : 'Run test' }}
               </button>
               <span class="text-xs text-subtle">
-                Runs in your browser only — nothing is sent to Jitsu.
+                Runs in your browser only. Nothing is sent to Jitsu.
               </span>
             </div>
 
@@ -136,7 +136,7 @@
 
       <p class="text-xs text-subtle">
         These functions also appear in the Jitsu console, linked to this pipe's
-        connection — edits made there show up here and vice versa.
+        connection, so edits made there show up here and vice versa.
       </p>
     </div>
   </CardPanel>
@@ -207,7 +207,7 @@ async function saveFunction(fn) {
   busy[fn.functionId] = 'save'
   try {
     await save(props.pipelineId, fn.functionId, drafts[fn.functionId])
-    notify(`${fn.name} saved — live on this pipe immediately.`)
+    notify(`${fn.name} saved. Live on this pipe immediately.`)
   } catch (e) {
     notify(`Couldn't save ${fn.name}: ${e?.message || 'request failed'}`)
   } finally {

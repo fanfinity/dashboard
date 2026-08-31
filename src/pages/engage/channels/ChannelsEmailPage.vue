@@ -328,7 +328,7 @@ function select(row) {
 function notifyLocal(message) {
   $q.notify({
     message,
-    caption: 'Local preview only — no backend is connected yet.',
+    caption: 'Local preview only. No backend is connected yet.',
     color: 'dark',
     timeout: 2500
   })

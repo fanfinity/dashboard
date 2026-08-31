@@ -108,7 +108,7 @@
             <p class="mt-0.5 text-xs text-subtle"
               >Invited by {{ invite.invitedByName }} on
               {{ formatDate(invite.invitedAt) }} · expires
-              {{ formatDate(invite.expiresAt) }}</p
+              {{ formatDate(invite.expiresAt, NOT_SET) }}</p
             >
           </div>
 
@@ -125,6 +125,7 @@
 </template>
 
 <script setup>
+import { NOT_SET } from '@/lib/emptyValue'
 import { computed, ref } from 'vue'
 import DataTable from '@/components/ui/DataTable.vue'
 import CardPanel from '@/components/ui/CardPanel.vue'

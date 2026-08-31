@@ -69,7 +69,7 @@
       </div>
 
       <template #footer>
-        <p class="text-xs text-subtle">Read-only — demo data.</p>
+        <p class="text-xs text-subtle">Read-only demo data.</p>
         <button
           v-close-popup
           class="rounded-lg border border-line2 bg-white px-3 py-1.5 text-sm font-medium text-brand hover:bg-fill"
@@ -82,6 +82,7 @@
 </template>
 
 <script setup>
+import { NEVER } from '@/lib/emptyValue'
 import { computed } from 'vue'
 import CardPanel from '@/components/ui/CardPanel.vue'
 import DefinitionList from '@/components/ui/DefinitionList.vue'
@@ -181,14 +182,14 @@ const facts = computed(() => {
       value: formatCount(j.exitedCount),
       hint: 'Left the entry audience, or a branch sent them out.'
     },
-    { label: 'Launched', value: formatDateTime(j.launchedAt) },
+    { label: 'Launched', value: formatDateTime(j.launchedAt, NEVER) },
     // Only ever set on a journey that reached that state — a row of em dashes
     // for the states it never entered is noise, not information.
     ...(j.pausedAt
-      ? [{ label: 'Paused', value: formatDateTime(j.pausedAt) }]
+      ? [{ label: 'Paused', value: formatDateTime(j.pausedAt, NEVER) }]
       : []),
     ...(j.archivedAt
-      ? [{ label: 'Archived', value: formatDateTime(j.archivedAt) }]
+      ? [{ label: 'Archived', value: formatDateTime(j.archivedAt, NEVER) }]
       : []),
     { label: 'Created', value: formatDateTime(j.createdAt) },
     { label: 'Last updated', value: formatDateTime(j.updatedAt) },

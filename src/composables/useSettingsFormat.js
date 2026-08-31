@@ -17,9 +17,10 @@
  * @param {number|null|undefined} n
  * @returns {string}
  */
+import { NOT_KNOWN, NOT_SET } from '@/lib/emptyValue'
 export function formatCount(n) {
   const value = Number(n)
-  if (!Number.isFinite(value)) return '—'
+  if (!Number.isFinite(value)) return NOT_KNOWN
   return value.toLocaleString('en-GB')
 }
 
@@ -29,8 +30,8 @@ export function formatCount(n) {
  * @param {string|null|undefined} iso
  * @returns {string}
  */
-export function formatDate(iso) {
-  if (!iso) return '—'
+export function formatDate(iso, fallback = NOT_KNOWN) {
+  if (!iso) return fallback
   const d = new Date(iso)
   if (Number.isNaN(d.getTime())) return String(iso)
   return d.toLocaleDateString('en-GB', {
@@ -47,8 +48,8 @@ export function formatDate(iso) {
  * @param {string|null|undefined} iso
  * @returns {string}
  */
-export function formatDateTime(iso) {
-  if (!iso) return '—'
+export function formatDateTime(iso, fallback = NOT_KNOWN) {
+  if (!iso) return fallback
   const d = new Date(iso)
   if (Number.isNaN(d.getTime())) return String(iso)
   const time = d.toLocaleTimeString('en-GB', {
@@ -68,7 +69,7 @@ export function formatDateTime(iso) {
  */
 export function formatDays(days) {
   const value = Number(days)
-  if (!Number.isFinite(value)) return '—'
+  if (!Number.isFinite(value)) return NOT_KNOWN
   return `${formatCount(value)} day${value === 1 ? '' : 's'}`
 }
 
@@ -101,7 +102,7 @@ export function hasRevealablePreview(preview) {
  * @returns {string}
  */
 export function maskSecret(preview, revealed) {
-  if (!preview) return '—'
+  if (!preview) return NOT_SET
   const value = String(preview)
   if (!hasRevealablePreview(value)) return MASK
   if (revealed) return value

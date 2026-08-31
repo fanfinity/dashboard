@@ -188,6 +188,7 @@
 </template>
 
 <script setup>
+import { NEVER } from '@/lib/emptyValue'
 import { computed, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useQuasar } from 'quasar'
@@ -276,7 +277,7 @@ const rows = computed(() =>
       keyLabel: model.identifierColumn
         ? `keyed on ${model.identifierColumn}`
         : 'no identifier column',
-      refreshedLabel: formatDateTime(model.lastRefreshedAt),
+      refreshedLabel: formatDateTime(model.lastRefreshedAt, NEVER),
       refreshStatusLabel:
         model.lastRefreshMessage || refreshStatusLabel(model.lastRefreshStatus),
       usedByLabel: `${formatCount(attributes)} attribute${attributes === 1 ? '' : 's'}`,
@@ -371,7 +372,7 @@ const emptyTitle = computed(() =>
 const emptyDescription = computed(() =>
   models.value.length
     ? 'Try a different search term, or switch back to the All tab.'
-    : 'A model turns a warehouse table into something the fan graph can read — orders, season tickets, turnstile scans.'
+    : 'A model turns a warehouse table into something the fan graph can read: orders, season tickets, turnstile scans.'
 )
 
 function clearFilters() {
@@ -383,7 +384,7 @@ function clearFilters() {
 function notifyLocal(message) {
   $q.notify({
     message,
-    caption: 'Local preview only — no backend is connected yet.',
+    caption: 'Local preview only. No backend is connected yet.',
     color: 'dark',
     timeout: 2500
   })

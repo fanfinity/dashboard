@@ -52,7 +52,7 @@
                 >{{ line }}</li
               >
             </ul>
-            <span v-if="!conditionLines.length" class="text-subtle">—</span>
+            <span v-if="!conditionLines.length" class="text-subtle">None</span>
           </template>
 
           <template #value-feeds>
@@ -63,14 +63,14 @@
                 class="rounded bg-fill px-1.5 py-0.5 text-xs text-muted"
                 >{{ s.profileDestinationName }}</span
               >
-              <span v-if="!syncs.length" class="text-subtle">—</span>
+              <span v-if="!syncs.length" class="text-subtle">None</span>
             </div>
           </template>
         </DefinitionList>
       </div>
 
       <template #footer>
-        <p class="text-xs text-subtle">Read-only — demo data.</p>
+        <p class="text-xs text-subtle">Read-only demo data.</p>
         <button
           v-close-popup
           class="rounded-lg border border-line2 bg-white px-3 py-1.5 text-sm font-medium text-brand hover:bg-fill"
@@ -83,6 +83,7 @@
 </template>
 
 <script setup>
+import { NEVER } from '@/lib/emptyValue'
 import { computed } from 'vue'
 import CardPanel from '@/components/ui/CardPanel.vue'
 import DefinitionList from '@/components/ui/DefinitionList.vue'
@@ -171,7 +172,7 @@ const facts = computed(() => {
       value: conditionLines.value.length ? conditionLines.value : null,
       hint: conditionLines.value.length
         ? 'All conditions must match.'
-        : 'No conditions — every resolved profile is a member.'
+        : 'No conditions. Every resolved profile is a member.'
     },
     {
       label: 'Feeds',
@@ -181,7 +182,10 @@ const facts = computed(() => {
         : 'No live profile sync draws from this audience yet.'
     },
     { label: 'Attached goals', value: pluralize(a.goalCount ?? 0, 'goal') },
-    { label: 'Last evaluated', value: formatDateTime(a.lastEvaluatedAt) },
+    {
+      label: 'Last evaluated',
+      value: formatDateTime(a.lastEvaluatedAt, NEVER)
+    },
     { label: 'Created', value: formatDateTime(a.createdAt) },
     { label: 'Last updated', value: formatDateTime(a.updatedAt) },
     { label: 'Config version', value: `v${a.version}` }

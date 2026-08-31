@@ -74,7 +74,7 @@ const selectValue = computed(() => (isCustom.value ? CUSTOM : props.modelValue))
 const presetHint = computed(() =>
   isCustom.value || props.modelValue
     ? 'Runs on the workspace clock, which is UTC.'
-    : 'Nothing is scheduled — attributes over this model recompute only when you refresh it.'
+    : 'Nothing is scheduled. Attributes over this model recompute only when you refresh it.'
 )
 
 function onPreset(value) {

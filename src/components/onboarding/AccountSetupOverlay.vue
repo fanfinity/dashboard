@@ -13,7 +13,7 @@
     class="fixed inset-0 z-[9999] grid place-items-center overflow-hidden bg-sfere-ink"
     role="status"
     aria-live="polite"
-    :aria-label="`Setting up your account — ${activeStep?.label ?? 'finishing'}`"
+    :aria-label="`Setting up your account: ${activeStep?.label ?? 'finishing'}`"
   >
     <!-- Two drifting brand glows. Blurred radial gradients rather than images:
          img-src is 'self' and assetsInlineLimit is 0, so a decorative PNG would

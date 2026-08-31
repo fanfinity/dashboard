@@ -10,7 +10,7 @@
       v-else
       tone="neutral"
       label="Custom"
-      title="Hand-configured — not created from a template"
+      title="Hand-configured, not created from a template"
     />
     <StatusBadge
       v-if="upgrade"

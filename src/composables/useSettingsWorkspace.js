@@ -1,3 +1,4 @@
+import { NOT_KNOWN } from '@/lib/emptyValue'
 import { computed } from 'vue'
 import { useMockResource } from '@/composables/useMockResource'
 
@@ -34,7 +35,7 @@ export function memberRole(role) {
   return (
     MEMBER_ROLES.find(r => r.value === role) ?? {
       value: role,
-      label: String(role ?? '—'),
+      label: String(role ?? NOT_KNOWN),
       variant: 'neutral'
     }
   )

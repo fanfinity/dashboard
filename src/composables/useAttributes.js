@@ -1,3 +1,4 @@
+import { NOT_KNOWN, NOT_SET } from '@/lib/emptyValue'
 import { useMockResource } from '@/composables/useMockResource'
 
 /**
@@ -63,7 +64,7 @@ export const DIMENSION_TYPES = [
  * @returns {string}
  */
 export function algorithmLabel(algorithm) {
-  if (!algorithm) return '—'
+  if (!algorithm) return NOT_SET
   return ALGORITHMS.find(a => a.value === algorithm)?.label ?? algorithm
 }
 
@@ -87,7 +88,7 @@ export function attributeSourceLabel(attribute) {
  */
 export function formatCount(n) {
   const value = Number(n)
-  if (!Number.isFinite(value)) return '—'
+  if (!Number.isFinite(value)) return NOT_KNOWN
   return value.toLocaleString('en-GB')
 }
 
@@ -100,8 +101,8 @@ export function formatCount(n) {
  * @param {string|null|undefined} iso
  * @returns {string}
  */
-export function formatDate(iso) {
-  if (!iso) return '—'
+export function formatDate(iso, fallback = NOT_KNOWN) {
+  if (!iso) return fallback
   const d = new Date(iso)
   if (Number.isNaN(d.getTime())) return String(iso)
   return d.toLocaleDateString('en-GB', {
@@ -118,8 +119,8 @@ export function formatDate(iso) {
  * @param {string|null|undefined} iso
  * @returns {string}
  */
-export function formatDateTime(iso) {
-  if (!iso) return '—'
+export function formatDateTime(iso, fallback = NOT_KNOWN) {
+  if (!iso) return fallback
   const d = new Date(iso)
   if (Number.isNaN(d.getTime())) return String(iso)
   return `${formatDate(iso)}, ${d.toLocaleTimeString('en-GB', {

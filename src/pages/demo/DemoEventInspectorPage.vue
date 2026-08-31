@@ -2,7 +2,7 @@
   <q-page class="p-6">
     <PageHeader
       title="Demo Event Inspector"
-      subtitle="Every event the Demo Store fires, read back exactly as the pipeline would see it — raw payload, source, matched pipes and delivery."
+      subtitle="Every event the Demo Store fires, read back exactly as the pipeline would see it: raw payload, source, matched pipes and delivery."
     >
       <template #actions>
         <ToolbarSearch v-model="query" placeholder="Search events..." />
@@ -138,7 +138,7 @@
               <EmptyState
                 v-else
                 title="No events yet"
-                description="Open the Demo Store and fire an event — it appears here immediately, with its payload and its routing. Or replay one of the recent events on the right."
+                description="Open the Demo Store and fire an event. It appears here immediately, with its payload and its routing. Or replay one of the recent events on the right."
               >
                 <template #cta>
                   <button
@@ -174,7 +174,7 @@
 
             <p class="text-xs leading-5 text-muted">
               Events already collected on this account. Replaying one copies it
-              into the log above with a fresh timestamp — it is not re-ingested.
+              into the log above with a fresh timestamp; it is not re-ingested.
             </p>
 
             <LoadingState
@@ -374,7 +374,7 @@ function replay(sample) {
   selectedId.value = event.id
   $q.notify({
     message: `${event.eventName} replayed`,
-    caption: 'Simulated locally — nothing was ingested.',
+    caption: 'Simulated locally. Nothing was ingested.',
     color: 'dark',
     timeout: 2000
   })
@@ -396,7 +396,7 @@ async function copyValue({ label, value }) {
   try {
     await navigator.clipboard.writeText(value)
   } catch {
-    message = `Couldn't copy the ${label.toLowerCase()} — select it and copy by hand.`
+    message = `Couldn't copy the ${label.toLowerCase()}. Select it and copy by hand.`
   }
   $q.notify({ message, color: 'dark', timeout: 2500 })
 }
