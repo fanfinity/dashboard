@@ -33,7 +33,7 @@
           <div v-if="!connected" class="flex flex-wrap items-center gap-2">
             <button
               class="flex h-8 items-center gap-1.5 rounded-lg bg-brand px-3 text-xs font-medium text-white shadow-sm hover:opacity-90 disabled:opacity-40"
-              :disabled="!zidAppUrl"
+              :disabled="!authorizeHref"
               @click="openOAuth"
             >
               Authorize with Zid
@@ -47,6 +47,23 @@
             </button>
           </div>
           <p v-if="verifyMsg" class="text-xs text-amber-600">{{ verifyMsg }}</p>
+          <!-- Says which of the two ways the button is unusable, because they
+               need different people: an unset env var is ours to fix, a source
+               with no store id is the record's. -->
+          <p
+            v-else-if="!connected && !authorizeHref"
+            class="text-xs text-muted"
+          >
+            No authorization link is available for this source yet.
+            <template v-if="!source.storeId"
+              >It has no Zid store id on record.</template
+            >
+            <template v-else
+              >The backend did not return one and
+              <code class="font-sfere-mono">VITE_ZID_APP_URL</code> is
+              unset.</template
+            >
+          </p>
         </div>
       </div>
 
@@ -125,15 +142,15 @@ import CardPanel from '@/components/ui/CardPanel.vue'
 import StatusBadge from '@/components/ui/StatusBadge.vue'
 import { useSourcesAPI } from '@/composables/useSourcesAPI'
 import { useSourceSyncAPI } from '@/composables/useSourceSyncAPI'
+import { legacyAuthorizeUrl, openAuthorize } from '@/lib/zidAuthorize'
 
 const props = defineProps({
-  source: { type: Object, required: true },
-  zidAppUrl: { type: String, default: '' }
+  source: { type: Object, required: true }
 })
 
 const emit = defineEmits(['complete'])
 
-const { connectZid, isZidConnected } = useSourcesAPI()
+const { connectZid, zidStatus } = useSourcesAPI()
 const { triggerSync } = useSourceSyncAPI()
 
 const webhooksKey = computed(() => `zid_webhooks_${props.source.id}`)
@@ -163,13 +180,28 @@ const visible = computed(
     !step3Done.value
 )
 
+// The start code the backend last minted for this source. Single-use, so it is
+// re-read after every open rather than held for the life of the panel.
+const backendAuthorizeUrl = ref('')
+
+// The backend's signed start hop when PR #16 is behind this, the legacy
+// `/redirect-url` entry otherwise. See src/lib/zidAuthorize.js for why the first
+// is not reconstructable in the browser and what the second gives up.
+const authorizeHref = computed(
+  () => backendAuthorizeUrl.value || legacyAuthorizeUrl(props.source.storeId)
+)
+
 async function refreshConnected() {
   checking.value = true
   try {
-    connected.value = await isZidConnected(props.source.id)
+    const status = await zidStatus(props.source.id)
+    connected.value = status.connected
+    backendAuthorizeUrl.value = status.authorizeUrl
   } catch {
     // A failed status check reads as "not connected yet" — the merchant just
-    // stays on the authorize step rather than seeing an error.
+    // stays on the authorize step rather than seeing an error. The link is left
+    // alone: a status call that failed says nothing about the last URL's
+    // validity, and clearing it would disable the only button that helps.
     connected.value = false
   } finally {
     checking.value = false
@@ -178,9 +210,12 @@ async function refreshConnected() {
 }
 
 function openOAuth() {
-  if (!props.zidAppUrl) return
-  const url = `${props.zidAppUrl.replace(/\/$/, '')}/redirect-url?store_id=${props.source.storeId}`
-  window.open(url, '_blank', 'noopener,noreferrer')
+  // Opened straight from the click. Minting a fresh code first would put an
+  // await between the gesture and the open, which popup blockers stop — so the
+  // held URL is spent now and a replacement is fetched behind it.
+  if (!openAuthorize(authorizeHref.value)) return
+  backendAuthorizeUrl.value = ''
+  refreshConnected()
 }
 
 // Verify against the backend that the store actually finished OAuth (the

@@ -2,7 +2,7 @@
   {
     "id": "zid",
     "name": "Zid",
-    "description": "Connect a Zid store to sync its customers, orders and events. Enter your Zid store ID below after picking this template.",
+    "description": "Connect a Zid store to sync its customers, orders and events. Authorize the store below, and we take its id from the grant.",
     "sourceType": "cloud_app",
     "version": "2026-08-22",
     "icon": "shopify",

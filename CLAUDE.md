@@ -308,6 +308,59 @@ nothing lit, rather than the card appearing fully lit. See the provisioning tabl
 architecture for which source types this applies to; the panel, the overlay and the CTA all
 follow the lookup rather than the type.
 
+**A Zid source starts with an authorization, and it is the first thing on the create form.**
+`ZidAuthorizePanel.vue` sits above Details on step 2, in the same numbered-step grammar as
+`ZidSetupWizard` so the merchant reads one continuous 1-2-3, and it **gates the submit**: Create
+is disabled until the store has granted access, because an unauthorised store gives a source
+that can read nothing. It is the only disabled submit in the flow, and it is disabled because
+the click could not succeed — the backend answers `400 store_id is required for Zid sources`.
+Every other problem on this form is a validation message on submit, which is the house rule, so
+the sentence beside the button names the missing step rather than leaving a dead control.
+
+**It asks for a grant, not for a store id.** The id is still required by the backend, but it is
+read off `…/zid-connections` rather than typed — an empty `store_id` is therefore exactly "not
+authorised yet", which is the single signal `canSubmit` reads. The free-text "Zid store ID" box
+this replaced asked for an id nothing checked, so a source could be built against a store that
+had never heard of us and only say so three screens later. One authorised store is used
+silently; two or more render as name pills, since picking between real stores is a genuine
+question and typing an id was never the way to answer it. **`apiMissing` is the one branch that
+still asks**: with no `…/zid-connections` there is nothing to read the id off and no way to
+confirm the grant, and the backend still refuses a Zid source without one.
+
+**It is a field, not a fourth step, and that was a considered reversal.** Making it a step
+looked tidier and behaved worse: the "An online store" intent carries Zid _and_ Shopify, so the
+template is settled halfway down step 2 — and a stepper that grows a rung and walks you
+backwards the moment you pick Zid is a wizard changing shape under you. The stepper stays three
+rungs for every template.
+
+**The authorization URL is fetched, never built.** Both `…/zid-authorize` and `zid-status`'s
+`authorize_url` return the same start hop, `/api/zid/start?start={code}`: it consumes a
+single-use code and sets an HMAC-signed first-party cookie carrying the `account_id`. That
+cookie is load-bearing — Zid drops the URL `state` for a merchant who is not already signed in,
+so it is the only thing telling the callback which account finished — and the backend trusts no
+client-supplied account id, so a URL assembled in the browser cannot be account-linked. Each is
+spent once opened. `src/lib/zidAuthorize.js` holds this, plus the pre-PR-#16
+`{VITE_ZID_APP_URL}/redirect-url?store_id=…` fallback: measured against `api-staging`,
+`/redirect-url` answers 302 there today while all three PR #16 routes answer 404, so preferring
+the backend's URL means the signed flow switches itself on when the PR deploys. The fallback is
+a real downgrade, not a synonym — it stores tokens against the store but links it to no account,
+so it never appears in `zid-connections`. Always `window.open`, never a fetch: `connect-src`
+names the Sfere hosts only, and the whole point is that the merchant signs in on Zid's domain.
+
+**`ZidSetupWizard.vue` owns what is left, and on step 3 it sits _above_ `ProvisionedPipePanel`**
+— the one deliberate exception to "lead with what the backend already did", and an exception
+about truth rather than taste. Its remaining steps are register webhooks → run first sync, and
+the provisioned chain is **dry** until both have run, so showing the pipe first would say
+"you're live" to someone whose store has delivered nothing. For the same reason
+`SourceProvisionedOverlay` is **suppressed for Zid**: two seconds of the chain lighting up would
+be the loudest claim on the screen and the least true. A store authorized on the form renders
+the wizard's step 1 already ticked, so the merchant lands on the two genuinely left. It is the
+same component the source detail page renders, for the reason `SourceInstallGuide` is shared.
+
+**Neither surface can observe the grant, which is why "I've authorized" exists.** Zid's callback
+returns the merchant to _Zid's_ dashboard, not to this tab, so nothing here sees the handshake
+complete — every authorize button is paired with a control that re-reads the backend.
+
 `SourceInstallGuide.vue` renders step 3 _and_ the source detail page's "Setup instructions" tab —
 one component, two entry points, because someone who closed the tab mid-setup wants exactly the
 same page a week later. Its snippets live in `src/lib/sourceInstallSnippets.js` for the reason
@@ -846,8 +899,9 @@ exists to prevent.`sendMutation()`and`fetchCollection()`resolve`path` the same w
    **60/60** in the default local `mock` mode. So the backend PR merges first, staging deploys,
    then this. Do **not** buy a green run by adding a `404` pattern to `IGNORED_CONSOLE`.
 
-   **Wired to a drafted endpoint that does not exist yet**: `useConnectorCatalog()`
-   (`/v1/connectors`, `/v1/connectors/{id}/spec`). Everything else has no `api` at all.
+   **`useConnectorCatalog()` (`/v1/connectors`, `/v1/connectors/{id}/spec`) is in the
+   contract too** — it used to be the one reader wired to a purely drafted endpoint, and PR
+   #16's spec carries both. Everything else has no `api` at all.
 
    **Two write-once plaintexts** live behind these: `ApiTokenCreated.plaintext` and
    `WriteKeyCreated.plaintext`. The create response is the only time the value exists — every
@@ -900,6 +954,22 @@ exists to prevent.`sendMutation()`and`fetchCollection()`resolve`path` the same w
    | `zid`          | `zid`                                | `"{name} — ClickHouse"`, db `store_{storeId}_{account8}` | `"{name} → ClickHouse"` |
    | `event_stream` | `ios-sdk`, `android-sdk`, `http-api` | none                                                     | none                    |
    | `cloud_app`    | `shopify`, `stripe`                  | none                                                     | none                    |
+
+   **That table describes `POST …/sources/provisioned`, not `POST …/sources`.** The agreed
+   contract (backend PR #16) splits the two: the plain create makes "the row, its Jitsu site,
+   and a first write key" and **no destination, pipeline or ClickHouse database**, while the
+   full-stack create moved to `…/sources/provisioned` — which the backend labels **legacy**.
+   **`useSourcesAPI().create()` therefore posts to `…/sources/provisioned`, deliberately.** On
+   the plain endpoint a `web` or `zid` create yields no pipeline, `useSourceProvisioning()`
+   settles on `state: 'none'`, and step 3's `ProvisionedPipePanel` and
+   `SourceProvisionedOverlay` render nothing while the primary action reverts to "Add a
+   destination" — the hand-build that flow exists to remove. That failure is **silent**: no
+   console error, no `ErrorState`, so `pnpm smoke:dist` stays green and only a human reading
+   step 3 would catch it. Since the backend calls the endpoint legacy, this buys time rather
+   than settling it: if it goes, step 3 needs a real answer (create then provision in two
+   calls, or a narrowed reveal) before anything drops back to the plain create. Reasoning and
+   exit condition are in `create()`'s doc comment; the full check is
+   `docs/contract-check-pr16.md`.
 
    All of it is **synchronous** — both records are present on the very next read, so nothing
    needs polling. Two consequences. First, a `web` or `zid` user finishes all three setup steps
@@ -1093,8 +1163,24 @@ sends no `tenantId` and needs no `VITE_FIREBASE_*` config.
 ## Environment / secrets
 
 Config lives in a gitignored `.env` at the project root, and it is short on purpose:
-`VITE_API_BASE`, the two smoke credentials, and the two build-identity stamps. See
-`.env.example`.
+`VITE_API_BASE`, `VITE_ZID_APP_URL`, the two smoke credentials, and the two build-identity
+stamps. See `.env.example`.
+
+`VITE_ZID_APP_URL` is the host serving `/redirect-url`, the page a merchant lands on to grant
+the Sfere app access to their Zid store. It is **the backend** — the same host as
+`VITE_API_BASE` on staging, not Zid and not a tunnel; it used to be an ngrok forward to the
+old GCF zid-app (client 7241) and is now the staging backend's own route against the new Zid
+app (client 7003), so it is not an exception to the rule below. **`src/lib/zidAuthorize.js` is
+the one file that reads it**, and it reads it only for the **pre-PR-#16 fallback**: the
+authorization URL is fetched from `…/zid-authorize` or `zid-status` where those exist, and the
+var is what the fallback needs because a legacy `/redirect-url` hop carries no account context.
+Every path **opens** the URL with `window.open` and never fetches it, which is why
+`connect-src` does not name it: the whole point is that the merchant signs in on Zid's own
+domain. There is **no in-code default for the var** — with no backend URL and no
+`VITE_ZID_APP_URL`, `Authorize with Zid` is disabled, because a button that opens
+`undefined/redirect-url` is worse than one that visibly cannot run yet. That is exactly how it
+shipped for a while: the wizard was built, the var never was, so step 1 was inert in every
+environment.
 
 **A var naming a non-Sfere host does not belong here.** The three `VITE_FIREBASE_*` values are
 gone with client-side sign-in, and `EVENTS_API_KEY`, `VITE_JITSU_HOST`, `VITE_JITSU_WRITE_KEY`,

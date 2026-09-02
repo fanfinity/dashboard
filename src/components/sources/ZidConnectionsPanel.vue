@@ -2,7 +2,7 @@
   <div class="flex flex-col gap-4">
     <div class="flex flex-wrap items-start justify-between gap-3">
       <p class="max-w-xl text-sm text-muted">
-        Zid stores that have authorised the Sfere app. Authorising is the store
+        Zid stores that have authorized the Sfere app. Authorizing is the store
         owner's step; creating a source against the store is yours, and one does
         not imply the other.
       </p>
@@ -12,7 +12,7 @@
         variant="secondary"
         :loading="authorizing"
         @click="startAuthorize"
-        >Authorise a store</SfereButton
+        >Authorize a store</SfereButton
       >
     </div>
 
@@ -39,8 +39,8 @@
         }}</span>
       </template>
 
-      <!-- The interesting column. An authorised store with no source means
-           someone finished the authorisation and nobody built the source — a
+      <!-- The interesting column. An authorized store with no source means
+           someone finished the authorization and nobody built the source — a
            stalled setup that otherwise looks finished from the store's side. -->
       <template #cell-source="{ row }">
         <router-link
@@ -73,15 +73,15 @@
 
       <template #empty>
         <EmptyState
-          title="No Zid stores have authorised yet"
-          description="A store owner authorises the Sfere app from their Zid dashboard. Once they have, the store appears here and you can create a source against it."
+          title="No Zid stores have authorized yet"
+          description="A store owner authorizes the Sfere app from their Zid dashboard. Once they have, the store appears here and you can create a source against it."
         >
           <template #cta>
             <SfereButton
               size="sm"
               :loading="authorizing"
               @click="startAuthorize"
-              >Get the authorisation link</SfereButton
+              >Get the authorization link</SfereButton
             >
           </template>
         </EmptyState>
@@ -105,7 +105,7 @@ import { formatDateTime } from '@/composables/useSources'
 // PR #16.
 //
 // A tab on /sources rather than a screen, for the same reason the connector
-// catalog is: authorising a store is a step in adding a source, not something you
+// catalog is: authorizing a store is a step in adding a source, not something you
 // manage on its own.
 const props = defineProps({
   /** The account's sources, so a store can be joined to the one built from it. */
@@ -120,7 +120,7 @@ const authorizing = ref(false)
 
 const columns = [
   { key: 'name', label: 'Store', sortable: true },
-  { key: 'connectedAt', label: 'Authorised', sortable: true },
+  { key: 'connectedAt', label: 'Authorized', sortable: true },
   { key: 'source', label: 'Source' },
   { key: 'actions', label: '', align: 'right', width: '170px' }
 ]
@@ -151,8 +151,8 @@ async function startAuthorize() {
     if (!res.ok) {
       $q.notify({
         message: res.apiMissing
-          ? 'No authorisation link available.'
-          : (res.error ?? 'Could not get an authorisation link.'),
+          ? 'No authorization link available.'
+          : (res.error ?? 'Could not get an authorization link.'),
         caption: res.apiMissing
           ? 'Demo data mode has no live OAuth to start. Switch Settings → Data source to Real API.'
           : undefined,

@@ -3,8 +3,8 @@ import { currentAccount } from '@/composables/useMe'
 import { useMockResource, fetchCollection } from '@/composables/useMockResource'
 
 /**
- * Zid stores that have authorised the Sfere app, and the URL that starts an
- * authorisation. Both live as of backend PR #16:
+ * Zid stores that have authorized the Sfere app, and the URL that starts an
+ * authorization. Both live as of backend PR #16:
  *
  *   GET …/zid-connections
  *   GET …/zid-authorize
@@ -12,16 +12,16 @@ import { useMockResource, fetchCollection } from '@/composables/useMockResource'
  * ## Why this is a tab on /sources and not a screen
  *
  * Same reasoning as the connector catalog: a Zid connection is a step in adding
- * a source, not a thing you manage on its own. A store authorises, then a source
+ * a source, not a thing you manage on its own. A store authorizes, then a source
  * is created against it — so the list belongs beside the streams it produces.
  *
- * ## An authorised store is not a source
+ * ## An authorized store is not a source
  *
  * `ZidConnection` is `{store_id, name, domain?, connected_at}`. There is no
  * source id on it and no source-to-store link on the `Source` record either
  * beyond `store_id`, so the join is done here by matching on `store_id`. A store
  * with no source is the interesting row on this tab — it means someone finished
- * the authorisation and nobody built the source, which is a stalled setup rather
+ * the authorization and nobody built the source, which is a stalled setup rather
  * than a completed one.
  *
  * ## `getZidAuthorizeUrl` returns a URL to send someone to, not a fetch target
@@ -62,7 +62,7 @@ export function useZidConnections() {
   })
 
   /**
-   * The URL that starts an authorisation. Read on demand rather than on mount:
+   * The URL that starts an authorization. Read on demand rather than on mount:
    * it is only needed when someone clicks, and a URL fetched early may have gone
    * stale by the time it is used.
    *
@@ -71,7 +71,7 @@ export function useZidConnections() {
   async function authorizeUrl() {
     const res = await fetchCollection('zid-connections', {
       // No fixture equivalent: Demo mode has stores but no live OAuth to start,
-      // and a fake authorise URL is worse than an honest "not in Demo mode".
+      // and a fake authorize URL is worse than an honest "not in Demo mode".
       select: () => null,
       api: {
         path: () =>
