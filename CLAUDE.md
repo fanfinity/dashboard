@@ -200,7 +200,7 @@ not-allowed }`, so `disabled:opacity-45` and `disabled:cursor-not-allowed` are d
    `.sfere-flush > p` for a container that already spaces its children with `gap`. There is
    deliberately **no blanket `p { margin: 0 }`**: stacked prose still wants its rhythm, and
    the smoke gate cannot see a spacing regression, so a global reset would be an unverifiable
-   change to all 58 screens at once.
+   change to all 49 screens at once.
 6. **`auto-fit` grid tracks measure a card at min-content and keep the answer.** An
    `auto-fit` track is min-content-sized in the first pass, and the min-content height of a
    `SelectableCard` — a #4 wrapping flex — at that width is enormous, so the row keeps it:
@@ -243,9 +243,23 @@ not-allowed }`, so `disabled:opacity-45` and `disabled:cursor-not-allowed` are d
 
 The house dialog surface is one string — `rounded-sfere-xl! border border-sfere-line
 bg-sfere-surface shadow-sfere-pop` — and a new dialog copies it rather than improvising.
-`PersonaQuestion` had `rounded-xl border-line2 bg-white shadow-lg`, of which two were visibly
+`PersonaQuestion` once had `rounded-xl border-line2 bg-white shadow-lg`, of which two were visibly
 wrong (the 12px radius above, and a tight neutral `shadow-lg` where every other dialog sits on the
 wide plum-tinted `shadow-sfere-pop`) and two resolved to the right values by luck.
+
+**`PersonaQuestion` is now the one deliberate exception, and it is dark.** It carries
+`rounded-sfere-xl! border border-sfere-hairline bg-sfere-ink shadow-sfere-ink-deep` — the same
+four slots, each swapped for its on-ink counterpart rather than left alone, since
+`shadow-sfere-pop` is plum-on-light and is invisible beneath a dark card. What earns the exception
+is that it is not a dialog in the sense the rule is about: every other one interrupts a task
+somebody chose to start, so it should be the quietest surface over the work it covers, whereas
+this is the first thing a new account sees and the only screen whose job is to feel like an
+arrival. Dark is how the brand does arrivals — sfere.io's hero, deployment band and footer are all
+`--color-sfere-ink`, and the token layer calls dark "a section treatment, not a theme" for exactly
+this. **The boundary is one screen**: a second dark dialog is a change worth arguing about, not a
+precedent already set, and every ordinary new dialog still copies the light string.
+`bg-sfere-ink` needs **no** important suffix — `.q-dialog__inner > div` sets radius, overflow and
+max-width and no background, checked against `quasar.css` rather than assumed.
 
 ## Screen manifest — routes are generated, not hand-written
 
@@ -270,9 +284,11 @@ page or `ComingSoonPanel`. `routes.js` throws at module load if a `group` has no
 
 **A screen's `parent` field is the back button.** `parent: { name, label }` names the screen
 this one drills down from, `routes.js` forwards it as `meta.parent`, and `PageHeader` renders
-`← <label>` above the `<h1>` — so all 23 sub-screens (`/x/new`, `/x/trash`, `/x/:id`) get one
-control in one place, and a page never hand-rolls a header nav button. That replaced seven of
-them on the detail and trash screens, plus a header `Cancel` or `All models` on every create page,
+`← <label>` above the `<h1>` — so all 15 sub-screens (`/x/new` and `/x/:id`) get one
+control in one place, and a page never hand-rolls a header nav button. It was 23 until the ten
+`/x/trash` screens — every one of which declared a parent — collapsed into one `/trash`, which is
+a top-level screen and has none. That replaced seven hand-rolled buttons on the detail and trash
+screens, plus a header `Cancel` or `All models` on every create page,
 which between them called the same trip four different things and were missing entirely from the
 rest; if you find yourself adding an "All sources" button to `#actions`, the manifest entry is
 what is missing. A create page's docked `StickyActionBar` "Back to X" is a **different**
@@ -287,6 +303,17 @@ every route `scripts/smoke.mjs` visits, so the case where the control matters mo
 history cannot answer; `routes.js` throws at module load if `parent.name` is not a screen, since
 a `router-link` to an unknown name logs the console warning smoke fails on. And **top-level
 screens have no `parent` on purpose** — the sidebar is their nav and their row is already lit.
+
+**The back control is bordered and filled at rest**, `variant="secondary"` rather than the
+`variant="ghost"` it shipped as. As a ghost it was bare text on the page background that only grew
+a surface on hover, so on all 15 sub-screens the one way back out of a drill-down did not look
+like anything you could press until the pointer happened to be over it — and on touch there is no
+"happened to be over it". Do not quieten it back down. The `-ml-4` went with the ghost and must
+not come back: that negative margin existed to pull ghost _padding_ off the left so the link's
+text lined up with the `<h1>`, and on a bordered pill it hangs the border into the gutter instead;
+it is `mb-2` now and nothing else. No instance class softens the weight or colour either —
+`font-medium` against the variant's own `font-semibold` is two layered utilities in one layer, so
+which wins is Tailwind's ordering rather than the order written in the template.
 
 This makes `PageHeader` the one route-aware component in the kit. It takes a `back` prop to
 override the manifest, or `null` to suppress the link on a screen that has a parent but should
@@ -307,6 +334,60 @@ template ids), the existing details form, then Install & confirm. **One page, th
 because the steps share state — the intent picks the template, the template names the source, and
 the created source is what the install guide needs a key from. Three routes would mean threading
 that through query params, and a reload mid-flow would land on step 3 with nothing to install.
+
+**Steps 1 and 2 now survive a reload, and that is a reversal.** This file and
+`SourceCreatePage.vue`'s own header comment used to defend the opposite — "a reload restarts the
+flow cleanly, which is the honest behaviour" — and it lost on what is actually being discarded.
+By the middle of step 2 someone has picked a platform, named the source, chosen a slug they had
+to think about, and possibly walked off to Zid's site and back; losing all of that to a refresh,
+or to a link opened in the same tab, is not clean, it is an unannounced undo.
+`src/composables/useSourceDraft.js` persists it: module singleton, `localStorage` key
+`sfere_source_draft`, shape `{ v, uid, intent, templateId, form, savedAt }`, following
+`useOnboarding.js` field for field — version mismatch discards rather than migrates, the record is
+uid-scoped so a shared machine does not hand the second person the first person's half-form, and
+nothing is written while signed out. `form` goes through a field whitelist rather than a spread,
+so a field added to the form later cannot leak into `localStorage` by accident. A restored
+`intent` is validated against the registry and a restored **coming-soon `templateId` is rejected**,
+or a draft taken before those templates were greyed out would rehydrate as a submittable Shopify
+form.
+
+**What the old argument was right about is step 3, and that exception survives intact: step 3 is
+never written.** `created.id` and the write key come out of the create response and exist exactly
+once — every later read of a key is masked, which is why `SecretRevealDialog` exists at all. A
+persisted step 3 would rehydrate as an install guide with no key to show, beside a "your pipeline
+is live" panel for a source the reader may not still own. Restore therefore runs after
+`await load()` (the template list has to exist before a template id means anything), the deep
+watcher writes only on steps 1–2, and the one-way `finished` flag is set **before** `clearDraft()`
+so a queued flush cannot resurrect the record it just cleared.
+
+**Shopify and Stripe are greyed out and unpickable, and "Taking payments" with them.**
+`COMING_SOON_TEMPLATE_IDS` in `src/config/sourceIntents.js` is the list, `isTemplateComingSoon()`
+and `isIntentComingSoon()` read it, and the intent flag is **derived from its templates** rather
+than authored twice — with a `length > 0` guard, since `connector` has an empty `templates` array
+and `[].every` would otherwise report it coming-soon. Neither has OAuth or connector wiring behind
+it, so a source created against either could never receive an event: the create would succeed, the
+install guide would have nothing to install, and the failure would be silent for as long as the
+person waited for data. Both render `:disabled` on a real `<button>` — out of the tab order, Enter
+and Space dead — marked by colour and a dashed border plus a `Coming soon` `StatusBadge`, **not**
+by `disabled:opacity-*`, which is a dead class everywhere in this repo (collision #2). Deleting
+the two entries from that array is the whole of switching them back on; there is no second list.
+
+**The "Change" affordance moved onto the stepper.** Step 2 used to carry a grey "Setting up X …
+[Change]" banner above the form, which is a second back button for a flow that has one.
+`SetupStepper` gained `navigableSteps` (default `[]`) and a `navigate` emit: a completed rung
+named in that list renders as a real `<button>`. `SourceCreatePage` passes `[0]` on step 2 and
+`[]` on step 3 — by step 3 a row exists in the backend, so walking back to the intent picker would
+offer to re-answer a question that has already been committed. The connector between rungs is a
+track plus an absolutely-positioned fill keyed on `current` so it replays per advance, with
+`motion-reduce:transition-none` and a scoped reduced-motion rule that hides the travelling dot
+outright, and an `animate` flag set after a double rAF so first paint is static rather than
+animating on arrival.
+
+**One debt marker on that page, and it is the only kit-class override in the flow.** Step 2's
+`StickyActionBar` Back button carries `class="bg-sfere-fill!"`, because `secondary` draws
+`#e5e5e5` on `#ffffff` and the bar it sits in is already `bg-sfere-surface`, so the button
+disappeared into it. **Delete that class the day a button variant ships with its own rest fill** —
+it is a stopgap on one instance, not a pattern, and there is a comment on the line saying so.
 
 **Step 3 leads with what the backend already did, not with homework.** For a `web` or `zid`
 source the create call also provisioned the ClickHouse destination and the pipe joining it, so
@@ -409,12 +490,23 @@ that closes it**; do not reconstruct the template from a slug or a local cache.
 
 The product backlog (54 screens, GitHub issues #16–#69) is scaffolded: every screen already
 exists as a stub page at its final path. Implementing one means **rewriting that file in place**,
-never creating a file and registering a route. The manifest itself is **58 screens** now — the
-backlog count is the issue count, not the route count, and the two have not matched since
-`/team`, `/billing` and the Functions screens were added outside it. It went 60 → 58 when Secrets
-and Authorizations became tabs on `/settings`; both old URLs still resolve, as **named** redirects
-in `routes.js` (a named link elsewhere in the app points at `{ name: 'secrets' }`, and an
-unresolved name logs the console warning smoke fails on).
+never creating a file and registering a route. The manifest itself is **49 screens** now — the
+backlog count is the issue count, not the route count, and the two stopped matching in both
+directions: `/team`, `/billing` and the Functions screens were added outside the issue list, and
+then two consolidations took routes back out. It went 60 → 58 when Secrets and Authorizations
+became tabs on `/settings`, and **58 → 49 when the ten per-module `/x/trash` screens became one
+`/trash`**. Every one of those old URLs still resolves, as **named** redirects in `routes.js` —
+`{ name: 'secrets' }`, `{ name: 'sources-trash' }` and the other ten — because a named link
+elsewhere in the app still points at them and an unresolved name logs the console warning smoke
+fails on. Ten of the redirects are new and the names are the reason they exist: the targets are
+plain `/trash`, `/trash?tab=destinations` and `/trash?tab=pipes`, which any of the old callers
+could have written as a path.
+
+**`/sources/trash` still wins over the `/sources/:id` child, and that was measured rather than
+assumed.** A throwaway vue-router 4 matcher with the exact pair resolved `/sources/trash` to the
+redirect even though the redirect is declared after the layout route — a static segment outranks
+a param regardless of order. There is a comment saying so in `routes.js`, so nobody moves the
+block "to be safe" and quietly changes something else.
 
 **Functions is the newest top-level section** (`/functions`, `/functions/new`, `/functions/:id`),
 sitting under Pipes because a function is what runs _on_ a pipe's events. Two things about it
@@ -457,6 +549,83 @@ entries are gone (60 → 58) and `routes.js` redirects both old URLs, keeping th
 `{ name: 'secrets' }` still resolves. Each tab is still gated on its own `features.js` key — the
 same switch that used to decide whether its route rendered `ComingSoonPanel` now removes a tab.
 
+**Trash went the same way, and it is the larger of the two collapses**: ten `/x/trash` screens
+became one `/trash` with three tabs. Recovering something you deleted is an occasional errand, not
+a place you work, so ten rows' worth of route surface — one per module, each with its own
+`<h1>`, its own empty state and its own retention promise — cost ten screens of maintenance to
+answer a question asked once a month. `/trash` is a **bottom-menu row directly above Settings**,
+the same slot and the same reasoning that took Secrets and Authorizations off the rail. Its tabs
+are Sources, Destinations and Pipes, in `?tab=` exactly as `/sources` and `/settings` carry theirs
+— Sources is the default and writes no query, which is the choice `SettingsPage` already makes for
+General. `TabNav` navigates with `replace`, so tabbing does not stack history entries between the
+screen you came from and the back button. `trash` is a new `enabled: true` key in `features.js`
+and is in `SettingsFeaturePanel.vue`'s `CORE_KEYS`, which is the manual step that section warns
+about and this is a worked instance of it.
+
+`src/composables/useTrashCollections.js` is the one reader for all three tabs, and it exists
+rather than reusing `useSourcesTrash`/`useDestinationsTrash`/`usePipesTrash` for a stated reason:
+eight of those nine swallow `apiMissing`, so a screen built on them answers "Trash is empty — no
+source has been deleted in the last 30 days", which is a measured-sounding claim about a
+collection nobody asked for. It forwards `apiMissing` from the trash read alone and every tab
+passes it to `DataTable`. It also reads `trash.json` once instead of three times, so one failure
+produces one `error` and one Retry rather than three. Its `initial` is the shaped object
+`{ sources: [], destinations: [], pipes: [] }` and not the default `[]`: `loadReal()` resets
+`data` to `initial` for a resource with no `api`, and an array blank would leave
+`data.value.sources` undefined and every `.length` in the template a render error — in the one
+mode `pnpm smoke:dist` walks. Restore, purge and purge-all are local state in every mode, which
+the next reload undoes; there is no trash endpoint anywhere.
+
+**The Pipes tab claims something the backend does not do, and that is deliberate — read this
+before you change it or cite it.** The tab lists pipes whose source or destination no longer
+exists, marks each `Waiting to reconnect`, names the missing end under `Waiting for`, and dates it
+`Waiting since`. **No such state exists in the API.**
+`DELETE /v1/accounts/{account}/sources/{id}` is a hard `204`: no soft delete, no trash listing, no
+restore call, and the pipeline is **cascaded away** rather than parked — so on a real account the
+pipe the tab describes has already stopped existing, and nothing measures how long it has been
+waiting. In the default real mode all three tabs report `apiMissing` and show nothing at all; the
+tab has content only against `trash.json` in Demo mode. This is the same deliberate gap the
+"Delete", not "Move to trash" note below records, taken one step further, and it was accepted the
+same way: the reconnect story is the product direction and the wording is ahead of the API. **The
+trigger to revisit is backend soft-delete.** The day `DELETE` parks a record instead of dropping
+it, this tab becomes a description of real behaviour and the two banners saying "Restoring is not
+available yet" and "Reconnecting is not available yet" come off. Until then, do not read this
+paragraph — or the screen — as a statement about what the backend does.
+
+Three details on that tab are there to keep it from claiming more than it can. It has **no
+Restore, no Delete forever and no Empty trash**, because a pipe on this screen was not deleted and
+there is nothing to purge. The date column is headed `Waiting since` rather than `Deleted`, since
+a `Deleted` header over `deletedAt` would assert the pipe itself was deleted. And
+`useTrashCollections` **filters to rows with at least one missing end**, so "Waiting to reconnect"
+is true by construction rather than by whichever rows the fixture happens to carry. There is no
+countdown and no "restorable until" anywhere on the screen: the "kept for 30 days" line every
+replaced screen printed was a promise about a collection that does not exist.
+
+**Four screens still promise a trash that cannot hold their record.** `/profiles/api`,
+`/profiles/dwh-syncs`, `/profiles/live-syncs` and `/attributes` all still say on delete that the
+record "moves to the trash, where it can be restored for 30 days" and toast "moved to trash", and
+`/trash` has only the three tabs above. Before this change their own trash screens at least
+existed to show it; now the sentence points at a screen the reader can reach in one click and
+will find empty of their record. It is the identical failure the Sources paragraph below
+documents, and the fix is the same: say what the delete actually does and that restoring is not
+available yet. `/profile-builders` is the one that was already honest — its copy says there is no
+trash for a builder.
+
+**`public/data/trash.json`'s unused slices are not all unused.** The `attributes`, `dwh-*`,
+`profile-*` and `warehouse-models` slices lost their only readers with the ten screens. The
+`audiences` slice did **not**: `src/composables/useEngageAudiences.js` still reads
+`useMockResource('trash', { select: payload => payload.audiences })` for the Audiences screen's
+own in-page Trash tab, which survived. `audiences` is dark in `features.js` so nothing renders
+today, but deleting that slice as dead breaks `/audiences` the day the module switches on.
+
+**A bottom-menu row may declare a `glyph` instead of an `icon`, and Trash is the first one.**
+`MainLayout`'s `bottomMenu` rows used to be `icon` only — a bundled SVG with its colour baked into
+the file — and the template now branches on which field a row carries: `glyph` is a name in
+`sfereIcons.js`, drawn by `SfereIcon` with `fill="currentColor"`, so it inherits the row's colour
+and tints to `text-brand!` when the row is active, which an `<img>` cannot. The row also carries
+`:aria-label="mini ? item.label : undefined"`, because `SfereIcon` is `aria-hidden` and rail mode
+renders no label — without it the glyph row would be the one bottom-menu item with no accessible
+name, where an `<img alt>` row still has one. A new row copies both halves.
+
 **The Settings tab bar itself is mode-dependent, and only in one direction.** Members, API tokens,
 Ingest domains, Notifications, Connector images and Danger zone are all workspace records, and
 nothing behind them has a workspace endpoint: in the default real mode all six opened on the same
@@ -483,8 +652,8 @@ setup.
 ## Feature activation — most of the sidebar is switched off
 
 `enabled: true` in `features.js` today covers **Dashboard, Live events, Sources, Destinations,
-Pipes, Functions, Settings, Warehouse, Monitoring, Profiles, Secrets, Authorizations, Team** and
-**Billing** — fourteen top-level keys, not six. Two of those are partly on: Warehouse and Profiles each gate their own
+Pipes, Functions, Settings, Warehouse, Monitoring, Profiles, Secrets, Authorizations, Team,
+Billing** and **Trash** — fifteen top-level keys, not six. Two of those are partly on: Warehouse and Profiles each gate their own
 children by a separate key (`dwh-syncs`, `warehouse-models`, `identity-resolution`, `attributes`,
 `profile-builders`, `profile-api`, `live-profile-syncs`, `profile-dwh-syncs`), so switching the
 parent on only exposes the child screens whose own key is _also_ `true` — right now that's
@@ -532,7 +701,7 @@ of** `<router-view>` when `route.meta.group` is inactive. Deliberately not a `be
 guard can only redirect, which throws away the URL you asked for. This way the address survives,
 the real page component never mounts (so nothing it fetches on mount runs), and
 `ComingSoonPanel` renders the screen's own title as a real `<h1>` — which is what lets
-`pnpm smoke:dist` keep walking **all 58 routes** instead of being narrowed to the active few.
+`pnpm smoke:dist` keep walking **all 49 routes** instead of being narrowed to the active few.
 Any new gating must preserve that; a redirect would silently drop the gate to ~6 routes.
 **Hiding the sidebar rows did not touch this**: `/audiences` still renders `ComingSoonPanel` with
 its own `<h1>`, it just has no row pointing at it. Hide the rows, keep the gate.
@@ -546,7 +715,7 @@ numbers"). `src/config/personas.js` is the registry — pure data, no imports, s
 
 **The question is an overlay over a fully-rendered Home, never a route.** A `/welcome` route
 would replace `MainLayout`, so `[data-smoke="nav"]` would never appear and `pnpm smoke:dist`
-would fail at sign-in for all 58 routes rather than on one screen. Three consequences that any
+would fail at sign-in for all 49 routes rather than on one screen. Three consequences that any
 change here has to preserve: the page beneath stays mounted and visible, the overlay renders
 **no `<h1>`** (smoke asserts on the first one, which belongs to the page), and it opens **only on
 `/`** — a deep link to `/errors` from Slack must not be met by a modal demanding a role.
@@ -600,7 +769,9 @@ Three things about that shape are load-bearing:
 **A dark section is never hoisted.** Marketer's natural sections are ACTIVATE and ENGAGE and both
 are switched off in `features.js`, so leading with them would put a wall of `Soon` pills above
 every live row — the exact failure the ACCOUNT placement guards against. The orderings are built
-out of the fourteen live keys.
+out of the fourteen live keys that appear in `navGroups` — **`trash` is the fifteenth live key and
+is not one of them**, because it is a `bottomMenu` row and `orderNavGroups()` only ever sees
+`navGroups`. A persona cannot hoist Trash and does not need to; the two numbers differ on purpose.
 
 **The Home blocks are extracted components, not CSS `order-*`.** `ThroughputPanel`,
 `ActivityPanel`, `ProfilesPanel` and `WarehouseHandoffStrip` came out of
@@ -620,7 +791,26 @@ primary action are both gated on `setupComplete` first, so a marketer whose work
 source still gets the tracker and `Connect a source`. A role does not make setup somebody else's
 problem until setup is actually done.
 
-**The question card is two centred lines and nothing else.** The third line describing the
+**The question card sits on the brand's dark canvas** — `bg-sfere-ink` with `sfere-dot-grid`
+over it and a purple bloom above that, the wordmark in its `on-dark` cut, and the question at
+`text-sfere-h3!` rising to `text-sfere-h2!` from `sm`. Three notes for anyone touching it. The
+bloom is a **child element**, not a second utility, because `sfere-dot-grid` and `sfere-glow-top`
+both set `background-image` and the second one declared simply replaces the first. Every kit
+component in there takes `on-dark` on **both** halves of the pair — the card and its icon chip —
+since a light-surface variant inside a dark section is black text on a near-black card; and
+`SelectableCard`'s on-dark hover was extended to a purple border plus `shadow-sfere-glow`, in the
+**component** rather than on the instance, because an instance `hover:border-*` and the
+component's own are two layered utilities on one property in one layer and the winner would be
+Tailwind's emission order. Colours come from `text-sfere-dark-fg` / `text-sfere-dark-fg-muted`,
+never `text-muted` or `text-subtle` — both of those alias to the same `#737373` and are
+light-surface tokens. `SfereLogo` is sized by an `h-6` class and not by its `height` prop: that
+prop is **inert app-wide**, because Tailwind preflight ships `img, video { height: auto }` in
+`@layer base` and the component only sets a `height` attribute, which is a presentational hint any
+author rule beats — `/design-system` demonstrates it by rendering `:height="32"` and
+`:height="22"` as two identical logos. Worth fixing in the component; it resizes `LoginPage`,
+`AccountSetupOverlay` and the docs page too, so it has not been.
+
+**The card is otherwise two centred lines and nothing else.** The third line describing the
 onboarding run, the `~10 min · 5 steps` estimate, the 1/2/3 number chips, the footer divider and
 the per-card `Start →` have all come off: the estimate measured a script that does not exist yet,
 the digits read as a ranking of three equal roles, and the rule separated a role from a footer that
@@ -685,6 +875,48 @@ four copies of the same three steps is four things to keep in agreement. The str
 the _workspace_ is on, not the step the screen is; it hides itself once all three exist. The
 panel is dismissible only after that, and the dismissal is `localStorage`.
 
+**At zero of three the Dashboard leads with the setup diagram, and that is a reversal of what
+this file used to say.** It previously said one sentence and one button, with the tracker gated
+off; the duplication that argued for was real, but hiding the tracker was the wrong half to drop.
+What a brand-new account needs first is the **shape** of the work — three steps, in a fixed order,
+each gated by the one before it — and a sentence plus a `Connect your first source` button states
+the goal while hiding all of it, then swaps in a different-looking surface the moment step one
+lands. So `SetupProgressPanel` is no longer three cards but a **node-and-wire diagram**, and
+`setupVisible` no longer excludes `firstRun`: one surface answers "how far am I?" at 0, 1, 2 and 3.
+
+`DashboardHomePage`'s `firstRun` is still `setupLoaded && !setupUnavailable && setupDone === 0`,
+still a branch in the existing chain (skeleton → error → firstRun → empty → populated), and that
+branch now renders **nothing** — the diagram above it is the screen. The `<h1>` swap to "Let's get
+your activity data flowing" and the suppressed header actions and subtitle both stay, and the
+diagram's own single CTA is the one button. **The headline is the `<h1>` and not an `EmptyState`
+title** on purpose: `EmptyState` renders its title at 14px semibold, so a welcome put there would
+be a label above a button while the word "Dashboard" stayed the largest text on a screen with
+nothing to dashboard — and `EmptyState` reaches every screen, so it is not the thing to restyle
+for one. Smoke is unaffected: still exactly one `<h1>`, still rendered by `PageHeader`, still
+non-empty, and losing `data-smoke="empty"` on that branch is safe because it is not a failure
+condition. Do **not** invent a third `data-smoke` attribute to compensate. The skeleton and error
+branches deliberately still win over `firstRun`: the setup reads are three different endpoints, so
+their success is no evidence about the dashboard aggregate, and a failed aggregate has to say so.
+
+Four things about the diagram are load-bearing. **`locked` and `blockedBy` are derived in the
+panel**, not added to `useSetupProgress` — a step that is neither `done` nor `current` is one the
+chain has not reached, and what blocks it is the step in front of it, so the shared composable
+gains no second consumer contract. **The wires animate only at three of three**, never at "both
+ends of this wire are done": with a source and a destination but no pipe, both ends of the first
+wire are green and nothing whatsoever is moving between them. Even at three the claim stays "the
+path is built" — nothing there measures throughput. **The rail spans the panel's full width.** It
+shipped briefly capped at `max-w-[46rem]`, because across the card's 1400px each wire stretches to
+~430px and three markers that far apart start reading as separate dots rather than one chain; that
+was reversed on review, since a capped rail left the right half of the card empty while the
+header, blurb and footer all span it, which read as a figure dropped into a panel rather than the
+panel's subject. Do not re-cap it without narrowing the footer row too. And the locked state is a
+**dashed border plus a drawn padlock**, so it
+survives being read without colour; it is deliberately not `disabled:opacity-*`, which Quasar's
+unlayered `[disabled]` rule makes a dead class everywhere in this repo.
+
+`SetupReminderStrip` still renders on Sources, Destinations and Pipes at zero of three: there it is
+the only thing saying "connect a source comes first, but you can set this up now".
+
 **The post-registration interstitial** (`components/onboarding/AccountSetupOverlay.vue`) covers
 the gap between a created account and the dashboard, when the session settles, `/v1/me` is read
 and the acting account resolves. It runs for a fixed **2.5s** (`TOTAL_MS`), long enough that its
@@ -747,7 +979,7 @@ need endpoints, and neither has a placeholder in the UI.
 matching. Keep exactly one of each — that is why sign-up has no confirm-password field, and why
 the password show/hide toggle is `type="button"` and the input starts as `type="password"`. A
 bare `<button>` inside a `<form>` submits by default, so an unmarked toggle would give the gate
-two matches for `button[type=submit]` and fail sign-in for all 58 routes before a single screen
+two matches for `button[type=submit]` and fail sign-in for all 49 routes before a single screen
 rendered.
 
 **Settings → General** (`SettingsPersonaPanel.vue`) is the other surface, so changing the answer
@@ -796,20 +1028,21 @@ page) is the deliberate exception: it is long-form editorial prose, not product 
 
 ## UI primitives
 
-`src/components/ui/` is **the** component kit — 43 components, all built on the Sfere token
+`src/components/ui/` is **the** component kit — 44 components, all built on the Sfere token
 layer. **Use them; do not re-implement their markup and do not copy their class strings into a
 page.** Read `docs/ui-conventions.md` before writing any new screen.
 
 Two naming schemes live in the folder, for a reason worth knowing:
 
-- **18 screen primitives carry plain, unprefixed names** — `PageHeader`,
+- **19 screen primitives carry plain, unprefixed names** — `PageHeader`,
   `DataTable`, `EmptyState`, `ErrorState`, `LoadingState`, `StatusBadge`, `CardPanel`,
   `NoticeBanner`, `StatCard`, `TabNav`, `FormField`, `FormSection`, `ConfirmDialog`,
-  `DefinitionList`, `SelectableCard`, `ToolbarSearch`, `StickyActionBar` and
-  `SecretRevealDialog`. Sixteen of them
+  `DefinitionList`, `SelectableCard`, `ToolbarSearch`, `StickyActionBar`,
+  `SecretRevealDialog` and `RowActionsMenu`. Sixteen of them
   keep the names the screens already imported, which is what let the Sfere implementations
-  replace the originals across 104 files without rewriting 571 imports; `StickyActionBar` is
-  newer and simply describes what it does. A few of the older names are now worse than what
+  replace the originals across 104 files without rewriting 571 imports; the other three —
+  `StickyActionBar`, `SecretRevealDialog` and `RowActionsMenu` — are newer than that swap and
+  simply describe what they do. A few of the older names are now worse than what
   they hold (`CardPanel` is a card, `NoticeBanner` is an alert); that was the price of the swap.
 - **25 keep their `Sfere*` names** — `SfereButton`, `SfereInput`, `SfereTable`, `SfereSection`,
   `SfereFeatureCard` and friends. These have no pre-Sfere counterpart, and the prefix keeps
@@ -846,7 +1079,42 @@ and the confirm-with-a-description, unless there is a stated reason not to.
 An icon-only control is the **exception**, not the house style: it is right where the page
 already names the noun, and wrong anywhere the action is not guessable from its shape. Empty
 states, form submits and destructive confirmations keep their words — and so do row-level
-actions in a `DataTable`, where the noun that matters is _which row_, not the `<h1>`.
+actions in a `DataTable`, where the noun that matters is _which row_, not the `<h1>`. That last
+clause is why a row's actions collapsed into a **kebab** rather than into two bare glyphs.
+
+**`RowActionsMenu` is the row-level answer, and it is one control rather than two-or-three.**
+A list row used to carry its actions as bordered text buttons in the last cell, which cost a
+120–230px column on every screen and put the second-most-important thing on the row (a Delete
+nobody clicks) in permanent competition with the data. The kebab spends one 36px cell and shows
+its verbs when asked. Props are `actions: [{ key, label, icon?, tone? }]` and a required `label`;
+it emits `select` with the key and **opens nothing and confirms nothing** — the page keeps its own
+`ConfirmDialog`s, its own `toggleTarget`/`target` refs and every word of its own copy, so the
+confirm rules below are unchanged by the swap. It is on the fourteen list screens that had
+row-level actions; the actions column is `72px` (or `76px`) there now.
+
+Five things about it a new caller has to know. **`label` is required and is the row's noun**
+(`Actions for ${row.name}`), because a teleported menu is the one control where "which row is
+this?" cannot be answered by looking. It carries **no tooltip**, deliberately parting company with
+`SfereIconButton`: a `SfereTooltip` bubble would be clipped by the same table scroller the menu
+teleports out of, and a native `title` on top of an `aria-label` is announced as the description,
+i.e. the same sentence twice. **An empty `actions` array is a dead control** — `openMenu()`
+returns early on `[]` — so a page whose only action is conditional must render no trigger at all
+rather than an empty menu; `/attributes` does exactly that on a managed row. **Icons are per-menu,
+not per-app**: items lay out `flex items-center gap-2`, so one icon-less entry beside iconed ones
+starts its label a glyph's width to the left, and that raggedness is visible because every item is
+on screen at once — either all of a menu's items carry a glyph or none do. Three screens landed on
+"none" because `sfereIcons.js` has no honest mark for "Send test", "Sync now" or "Test
+connection". And **no page-level `@click.stop` is needed**: the trigger, the menu root and every
+item stop their own clicks and the menu is teleported to `<body>`, so it does not bubble through a
+`clickable-rows` `<tr>`.
+
+**It is not universal, and two of the departures are deliberate rather than unfinished.**
+`/goals` and the Audiences screen's own Trash tab each have a single action and keep a labelled
+button — a one-item kebab costs a click and shows no verb. `/destinations` and `/pipes` carry a
+one-item kebab anyway, so that the last column means the same thing across the three live domains;
+each file says so and says not to simplify it back without changing all three. Neither page grew
+a row-level Delete in the process: writing destructive confirm copy for two screens from scratch
+is a product decision, not a side effect of a control swap.
 
 **A secret the backend returns once goes through `SecretRevealDialog`, and its rules are the
 opposite of every other dialog's.** `ApiTokenCreated` and `WriteKeyCreated` carry a `plaintext`
@@ -878,10 +1146,45 @@ One caution on that copy: several of these screens have no backend, so a sentenc
 happens to data _while_ something is paused — queued, replayed, backfilled — is a claim nothing
 measured. Say what stops and what is left alone; do not promise a resume behaviour.
 
+## Page width — every screen caps its own content at 1400px
+
+Screens used to sit in `max-w-3xl` / `4xl` / `5xl`, and `--container-sfere-page` is `80rem`
+(1280px) — measured on a wide monitor that left roughly 40% of the window empty beside a table
+that had columns to spare. The cap is now **1400px, applied by the page**, and it wraps everything
+the reader takes as one column: the `PageHeader` (so the `<h1>` shares the content's left edge),
+the toolbar, the tabs, the table, and any sibling branch the tabs swap in — `ConnectorCatalog` on
+`/sources`, the topology view on `/pipes` — or the right edge visibly steps in and out as the tab
+changes. Dialogs stay outside it; they teleport regardless.
+
+**It is page-level and not a container in `MainLayout`, deliberately.** A shell-level cap would
+apply to the demo-mode footer, the header bar and `ComingSoonPanel` as well, and would make the
+one screen that genuinely wants the full window (nothing does today, but the topology view is the
+candidate) impossible to write without fighting the layout.
+
+**Three shapes of it ship right now, and that is a divergence to reconcile rather than a pattern
+to pick from.** Most list screens and the Dashboard use a wrapper `<div class="mx-auto w-full
+max-w-[1400px]">` inside the existing `q-page`; the four Engage screens put the same utilities on
+the `q-page` itself (verified safe: Quasar ships `.q-mx-auto`, not `.mx-auto`, has no `max-w-*`
+rule at all and sets no width on `.q-page`); and `SourceCreatePage` caps **left-aligned**, with no
+`mx-auto`, because a three-step flow reading left to right should not shift horizontally between
+steps. The first two are the same thing written two ways and should converge.
+
+**The literal is repeated in roughly ten files because it has to be.** Tailwind v4 extracts class
+names from source text, so a token-built `` `max-w-[${n}]` `` is never generated. The durable home
+is a `--container-sfere-wide: 87.5rem` in `src/css/sfere.css` with a named utility over it; until
+that lands, copy the string rather than improvising a nearby number.
+
+**A wide page is not a licence for wide text inputs.** Step 2 of `/sources/new` goes two columns
+past a `@min-[64rem]` **container** query rather than spending the extra width on 1300px-wide
+fields, and the intent picker's grids are container queries for the reason collision #6 gives: the
+sidebar collapses without changing the viewport, so one 1024px window has two content widths and a
+`lg:` breakpoint is answering the wrong question. `repeat(N,minmax(0,1fr))` only — never
+`auto-fit`.
+
 ## The Sfere design system
 
 `src/css/sfere.css` holds the token layer, measured off the live marketing site
-(<https://sfere.io>) rather than eyeballed, and `src/components/ui/` holds the 43-component kit
+(<https://sfere.io>) rather than eyeballed, and `src/components/ui/` holds the 44-component kit
 built on it. Browse the whole thing at **`#/design-system`** (hash mode — not `/design-system`);
 no sign-in required.
 
@@ -892,13 +1195,20 @@ so Quasar's own controls match. **Never hardcode a hex in a screen** — that is
 brand changed, and the alias layer only works if nothing bypasses it.
 
 **There is one kit.** The pre-Sfere primitives were replaced in place, not deprecated alongside
-it: all 58 screens now render Sfere components.
+it: all 49 screens now render Sfere components.
 
 Rules for touching it:
 
 - The kit has exactly **two `data-smoke` attributes** — `ErrorState` (`error`) and `EmptyState`
-  (`empty`) — and exactly **one Quasar dependency**, `ConfirmDialog` wrapping `q-dialog`. Both
-  are named carve-outs in `docs/sfere-design-system.md`; neither is licence to add a third.
+  (`empty`) — and exactly **two Quasar dependencies**, `ConfirmDialog` and `SecretRevealDialog`,
+  each wrapping `q-dialog`. Both are named carve-outs in `docs/sfere-design-system.md`, and the
+  honest form of the second is a list rather than a number: the carve-out is for a **modal**,
+  which owes a focus trap, Escape, scroll lock, a backdrop and a teleport, and the second entry
+  is a second modal. A third entry that is not a modal is the change worth arguing about.
+  `RowActionsMenu` is what that clause cost and what it bought: a popover is not a modal, so the
+  kebab menu is hand-rolled — measure-then-place, flip-above, outside-`pointerdown`, `focusin`,
+  scroll and Escape dismissal, roving `menuitem` focus — rather than sat on `q-menu`. Roughly
+  ninety lines to avoid a third dependency, paid deliberately. The next popover copies it.
 - `sfere.css` is imported from `src/css/tailwind.css` rather than registered in
   `quasar.config.js`'s `css: [...]` array. Either works; the import keeps the whole token layer
   reachable from one stylesheet.
@@ -961,7 +1271,7 @@ Nothing in this repo is off-limits to edit. But a handful of files are load-bear
 changing one changes every screen at once, so they are worth a moment's thought and a line in the
 commit message rather than a drive-by edit mid-task:
 
-`src/router/**` (the manifest generates all 58 routes) · `src/layouts/MainLayout.vue` (the nav
+`src/router/**` (the manifest generates all 49 routes) · `src/layouts/MainLayout.vue` (the nav
 is the IA, and the feature gate lives in its `q-page-container`) · `src/components/ui/**` (the
 kit) · `src/config/features.js` + `src/composables/useFeatures.js` (which modules are switched
 on at all) · `src/config/personas.js` + `src/lib/navOrder.js` (the order of the sidebar and of
@@ -1107,9 +1417,35 @@ exists to prevent.`sendMutation()`and`fetchCollection()`resolve`path` the same w
    is the pattern to copy. Where nothing backs the field, say so (`'—'`, "Not known") or
    drop the control; do not let `formatCount` decide.
 
+   **`pipeCount` is the second field to lose a column to this**, after "Upgrade available"
+   below. The Sources list carried a sortable **Pipes** column reading it, and the backend's
+   `Source` has no such field, so on a real account the cell was blank on every row — a header
+   promising a count nobody took. It is gone from `SourcesListPage`. What is not gone is the
+   same column on **`DestinationsListPage`**, off the same invented field, plus the `Pipes`
+   `StatCard` on both detail screens; as with the upgrade badge, the app is consistent per
+   screen and not across itself until somebody decides whether the count is worth a real
+   endpoint.
+
    Grep the merged `openapi/fanfinity-api.json` before adding an `api` path — `/v1/dashboard`
    and `/v1/errors` were drafted flat and shipped account-scoped and merged, which is exactly
    the drift the check catches.
+
+   **"Upgrade available" is the worked example, and it is now half removed.**
+   `latestTemplateVersion` is a `sources.json` invention with no counterpart in the backend's
+   `Source`, so `useTemplates()`'s `hasUpgrade()` can only ever return `false` on a real record:
+   the badge never appeared, and the Sources list's **"Upgrade available" filter tab** was a
+   control whose count was permanently `0`. Both are gone from `SourcesListPage`, along with its
+   `useTemplates` import. The rest of the surface is **not** gone, and that is a product call
+   somebody has to make rather than a leftover to tidy: `hasUpgrade`/`upgradeLabel` are still read
+   by `DestinationDetailPage.vue`, by `DestinationTemplateBadge.vue` — which the **Destinations
+   list** still renders in its Template column — and the same fixture-only field still backs them
+   there. So the phrase is inconsistent across the app today, not retired. `useTemplates.js` still
+   exports all three helpers and was not touched.
+
+   **`useFunctions.js`'s `hasTemplateUpgrade()` is a different feature that shares the word**, and
+   it is live on `/functions` and `/functions/:id`. Do not delete it while cleaning up the other
+   one, and do not merge the two: a function template genuinely versions behind a real endpoint,
+   where a source template's version was only ever in the fixture.
 
    **There is no fallback from real to mock, and that is deliberate.** `loadReal()` sets
    `apiMissing` and blanks `data`; it does not quietly read the fixture instead, because a
@@ -1194,7 +1530,12 @@ exists to prevent.`sendMutation()`and`fetchCollection()`resolve`path` the same w
    forward `apiMissing` and the screen must pass it to `DataTable`; `useSourcesTrash` swallowed
    it, and the screen answered "Trash is empty — no source has been deleted in the last 30
    days", which is a measured-sounding claim about a collection nobody asked for. The other
-   eight still swallow it.
+   eight still swallow it — and eight of the nine no longer have a screen behind them, since
+   `/trash` reads `useTrashCollections()` instead precisely so it does not inherit that bug. Those
+   composables and the ten `*TrashPage.vue` files are unreferenced now rather than deleted; the
+   day someone prunes them, `useSourcesTrash`/`useDestinationsTrash`/`usePipesTrash` are the three
+   the old pages still import and `useEngageAudienceTrash` is the one still live behind the
+   Audiences screen's in-page tab.
 
    **A source's Settings tab is now mostly real, and the banner narrowed with it.** PR #16
    closed three of the five things that used to be disabled controls there: write keys are a
@@ -1213,7 +1554,7 @@ exists to prevent.`sendMutation()`and`fetchCollection()`resolve`path` the same w
    explains, `404` to `apiMissing`, and everything else to `error`. `hasIngestSettings(source)`
    is the matching narrowing on the other panel — `source_type === 'web'` and nothing else.
 
-   **`pnpm smoke:dist` now walks all 58 routes against whatever `VITE_API_BASE` points at**,
+   **`pnpm smoke:dist` now walks all 49 routes against whatever `VITE_API_BASE` points at**,
    because that is what the default mode does. It used to be hermetic. If you need the old
    behaviour, set `sfere_data_source_mode` to `mock` in the browser profile the run uses, or
    flip the default — do not add a smoke-only branch to `useDataSource`, which would mean the

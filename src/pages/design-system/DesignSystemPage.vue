@@ -97,13 +97,13 @@
             <StatCard
               bare
               label="Components"
-              value="42"
+              value="44"
               hint="src/components/ui/"
             />
             <StatCard
               bare
               label="Screens on the tokens"
-              value="54"
+              value="49"
               hint="every route in the manifest"
             />
           </div>
@@ -165,7 +165,7 @@ import PatternsGallery from '@/components/sfere-docs/sections/PatternsGallery.vu
 
 // Bump when the token layer or a component's public props change. It is shown
 // in the header so a screenshot in a ticket says which version it came from.
-const VERSION = '1.1.0'
+const VERSION = '1.2.0'
 
 // Ids must match the DocSection ids the section components render.
 const NAV = [

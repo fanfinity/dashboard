@@ -1,145 +1,146 @@
 <template>
   <q-page class="p-6">
-    <PageHeader
-      title="Profile API"
-      subtitle="REST endpoints other systems call to look a fan up and read back agreed attributes."
-    >
-      <template #actions>
-        <ToolbarSearch v-model="query" placeholder="Search endpoints..." />
-        <SfereIconButton
-          icon="trash"
-          label="Trash"
-          :to="{ name: 'profile-api-endpoints-trash' }"
+    <!-- One content cap for the header, the toolbar and the table, so all three
+         share a left AND a right edge. Same 1400px literal as DashboardHomePage
+         — deliberately wider than `--container-sfere-page` (80rem, the
+         marketing-site measure), which left ~40% of a wide monitor empty. On
+         the page, not in MainLayout: that layout is shared with screens which
+         want the full width. -->
+    <div class="mx-auto w-full max-w-[1400px]">
+      <PageHeader
+        title="Profile API"
+        subtitle="REST endpoints other systems call to look a fan up and read back agreed attributes."
+      >
+        <template #actions>
+          <ToolbarSearch v-model="query" placeholder="Search endpoints..." />
+          <SfereIconButton
+            icon="plus"
+            label="New endpoint"
+            variant="primary"
+            :to="{ name: 'profile-api-endpoints-new' }"
+          />
+        </template>
+      </PageHeader>
+
+      <div
+        v-if="!loading && !error && endpoints.length"
+        class="mb-5 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4"
+      >
+        <StatCard label="Endpoints" :value="formatCount(endpoints.length)" />
+        <StatCard
+          label="Live"
+          :value="`${liveCount} of ${endpoints.length}`"
+          :hint="liveCount === endpoints.length ? 'All serving' : 'Some paused'"
         />
-        <SfereIconButton
-          icon="plus"
-          label="New endpoint"
-          variant="primary"
-          :to="{ name: 'profile-api-endpoints-new' }"
+        <StatCard
+          label="Requests (last hour)"
+          :value="formatCount(requestsLastHour)"
         />
-      </template>
-    </PageHeader>
-
-    <div
-      v-if="!loading && !error && endpoints.length"
-      class="mb-5 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4"
-    >
-      <StatCard label="Endpoints" :value="formatCount(endpoints.length)" />
-      <StatCard
-        label="Live"
-        :value="`${liveCount} of ${endpoints.length}`"
-        :hint="liveCount === endpoints.length ? 'All serving' : 'Some paused'"
-      />
-      <StatCard
-        label="Requests (last hour)"
-        :value="formatCount(requestsLastHour)"
-      />
-      <StatCard
-        label="Slowest p95"
-        :value="formatLatency(slowestP95)"
-        :hint="slowestP95Name"
-      />
-    </div>
-
-    <TabNav v-model="tab" :tabs="tabs" />
-
-    <DataTable
-      :columns="columns"
-      :rows="visible"
-      :loading="loading"
-      :error="error"
-      row-key="id"
-      @retry="load"
-    >
-      <template #cell-name="{ row }">
-        <p class="font-medium text-ink">{{ row.name }}</p>
-        <p class="font-mono text-xs text-subtle"
-          >{{ row.method }} {{ row.path }}</p
-        >
-      </template>
-
-      <template #cell-identifierTypeName="{ value }">
-        <StatusBadge tone="neutral" :label="value" />
-      </template>
-
-      <template #cell-attributes="{ row }">
-        <p class="text-muted">{{ attributeCount(row) }}</p>
-        <p class="truncate font-mono text-xs text-subtle">{{
-          attributeList(row)
-        }}</p>
-      </template>
-
-      <template #cell-isEnabled="{ value }">
-        <StatusBadge
-          :tone="value ? 'success' : 'neutral'"
-          :label="value ? 'Live' : 'Paused'"
+        <StatCard
+          label="Slowest p95"
+          :value="formatLatency(slowestP95)"
+          :hint="slowestP95Name"
         />
-      </template>
+      </div>
 
-      <template #cell-requestCountLastHour="{ value }">
-        {{ formatCount(value) }}
-      </template>
+      <TabNav v-model="tab" :tabs="tabs" />
 
-      <template #cell-p95LatencyMs="{ value }">
-        {{ formatLatency(value) }}
-      </template>
-
-      <template #cell-actions="{ row }">
-        <div class="flex items-center justify-end gap-2">
-          <button
-            class="rounded-lg border border-line2 bg-white px-3 py-1.5 text-sm font-medium text-brand hover:bg-fill"
-            @click.stop="askToggle(row)"
+      <DataTable
+        :columns="columns"
+        :rows="visible"
+        :loading="loading"
+        :error="error"
+        row-key="id"
+        @retry="load"
+      >
+        <template #cell-name="{ row }">
+          <p class="font-medium text-ink">{{ row.name }}</p>
+          <p class="font-mono text-xs text-subtle"
+            >{{ row.method }} {{ row.path }}</p
           >
-            {{ row.isEnabled ? 'Pause' : 'Enable' }}
-          </button>
-          <button
-            class="rounded-lg border border-line2 bg-white px-3 py-1.5 text-sm font-medium text-rose-600 hover:bg-fill"
-            @click.stop="ask(row)"
-          >
-            Delete
-          </button>
-        </div>
-      </template>
+        </template>
 
-      <!-- Two different "no rows" cases: nothing configured yet (offer the
-           primary CTA) and nothing matching the filters (offer a way back). -->
-      <template #empty>
-        <EmptyState :title="emptyTitle" :description="emptyDescription">
-          <template #cta>
-            <button
-              v-if="!endpoints.length"
-              class="flex h-9 items-center gap-1.5 rounded-lg bg-brand px-3.5 text-sm font-medium text-white shadow-sm hover:opacity-90"
-              @click="router.push({ name: 'profile-api-endpoints-new' })"
-            >
-              Create your first endpoint
-            </button>
-            <button
-              v-else
-              class="rounded-lg border border-line2 bg-white px-3 py-1.5 text-sm font-medium text-brand hover:bg-fill"
-              @click="clearFilters"
-            >
-              Clear filters
-            </button>
-          </template>
-        </EmptyState>
-      </template>
-    </DataTable>
+        <template #cell-identifierTypeName="{ value }">
+          <StatusBadge tone="neutral" :label="value" />
+        </template>
 
-    <div
-      v-if="!loading && !error && endpoints.length"
-      class="mt-5 grid grid-cols-1 gap-4 xl:grid-cols-3"
-    >
-      <ProfileApiAccessPanel
-        class="min-w-0 xl:col-span-2"
-        :endpoints="endpoints"
-        @copy="copyValue"
-      />
-      <ProfileApiTokensPanel
-        :tokens="readTokens"
-        :loading="tokensLoading"
-        :error="tokensError"
-        @retry="loadTokens"
-      />
+        <template #cell-attributes="{ row }">
+          <p class="text-muted">{{ attributeCount(row) }}</p>
+          <p class="truncate font-mono text-xs text-subtle">{{
+            attributeList(row)
+          }}</p>
+        </template>
+
+        <template #cell-isEnabled="{ value }">
+          <StatusBadge
+            :tone="value ? 'success' : 'neutral'"
+            :label="value ? 'Live' : 'Paused'"
+          />
+        </template>
+
+        <template #cell-requestCountLastHour="{ value }">
+          {{ formatCount(value) }}
+        </template>
+
+        <template #cell-p95LatencyMs="{ value }">
+          {{ formatLatency(value) }}
+        </template>
+
+        <!-- No wrapper element: the column is `align: 'right'`, so SfereTable
+             puts `text-right` on the cell and the trigger is inline-level,
+             which is all the alignment it needs. A flex row here would be one
+             more of Quasar's unlayered wrapping `.flex` (collision #4) earning
+             nothing. The label names the ROW, not the action — ten identical
+             "Actions" buttons give a screen-reader user no way to tell them
+             apart. -->
+        <template #cell-actions="{ row }">
+          <RowActionsMenu
+            :label="`Actions for ${row.name}`"
+            :actions="actionsFor(row)"
+            @select="key => onRowAction(row, key)"
+          />
+        </template>
+
+        <!-- Two different "no rows" cases: nothing configured yet (offer the
+             primary CTA) and nothing matching the filters (offer a way back). -->
+        <template #empty>
+          <EmptyState :title="emptyTitle" :description="emptyDescription">
+            <template #cta>
+              <button
+                v-if="!endpoints.length"
+                class="flex h-9 items-center gap-1.5 rounded-lg bg-brand px-3.5 text-sm font-medium text-white shadow-sm hover:opacity-90"
+                @click="router.push({ name: 'profile-api-endpoints-new' })"
+              >
+                Create your first endpoint
+              </button>
+              <button
+                v-else
+                class="rounded-lg border border-line2 bg-white px-3 py-1.5 text-sm font-medium text-brand hover:bg-fill"
+                @click="clearFilters"
+              >
+                Clear filters
+              </button>
+            </template>
+          </EmptyState>
+        </template>
+      </DataTable>
+
+      <div
+        v-if="!loading && !error && endpoints.length"
+        class="mt-5 grid grid-cols-1 gap-4 xl:grid-cols-3"
+      >
+        <ProfileApiAccessPanel
+          class="min-w-0 xl:col-span-2"
+          :endpoints="endpoints"
+          @copy="copyValue"
+        />
+        <ProfileApiTokensPanel
+          :tokens="readTokens"
+          :loading="tokensLoading"
+          :error="tokensError"
+          @retry="loadTokens"
+        />
+      </div>
     </div>
 
     <ConfirmDialog
@@ -172,6 +173,7 @@ import StatusBadge from '@/components/ui/StatusBadge.vue'
 import EmptyState from '@/components/ui/EmptyState.vue'
 import ToolbarSearch from '@/components/ui/ToolbarSearch.vue'
 import SfereIconButton from '@/components/ui/SfereIconButton.vue'
+import RowActionsMenu from '@/components/ui/RowActionsMenu.vue'
 import ConfirmDialog from '@/components/ui/ConfirmDialog.vue'
 import ProfileApiAccessPanel from '@/components/profiles/api/ProfileApiAccessPanel.vue'
 import ProfileApiTokensPanel from '@/components/profiles/api/ProfileApiTokensPanel.vue'
@@ -221,7 +223,7 @@ const columns = [
     align: 'right'
   },
   { key: 'p95LatencyMs', label: 'p95', sortable: true, align: 'right' },
-  { key: 'actions', label: '', align: 'right', width: '190px' }
+  { key: 'actions', label: '', align: 'right', width: '72px' }
 ]
 
 // Each tab is a predicate over an endpoint; 'all' has none.
@@ -328,6 +330,24 @@ function notifyLocal(message) {
   })
 }
 
+// A function, not a constant: the toggle's label flips with `isEnabled`, so a
+// hoisted array would print "Pause" on a row that is already paused.
+//
+// The menu reports a choice and nothing else — every item still routes to the
+// handler it always had, so both actions keep their own ConfirmDialog, their
+// own target ref and their own per-screen sentence.
+function actionsFor(row) {
+  return [
+    { key: 'toggle', label: row.isEnabled ? 'Pause' : 'Enable' },
+    { key: 'delete', label: 'Delete', tone: 'destructive' }
+  ]
+}
+
+function onRowAction(row, key) {
+  if (key === 'toggle') askToggle(row)
+  else if (key === 'delete') ask(row)
+}
+
 const confirmToggle = ref(false)
 const toggleTarget = ref(null)
 
@@ -387,7 +407,10 @@ function remove() {
   if (!row) return
   removeEndpoint(row.id)
   notifyLocal(`${row.name} moved to trash`)
-  target.value = null
+  // `target` is deliberately NOT nulled: `deleteMessage` reads it, so clearing it
+  // here blanks the dialog's sentence out while the dialog is still fading. The
+  // dialog's open state is its own ref, and `ask()` overwrites `target` before
+  // reopening, so nothing goes stale.
 }
 
 // Clipboard access is permission-gated and unavailable outside a secure

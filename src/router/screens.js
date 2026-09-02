@@ -283,6 +283,24 @@ export const screens = [
     title: 'Team & roles',
     group: 'team'
   },
+  // ONE Trash destination, replacing ten '/x/trash' screens.
+  //
+  // Its three tabs (Sources, Destinations, Pipes) are held in ?tab= rather than
+  // in child routes, for the reason /sources and /settings do it: all three are
+  // the same screen with the same <h1>, and a child route would put each of them
+  // back in the sidebar — which is exactly what this undid. The ten old URLs
+  // survive as named redirects in routes.js.
+  //
+  // `group: 'trash'` is its own feature key rather than a share of 'settings':
+  // the row sits beside Settings in the bottom menu but is a place you go, not
+  // configuration, and switching one off must not take the other with it.
+  {
+    path: '/trash',
+    name: 'trash',
+    component: 'trash/TrashPage.vue',
+    title: 'Trash',
+    group: 'trash'
+  },
   {
     path: '/warehouse-models',
     name: 'warehouse-models',
@@ -299,15 +317,6 @@ export const screens = [
     group: 'profiles',
     parent: { name: 'attributes', label: 'Attributes' },
     issue: 19
-  },
-  {
-    path: '/attributes/trash',
-    name: 'attributes-trash',
-    component: 'profiles/attributes/AttributesTrashPage.vue',
-    title: 'Attributes trash',
-    group: 'profiles',
-    parent: { name: 'attributes', label: 'Attributes' },
-    issue: 20
   },
   {
     path: '/channels/email',
@@ -335,15 +344,6 @@ export const screens = [
     issue: 30
   },
   {
-    path: '/destinations/trash',
-    name: 'destinations-trash',
-    component: 'destinations/DestinationsTrashPage.vue',
-    title: 'Destinations trash',
-    group: 'destinations',
-    parent: { name: 'destinations', label: 'Destinations' },
-    issue: 31
-  },
-  {
     path: '/dwh-connections/new',
     name: 'dwh-connections-new',
     component: 'warehouse/connections/DwhConnectionCreatePage.vue',
@@ -353,15 +353,6 @@ export const screens = [
     issue: 33
   },
   {
-    path: '/dwh-connections/trash',
-    name: 'dwh-connections-trash',
-    component: 'warehouse/connections/DwhConnectionsTrashPage.vue',
-    title: 'Warehouse connections trash',
-    group: 'warehouse',
-    parent: { name: 'dwh-connections', label: 'Warehouse connections' },
-    issue: 34
-  },
-  {
     path: '/dwh-syncs/new',
     name: 'dwh-syncs-new',
     component: 'warehouse/syncs/DwhSyncCreatePage.vue',
@@ -369,15 +360,6 @@ export const screens = [
     group: 'warehouse',
     parent: { name: 'dwh-syncs', label: 'DWH syncs' },
     issue: 36
-  },
-  {
-    path: '/dwh-syncs/trash',
-    name: 'dwh-syncs-trash',
-    component: 'warehouse/syncs/DwhSyncsTrashPage.vue',
-    title: 'Warehouse syncs trash',
-    group: 'warehouse',
-    parent: { name: 'dwh-syncs', label: 'DWH syncs' },
-    issue: 37
   },
   {
     path: '/engage-operator/work-log',
@@ -397,15 +379,6 @@ export const screens = [
     issue: 45
   },
   {
-    path: '/live-profile-syncs/trash',
-    name: 'live-profile-syncs-trash',
-    component: 'profiles/live-syncs/LiveProfileSyncsTrashPage.vue',
-    title: 'Live profile syncs trash',
-    group: 'profiles',
-    parent: { name: 'live-profile-syncs', label: 'Live profile syncs' },
-    issue: 46
-  },
-  {
     path: '/pipes/new',
     name: 'pipes-new',
     component: 'pipes/PipeCreatePage.vue',
@@ -413,15 +386,6 @@ export const screens = [
     group: 'pipes',
     parent: { name: 'pipes', label: 'Pipes' },
     issue: 49
-  },
-  {
-    path: '/pipes/trash',
-    name: 'pipes-trash',
-    component: 'pipes/PipesTrashPage.vue',
-    title: 'Pipes trash',
-    group: 'pipes',
-    parent: { name: 'pipes', label: 'Pipes' },
-    issue: 50
   },
   {
     path: '/profile-api-endpoints/new',
@@ -433,15 +397,6 @@ export const screens = [
     issue: 52
   },
   {
-    path: '/profile-api-endpoints/trash',
-    name: 'profile-api-endpoints-trash',
-    component: 'profiles/api/ProfileApiEndpointsTrashPage.vue',
-    title: 'Profile API endpoints trash',
-    group: 'profiles',
-    parent: { name: 'profile-api', label: 'Profile API' },
-    issue: 53
-  },
-  {
     path: '/profile-dwh-syncs/new',
     name: 'profile-dwh-syncs-new',
     component: 'profiles/dwh-syncs/ProfileDwhSyncCreatePage.vue',
@@ -449,15 +404,6 @@ export const screens = [
     group: 'profiles',
     parent: { name: 'profile-dwh-syncs', label: 'Profile DWH syncs' },
     issue: 55
-  },
-  {
-    path: '/profile-dwh-syncs/trash',
-    name: 'profile-dwh-syncs-trash',
-    component: 'profiles/dwh-syncs/ProfileDwhSyncsTrashPage.vue',
-    title: 'Profile warehouse syncs trash',
-    group: 'profiles',
-    parent: { name: 'profile-dwh-syncs', label: 'Profile DWH syncs' },
-    issue: 56
   },
   {
     path: '/profiles/identity-resolution',
@@ -485,15 +431,6 @@ export const screens = [
     issue: 64
   },
   {
-    path: '/sources/trash',
-    name: 'sources-trash',
-    component: 'sources/SourcesTrashPage.vue',
-    title: 'Sources trash',
-    group: 'sources',
-    parent: { name: 'sources', label: 'Sources' },
-    issue: 65
-  },
-  {
     path: '/warehouse-models/new',
     name: 'warehouse-models-new',
     component: 'warehouse/models/WarehouseModelCreatePage.vue',
@@ -501,15 +438,6 @@ export const screens = [
     group: 'warehouse',
     parent: { name: 'warehouse-models', label: 'Warehouse models' },
     issue: 68
-  },
-  {
-    path: '/warehouse-models/trash',
-    name: 'warehouse-models-trash',
-    component: 'warehouse/models/WarehouseModelsTrashPage.vue',
-    title: 'Warehouse models trash',
-    group: 'warehouse',
-    parent: { name: 'warehouse-models', label: 'Warehouse models' },
-    issue: 69
   },
   {
     path: '/destinations/:id',

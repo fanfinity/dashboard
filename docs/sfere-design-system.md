@@ -31,8 +31,8 @@ The replacement kept the sixteen original filenames — `PageHeader.vue`,
 `DataTable.vue`, `StatusBadge.vue` and the rest — which is what let 104 screen
 files pick up Sfere implementations without rewriting 571 imports. Twenty-five
 components have no pre-Sfere counterpart and keep their `Sfere*` names. The
-remaining two, `StickyActionBar` and `SecretRevealDialog`, are newer than the
-swap and simply describe what they do: 16 + 25 + 2 = 43.
+remaining three — `StickyActionBar`, `SecretRevealDialog` and `RowActionsMenu` —
+are newer than the swap and simply describe what they do: 16 + 25 + 3 = 44.
 
 ---
 
@@ -41,7 +41,7 @@ swap and simply describe what they do: 16 + 25 + 2 = 43.
 | Path                         | What                                                           |
 | ---------------------------- | -------------------------------------------------------------- |
 | `src/css/sfere.css`          | The token layer: `@theme` tokens + seven `@utility` treatments |
-| `src/components/ui/`         | 43 components. The kit every screen is built from              |
+| `src/components/ui/`         | 44 components. The kit every screen is built from              |
 | `src/components/sfere-docs/` | Doc-page scaffolding. **Not** part of the kit                  |
 | `src/pages/design-system/`   | The showcase page itself                                       |
 | `public/brand/`              | Logo lockups and the mark, as real SVG files                   |
@@ -208,7 +208,7 @@ inexplicably invisible, check for a bare `hidden`.
 
 ## Components
 
-43, in `src/components/ui/`, imported by path:
+44, in `src/components/ui/`, imported by path:
 
 ```js
 import SfereButton from '@/components/ui/SfereButton.vue'
@@ -222,7 +222,7 @@ the data and hands down strings. The one carve-out is a declarative
 **Screen primitives** — `PageHeader` `DataTable` `ErrorState` `LoadingState`
 `EmptyState` `FormSection` `FormField` `ConfirmDialog` `DefinitionList`
 `SelectableCard` `ToolbarSearch` `CardPanel` `NoticeBanner` `StatCard`
-`StatusBadge` `TabNav` `StickyActionBar` `SecretRevealDialog`
+`StatusBadge` `TabNav` `StickyActionBar` `SecretRevealDialog` `RowActionsMenu`
 **Actions & markers** — `SfereButton` `SfereIconButton` `SfereIcon`
 `SfereLinkArrow` `SferePill` `SfereEyebrow` `SfereIconChip` `SfereAvatar`
 `SfereKbd` `SfereTooltip`
@@ -298,7 +298,7 @@ its own. Adding a glyph means one entry in that file; nothing else changes.
 
 ### Screen primitives
 
-Sixteen of the 43 carry the filenames of the components they replaced, so that
+Sixteen of the 44 carry the filenames of the components they replaced, so that
 every screen picked up a Sfere implementation without an import changing. What
 each one is underneath:
 
@@ -396,6 +396,23 @@ They were right the first time and they still apply:
   second modal, which is the one thing the first entry already licensed. A third
   entry that is not a modal is the change worth arguing about.
 
+  **`RowActionsMenu` is what that clause costs, and it was paid deliberately.** A
+  kebab row-action menu is a popover, not a modal: it owes no focus trap and no
+  scroll lock, and the one thing it shares with a dialog — teleporting out of an
+  `overflow` ancestor — is four lines of `<Teleport to="body">` rather than a
+  reason to import `q-menu`. So it is hand-rolled: measure-then-place against the
+  trigger's `getBoundingClientRect`, a horizontal clamp, flip-above when there is
+  less room below than the menu is tall, dismissal on outside `pointerdown`
+  (capture, trigger excluded), `focusin` outside, any scroll, Escape, Tab and
+  select, and roving `role="menuitem"` focus with Down/Up wrap and Home/End.
+  Roughly ninety lines. It closes on scroll rather than repositioning, on
+  purpose: repositioning needs a top clamp, and a clamped menu whose trigger has
+  scrolled out from under it is a panel attached to nothing.
+
+  The next popover in this kit copies `RowActionsMenu` rather than reopening the
+  question. The rule is not "avoid Quasar"; it is that the carve-out was argued
+  for a modal's five invisible behaviours, and a popover does not have them.
+
   `SecretRevealDialog` also inverts the dismissal contract, which is why it is a
   separate component rather than a `ConfirmDialog` prop. It is `persistent` with
   **no Cancel and no `v-close-popup`**, because it shows a write-once secret —
@@ -477,7 +494,7 @@ the company prompting Claude Design gets the Sfere palette and typefaces by
 default.
 
 **Only the tokens cross over — the component kit does not.** Claude Design's
-agent builds in React; `src/components/ui/` is 43 Vue SFCs and cannot be
+agent builds in React; `src/components/ui/` is 44 Vue SFCs and cannot be
 imported there. The uploaded `_ds_bundle.js` is an empty namespace and says so.
 Anyone using it composes their own components from the tokens.
 

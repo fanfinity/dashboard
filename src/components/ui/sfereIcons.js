@@ -44,6 +44,15 @@ export const SFERE_ICONS = {
   menu: {
     path: 'M224 128a8 8 0 0 1-8 8H40a8 8 0 0 1 0-16h176a8 8 0 0 1 8 8M40 72h176a8 8 0 0 0 0-16H40a8 8 0 0 0 0 16m176 112H40a8 8 0 0 0 0 16h176a8 8 0 0 0 0-16'
   },
+  // The row-action kebab (RowActionsMenu). Vertical, not horizontal: it sits in
+  // a table's right-hand actions column, where three dots on a row would read
+  // as an ellipsis truncating the cell beside it. Phosphor's geometry — three
+  // r13 circles at 64/128/192 — rather than a heavier dot, because the whole
+  // set is regular weight and a bolder glyph here would look like a different
+  // family. If it reads small, the lever is the button size, not the radius.
+  'dots-vertical': {
+    path: 'M128 51a13 13 0 1 0 13 13a13 13 0 0 0-13-13m0 64a13 13 0 1 0 13 13a13 13 0 0 0-13-13m0 64a13 13 0 1 0 13 13a13 13 0 0 0-13-13'
+  },
   // The password show/hide pair. Two glyphs rather than one rotated or
   // struck-through icon: the slash is part of the outline, so a CSS overlay
   // would not follow `currentColor` on a dark form.

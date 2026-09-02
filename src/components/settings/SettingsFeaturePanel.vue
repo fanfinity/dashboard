@@ -109,6 +109,8 @@ const CORE_KEYS = [
   // module has to be added to, or it renders under "Backlog modules" while
   // being live everywhere else.
   'functions',
+  // Added with the one Trash screen that replaced ten '/x/trash' routes.
+  'trash',
   'settings',
   'warehouse',
   'monitoring',

@@ -132,6 +132,82 @@ const routes = [
     redirect: '/settings?tab=authorizations'
   },
 
+  // Ten '/x/trash' screens became one Trash destination in the bottom menu, and
+  // these ten redirects are what keeps their URLs working. Same move, same
+  // reasoning as the three above: a trash is somewhere you go occasionally to
+  // recover something, not somewhere you work, so ten rows' worth of toolbar
+  // buttons pointing at ten near-identical screens cost more than one row does.
+  //
+  // EVERY `name` IS KEPT, and that is the load-bearing half. A `router-link` to
+  // an unresolved route name logs the console warning `pnpm smoke:dist` fails on,
+  // and these names are still reachable from handover docs and from any page that
+  // has not been swept yet.
+  //
+  // A static redirect outranks the '/sources/:id' child it looks like it
+  // collides with — vue-router 4 scores a static segment above a param
+  // regardless of declaration order, verified against this exact pair rather
+  // than assumed, which is why these can sit here at the bottom next to the
+  // other redirects instead of ahead of the layout route.
+  //
+  // Only three of the ten have a tab: the Trash screen covers Sources,
+  // Destinations and Pipes. The other seven land on the screen's default tab
+  // rather than 404-ing, and their fixture slices are no longer surfaced
+  // anywhere — every one of those modules is switched off in features.js today
+  // (dwh-connections aside), so nothing live lost a surface.
+  //
+  // Sources writes no `?tab=` because Sources is the default tab, keeping
+  // /trash the canonical URL — the same choice SettingsPage makes for General.
+  {
+    path: '/sources/trash',
+    name: 'sources-trash',
+    redirect: '/trash'
+  },
+  {
+    path: '/destinations/trash',
+    name: 'destinations-trash',
+    redirect: '/trash?tab=destinations'
+  },
+  {
+    path: '/pipes/trash',
+    name: 'pipes-trash',
+    redirect: '/trash?tab=pipes'
+  },
+  {
+    path: '/attributes/trash',
+    name: 'attributes-trash',
+    redirect: '/trash'
+  },
+  {
+    path: '/dwh-connections/trash',
+    name: 'dwh-connections-trash',
+    redirect: '/trash'
+  },
+  {
+    path: '/dwh-syncs/trash',
+    name: 'dwh-syncs-trash',
+    redirect: '/trash'
+  },
+  {
+    path: '/live-profile-syncs/trash',
+    name: 'live-profile-syncs-trash',
+    redirect: '/trash'
+  },
+  {
+    path: '/profile-api-endpoints/trash',
+    name: 'profile-api-endpoints-trash',
+    redirect: '/trash'
+  },
+  {
+    path: '/profile-dwh-syncs/trash',
+    name: 'profile-dwh-syncs-trash',
+    redirect: '/trash'
+  },
+  {
+    path: '/warehouse-models/trash',
+    name: 'warehouse-models-trash',
+    redirect: '/trash'
+  },
+
   // Always leave this as last one,
   // but you can also remove it
   {

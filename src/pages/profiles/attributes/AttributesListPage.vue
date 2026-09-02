@@ -1,136 +1,142 @@
 <template>
   <q-page class="p-6">
-    <PageHeader
-      title="Attributes"
-      subtitle="Computed fields on a fan profile, each one derived from event data or a warehouse model."
-    >
-      <template #actions>
-        <ToolbarSearch v-model="query" placeholder="Search attributes..." />
-        <SfereIconButton
-          icon="trash"
-          label="Trash"
-          :to="{ name: 'attributes-trash' }"
-        />
-        <SfereIconButton
-          icon="plus"
-          label="New attribute"
-          variant="primary"
-          :to="{ name: 'attributes-new' }"
-        />
-      </template>
-    </PageHeader>
-
-    <div
-      v-if="!loading && !error && attributes.length"
-      class="mb-5 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4"
-    >
-      <StatCard label="Attributes" :value="formatCount(attributes.length)" />
-      <StatCard
-        label="Realtime"
-        :value="formatCount(counts.realtime)"
-        hint="Evaluated as events arrive"
-      />
-      <StatCard
-        label="Warehouse"
-        :value="formatCount(counts.warehouse)"
-        hint="Evaluated on the model refresh"
-      />
-      <StatCard
-        label="Used in audiences"
-        :value="formatCount(counts.used)"
-        :hint="`${formatCount(counts.unused)} not referenced yet`"
-      />
-    </div>
-
-    <TabNav v-model="tab" :tabs="tabs" />
-
-    <DataTable
-      :columns="columns"
-      :rows="visible"
-      :loading="loading"
-      :error="error"
-      row-key="id"
-      @retry="load"
-    >
-      <template #cell-name="{ row }">
-        <div class="flex items-center gap-2">
-          <p class="font-medium text-ink">{{ row.name }}</p>
-          <StatusBadge
-            v-if="row.isManaged"
-            tone="brand"
-            :label="`Managed by ${row.managedBy}`"
+    <!-- One content cap for the header, the toolbar and the table, so all three
+         share a left AND a right edge. Same 1400px literal as DashboardHomePage
+         — deliberately wider than `--container-sfere-page` (80rem, the
+         marketing-site measure), which left ~40% of a wide monitor empty. On
+         the page, not in MainLayout: that layout is shared with screens which
+         want the full width. -->
+    <div class="mx-auto w-full max-w-[1400px]">
+      <PageHeader
+        title="Attributes"
+        subtitle="Computed fields on a fan profile, each one derived from event data or a warehouse model."
+      >
+        <template #actions>
+          <ToolbarSearch v-model="query" placeholder="Search attributes..." />
+          <SfereIconButton
+            icon="plus"
+            label="New attribute"
+            variant="primary"
+            :to="{ name: 'attributes-new' }"
           />
-        </div>
-        <p class="font-mono text-xs text-subtle">{{ row.id }}</p>
-      </template>
+        </template>
+      </PageHeader>
 
-      <template #cell-type="{ row }">
-        <StatusBadge
-          :tone="row.type === 'realtime' ? 'success' : 'neutral'"
-          :label="attributeTypeLabel(row.type)"
+      <div
+        v-if="!loading && !error && attributes.length"
+        class="mb-5 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4"
+      >
+        <StatCard label="Attributes" :value="formatCount(attributes.length)" />
+        <StatCard
+          label="Realtime"
+          :value="formatCount(counts.realtime)"
+          hint="Evaluated as events arrive"
         />
-      </template>
+        <StatCard
+          label="Warehouse"
+          :value="formatCount(counts.warehouse)"
+          hint="Evaluated on the model refresh"
+        />
+        <StatCard
+          label="Used in audiences"
+          :value="formatCount(counts.used)"
+          :hint="`${formatCount(counts.unused)} not referenced yet`"
+        />
+      </div>
 
-      <template #cell-derivedFrom="{ row }">
-        <p class="text-ink">{{ row.derivedFrom }}</p>
-        <p class="text-xs text-subtle">{{ row.algorithmText }}</p>
-      </template>
+      <TabNav v-model="tab" :tabs="tabs" />
 
-      <template #cell-dimensionCount="{ row }">
-        <p class="text-ink">{{ dimensionCountLabel(row) }}</p>
-        <p class="text-xs text-subtle">{{ row.dimensionNames }}</p>
-      </template>
+      <DataTable
+        :columns="columns"
+        :rows="visible"
+        :loading="loading"
+        :error="error"
+        row-key="id"
+        @retry="load"
+      >
+        <template #cell-name="{ row }">
+          <div class="flex items-center gap-2">
+            <p class="font-medium text-ink">{{ row.name }}</p>
+            <StatusBadge
+              v-if="row.isManaged"
+              tone="brand"
+              :label="`Managed by ${row.managedBy}`"
+            />
+          </div>
+          <p class="font-mono text-xs text-subtle">{{ row.id }}</p>
+        </template>
 
-      <template #cell-usedByAudienceCount="{ value }">
-        {{ formatCount(value) }}
-      </template>
+        <template #cell-type="{ row }">
+          <StatusBadge
+            :tone="row.type === 'realtime' ? 'success' : 'neutral'"
+            :label="attributeTypeLabel(row.type)"
+          />
+        </template>
 
-      <!-- The seven columns leave this one narrow enough that "30 Jun 2026"
-           breaks across two lines; the date is one token, so it never wraps. -->
-      <template #cell-updatedAt="{ value }">
-        <span class="whitespace-nowrap">{{ formatDate(value) }}</span>
-      </template>
+        <template #cell-derivedFrom="{ row }">
+          <p class="text-ink">{{ row.derivedFrom }}</p>
+          <p class="text-xs text-subtle">{{ row.algorithmText }}</p>
+        </template>
 
-      <template #cell-actions="{ row }">
-        <div class="flex items-center justify-end">
-          <button
-            :disabled="row.isManaged"
-            :title="
-              row.isManaged
-                ? `Maintained by ${row.managedBy}, so it cannot be deleted here.`
-                : ''
-            "
-            class="rounded-lg border border-line2 bg-white px-3 py-1.5 text-sm font-medium text-rose-600 hover:bg-fill disabled:cursor-not-allowed disabled:opacity-40"
-            @click.stop="ask(row)"
-          >
-            Delete
-          </button>
-        </div>
-      </template>
+        <template #cell-dimensionCount="{ row }">
+          <p class="text-ink">{{ dimensionCountLabel(row) }}</p>
+          <p class="text-xs text-subtle">{{ row.dimensionNames }}</p>
+        </template>
 
-      <!-- Two different "no rows" cases: nothing defined yet (offer the primary
-           CTA) and nothing matching the filters (offer a way back). -->
-      <template #empty>
-        <EmptyState :title="emptyTitle" :description="emptyDescription">
-          <template #cta>
-            <button
-              v-if="!attributes.length"
-              class="flex h-9 items-center gap-1.5 rounded-lg bg-brand px-3.5 text-sm font-medium text-white shadow-sm hover:opacity-90"
-              @click="router.push({ name: 'attributes-new' })"
-            >
-              Create your first attribute
-            </button>
-            <button
-              v-else
-              class="rounded-lg border border-line2 bg-white px-3 py-1.5 text-sm font-medium text-brand hover:bg-fill"
-              @click="clearFilters"
-            >
-              Clear filters
-            </button>
-          </template>
-        </EmptyState>
-      </template>
-    </DataTable>
+        <template #cell-usedByAudienceCount="{ value }">
+          {{ formatCount(value) }}
+        </template>
+
+        <!-- The date is one token, so `nowrap` is what keeps "30 Jun 2026" on
+             one line in a column seven others are competing with. -->
+        <template #cell-updatedAt="{ value }">
+          <span class="whitespace-nowrap">{{ formatDate(value) }}</span>
+        </template>
+
+        <!-- No wrapper element: the column is `align: 'right'`, so SfereTable
+             puts `text-right` on the cell and the trigger is inline-level,
+             which is all the alignment it needs.
+
+             A managed attribute renders NO trigger, rather than a menu whose
+             one item is disabled: RowActionsMenu opens nothing on an empty
+             action list, so removing the item would leave a control that does
+             nothing when clicked. The row already says why in the name cell —
+             the "Managed by X" badge — and a badge is visible to every reader,
+             where the `title` this replaced reached neither a screen reader nor
+             a touch user. -->
+        <template #cell-actions="{ row }">
+          <RowActionsMenu
+            v-if="!row.isManaged"
+            :label="`Actions for ${row.name}`"
+            :actions="ROW_ACTIONS"
+            @select="ask(row)"
+          />
+        </template>
+
+        <!-- Two different "no rows" cases: nothing defined yet (offer the primary
+             CTA) and nothing matching the filters (offer a way back). -->
+        <template #empty>
+          <EmptyState :title="emptyTitle" :description="emptyDescription">
+            <template #cta>
+              <button
+                v-if="!attributes.length"
+                class="flex h-9 items-center gap-1.5 rounded-lg bg-brand px-3.5 text-sm font-medium text-white shadow-sm hover:opacity-90"
+                @click="router.push({ name: 'attributes-new' })"
+              >
+                Create your first attribute
+              </button>
+              <button
+                v-else
+                class="rounded-lg border border-line2 bg-white px-3 py-1.5 text-sm font-medium text-brand hover:bg-fill"
+                @click="clearFilters"
+              >
+                Clear filters
+              </button>
+            </template>
+          </EmptyState>
+        </template>
+      </DataTable>
+    </div>
 
     <ConfirmDialog
       v-model="confirmDelete"
@@ -155,6 +161,7 @@ import StatusBadge from '@/components/ui/StatusBadge.vue'
 import EmptyState from '@/components/ui/EmptyState.vue'
 import ToolbarSearch from '@/components/ui/ToolbarSearch.vue'
 import SfereIconButton from '@/components/ui/SfereIconButton.vue'
+import RowActionsMenu from '@/components/ui/RowActionsMenu.vue'
 import ConfirmDialog from '@/components/ui/ConfirmDialog.vue'
 import {
   algorithmLabel,
@@ -181,6 +188,13 @@ const tab = ref('all')
 const confirmDelete = ref(false)
 const target = ref(null)
 
+// A constant, not a per-row function like the other list screens use: nothing
+// here flips with the row's state, because an attribute has no enable/pause.
+// The handler ignores the emitted key for the same reason — a second action
+// added here needs a `switch` on it, or it will silently run the delete
+// confirm.
+const ROW_ACTIONS = [{ key: 'delete', label: 'Delete', tone: 'destructive' }]
+
 const columns = [
   { key: 'name', label: 'Attribute', sortable: true },
   { key: 'type', label: 'Kind', sortable: true },
@@ -193,7 +207,7 @@ const columns = [
     align: 'right'
   },
   { key: 'updatedAt', label: 'Updated', sortable: true },
-  { key: 'actions', label: '', align: 'right', width: '120px' }
+  { key: 'actions', label: '', align: 'right', width: '72px' }
 ]
 
 // The table sorts on `row[key]`, so anything a column shows has to exist as a
@@ -316,7 +330,10 @@ function remove() {
   if (!row) return
   removeAttribute(row.id)
   notifyLocal(`${row.name} moved to trash`)
-  target.value = null
+  // `target` is deliberately NOT nulled: `deleteMessage` reads it, so clearing it
+  // here blanks the dialog's sentence out while the dialog is still fading. The
+  // dialog's open state is its own ref, and `ask()` overwrites `target` before
+  // reopening, so nothing goes stale.
 }
 
 onMounted(load)

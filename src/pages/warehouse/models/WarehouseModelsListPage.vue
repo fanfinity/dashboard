@@ -1,173 +1,173 @@
 <template>
   <q-page class="p-6">
-    <PageHeader
-      title="Warehouse models"
-      subtitle="Each one is a select against a warehouse connection whose result the fan graph can build on."
-    >
-      <template #actions>
-        <ToolbarSearch v-model="query" placeholder="Search models..." />
-        <SfereIconButton
-          icon="trash"
-          label="Trash"
-          :to="{ name: 'warehouse-models-trash' }"
-        />
-        <SfereIconButton
-          icon="plus"
-          label="New model"
-          variant="primary"
-          :to="{ name: 'warehouse-models-new' }"
-        />
-      </template>
-    </PageHeader>
-
-    <div
-      v-if="!loading && !error && models.length"
-      class="mb-5 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4"
-    >
-      <StatCard
-        label="Models"
-        :value="formatCount(models.length)"
-        :hint="`${formatCount(stats.paused)} paused`"
-      />
-      <StatCard
-        label="Rows modelled"
-        :value="formatCount(stats.rows)"
-        hint="As of the last refresh of each model"
-      />
-      <StatCard
-        label="Columns exposed"
-        :value="formatCount(stats.columns)"
-        hint="What attributes and syncs can read"
-      />
-      <StatCard
-        label="Derived attributes"
-        :value="formatCount(stats.attributes)"
-        :hint="`Feeding ${formatCount(stats.audiences)} audiences`"
-      />
-    </div>
-
-    <!-- Secondary resources: connection health, and the records that depend on
-         each model. Their failure degrades this panel and nothing else — the
-         table below is driven by the models themselves and keeps working. -->
-    <div v-if="contextError" class="mb-5">
-      <ErrorState
-        title="Couldn't load connections and dependants."
-        :message="contextError"
-        @retry="loadContext"
-      />
-    </div>
-
-    <NoticeBanner
-      v-else-if="attention.length"
-      tone="warn"
-      class="mb-5"
-      :title="attentionTitle"
-      :message="attentionMessage"
-    />
-
-    <TabNav v-model="tab" :tabs="tabs" />
-
-    <DataTable
-      :columns="columns"
-      :rows="visible"
-      :loading="loading"
-      :error="error"
-      row-key="id"
-      @retry="load"
-    >
-      <template #cell-name="{ row }">
-        <div class="flex items-center gap-2">
-          <p class="font-medium text-ink">{{ row.name }}</p>
-          <StatusBadge
-            v-if="row.connectionBroken"
-            tone="danger"
-            label="Connection down"
+    <!-- One content cap for the header, the toolbar and the table, so all
+         three share a left AND a right edge. Same measure and same string as
+         DashboardHomePage's wrapper — 1400px, deliberately wider than
+         `--container-sfere-page` (80rem), which left ~40% of a wide monitor
+         empty. It sits on the page rather than in MainLayout because the layout
+         is shared with screens that want the whole width, and the dialogs below
+         stay outside it since q-dialog teleports anyway. -->
+    <div class="mx-auto w-full max-w-[1400px]">
+      <PageHeader
+        title="Warehouse models"
+        subtitle="Each one is a select against a warehouse connection whose result the fan graph can build on."
+      >
+        <template #actions>
+          <ToolbarSearch v-model="query" placeholder="Search models..." />
+          <SfereIconButton
+            icon="plus"
+            label="New model"
+            variant="primary"
+            :to="{ name: 'warehouse-models-new' }"
           />
-        </div>
-        <p class="font-mono text-xs text-subtle">{{ row.id }}</p>
-      </template>
+        </template>
+      </PageHeader>
 
-      <template #cell-dwhConnectionName="{ row }">
-        <p class="text-ink">{{ row.dwhConnectionName }}</p>
-        <p class="text-xs text-subtle">{{ row.connectionDetail }}</p>
-      </template>
-
-      <template #cell-columnCount="{ row }">
-        <p class="whitespace-nowrap text-ink">{{ row.shapeLabel }}</p>
-        <p class="whitespace-nowrap font-mono text-xs text-subtle">{{
-          row.keyLabel
-        }}</p>
-      </template>
-
-      <template #cell-lastRefreshedAt="{ row }">
-        <p class="whitespace-nowrap text-muted">{{ row.refreshedLabel }}</p>
-        <div class="mt-1">
-          <StatusBadge
-            :tone="refreshStatusVariant(row.lastRefreshStatus)"
-            :label="refreshStatusLabel(row.lastRefreshStatus)"
-          />
-        </div>
-        <!-- The detail of a warning is a sentence, so it goes under the pill
-             rather than inside it. -->
-        <p v-if="row.lastRefreshMessage" class="mt-1 text-xs text-subtle">{{
-          row.lastRefreshMessage
-        }}</p>
-      </template>
-
-      <template #cell-usedByAttributeCount="{ row }">
-        <p class="whitespace-nowrap text-ink">{{ row.usedByLabel }}</p>
-        <p class="whitespace-nowrap text-xs text-subtle">{{
-          row.audienceLabel
-        }}</p>
-      </template>
-
-      <template #cell-isEnabled="{ value }">
-        <StatusBadge
-          :tone="value ? 'success' : 'neutral'"
-          :label="value ? 'Active' : 'Paused'"
+      <div
+        v-if="!loading && !error && models.length"
+        class="mb-5 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4"
+      >
+        <StatCard
+          label="Models"
+          :value="formatCount(models.length)"
+          :hint="`${formatCount(stats.paused)} paused`"
         />
-      </template>
+        <StatCard
+          label="Rows modelled"
+          :value="formatCount(stats.rows)"
+          hint="As of the last refresh of each model"
+        />
+        <StatCard
+          label="Columns exposed"
+          :value="formatCount(stats.columns)"
+          hint="What attributes and syncs can read"
+        />
+        <StatCard
+          label="Derived attributes"
+          :value="formatCount(stats.attributes)"
+          :hint="`Feeding ${formatCount(stats.audiences)} audiences`"
+        />
+      </div>
 
-      <template #cell-actions="{ row }">
-        <div class="flex flex-nowrap items-center justify-end gap-2">
-          <button
-            class="rounded-lg border border-line2 bg-white px-3 py-1.5 text-sm font-medium text-brand hover:bg-fill"
-            @click.stop="askToggle(row)"
-          >
-            {{ row.isEnabled ? 'Pause' : 'Resume' }}
-          </button>
-          <button
-            class="rounded-lg border border-line2 bg-white px-3 py-1.5 text-sm font-medium text-rose-600 hover:bg-fill"
-            @click.stop="ask(row)"
-          >
-            Delete
-          </button>
-        </div>
-      </template>
+      <!-- Secondary resources: connection health, and the records that depend on
+           each model. Their failure degrades this panel and nothing else — the
+           table below is driven by the models themselves and keeps working. -->
+      <div v-if="contextError" class="mb-5">
+        <ErrorState
+          title="Couldn't load connections and dependants."
+          :message="contextError"
+          @retry="loadContext"
+        />
+      </div>
 
-      <!-- Two different "no rows" cases: nothing modelled yet (offer the primary
-           CTA) and nothing matching the filters (offer a way back). -->
-      <template #empty>
-        <EmptyState :title="emptyTitle" :description="emptyDescription">
-          <template #cta>
-            <button
-              v-if="!models.length"
-              class="flex h-9 items-center gap-1.5 rounded-lg bg-brand px-3.5 text-sm font-medium text-white shadow-sm hover:opacity-90"
-              @click="router.push({ name: 'warehouse-models-new' })"
-            >
-              Build your first model
-            </button>
-            <button
-              v-else
-              class="rounded-lg border border-line2 bg-white px-3 py-1.5 text-sm font-medium text-brand hover:bg-fill"
-              @click="clearFilters"
-            >
-              Clear filters
-            </button>
-          </template>
-        </EmptyState>
-      </template>
-    </DataTable>
+      <NoticeBanner
+        v-else-if="attention.length"
+        tone="warn"
+        class="mb-5"
+        :title="attentionTitle"
+        :message="attentionMessage"
+      />
+
+      <TabNav v-model="tab" :tabs="tabs" />
+
+      <DataTable
+        :columns="columns"
+        :rows="visible"
+        :loading="loading"
+        :error="error"
+        row-key="id"
+        @retry="load"
+      >
+        <template #cell-name="{ row }">
+          <div class="flex items-center gap-2">
+            <p class="font-medium text-ink">{{ row.name }}</p>
+            <StatusBadge
+              v-if="row.connectionBroken"
+              tone="danger"
+              label="Connection down"
+            />
+          </div>
+          <p class="font-mono text-xs text-subtle">{{ row.id }}</p>
+        </template>
+
+        <template #cell-dwhConnectionName="{ row }">
+          <p class="text-ink">{{ row.dwhConnectionName }}</p>
+          <p class="text-xs text-subtle">{{ row.connectionDetail }}</p>
+        </template>
+
+        <template #cell-columnCount="{ row }">
+          <p class="whitespace-nowrap text-ink">{{ row.shapeLabel }}</p>
+          <p class="whitespace-nowrap font-mono text-xs text-subtle">{{
+            row.keyLabel
+          }}</p>
+        </template>
+
+        <template #cell-lastRefreshedAt="{ row }">
+          <p class="whitespace-nowrap text-muted">{{ row.refreshedLabel }}</p>
+          <div class="mt-1">
+            <StatusBadge
+              :tone="refreshStatusVariant(row.lastRefreshStatus)"
+              :label="refreshStatusLabel(row.lastRefreshStatus)"
+            />
+          </div>
+          <!-- The detail of a warning is a sentence, so it goes under the pill
+               rather than inside it. -->
+          <p v-if="row.lastRefreshMessage" class="mt-1 text-xs text-subtle">{{
+            row.lastRefreshMessage
+          }}</p>
+        </template>
+
+        <template #cell-usedByAttributeCount="{ row }">
+          <p class="whitespace-nowrap text-ink">{{ row.usedByLabel }}</p>
+          <p class="whitespace-nowrap text-xs text-subtle">{{
+            row.audienceLabel
+          }}</p>
+        </template>
+
+        <template #cell-isEnabled="{ value }">
+          <StatusBadge
+            :tone="value ? 'success' : 'neutral'"
+            :label="value ? 'Active' : 'Paused'"
+          />
+        </template>
+
+        <!-- No flex wrapper: the column is `align: 'right'`, which SfereTable
+             renders as `text-align: right` on the <td>, and RowActionsMenu's root
+             is `inline-grid` — an inline-level box, so it lands on the right edge
+             on its own. A wrapper here would only re-open Quasar's unlayered
+             wrapping `.flex` (collision #4) for no gain. -->
+        <template #cell-actions="{ row }">
+          <RowActionsMenu
+            :label="`Actions for ${row.name}`"
+            :actions="rowActions(row)"
+            @select="key => onRowAction(key, row)"
+          />
+        </template>
+
+        <!-- Two different "no rows" cases: nothing modelled yet (offer the primary
+             CTA) and nothing matching the filters (offer a way back). -->
+        <template #empty>
+          <EmptyState :title="emptyTitle" :description="emptyDescription">
+            <template #cta>
+              <button
+                v-if="!models.length"
+                class="flex h-9 items-center gap-1.5 rounded-lg bg-brand px-3.5 text-sm font-medium text-white shadow-sm hover:opacity-90"
+                @click="router.push({ name: 'warehouse-models-new' })"
+              >
+                Build your first model
+              </button>
+              <button
+                v-else
+                class="rounded-lg border border-line2 bg-white px-3 py-1.5 text-sm font-medium text-brand hover:bg-fill"
+                @click="clearFilters"
+              >
+                Clear filters
+              </button>
+            </template>
+          </EmptyState>
+        </template>
+      </DataTable>
+    </div>
 
     <ConfirmDialog
       v-model="confirmDelete"
@@ -203,6 +203,7 @@ import NoticeBanner from '@/components/ui/NoticeBanner.vue'
 import ToolbarSearch from '@/components/ui/ToolbarSearch.vue'
 import SfereIconButton from '@/components/ui/SfereIconButton.vue'
 import ConfirmDialog from '@/components/ui/ConfirmDialog.vue'
+import RowActionsMenu from '@/components/ui/RowActionsMenu.vue'
 import {
   connectionTypeLabel,
   describeDependants,
@@ -257,7 +258,10 @@ const columns = [
     width: '140px'
   },
   { key: 'isEnabled', label: 'Status', sortable: true },
-  { key: 'actions', label: '', align: 'right', width: '215px' }
+  // Sized for one 36px kebab plus the cell's own px-4, not for the two text
+  // buttons this replaced — a 215px column of whitespace is exactly what makes
+  // the data columns feel cramped on a wide window.
+  { key: 'actions', label: '', align: 'right', width: '76px' }
 ]
 
 // The table sorts on `row[key]`, so anything a column shows has to exist as a
@@ -436,6 +440,33 @@ function ask(row) {
   confirmDelete.value = true
 }
 
+// The menu reports a key and does nothing else — both branches still open the
+// screen's own ConfirmDialog, against its own target ref. The labels carry the
+// noun ("Pause model") because the trigger's aria-label names the ROW, so the
+// item is the only place the verb's object appears.
+function rowActions(row) {
+  return [
+    {
+      key: 'toggle',
+      label: row.isEnabled ? 'Pause model' : 'Resume model',
+      icon: row.isEnabled ? 'pause' : 'play'
+    },
+    // "Move to trash", not "Delete": it has to say the same thing the confirm
+    // it opens says, and that dialog is titled "Move model to trash?".
+    {
+      key: 'delete',
+      label: 'Move to trash',
+      icon: 'trash',
+      tone: 'destructive'
+    }
+  ]
+}
+
+function onRowAction(key, row) {
+  if (key === 'toggle') askToggle(row)
+  else if (key === 'delete') ask(row)
+}
+
 // A model with attributes hanging off it is not a safe delete, so the dialog
 // names what breaks rather than asking a generic "are you sure". When the
 // dependants failed to load, the model's own counters still carry the number.
@@ -455,7 +486,10 @@ function remove() {
   if (!row) return
   removeModel(row.id)
   notifyLocal(`${row.name} moved to trash`)
-  target.value = null
+  // `target` is deliberately NOT nulled: `deleteMessage` reads it, so clearing it
+  // here blanks the dialog's sentence out while the dialog is still fading. The
+  // dialog's open state is its own ref, and `ask()` overwrites `target` before
+  // reopening, so nothing goes stale.
 }
 
 onMounted(() => {

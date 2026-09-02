@@ -22,16 +22,30 @@
          min-content height of SelectableCard's Quasar wrapping flex at that width
          is enormous — it sized these 219px cards at 637px and kept it, at every
          viewport. Measured, not guessed; `repeat(N,minmax(0,1fr))` behind a
-         container query is the form that stays honest. -->
-    <div class="@container">
-      <div
-        class="grid grid-cols-1 gap-5 @min-[34rem]:grid-cols-2 @min-[52rem]:grid-cols-3"
-      >
+         container query is the form that stays honest.
+
+         TWO ROWS, ONE CONTAINER. Both grids query the same `@container` and
+         change shape at the same widths (34rem, then 52rem for the tail), so
+         they read as one grid with a heavier first row rather than as two that
+         happen to be stacked. The split itself comes from `hero` in the
+         registry, and `rows` drops an empty row rather than leaving a gap where
+         a filtered-out intent used to be. -->
+    <div class="@container grid gap-5">
+      <div v-for="row in rows" :key="row.key" :class="row.grid">
+        <!-- The coming-soon look is COLOUR, NOT OPACITY. Quasar ships unlayered
+             `[disabled] { opacity: .6; cursor: not-allowed }` (collision #2), so
+             SelectableCard's own `disabled:opacity-50` never applies and every
+             `disabled:*` fade in this repo is a dead class. What a layered
+             utility can still win is the surface: a dashed border on the page
+             fill reads as a placeholder rather than as a choice. SfereToggle
+             makes the same trade for the same reason. -->
         <SelectableCard
-          v-for="intent in available"
+          v-for="intent in row.intents"
           :key="intent.key"
           :selected="modelValue === intent.key"
-          @select="emit('update:modelValue', intent.key)"
+          :disabled="intent.comingSoon"
+          :class="intent.comingSoon && 'border-dashed! bg-sfere-fill!'"
+          @select="pick(intent)"
         >
           <!-- LAYOUT IS GRID, NOT MARGINS, and that is the whole point of this
              wrapper. Two collisions from CLAUDE.md meet inside this card:
@@ -48,45 +62,96 @@
              construction rather than by leftover space. `m-0!` on each <p> is
              what stops the inert margin adding itself to the gap — suffix, not
              prefix (ui-conventions rules 2-3). -->
-          <div class="grid h-full w-full grid-rows-[1fr_auto] gap-5">
-            <div class="grid content-start gap-3.5">
+          <div
+            class="grid h-full w-full grid-rows-[1fr_auto]"
+            :class="row.hero ? 'gap-6' : 'gap-5'"
+          >
+            <div
+              class="grid content-start"
+              :class="row.hero ? 'gap-4' : 'gap-3.5'"
+            >
               <span
-                class="grid size-11 place-items-center rounded-sfere-lg border transition duration-200 ease-sfere-ui"
-                :class="
-                  modelValue === intent.key
-                    ? 'border-sfere-300 bg-sfere-100 text-sfere-brand-text'
-                    : 'border-sfere-line bg-sfere-fill text-sfere-fg-muted'
-                "
+                class="grid shrink-0 place-items-center rounded-sfere-lg border transition duration-200 ease-sfere-ui"
+                :class="[
+                  row.hero ? 'size-14' : 'size-11',
+                  intent.comingSoon
+                    ? 'border-sfere-line bg-sfere-surface text-sfere-fg-muted/60'
+                    : modelValue === intent.key
+                      ? 'border-sfere-300 bg-sfere-100 text-sfere-brand-text'
+                      : 'border-sfere-line bg-sfere-fill text-sfere-fg-muted'
+                ]"
               >
-                <SourceIntentIcon :intent="intent.key" />
+                <SourceIntentIcon
+                  :intent="intent.key"
+                  :class="row.hero && 'size-7!'"
+                />
               </span>
 
               <div class="grid min-w-0 gap-1.5">
-                <p class="m-0! text-sm font-semibold text-ink">
+                <p
+                  class="m-0! font-semibold"
+                  :class="[
+                    row.hero ? 'text-lg!' : 'text-sm',
+                    intent.comingSoon ? 'text-sfere-fg-muted' : 'text-ink'
+                  ]"
+                >
                   {{ intent.title }}
                 </p>
-                <p class="m-0! text-xs leading-5 text-muted">{{
-                  intent.body
-                }}</p>
+                <!-- The emphasis is authored, not matched. See `body` in
+                     src/config/sourceIntents.js for why a regex over the copy
+                     was rejected; here it is only ever a loop, and a segment
+                     with no `strong` renders as bare text. -->
+                <p
+                  class="m-0! leading-5"
+                  :class="[
+                    row.hero ? 'text-sm' : 'text-xs',
+                    intent.comingSoon ? 'text-sfere-fg-muted/75' : 'text-muted'
+                  ]"
+                  ><template v-for="(seg, i) in intent.segments" :key="i"
+                    ><strong
+                      v-if="seg.strong"
+                      class="font-semibold"
+                      :class="!intent.comingSoon && 'text-ink'"
+                      >{{ seg.text }}</strong
+                    ><template v-else>{{ seg.text }}</template></template
+                  ></p
+                >
               </div>
             </div>
 
             <div
-              class="grid grid-cols-[1fr_auto] items-center gap-3 border-t border-sfere-line pt-4 text-sfere-brand-text"
+              class="grid grid-cols-[1fr_auto] items-center gap-3 border-t border-sfere-line pt-4"
+              :class="
+                intent.comingSoon
+                  ? 'text-sfere-fg-muted'
+                  : 'text-sfere-brand-text'
+              "
             >
-              <p class="m-0! truncate text-xs font-semibold">
-                {{ intent.outcome }}
-              </p>
-              <svg
-                class="size-3 shrink-0"
-                viewBox="0 0 256 256"
-                fill="currentColor"
-                aria-hidden="true"
-              >
-                <path
-                  d="m221.66 133.66l-72 72a8 8 0 0 1-11.32-11.32L196.69 136H40a8 8 0 0 1 0-16h156.69l-58.35-58.34a8 8 0 0 1 11.32-11.32l72 72a8 8 0 0 1 0 11.32"
-                />
-              </svg>
+              <!-- The badge replaces the outcome line rather than joining it: an
+                   intent that cannot be picked has no outcome to promise, and
+                   "Payments source →" beside "Coming soon" reads as two answers
+                   to the same question. -->
+              <StatusBadge
+                v-if="intent.comingSoon"
+                tone="neutral"
+                label="Coming soon"
+                class="justify-self-start"
+              />
+              <template v-else>
+                <p class="m-0! truncate text-xs font-semibold">
+                  {{ intent.outcome }}
+                </p>
+                <svg
+                  class="size-3 shrink-0"
+                  viewBox="0 0 256 256"
+                  fill="currentColor"
+                  aria-hidden="true"
+                >
+                  <path
+                    d="m221.66 133.66l-72 72a8 8 0 0 1-11.32-11.32L196.69 136H40a8 8 0 0 1 0-16h156.69l-58.35-58.34a8 8 0 0 1 11.32-11.32l72 72a8 8 0 0 1 0 11.32"
+                  />
+                </svg>
+              </template>
             </div>
           </div>
         </SelectableCard>
@@ -99,8 +164,9 @@
 import { computed } from 'vue'
 import NoticeBanner from '@/components/ui/NoticeBanner.vue'
 import SelectableCard from '@/components/ui/SelectableCard.vue'
+import StatusBadge from '@/components/ui/StatusBadge.vue'
 import SourceIntentIcon from '@/components/sources/SourceIntentIcon.vue'
-import { SOURCE_INTENTS } from '@/config/sourceIntents'
+import { SOURCE_INTENTS, isIntentComingSoon } from '@/config/sourceIntents'
 
 // Step 1 of the guided flow: what are you connecting, in the reader's words.
 //
@@ -109,6 +175,10 @@ import { SOURCE_INTENTS } from '@/config/sourceIntents'
 // so a workspace with Stripe disabled should not be offered Payments. The
 // `connector` intent has no templates and always survives: it navigates
 // somewhere else entirely.
+//
+// A COMING-SOON INTENT IS NOT DROPPED, and that is a different case from an
+// absent one. Payments is a thing we are building, so hiding it makes people
+// wonder where Stripe went; the card stays, greyed and badged, and says so.
 //
 // The grid gutter is 20px to match SelectableCard's own `p-5`: a gutter tighter
 // than the card padding reads as six cards crowding each other rather than six
@@ -119,13 +189,61 @@ const props = defineProps({
   availableTemplateIds: { type: Array, default: () => [] }
 })
 
-const emit = defineEmits(['update:modelValue'])
+// `choose` is the whole point of the card now: picking IS continuing. There is
+// no Continue button on step 1 any more, because a card that visibly commits on
+// click and then asks for a second click on a button 400px below it is one
+// decision charged twice. The parent still owns what "continue" means (the
+// connector intent navigates; a single-template intent settles the template),
+// so this emits the answer rather than acting on it.
+const emit = defineEmits(['update:modelValue', 'choose'])
 
 const available = computed(() =>
   SOURCE_INTENTS.filter(
     intent =>
       intent.to ||
       intent.templates.some(id => props.availableTemplateIds.includes(id))
-  )
+  ).map(intent => ({
+    ...intent,
+    comingSoon: isIntentComingSoon(intent),
+    // A plain-string `body` is still legal in the registry; normalising here
+    // means the template only ever loops and never type-checks its own copy.
+    segments: Array.isArray(intent.body) ? intent.body : [{ text: intent.body }]
+  }))
 )
+
+// Two rows, derived from the already-filtered list so a workspace missing
+// `web-sdk` gets a one-card hero row rather than a hole in it. An empty row is
+// dropped entirely — `v-for` over a row with no intents would still emit the
+// grid element and its `gap`.
+const rows = computed(() =>
+  [
+    {
+      key: 'hero',
+      hero: true,
+      // Two up, always: these are the two answers most people are here for, and
+      // a half-width card is the layout saying so.
+      grid: 'grid grid-cols-1 gap-5 @min-[34rem]:grid-cols-2',
+      intents: available.value.filter(i => i.hero)
+    },
+    {
+      key: 'rest',
+      hero: false,
+      // Breakpoints SHARED with the hero row above: 34rem is where that row
+      // goes two-up, so both rows change shape at the same container width. A
+      // tail row that split at 30rem while the hero was still one column would
+      // read as two unrelated grids that happen to sit on top of each other.
+      grid: 'grid grid-cols-1 gap-5 @min-[34rem]:grid-cols-2 @min-[52rem]:grid-cols-4',
+      intents: available.value.filter(i => !i.hero)
+    }
+  ].filter(row => row.intents.length > 0)
+)
+
+function pick(intent) {
+  // Belt to SelectableCard's `disabled`: the card cannot be clicked or
+  // keyboard-activated while disabled, so this only ever fires if someone wires
+  // a new caller past it.
+  if (intent.comingSoon) return
+  emit('update:modelValue', intent.key)
+  emit('choose', intent.key)
+}
 </script>

@@ -1,157 +1,160 @@
 <template>
   <q-page class="p-6">
-    <PageHeader
-      title="Sources"
-      subtitle="Every event stream and cloud app feeding the fan graph."
-    >
-      <!-- Stream-only actions. On the Connectors tab a "New source" button would
-           be pointing at the wrong flow — you pick a connector from the catalog
-           itself — and its search box would compete with the catalog's own. -->
-      <template v-if="view === 'streams'" #actions>
-        <ToolbarSearch v-model="query" placeholder="Search sources..." />
-        <SfereIconButton
-          icon="trash"
-          label="Trash"
-          :to="{ name: 'sources-trash' }"
-        />
-        <SfereIconButton
-          icon="plus"
-          label="New source"
-          variant="primary"
-          :to="{ name: 'sources-new' }"
-        />
-      </template>
-    </PageHeader>
-
-    <!-- Underline tabs switch the page's primary content; the pill row below
-         filters one list. That is exactly the split TabNav documents, and the two
-         shapes are what stop a filter reading like a navigation change. -->
-    <!-- Where this screen sits in first-run setup. One line only; the
-         full tracker is on the Dashboard, deliberately in one place. -->
-    <SetupReminderStrip
-      step="source"
-      :steps="setupSteps"
-      :total="setupTotal"
-      :complete="setupComplete"
-      :unavailable="setupUnavailable"
-    />
-
-    <TabNav v-model="view" :tabs="viewTabs" />
-
-    <ConnectorCatalog v-if="view === 'connectors'" />
-
-    <!-- `sources` is passed in so a store can be joined to the source built from
-         it: `ZidConnection` carries no source id and `Source` carries no
-         connection id, only a matching `store_id`. -->
-    <ZidConnectionsPanel v-else-if="view === 'zid'" :sources="sources" />
-
-    <template v-else>
-      <div class="mb-4">
-        <TabNav v-model="tab" :tabs="tabs" variant="pill" />
-      </div>
-
-      <DataTable
-        :columns="columns"
-        :rows="visible"
-        :loading="loading"
-        :error="error"
-        :api-missing="apiMissing"
-        row-key="id"
-        clickable-rows
-        @retry="load"
-        @row-click="open"
+    <!-- One content cap for the header, the toolbar and the table, so all
+         three share a left AND a right edge. Same measure and the same
+         reasoning as DashboardHomePage.vue: 1400px is deliberately wider than
+         `--container-sfere-page` (80rem), which is the marketing-site measure
+         and left ~40% of a wide monitor empty here, and it sits on the page
+         rather than in MainLayout because the layout is shared with screens
+         that want the whole width. Literal, not a token: Tailwind v4 extracts
+         class names from source text. A plain block div — `flex` here would be
+         one of Quasar's unlayered wrapping containers. -->
+    <div class="mx-auto w-full max-w-[1400px]">
+      <PageHeader
+        title="Sources"
+        subtitle="Every event stream and cloud app feeding the fan graph."
       >
-        <template #cell-name="{ row }">
-          <div class="flex items-center gap-2">
-            <p class="font-medium text-ink">{{ row.name }}</p>
-            <StatusBadge
-              v-if="hasUpgrade(row)"
-              tone="warn"
-              :label="`Upgrade to ${row.latestTemplateVersion}`"
-            />
-          </div>
-          <p class="text-xs text-subtle">{{ row.slug }}</p>
-        </template>
-
-        <template #cell-sourceType="{ value }">
-          <StatusBadge tone="neutral" :label="sourceTypeLabel(value)" />
-        </template>
-
-        <template #cell-isEnabled="{ value }">
-          <StatusBadge
-            :tone="value ? 'success' : 'neutral'"
-            :label="value ? 'Enabled' : 'Paused'"
+        <!-- Stream-only actions. On the Connectors tab a "New source" button would
+             be pointing at the wrong flow — you pick a connector from the catalog
+             itself — and its search box would compete with the catalog's own. -->
+        <template v-if="view === 'streams'" #actions>
+          <ToolbarSearch v-model="query" placeholder="Search sources..." />
+          <SfereIconButton
+            icon="plus"
+            label="New source"
+            variant="primary"
+            :to="{ name: 'sources-new' }"
           />
         </template>
+      </PageHeader>
 
-        <!-- `formatCount` already reads a missing value as an em dash, and it
-             has to stay that way here: the backend's Source record carries no
-             per-hour counter (it is a `sources.json` field), so a `?? 0` would
-             report a measured zero for every live source. -->
-        <template #cell-eventCountLastHour="{ value }">{{
-          formatCount(value)
-        }}</template>
+      <!-- Underline tabs switch the page's primary content; the pill row below
+           filters one list. That is exactly the split TabNav documents, and the two
+           shapes are what stop a filter reading like a navigation change. -->
+      <!-- Where this screen sits in first-run setup. One line only; the
+           full tracker is on the Dashboard, deliberately in one place. -->
+      <SetupReminderStrip
+        step="source"
+        :steps="setupSteps"
+        :total="setupTotal"
+        :complete="setupComplete"
+        :unavailable="setupUnavailable"
+      />
 
-        <template #cell-actions="{ row }">
-          <div class="flex items-center justify-end gap-2">
-            <button
-              class="rounded-lg border border-line2 bg-white px-3 py-1.5 text-sm font-medium text-brand hover:bg-fill"
-              @click.stop="askToggle(row)"
-            >
-              {{ row.isEnabled ? 'Pause' : 'Enable' }}
-            </button>
-            <button
-              class="rounded-lg border border-line2 bg-white px-3 py-1.5 text-sm font-medium text-rose-600 hover:bg-fill"
-              @click.stop="ask(row)"
-            >
-              Delete
-            </button>
-          </div>
-        </template>
+      <TabNav v-model="view" :tabs="viewTabs" />
 
-        <!-- Two different "no rows" cases: nothing configured yet (offer the
-             primary CTA) and nothing matching the filters (offer a way back). -->
-        <template #empty>
-          <EmptyState :title="emptyTitle" :description="emptyDescription">
-            <template #cta>
-              <button
-                v-if="!sources.length"
-                class="flex h-9 items-center gap-1.5 rounded-lg bg-brand px-3.5 text-sm font-medium text-white shadow-sm hover:opacity-90"
-                @click="router.push({ name: 'sources-new' })"
-              >
-                Connect your first source
-              </button>
-              <button
-                v-else
-                class="rounded-lg border border-line2 bg-white px-3 py-1.5 text-sm font-medium text-brand hover:bg-fill"
-                @click="clearFilters"
-              >
-                Clear filters
-              </button>
-            </template>
-          </EmptyState>
-        </template>
-      </DataTable>
-    </template>
+      <ConnectorCatalog v-if="view === 'connectors'" />
 
-    <!-- Same verb and the same sentence as the detail screen's confirm: one
-         action told two ways is how "Delete" and "Move to trash" ended up
-         describing the same 204. -->
-    <ConfirmDialog
-      v-model="confirmDelete"
-      :title="deleteTitle"
-      :message="deleteMessage"
-      confirm-label="Delete source"
-      destructive
-      @confirm="remove"
-    />
-    <ConfirmDialog
-      v-model="confirmToggle"
-      :title="toggleTitle"
-      :message="toggleMessage"
-      :confirm-label="toggleConfirmLabel"
-      @confirm="toggle"
-    />
+      <!-- `sources` is passed in so a store can be joined to the source built from
+           it: `ZidConnection` carries no source id and `Source` carries no
+           connection id, only a matching `store_id`. -->
+      <ZidConnectionsPanel v-else-if="view === 'zid'" :sources="sources" />
+
+      <template v-else>
+        <div class="mb-4">
+          <TabNav v-model="tab" :tabs="tabs" variant="pill" />
+        </div>
+
+        <DataTable
+          :columns="columns"
+          :rows="visible"
+          :loading="loading"
+          :error="error"
+          :api-missing="apiMissing"
+          row-key="id"
+          clickable-rows
+          @retry="load"
+          @row-click="open"
+        >
+          <!-- `sfere-flush` because this cell owns the spacing of its two
+               lines. The name used to sit in an `items-center` flex row holding
+               an "Upgrade to …" badge, and that row zeroed Quasar's unlayered
+               `p { margin: 0 0 16px }` for free (collision #5); dropping the row
+               with the badge would have pushed the slug 16px down instead. -->
+          <template #cell-name="{ row }">
+            <div class="sfere-flush">
+              <p class="font-medium text-ink">{{ row.name }}</p>
+              <p class="text-xs text-subtle">{{ row.slug }}</p>
+            </div>
+          </template>
+
+          <template #cell-sourceType="{ value }">
+            <StatusBadge tone="neutral" :label="sourceTypeLabel(value)" />
+          </template>
+
+          <template #cell-isEnabled="{ value }">
+            <StatusBadge
+              :tone="value ? 'success' : 'neutral'"
+              :label="value ? 'Enabled' : 'Paused'"
+            />
+          </template>
+
+          <!-- `formatCount` already reads a missing value as an em dash, and it
+               has to stay that way here: the backend's Source record carries no
+               per-hour counter (it is a `sources.json` field), so a `?? 0` would
+               report a measured zero for every live source. -->
+          <template #cell-eventCountLastHour="{ value }">{{
+            formatCount(value)
+          }}</template>
+
+          <!-- No wrapper element: the column is `align: 'right'`, so
+               SfereTable's own `text-right` already pushes RowActionsMenu's
+               inline-grid root to the cell's right edge — and a flex wrapper
+               here would be one more of Quasar's unlayered wrapping `.flex`
+               containers for nothing. The menu reports a choice and acts on
+               nothing; both branches still open the confirms below. -->
+          <template #cell-actions="{ row }">
+            <RowActionsMenu
+              :label="`Actions for ${row.name}`"
+              :actions="rowActions(row)"
+              @select="onRowAction(row, $event)"
+            />
+          </template>
+
+          <!-- Two different "no rows" cases: nothing configured yet (offer the
+               primary CTA) and nothing matching the filters (offer a way back). -->
+          <template #empty>
+            <EmptyState :title="emptyTitle" :description="emptyDescription">
+              <template #cta>
+                <button
+                  v-if="!sources.length"
+                  class="flex h-9 items-center gap-1.5 rounded-lg bg-brand px-3.5 text-sm font-medium text-white shadow-sm hover:opacity-90"
+                  @click="router.push({ name: 'sources-new' })"
+                >
+                  Connect your first source
+                </button>
+                <button
+                  v-else
+                  class="rounded-lg border border-line2 bg-white px-3 py-1.5 text-sm font-medium text-brand hover:bg-fill"
+                  @click="clearFilters"
+                >
+                  Clear filters
+                </button>
+              </template>
+            </EmptyState>
+          </template>
+        </DataTable>
+      </template>
+
+      <!-- Same verb and the same sentence as the detail screen's confirm: one
+           action told two ways is how "Delete" and "Move to trash" ended up
+           describing the same 204. -->
+      <ConfirmDialog
+        v-model="confirmDelete"
+        :title="deleteTitle"
+        :message="deleteMessage"
+        confirm-label="Delete source"
+        destructive
+        @confirm="remove"
+      />
+      <ConfirmDialog
+        v-model="confirmToggle"
+        :title="toggleTitle"
+        :message="toggleMessage"
+        :confirm-label="toggleConfirmLabel"
+        @confirm="toggle"
+      />
+    </div>
   </q-page>
 </template>
 
@@ -167,11 +170,11 @@ import EmptyState from '@/components/ui/EmptyState.vue'
 import ToolbarSearch from '@/components/ui/ToolbarSearch.vue'
 import SfereIconButton from '@/components/ui/SfereIconButton.vue'
 import ConfirmDialog from '@/components/ui/ConfirmDialog.vue'
+import RowActionsMenu from '@/components/ui/RowActionsMenu.vue'
 import SetupReminderStrip from '@/components/shell/SetupReminderStrip.vue'
 import { useSetupProgress } from '@/composables/useSetupProgress'
 import ConnectorCatalog from '@/components/sources/ConnectorCatalog.vue'
 import ZidConnectionsPanel from '@/components/sources/ZidConnectionsPanel.vue'
-import { useTemplates } from '@/composables/useTemplates'
 import {
   formatCount,
   sourceTypeLabel,
@@ -193,7 +196,6 @@ const {
 const router = useRouter()
 const route = useRoute()
 const $q = useQuasar()
-const { hasUpgrade } = useTemplates()
 const {
   sources,
   loading,
@@ -253,17 +255,26 @@ const columns = [
     sortable: true,
     align: 'right'
   },
-  { key: 'pipeCount', label: 'Pipes', sortable: true, align: 'right' },
-  { key: 'actions', label: '', align: 'right', width: '190px' }
+  // No Pipes column: `pipeCount` is a sources.json invention with no field
+  // behind it on the backend's `Source`, so on a real account the cell was
+  // blank on every row — a header promising a count nobody measured.
+  // 72px: SfereTable pads a cell `px-4` either side of a 36px kebab. The
+  // 190px this held was measured for two text buttons, and keeping it would
+  // spend the width this page just reclaimed on an empty gutter.
+  { key: 'actions', label: '', align: 'right', width: '72px' }
 ]
 
 // Each tab is a predicate over a source; 'all' has none.
 const TAB_PREDICATES = {
   enabled: s => s.isEnabled,
-  paused: s => !s.isEnabled,
-  upgrade: s => hasUpgrade(s)
+  paused: s => !s.isEnabled
 }
 
+// There is no "Upgrade available" tab, and its badge is gone from the name cell
+// with it. Both read `latestTemplateVersion`, which is a `sources.json` fixture
+// field absent from the backend's Source schema — so in the default real mode
+// the count was permanently 0 and selecting the tab filtered to an empty table.
+// A control that can never do anything is worse than an absent one.
 const tabs = computed(() => [
   { key: 'all', label: 'All', count: sources.value.length },
   {
@@ -275,11 +286,6 @@ const tabs = computed(() => [
     key: 'paused',
     label: 'Paused',
     count: sources.value.filter(TAB_PREDICATES.paused).length
-  },
-  {
-    key: 'upgrade',
-    label: 'Upgrade available',
-    count: sources.value.filter(TAB_PREDICATES.upgrade).length
   }
 ])
 
@@ -316,6 +322,31 @@ function clearFilters() {
 
 function open(row) {
   router.push({ name: 'sources-detail', params: { id: row.id } })
+}
+
+// Built per row rather than hoisted to a module constant: the first label
+// depends on `row.isEnabled`. Each label is the word for word the matching
+// ConfirmDialog's confirm button, so the menu item and the button that carries
+// it out never describe the same action two ways.
+function rowActions(row) {
+  return [
+    row.isEnabled
+      ? { key: 'toggle', label: 'Pause source', icon: 'pause' }
+      : { key: 'toggle', label: 'Enable source', icon: 'play' },
+    {
+      key: 'delete',
+      label: 'Delete source',
+      icon: 'trash',
+      tone: 'destructive'
+    }
+  ]
+}
+
+// The menu never acts, so both branches land on the confirm the old row buttons
+// opened — Pause included, which still asks in BOTH directions.
+function onRowAction(row, key) {
+  if (key === 'toggle') askToggle(row)
+  else if (key === 'delete') ask(row)
 }
 
 const confirmToggle = ref(false)
@@ -384,7 +415,11 @@ const deleteMessage = computed(() =>
 async function remove() {
   const row = target.value
   if (!row) return
-  target.value = null
+  // `target` is deliberately NOT nulled: `deleteTitle` and `deleteMessage` both
+  // read it, and this one awaits — so clearing it here blanked the dialog's
+  // heading AND its sentence for the whole length of the request, not just for
+  // the fade. `ask()` overwrites `target` before reopening, so nothing goes
+  // stale.
   const res = await removeSource(row.id)
   notifyMutationResult($q, res, {
     success: `${row.name} deleted`,

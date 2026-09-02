@@ -166,9 +166,20 @@
                   mini ? 'justify-center px-0!' : 'px-3!'
                 ]"
                 class="min-h-9! rounded-lg! py-2! mb-0.5 flex items-center gap-2"
+                :aria-label="mini ? item.label : undefined"
                 @click="select(item)"
               >
+                <!-- Two ways to draw a bottom-menu row's mark. `glyph` is a
+                     name in the kit's registry and inherits the row's colour;
+                     `icon` is a bundled SVG file with its own. Both render at
+                     size-4, so the rail lines up either way.
+
+                     SfereIcon is aria-hidden by design, and in rail mode the
+                     label beside it is not rendered — hence the `aria-label`
+                     above, which is what an <img alt> row already had. -->
+                <SfereIcon v-if="item.glyph" :name="item.glyph" />
                 <img
+                  v-else
                   :src="item.icon"
                   :alt="item.label"
                   class="size-4 shrink-0"
@@ -335,6 +346,7 @@ import { orderNavGroups, toFlat, toSections } from '@/lib/navOrder'
 import ComingSoonPanel from '@/components/ComingSoonPanel.vue'
 import PersonaQuestion from '@/components/onboarding/PersonaQuestion.vue'
 import DemoModeBanner from '@/components/DemoModeBanner.vue'
+import SfereIcon from '@/components/ui/SfereIcon.vue'
 import SfereIconButton from '@/components/ui/SfereIconButton.vue'
 
 import icCollapse from '@/assets/dashboard/ic-collapse.svg'
@@ -608,7 +620,21 @@ const navGroups = [
 // then leave alone, so a row that is always in the rail costs more attention than
 // it returns. /secrets and /authorizations redirect into the tabs — see
 // src/router/routes.js.
+//
+// TRASH SITS DIRECTLY ABOVE SETTINGS for the same reason those two left the main
+// rail: it is somewhere you go occasionally to recover something, not somewhere
+// you work. It replaced a Trash icon-button in the toolbar of ten list screens,
+// each pointing at its own '/x/trash' route; those ten URLs are named redirects
+// in src/router/routes.js now.
+//
+// It carries `glyph` rather than `icon`, and it is the only row here that does.
+// The other two are `<img>` files under src/assets/dashboard/ with their
+// colour baked in; a `glyph` is a name in the kit's own registry, drawn by
+// SfereIcon with `fill="currentColor"` — so it takes the row's own colour and
+// tints to `text-brand!` when the row is active, which the flat SVGs cannot do.
+// The template branches on which of the two a row declares.
 const bottomMenu = [
+  { key: 'trash', label: 'Trash', glyph: 'trash', to: '/trash' },
   { key: 'settings', label: 'Settings', icon: icSettings, to: '/settings' },
   { label: 'Logout', icon: icLogout, action: 'logout' }
 ]

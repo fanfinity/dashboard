@@ -1,5 +1,10 @@
 <template>
-  <q-page class="p-6">
+  <!-- 1400px cap, centred: the header, the toolbar and the table have to share
+       a right edge or the screen reads as three unrelated bands, and an
+       uncapped table stretches its columns into unreadable runs on a wide
+       monitor. No important suffix needed here — Quasar ships `.q-mx-auto`,
+       not `.mx-auto`, and no `max-w-*` rule at all. -->
+  <q-page class="mx-auto w-full max-w-[1400px] p-6">
     <PageHeader
       title="Email campaigns"
       subtitle="Every email Engage sends, who it went to, and how it landed."
@@ -73,22 +78,15 @@
 
       <template #cell-lastSentAt="{ value }">{{ formatDate(value) }}</template>
 
+      <!-- No wrapper: SfereTable puts `text-align: right` on a right-aligned
+           cell and the trigger's root is inline-level, so it reaches the right
+           edge without a flex row of its own. -->
       <template #cell-actions="{ row }">
-        <div class="flex items-center justify-end gap-2">
-          <button
-            v-if="row.status !== 'completed'"
-            class="rounded-lg border border-line2 bg-white px-3 py-1.5 text-sm font-medium text-brand hover:bg-fill"
-            @click.stop="askToggle(row)"
-          >
-            {{ row.status === 'sending' ? 'Pause' : 'Resume' }}
-          </button>
-          <button
-            class="rounded-lg border border-line2 bg-white px-3 py-1.5 text-sm font-medium text-muted hover:bg-fill"
-            @click.stop="sendTest(row)"
-          >
-            Send test
-          </button>
-        </div>
+        <RowActionsMenu
+          :label="`Actions for ${row.name}`"
+          :actions="rowActions(row)"
+          @select="key => onRowAction(key, row)"
+        />
       </template>
 
       <!-- Two different "no rows" cases: nothing built yet (offer the primary
@@ -144,6 +142,7 @@ import { useQuasar } from 'quasar'
 import PageHeader from '@/components/ui/PageHeader.vue'
 import TabNav from '@/components/ui/TabNav.vue'
 import ConfirmDialog from '@/components/ui/ConfirmDialog.vue'
+import RowActionsMenu from '@/components/ui/RowActionsMenu.vue'
 import DataTable from '@/components/ui/DataTable.vue'
 import StatCard from '@/components/ui/StatCard.vue'
 import StatusBadge from '@/components/ui/StatusBadge.vue'
@@ -191,7 +190,8 @@ const columns = [
   { key: 'openRate', label: 'Open rate', sortable: true, align: 'right' },
   { key: 'clickRate', label: 'Click rate', sortable: true, align: 'right' },
   { key: 'lastSentAt', label: 'Last sent', sortable: true, align: 'right' },
-  { key: 'actions', label: '', align: 'right', width: '210px' }
+  // 72px: a 36px kebab plus the cell's own px-4. It held two text buttons.
+  { key: 'actions', label: '', align: 'right', width: '72px' }
 ]
 
 // Each tab is a predicate over a campaign; 'all' has none.
@@ -374,6 +374,34 @@ function toggle() {
   const next = row.status === 'sending' ? 'paused' : 'sending'
   setStatus(row.id, next)
   notifyLocal(`${row.name} ${next === 'paused' ? 'paused' : 'resumed'}`)
+}
+
+// No icons on this menu. sfereIcons.js has no glyph for "Send test", and
+// RowActionsMenu lays an item out as `flex items-center gap-2` — so giving the
+// toggle a `pause`/`play` and leaving its neighbour bare would start the two
+// labels at different x. Per-menu rule: all of them, or none.
+//
+// A completed campaign has nothing to pause or resume, so that entry is absent
+// rather than disabled — the same v-if the button carried. "Send test" is
+// unconditional, which is what keeps the array non-empty: RowActionsMenu
+// refuses to open on [], leaving a trigger that silently does nothing.
+function rowActions(row) {
+  const actions = []
+  if (row.status !== 'completed') {
+    actions.push({
+      key: 'toggle',
+      label: row.status === 'sending' ? 'Pause' : 'Resume'
+    })
+  }
+  actions.push({ key: 'test', label: 'Send test' })
+  return actions
+}
+
+// The menu reports a key and nothing else — the confirm dialog and its own
+// `toggleTarget` stay on the page.
+function onRowAction(key, row) {
+  if (key === 'toggle') askToggle(row)
+  else sendTest(row)
 }
 
 function sendTest(row) {
