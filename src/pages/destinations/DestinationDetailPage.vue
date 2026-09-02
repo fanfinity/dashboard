@@ -497,11 +497,19 @@ async function onRunQuery({ sql, limit }) {
 // The table list backs two tabs, so it is read once the destination resolves
 // rather than on entering a tab — otherwise the SQL console's schema tree is
 // empty until someone has visited Tables first.
+// Key this on the *resolved* destination, not the raw route id. The table list
+// is a per-id read (`GET …/destinations/{id}/tables`), so firing it for an id
+// that isn't in the account 404s — and `smoke.mjs` walks this route with a mock
+// fixture id (`dst_snowflake`) in real mode, which is exactly such an id. The
+// read awaits `waitForAccount()`, so its 404 resolves late enough to be logged
+// against the *next* route in the walk (`/pipes/pipe_web_to_snowflake`), where
+// it read as an unrelated failure. A real record carries an id that exists; a
+// missing one is "empty" (see `destination` above), not a request to make.
 watch(
-  id,
+  () => destination.value?.id,
   value => {
-    if (value && !isMock.value) loadTables(value)
     selectedTable.value = ''
+    if (value && !isMock.value) loadTables(value)
   },
   { immediate: true }
 )
