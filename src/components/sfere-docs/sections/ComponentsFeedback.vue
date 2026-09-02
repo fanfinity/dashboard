@@ -58,6 +58,30 @@
           message="The access token expired 4 hours ago."
           dismissible
         />
+        <!-- `collapsible` turns the title into the disclosure control and hides
+             the slot behind it. Shown with slot content because that is the only
+             case it does anything in — a banner whose whole payload is `title`
+             has nothing to disclose. -->
+        <NoticeBanner
+          tone="warn"
+          title="3 issues need your attention"
+          collapsible
+        >
+          <ul class="grid gap-2">
+            <li class="grid gap-0.5">
+              <span class="text-sm font-medium text-ink">Android SDK</span>
+              <span class="text-sm text-muted"
+                >Enabled, but no events received in the last hour.</span
+              >
+            </li>
+            <li class="grid gap-0.5">
+              <span class="text-sm font-medium text-ink">S3 Cold Storage</span>
+              <span class="text-sm text-muted"
+                >Enabled, but no pipe delivers to it.</span
+              >
+            </li>
+          </ul>
+        </NoticeBanner>
       </div>
     </DocSpecimen>
 

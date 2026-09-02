@@ -112,6 +112,26 @@ const routes = [
     redirect: '/sources?tab=connectors'
   },
 
+  // Same move, for the same reason: Secrets and Authorizations are workspace
+  // configuration you set up once, not screens you work in, so they are tabs on
+  // /settings rather than two permanent rows in the sidebar. Both old URLs keep
+  // working — they are in handover docs and in the address bar of anyone who
+  // bookmarked them.
+  //
+  // Both keep their `name`, because a named link is how the rest of the app
+  // reaches them (ChannelsSettingsPage points at `{ name: 'secrets' }`) and an
+  // unresolved name logs the console warning scripts/smoke.mjs fails on.
+  {
+    path: '/secrets',
+    name: 'secrets',
+    redirect: '/settings?tab=secrets'
+  },
+  {
+    path: '/authorizations',
+    name: 'authorizations',
+    redirect: '/settings?tab=authorizations'
+  },
+
   // Always leave this as last one,
   // but you can also remove it
   {

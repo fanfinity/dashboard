@@ -218,7 +218,7 @@ const emit = defineEmits(['update:modelValue', 'submit'])
 // `overflow-hidden`. The plain `flex-nowrap` utility is layered and loses.
 const cardClasses = [
   'flex max-h-[85vh] w-[min(600px,94vw)]! max-w-[min(600px,94vw)]! flex-col flex-nowrap! overflow-hidden',
-  'rounded-sfere-xl border border-sfere-line bg-sfere-surface shadow-sfere-pop'
+  'rounded-sfere-xl! border border-sfere-line bg-sfere-surface shadow-sfere-pop'
 ]
 
 const open = computed({

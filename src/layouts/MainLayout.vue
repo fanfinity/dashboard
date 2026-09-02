@@ -57,38 +57,11 @@
             </div>
             <q-separator v-else-if="group.caption" class="my-2 bg-line!" />
 
-            <!-- Switched-off module: visible, inert. No `clickable` and no
-                 @click, so there is no ripple and no cursor promising a
-                 destination — the Soon pill is the whole affordance. Children
-                 are not rendered: there is nothing to expand into yet. -->
+            <!-- Leaf entry: navigates directly. A switched-off module never
+                 reaches here — visibleGroups drops it, so every row in the rail
+                 goes somewhere. -->
             <q-item
-              v-if="isSoon(group)"
-              :class="mini ? 'justify-center px-0!' : 'px-3!'"
-              class="min-h-9! rounded-lg! py-2! mb-0.5 flex cursor-not-allowed items-center gap-2 text-subtle"
-            >
-              <img
-                :src="group.icon"
-                :alt="group.label"
-                class="size-4 shrink-0 opacity-50"
-              />
-              <span v-if="!mini" class="flex-1 text-sm tracking-[-0.35px]">{{
-                group.label
-              }}</span>
-              <span v-if="!mini" :class="[BADGE_BASE, BADGES.soon.class]">{{
-                BADGES.soon.label
-              }}</span>
-              <q-tooltip
-                v-if="mini"
-                anchor="center right"
-                self="center left"
-                class="bg-ink! text-xs"
-                >{{ railLabel(group) }}</q-tooltip
-              >
-            </q-item>
-
-            <!-- Leaf entry: navigates directly -->
-            <q-item
-              v-else-if="!group.children"
+              v-if="!group.children"
               clickable
               :class="[
                 itemClass(group),
@@ -160,21 +133,7 @@
                 class="mb-1 ml-4 border-l border-line pl-2"
               >
                 <template v-for="child in group.children" :key="child.to">
-                  <!-- Disabled child: inert with Soon pill -->
                   <q-item
-                    v-if="isSoon(child)"
-                    class="min-h-8! rounded-lg! px-3! py-1.5! mb-0.5 flex cursor-not-allowed items-center gap-1 text-subtle"
-                  >
-                    <span class="flex-1 text-[13px] tracking-[-0.3px]">{{
-                      child.label
-                    }}</span>
-                    <span :class="[BADGE_BASE, BADGES.soon.class]">{{
-                      BADGES.soon.label
-                    }}</span>
-                  </q-item>
-                  <!-- Active child: clickable -->
-                  <q-item
-                    v-else
                     clickable
                     :class="itemClass(child)"
                     class="min-h-8! rounded-lg! px-3! py-1.5! mb-0.5 flex items-center"
@@ -199,35 +158,8 @@
         <!-- Bottom menu -->
         <div class="shrink-0 border-t border-line p-3">
           <q-list>
-            <template v-for="item in bottomMenu" :key="item.label">
-              <!-- Same inert treatment as a switched-off group above. -->
+            <template v-for="item in visibleBottomMenu" :key="item.label">
               <q-item
-                v-if="isSoon(item)"
-                :class="mini ? 'justify-center px-0!' : 'px-3!'"
-                class="min-h-9! rounded-lg! py-2! mb-0.5 flex cursor-not-allowed items-center gap-2 text-subtle"
-              >
-                <img
-                  :src="item.icon"
-                  :alt="item.label"
-                  class="size-4 shrink-0 opacity-50"
-                />
-                <span v-if="!mini" class="flex-1 text-sm tracking-[-0.35px]">{{
-                  item.label
-                }}</span>
-                <span v-if="!mini" :class="[BADGE_BASE, BADGES.soon.class]">{{
-                  BADGES.soon.label
-                }}</span>
-                <q-tooltip
-                  v-if="mini"
-                  anchor="center right"
-                  self="center left"
-                  class="bg-ink! text-xs"
-                  >{{ railLabel(item) }}</q-tooltip
-                >
-              </q-item>
-
-              <q-item
-                v-else
                 clickable
                 :class="[
                   itemClass(item),
@@ -390,7 +322,7 @@
 </template>
 
 <script setup>
-import { computed, ref } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useQuasar } from 'quasar'
 import { useAuth } from '@/composables/useAuth'
@@ -399,6 +331,7 @@ import { useEntitlements } from '@/composables/useEntitlements'
 import { useFeatures } from '@/composables/useFeatures'
 import { useOnboarding } from '@/composables/useOnboarding'
 import { useDataSource } from '@/composables/useDataSource'
+import { orderNavGroups, toFlat, toSections } from '@/lib/navOrder'
 import ComingSoonPanel from '@/components/ComingSoonPanel.vue'
 import PersonaQuestion from '@/components/onboarding/PersonaQuestion.vue'
 import DemoModeBanner from '@/components/DemoModeBanner.vue'
@@ -451,21 +384,16 @@ const BADGES = {
     class: 'border-success-line bg-success-bg text-success'
   },
   demo: { label: 'Demo', class: 'border-line2 bg-fill text-subtle' },
-  preview: { label: 'Preview', class: 'border-brand/30 bg-brand/5 text-brand' },
-  // `soon` is not authored on a nav entry like the three above — it is derived
-  // from src/config/features.js, so one switch changes the pill, the row's
-  // interactivity and what the route renders together and they cannot disagree.
-  soon: { label: 'Soon', class: 'border-line2 bg-fill text-subtle' }
+  preview: { label: 'Preview', class: 'border-brand/30 bg-brand/5 text-brand' }
 }
 
 const BADGE_BASE =
   'inline-flex shrink-0 items-center rounded-md border px-1.5 py-px text-[10px]! font-medium uppercase tracking-wide'
 
-// Which pill a row wears. `soon` outranks an authored badge because it answers
-// the more urgent question — can I click this? — and Engage would otherwise show
-// `preview` while being inert.
+// Which pill a row wears. There is no `soon` pill any more: a module that is not
+// switched on is not in the rail at all, so every row here is one you can click
+// and the only badges left are the authored ones.
 function navBadge(item) {
-  if (isSoon(item)) return 'soon'
   return item.badge || null
 }
 
@@ -499,10 +427,10 @@ function railLabel(item) {
 // a product screen.
 //
 // `key` is the feature-activation key from src/config/features.js. A group whose
-// feature is off renders as an inert row with a Soon pill instead of navigating,
-// and its routes render ComingSoonPanel — see isSoon()/lockedFeature below. Every
-// group here keeps its children while it is switched off, so activating a module
-// is one flag rather than a nav rewrite.
+// feature is off is not rendered at all, though its routes still render
+// ComingSoonPanel — see isInactive()/lockedFeature below. Every group here keeps
+// its children while it is switched off, so activating a module is one flag
+// rather than a nav rewrite.
 const navGroups = [
   { key: 'dashboard', label: 'Dashboard', icon: icOverview, to: '/' },
   // Live events sits above COLLECT, uncaptioned, next to Dashboard: it is
@@ -597,10 +525,11 @@ const navGroups = [
       }
     ]
   },
-  // ACCOUNT is who and how much. It sits directly after FANS — above the four
-  // not-yet-built sections rather than below them — because those four are the
-  // longest part of the sidebar and burying a live row under them means Team and
-  // Billing can only be reached by scrolling past a wall of Soon pills.
+  // ACCOUNT is who and how much. It sits directly after FANS, above the four
+  // not-yet-built sections rather than below them. Those four are hidden while
+  // they are switched off, so this no longer keeps Team and Billing off the
+  // bottom of the rail — but the moment one of them ships it would again, and the
+  // authored order is what decides where it lands.
   {
     key: 'team',
     caption: 'ACCOUNT',
@@ -672,14 +601,14 @@ const navGroups = [
 // Same `key` contract as navGroups. Settings carries `locked: true` in
 // features.js because it hosts the activation panel — switching it off would take
 // every other switch with it.  Logout has no key, so it is never gated.
+//
+// Authorizations and Secrets used to sit here as two permanent rows above
+// Settings. They are tabs on /settings now, for the reason the connector catalog
+// became a tab on /sources: each is workspace configuration you set up once and
+// then leave alone, so a row that is always in the rail costs more attention than
+// it returns. /secrets and /authorizations redirect into the tabs — see
+// src/router/routes.js.
 const bottomMenu = [
-  {
-    key: 'authorizations',
-    label: 'Authorizations',
-    icon: icSetup,
-    to: '/authorizations'
-  },
-  { key: 'secrets', label: 'Secrets', icon: icSettings, to: '/secrets' },
   { key: 'settings', label: 'Settings', icon: icSettings, to: '/settings' },
   { label: 'Logout', icon: icLogout, action: 'logout' }
 ]
@@ -690,10 +619,20 @@ const { isEnabled, load: loadEntitlements } = useEntitlements()
 const { isActive: isFeatureActive } = useFeatures()
 const { isReal: isRealData } = useDataSource()
 
-// A module that is not switched on yet. Rendered rather than hidden — the sidebar
-// is the product roadmap, and a row you can see but not click says "not yet",
-// where a missing row says "does not exist".
-function isSoon(item) {
+// A module that is not switched on yet. HIDDEN, not rendered inert.
+//
+// This reverses the earlier call ("the sidebar is the product roadmap, and a row
+// you can see but not click says 'not yet'"). Twenty-odd rows out of the rail are
+// switched off today, so the roadmap reading cost every user a sidebar that was
+// mostly unclickable and pushed the live rows below the fold. Feature activation
+// in Settings is where the roadmap lives now, and it is the one surface that can
+// still switch a module on.
+//
+// The route gate is deliberately UNCHANGED: /audiences still renders
+// ComingSoonPanel with the screen's own <h1>, which is what lets
+// scripts/smoke.mjs keep walking every route instead of the active few. Hide the
+// rows, keep the gate.
+function isInactive(item) {
   return Boolean(item.key) && !isFeatureActive(item.key)
 }
 
@@ -710,24 +649,73 @@ const lockedFeature = computed(() => {
 // entitlement silently falls back to its optimistic default.
 loadEntitlements()
 
-// Entitlement-gated groups disappear entirely rather than rendering dead links.
-// Note this is the opposite of feature activation, which renders a Soon row: an
-// entitlement you do not hold is not yours to see, whereas a module that is not
-// built yet is worth advertising. Engage is subject to both, and the entitlement
-// wins because it removes the row before isSoon() is ever asked.
-const visibleGroups = computed(() =>
-  navGroups.filter(g => !g.entitlement || isEnabled(g.entitlement))
-)
-
-// Which persona this person picked, and whether they have been asked at all. The
-// answer steers onboarding and, later, what Home leads with — it never changes
-// what the sidebar contains, which is why nothing above reads it.
+// Which persona this person picked, and whether they have been asked at all.
+// Read here because the answer now sets the ORDER of the sidebar — never its
+// contents. A marketer signing in finds Profiles next to Dashboard instead of
+// three sections down; an analyst finds Warehouse and Monitoring at the top of
+// COLLECT. Every row a persona does not care about is still in the rail, in its
+// authored position, so support can say "click Pipes" to anyone. Removal stays
+// entitlements' job, below.
 const {
   personaMeta,
   needsPersona,
   setPersona,
   skip: skipPersonaQuestion
 } = useOnboarding()
+
+// Three passes, and the order between them matters.
+//
+// FIRST, entitlement-gated groups disappear. An entitlement you do not hold is
+// not yours to see; Engage is subject to both gates and this one runs first.
+//
+// THEN switched-off modules disappear too — see isInactive() above for why that
+// is now a removal rather than a Soon pill. Two details this pass has to get
+// right, and both were bugs the first time round:
+//
+//   * A CAPTION IS A FIELD ON THE FIRST GROUP OF ITS SECTION, so filtering the
+//     flat array can strand one. Drop `audiences` and 'ACTIVATE' goes with it,
+//     leaving Campaigns absorbed into the ACCOUNT section above. Sectioning
+//     first, filtering within sections, then flattening is what re-attaches
+//     each caption to whichever group now leads.
+//   * A GROUP WHOSE CHILDREN ARE ALL SWITCHED OFF must go too, or the rail
+//     grows a chevron that expands into nothing.
+//
+// THEN the persona reorders what is left. That way a persona ordering can never
+// resurrect a row either gate removed, and orderNavGroups only ever sees rows
+// this account is allowed to see. See src/lib/navOrder.js for why it cannot drop
+// one; a persona with no `nav` — engineer, a skipped question, an unanswered one,
+// which is the path scripts/smoke.mjs walks — gets the authored array back
+// untouched.
+const activeGroups = computed(() => {
+  const entitled = navGroups.filter(
+    g => !g.entitlement || isEnabled(g.entitlement)
+  )
+  const sections = toSections(entitled)
+    .map(section => ({
+      ...section,
+      groups: section.groups
+        .filter(group => !isInactive(group))
+        .map(group =>
+          group.children
+            ? { ...group, children: group.children.filter(c => !isInactive(c)) }
+            : group
+        )
+        .filter(group => !group.children || group.children.length)
+    }))
+    .filter(section => section.groups.length)
+  return toFlat(sections)
+})
+
+const visibleGroups = computed(() =>
+  orderNavGroups(activeGroups.value, personaMeta.value?.nav)
+)
+
+// Settings is `locked: true` in features.js and Logout carries no key, so today
+// nothing here can be switched off. The filter is here anyway because the rule is
+// the rail's, not this list's: no row the user cannot use.
+const visibleBottomMenu = computed(() =>
+  bottomMenu.filter(item => !isInactive(item))
+)
 
 const personaQuestionOpen = computed(
   () => needsPersona.value && route.path === '/'
@@ -737,19 +725,52 @@ function onChoosePersona(key) {
   setPersona(key)
   $q.notify({
     message: `Set to “${personaMeta.value?.label ?? key}”`,
-    caption: 'Change it any time in Settings → Your role.',
+    caption: 'Change it any time in Settings → General.',
     color: 'dark',
     timeout: 2500
   })
 }
 
+// Skipping is acknowledged, for the same reason choosing is. The overlay used to
+// simply vanish on Skip, which is indistinguishable from having dismissed it by
+// accident — and it is the one branch where nothing else on the screen changes to
+// confirm the click landed. The toast also carries the only pointer back: someone
+// who skips has not read the sentence about Settings that the answer's toast
+// repeats.
 function onSkipPersona() {
   skipPersonaQuestion()
+  $q.notify({
+    message: 'No role set',
+    caption: 'Pick one any time in Settings → General.',
+    color: 'dark',
+    timeout: 2500
+  })
 }
 
 // Groups the user has explicitly toggled. A group whose screen is active is
 // always shown open regardless, so navigation never hides where you are.
 const openGroups = ref(new Set())
+
+// Pre-expanded for this persona, so a marketer lands with the profile screens
+// listed rather than behind a chevron.
+//
+// ADDITIVE, AND DELIBERATELY NOT A COMPUTED. A computed set derived from the
+// persona would fight the person using it: collapse Profiles and it would spring
+// back open on the next render, with no way to say otherwise. Writing into the
+// same ref the chevron writes into means the persona chooses the starting state
+// and the user has the last word from then on. It also runs on change rather than
+// only at init, so picking a role in the overlay expands the rail in the same
+// tick instead of on the next reload.
+watch(
+  () => personaMeta.value?.nav?.expand,
+  keys => {
+    if (!keys?.length) return
+    const next = new Set(openGroups.value)
+    for (const key of keys) next.add(key)
+    openGroups.value = next
+  },
+  { immediate: true }
+)
 
 function groupHasActiveChild(group) {
   return (group.children || []).some(c => isActive(c))

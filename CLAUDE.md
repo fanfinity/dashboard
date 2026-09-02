@@ -137,10 +137,10 @@ Hash mode has one consequence worth internalising: the whole route lives after t
 so an in-page `href="#some-id"` **replaces the route** instead of scrolling. Anchor navigation
 has to go through `scrollIntoView` — see `src/pages/design-system/DesignSystemPage.vue`.
 
-### Seven Quasar/Tailwind cascade collisions
+### Eight Quasar/Tailwind cascade collisions
 
 Tailwind v4 emits utilities into `@layer utilities`; Quasar's base stylesheet is **unlayered**,
-and unlayered CSS beats layered CSS regardless of specificity. All seven of these have cost real
+and unlayered CSS beats layered CSS regardless of specificity. All eight of these have cost real
 time:
 
 1. **Headings need the important _suffix_** — `text-2xl!`, never `!text-2xl`. Covered at length
@@ -200,7 +200,7 @@ not-allowed }`, so `disabled:opacity-45` and `disabled:cursor-not-allowed` are d
    `.sfere-flush > p` for a container that already spaces its children with `gap`. There is
    deliberately **no blanket `p { margin: 0 }`**: stacked prose still wants its rhythm, and
    the smoke gate cannot see a spacing regression, so a global reset would be an unverifiable
-   change to all 60 screens at once.
+   change to all 58 screens at once.
 6. **`auto-fit` grid tracks measure a card at min-content and keep the answer.** An
    `auto-fit` track is min-content-sized in the first pass, and the min-content height of a
    `SelectableCard` — a #4 wrapping flex — at that width is enormous, so the row keeps it:
@@ -223,6 +223,29 @@ not-allowed }`, so `disabled:opacity-45` and `disabled:cursor-not-allowed` are d
    layered `lg:hidden` that was supposed to hide it on desktop, so it showed up beside a
    permanent sidebar too; `lg:hidden!` is what actually hides it.
    `docs/ui-conventions.md` rule 15.
+
+8. **A dialog's corner radius is pinned at 4px, and every `rounded-*` on a dialog card is a dead
+   class.** Quasar ships unlayered `.q-dialog__inner > div { border-radius: 4px }` — the same
+   selector as the 560px `max-width` in #3 — so a layered radius utility of any value loses to it.
+   That is not a wrong number, it is a class that does nothing: all seven Sfere-era dialogs
+   declared `rounded-sfere-xl` (16px) and all seven rendered at 4px, which reads as a panel whose
+   corners are visibly squarer than the `SelectableCard`s nested inside it. `rounded-sfere-xl!`
+   (important **suffix**) is what beats it, for the reason `flex-nowrap!` does in #4. It is on
+   `ConfirmDialog`, `SecretRevealDialog`, `SettingsNotificationChannelDialog`,
+   `SettingsApiTokenCreateDialog`, `ProfileBuilderEditDialog`, `SourceSyncRunLogsDialog` and
+   `PersonaQuestion`, and a new dialog needs it too.
+   **Radius has no alias layer, unlike colour**: `src/css/tailwind.css` aliases `--color-*` onto
+   the `sfere-*` values but says nothing about `--radius-*`, so `rounded-lg` and `rounded-xl`
+   resolve to Tailwind's own 8px and 12px rather than to `--radius-sfere-*`. Reach for
+   `rounded-sfere`, `rounded-sfere-lg` or `rounded-sfere-xl` by name. The fourteen pre-Sfere
+   dialogs still carry a bare `rounded-lg` and still render at 4px; they are a known issue, not a
+   pattern to copy.
+
+The house dialog surface is one string — `rounded-sfere-xl! border border-sfere-line
+bg-sfere-surface shadow-sfere-pop` — and a new dialog copies it rather than improvising.
+`PersonaQuestion` had `rounded-xl border-line2 bg-white shadow-lg`, of which two were visibly
+wrong (the 12px radius above, and a tight neutral `shadow-lg` where every other dialog sits on the
+wide plum-tinted `shadow-sfere-pop`) and two resolved to the right values by luck.
 
 ## Screen manifest — routes are generated, not hand-written
 
@@ -386,9 +409,12 @@ that closes it**; do not reconstruct the template from a slug or a local cache.
 
 The product backlog (54 screens, GitHub issues #16–#69) is scaffolded: every screen already
 exists as a stub page at its final path. Implementing one means **rewriting that file in place**,
-never creating a file and registering a route. The manifest itself is **60 screens** now — the
+never creating a file and registering a route. The manifest itself is **58 screens** now — the
 backlog count is the issue count, not the route count, and the two have not matched since
-`/team`, `/billing` and the Functions screens were added outside it.
+`/team`, `/billing` and the Functions screens were added outside it. It went 60 → 58 when Secrets
+and Authorizations became tabs on `/settings`; both old URLs still resolve, as **named** redirects
+in `routes.js` (a named link elsewhere in the app points at `{ name: 'secrets' }`, and an
+unresolved name logs the console warning smoke fails on).
 
 **Functions is the newest top-level section** (`/functions`, `/functions/new`, `/functions/:id`),
 sitting under Pipes because a function is what runs _on_ a pipe's events. Two things about it
@@ -420,6 +446,40 @@ in `src/components/sources/ConnectorCatalog.vue` behind `/sources?tab=connectors
 because both halves are the same screen with the same `<h1>` — a child route would put Connectors
 back in the sidebar, which is exactly what this undid.
 
+**Secrets and Authorizations went the same way**, and they are the reason `/settings` now carries
+`?tab=` too. Both used to be permanent rows in the sidebar's bottom menu, above Settings, on a rail
+where every other row is a place you work; each is configuration you set up once and then leave
+alone, so a row that is always visible costs more attention than it returns.
+`SettingsSecretsPanel.vue` and `SettingsAuthorizationsPanel.vue` are the old pages with their
+`q-page`/`PageHeader` shell traded for a toolbar row — the `<h1>` belongs to Settings now, so each
+page's subtitle became a line beside its search box and primary button. Their two `screens.js`
+entries are gone (60 → 58) and `routes.js` redirects both old URLs, keeping their `name` so
+`{ name: 'secrets' }` still resolves. Each tab is still gated on its own `features.js` key — the
+same switch that used to decide whether its route rendered `ComingSoonPanel` now removes a tab.
+
+**The Settings tab bar itself is mode-dependent, and only in one direction.** Members, API tokens,
+Ingest domains, Notifications, Connector images and Danger zone are all workspace records, and
+nothing behind them has a workspace endpoint: in the default real mode all six opened on the same
+"No workspace settings — ask an admin to add you to one", which is six tabs sharing one answer that
+blames the reader for a missing backend. They are offered in **Demo data** mode, where they have
+something to show. The condition is written as "demo mode **or** a workspace actually loaded", so
+the day a real endpoint ships they come back on their own rather than staying hidden behind a mode
+switch nobody remembers to remove.
+
+**General survived that cut because it stopped being workspace-only**: it leads with the role
+picker, which used to be a `Your role` tab of its own. That put the most personal setting on the
+screen one click further away than the workspace's data-retention windows, and it would have been
+unreachable in real mode once the workspace tabs went. The workspace form and the Error alerts card
+below it are still gated on `workspace`.
+
+**One ordering constraint in `SettingsPage.vue`, and it is a real crash rather than a style
+point.** The `tabs` computed reads the ingest-domain, notification and connector-image state, and
+`watch(tabs, …)` evaluates its source once to capture an initial value — so `tabs` and its watchers
+are declared **below** those resources. Move them back up next to the other computeds and setup
+throws a temporal-dead-zone `ReferenceError` and the screen does not render at all. A plain
+computed got away with it because only the template ever read it, and the template runs after
+setup.
+
 ## Feature activation — most of the sidebar is switched off
 
 `enabled: true` in `features.js` today covers **Dashboard, Live events, Sources, Destinations,
@@ -428,8 +488,8 @@ Pipes, Functions, Settings, Warehouse, Monitoring, Profiles, Secrets, Authorizat
 children by a separate key (`dwh-syncs`, `warehouse-models`, `identity-resolution`, `attributes`,
 `profile-builders`, `profile-api`, `live-profile-syncs`, `profile-dwh-syncs`), so switching the
 parent on only exposes the child screens whose own key is _also_ `true` — right now that's
-Warehouse connections, Profile search and Profile builders, everything else under those two stays
-a `Soon` row. Audiences, Campaigns, Engage,
+Warehouse connections, Profile search and Profile builders, and every other child is **absent from
+the rail**. Audiences, Campaigns, Engage,
 Reporting and Demo lab remain fully dark and get switched on one at a time as they become real.
 
 `src/config/features.js` is the registry — pure data, one entry per module, `enabled` being the
@@ -451,16 +511,31 @@ leaves a live module stranded under "Backlog modules".
 **This is not `useEntitlements`, and the two must not be merged.** An entitlement asks "did this
 account buy the module?" and defaults optimistically **on**; activation asks "is it built yet?"
 and defaults **off**. They also fail differently in the nav: an entitlement you lack removes the
-row, while an inactive module renders an inert row with a `Soon` pill, because a missing row says
-"does not exist" and a dimmed one says "not yet". Engage is subject to both.
+row, while an inactive module is simply not in the sidebar. **That second half is a reversal**:
+switched-off modules used to render an inert row with a `Soon` pill on the grounds that the
+sidebar is the product roadmap and "not yet" beats "does not exist". With twenty-odd keys off,
+that made a rail which was mostly unclickable and pushed the live rows below the fold, so the
+roadmap now lives in **Settings → Feature activation** — the one surface that can still switch a
+module on — and the rail holds only rows you can use. `BADGES.soon` and the two inert `q-item`
+branches are gone with it. Engage is subject to both gates, and the entitlement runs first.
+
+Two details the hiding pass has to keep getting right, because both were bugs the first time:
+a **caption is a field on the first group of its section**, so filtering the flat `navGroups`
+array strands one — drop `audiences` and `ACTIVATE` goes with it and Campaigns is absorbed into
+`ACCOUNT`; `MainLayout`'s `activeGroups` sections first, filters inside each section, then
+flattens through `navOrder.js`'s `toFlat`, which re-attaches each caption to whichever group now
+leads. And a **group whose children are all switched off is dropped too**, or the rail grows a
+chevron that expands into nothing.
 
 The gate is in `MainLayout.vue`'s `q-page-container`, which renders `ComingSoonPanel` **instead
 of** `<router-view>` when `route.meta.group` is inactive. Deliberately not a `beforeEach` guard: a
 guard can only redirect, which throws away the URL you asked for. This way the address survives,
 the real page component never mounts (so nothing it fetches on mount runs), and
 `ComingSoonPanel` renders the screen's own title as a real `<h1>` — which is what lets
-`pnpm smoke:dist` keep walking **all 60 routes** instead of being narrowed to the active few.
+`pnpm smoke:dist` keep walking **all 58 routes** instead of being narrowed to the active few.
 Any new gating must preserve that; a redirect would silently drop the gate to ~6 routes.
+**Hiding the sidebar rows did not touch this**: `/audiences` still renders `ComingSoonPanel` with
+its own `<h1>`, it just has no row pointing at it. Hide the rows, keep the gate.
 
 ## Onboarding — one question, asked once
 
@@ -471,7 +546,7 @@ numbers"). `src/config/personas.js` is the registry — pure data, no imports, s
 
 **The question is an overlay over a fully-rendered Home, never a route.** A `/welcome` route
 would replace `MainLayout`, so `[data-smoke="nav"]` would never appear and `pnpm smoke:dist`
-would fail at sign-in for all 60 routes rather than on one screen. Three consequences that any
+would fail at sign-in for all 58 routes rather than on one screen. Three consequences that any
 change here has to preserve: the page beneath stays mounted and visible, the overlay renders
 **no `<h1>`** (smoke asserts on the first one, which belongs to the page), and it opens **only on
 `/`** — a deep link to `/errors` from Slack must not be met by a modal demanding a role.
@@ -491,11 +566,112 @@ State is `src/composables/useOnboarding.js` — module singleton, `localStorage`
   completion card — is a later phase (`todos/site-overhaul-plan.md` §5.3–5.8), and it should find
   a record it can extend rather than inventing a second key.
 
-**The persona picks emphasis, never contents.** It is allowed to choose which onboarding script
-runs, what Home leads with, and which nav section starts expanded. It must never remove a sidebar
-row: support and handover docs have to be able to say "click Pipes" and be right. Removal is
-entitlements' job, and that mechanism stays separate — as does feature activation, which answers
-"is it built yet?".
+**The persona picks emphasis, never contents.** It chooses which onboarding script runs, the
+**order of the sidebar**, which nav group starts expanded, and the **order and emphasis of the
+Dashboard's blocks**. It must never remove a sidebar row: support and handover docs have to be
+able to say "click Pipes" and be right. Removal is entitlements' job, and that mechanism stays
+separate — as does feature activation, which answers "is it built yet?".
+
+**Both orderings are data on the persona, not conditionals in the consumers.** `personas.js`
+carries a `nav` (`lead` group keys pinned above the first caption, `sections` caption order,
+`first` per-section group order, `expand`) and a `home` (`blocks` render order, `subtitle`,
+`primaryAction`, `collapseAttention`, `hideSetupWhenComplete`) per persona.
+`src/lib/navOrder.js` applies `nav`; `DashboardHomePage.vue` applies `home`.
+
+Three things about that shape are load-bearing:
+
+- **Every list is a front-loading order, never a whitelist.** `orderNavGroups()` and the page's
+  block loop hoist the keys they recognise and append everything else in its authored position,
+  so a typo, a renamed key or a group added later degrades to "in the wrong place" and never to
+  "missing". Do not change either consumer to `filter` on these lists — that turns a data typo
+  into "Pipes has disappeared from my sidebar".
+- **A caption is a field on the first group of its section**, so permuting the flat `navGroups`
+  array moves captions onto the wrong rows: hoist Profiles for a marketer and `FANS` travels up
+  with it while Team & roles is left captionless. `navOrder.js` parses the list into sections,
+  reorders sections, and flattens again with each caption re-attached — via shallow copies, since
+  `navGroups` is a module constant shared across renders.
+- **`persona === null` — unanswered or skipped — must render exactly the authored nav and
+  `DEFAULT_HOME`.** `pnpm smoke:dist` signs in with an empty `localStorage`, so the unanswered
+  path is the **only** one the gate walks. `engineer` is `nav: null, home: null` for the same
+  reason: it is the identity ordering, so the gate covers it too. The marketer and analyst paths
+  are **not** covered — seed `sfere_onboarding` by hand (and switch to Demo data, since a fresh
+  account has no blocks to order) to check them.
+
+**A dark section is never hoisted.** Marketer's natural sections are ACTIVATE and ENGAGE and both
+are switched off in `features.js`, so leading with them would put a wall of `Soon` pills above
+every live row — the exact failure the ACCOUNT placement guards against. The orderings are built
+out of the fourteen live keys.
+
+**The Home blocks are extracted components, not CSS `order-*`.** `ThroughputPanel`,
+`ActivityPanel`, `ProfilesPanel` and `WarehouseHandoffStrip` came out of
+`DashboardHomePage.vue`'s template so the page can render an ordered list. An `order` utility
+moves the box and leaves the DOM alone, so a screen reader and the tab key would still walk the
+engineer's sequence on a marketer's screen.
+
+**Two blocks are fixed for every reader**: the four `StatCard`s and the needs-attention banner
+directly under them. Only the banner's _openness_ changes — an engineer gets the list open, a
+marketer gets `1 issue needs your attention` and a chevron (`NoticeBanner`'s `collapsible`).
+`WarehouseHandoffStrip` is the analyst's one addition, and it carries **no numbers**: Home's
+aggregate returns nothing about warehouse connections, so it is a signpost rather than a card
+with a measurement nobody took.
+
+**The persona never owns the setup story on its own.** `hideSetupWhenComplete` and the header's
+primary action are both gated on `setupComplete` first, so a marketer whose workspace has no
+source still gets the tracker and `Connect a source`. A role does not make setup somebody else's
+problem until setup is actually done.
+
+**The question card is two centred lines and nothing else.** The third line describing the
+onboarding run, the `~10 min · 5 steps` estimate, the 1/2/3 number chips, the footer divider and
+the per-card `Start →` have all come off: the estimate measured a script that does not exist yet,
+the digits read as a ranking of three equal roles, and the rule separated a role from a footer that
+no longer has two ends. The keyboard shortcut went with the chips deliberately — they were printed
+_so that_ the shortcut was an affordance, and a hidden hotkey that can answer the question for
+someone typing into the header search behind the overlay is worse than none.
+
+`Start →` went last, and for a different reason: **the card is the control**, so the word was a
+second, smaller call to action inside the thing you already click, printed three times — which
+reads as three CTAs rather than as one question with three answers. No other `SelectableCard` in
+the app labels itself, so matching the picker vocabulary on `/sources/new` is worth more here than
+a per-card verb; the affordance is the hover border and lift, the focus outline, and
+`active:translate-y-px` acknowledging the press.
+
+**Skip is a quiet text control, and that is the hierarchy rather than the styling.** It used to be
+a bordered, shadowed, white button — the only element on the overlay that looked like a button at
+all, since the three answers are outlined cards. So the most button-shaped thing on a screen
+asking someone to choose a role was the one that declines to. It carries `py-2.5` rather than the
+`py-1` a text control looks right with: measured at 420px the button was 28px tall, under any
+touch minimum, and padding is invisible on a borderless control.
+
+**One sentence about the stakes, not two in two places.** The subtitle said "It sets what you see
+first" and a rule below the cards said "Nothing is locked by this answer. Every screen stays in
+the sidebar whichever you pick." — two reassurances about the same answer, 400px apart, the first
+of them vague about what actually changes. They are merged into the subtitle, next to the question
+they qualify, and made specific: the role sets the **order** of the sidebar and what the dashboard
+leads with, and nothing is hidden. `aria-describedby` points at that line so the promise is read
+out with the question, and the three cards sit in a `role="group"` labelled by the heading — not a
+`radiogroup`, which would promise arrow-key roving and a separate submit that a commit-on-click
+picker does not have.
+
+**Both answers are acknowledged.** Choosing toasts the role; skipping toasts `No role set` with
+the pointer to Settings. Skip used to make the overlay simply vanish, which is indistinguishable
+from having dismissed it by accident, and it is the one branch where nothing else on the screen
+changes to confirm the click landed.
+
+Centring it takes **two** collision workarounds, both the important suffix. `SelectableCard` is
+`items-start … text-left` for every other picker in the app, and Quasar ships unlayered
+`.items-start` and `.text-left`, so the instance needs `items-center!` and `text-center!` — a bare
+`items-center` loses to the component's own class. The two `<p>` lines are then wrapped and spaced
+with `gap`, not `mt-*`: Quasar's `p { margin: 0 0 16px }` is the shorthand, so it zeroes
+`margin-top` on every paragraph in the app, and the wrapper's `items-center` trips `sfere.css`'s
+`[class~='items-center'] > p` rule to kill the trailing 16px that would otherwise sit under the
+last line of a card whose neighbours have none. The third workaround, `mt-auto!`, went with the
+`Start` row it pinned: with nothing to pin to the bottom the cards agree on height on their own.
+
+Left-aligning them was tried on screen rather than argued: the documented reason for centring was
+that left alignment left the divider and the `Start` row "looking like the remains of something",
+and both are now gone. It still loses — two short lines hugging the left edge of a 223px card read
+as a settings list rather than as a moment of choice, and dropping the wrapper's `items-center`
+re-arms Quasar's 16px paragraph margin (collision #5) between the role and its sentence.
 
 ### Two other first-run surfaces
 
@@ -571,10 +747,10 @@ need endpoints, and neither has a placeholder in the UI.
 matching. Keep exactly one of each — that is why sign-up has no confirm-password field, and why
 the password show/hide toggle is `type="button"` and the input starts as `type="password"`. A
 bare `<button>` inside a `<form>` submits by default, so an unmarked toggle would give the gate
-two matches for `button[type=submit]` and fail sign-in for all 60 routes before a single screen
+two matches for `button[type=submit]` and fail sign-in for all 58 routes before a single screen
 rendered.
 
-**Settings → Your role** (`SettingsPersonaPanel.vue`) is the other surface, so changing the answer
+**Settings → General** (`SettingsPersonaPanel.vue`) is the other surface, so changing the answer
 never means re-running a tour, and `Ask me again` clears it. Both surfaces render the same three
 cards and the same marks from `PersonaIcon.vue` — drawn there rather than reused from
 `src/assets/dashboard/`, because those are `<img>` with brand purple baked into a `stroke`
@@ -716,7 +892,7 @@ so Quasar's own controls match. **Never hardcode a hex in a screen** — that is
 brand changed, and the alias layer only works if nothing bypasses it.
 
 **There is one kit.** The pre-Sfere primitives were replaced in place, not deprecated alongside
-it: all 60 screens now render Sfere components.
+it: all 58 screens now render Sfere components.
 
 Rules for touching it:
 
@@ -728,6 +904,12 @@ Rules for touching it:
   reachable from one stylesheet.
 - `StatusBadge` takes `tone`, not `variant`, and there is no `enabled` shorthand — write
   `:tone="x ? 'success' : 'neutral'"`. `FormField` takes `for-id`, not `for`.
+- `NoticeBanner` takes an additive, **default-off** `collapsible`: the title becomes a real
+  `<button type="button">` with `aria-expanded`/`aria-controls` and the slot hides behind it.
+  Default-off is what made it a safe edit to a file every screen renders. It is for a list that
+  is a distraction to one reader and the point of the screen to another — not a way to shorten a
+  long banner. Its chevron uses a conditional `rotate-90` class rather than a `rotate-0` variant,
+  per collision #2.
 - The three brand faces (Bricolage Grotesque, Inter, Geist Mono) are self-hosted `@fontsource`
   packages. The CSP is `default-src 'self'`, so the Google Fonts CDN is blocked; any new face
   must be added the same way.
@@ -779,10 +961,11 @@ Nothing in this repo is off-limits to edit. But a handful of files are load-bear
 changing one changes every screen at once, so they are worth a moment's thought and a line in the
 commit message rather than a drive-by edit mid-task:
 
-`src/router/**` (the manifest generates all 60 routes) · `src/layouts/MainLayout.vue` (the nav
+`src/router/**` (the manifest generates all 58 routes) · `src/layouts/MainLayout.vue` (the nav
 is the IA, and the feature gate lives in its `q-page-container`) · `src/components/ui/**` (the
 kit) · `src/config/features.js` + `src/composables/useFeatures.js` (which modules are switched
-on at all) · `src/composables/{useMockResource,useEntitlements,useDiagram,useTemplates}.js` (the
+on at all) · `src/config/personas.js` + `src/lib/navOrder.js` (the order of the sidebar and of
+Home's blocks, per persona) · `src/composables/{useMockResource,useEntitlements,useDiagram,useTemplates}.js` (the
 `{ data, loading, error, apiMissing, load() }` contract every page is written against —
 `apiMissing` is real-mode-only, see Data architecture below) · `quasar.config.js`
 and `index.html` (build config and the CSP).
@@ -1030,7 +1213,7 @@ exists to prevent.`sendMutation()`and`fetchCollection()`resolve`path` the same w
    explains, `404` to `apiMissing`, and everything else to `error`. `hasIngestSettings(source)`
    is the matching narrowing on the other panel — `source_type === 'web'` and nothing else.
 
-   **`pnpm smoke:dist` now walks all 60 routes against whatever `VITE_API_BASE` points at**,
+   **`pnpm smoke:dist` now walks all 58 routes against whatever `VITE_API_BASE` points at**,
    because that is what the default mode does. It used to be hermetic. If you need the old
    behaviour, set `sfere_data_source_mode` to `mock` in the browser profile the run uses, or
    flip the default — do not add a smoke-only branch to `useDataSource`, which would mean the

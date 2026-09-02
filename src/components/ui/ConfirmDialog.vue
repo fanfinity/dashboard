@@ -94,7 +94,7 @@ const open = computed({
 
 const cardClasses = [
   'flex w-[440px] max-w-[92vw] flex-col overflow-hidden',
-  'rounded-sfere-xl border border-sfere-line bg-sfere-surface shadow-sfere-pop'
+  'rounded-sfere-xl! border border-sfere-line bg-sfere-surface shadow-sfere-pop'
 ]
 
 // The dialog always closes on confirm, which is what all nine Trash screens

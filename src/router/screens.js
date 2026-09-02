@@ -77,14 +77,6 @@ export const screens = [
     issue: 21
   },
   {
-    path: '/authorizations',
-    name: 'authorizations',
-    component: 'settings/AuthorizationsPage.vue',
-    title: 'Authorizations',
-    group: 'authorizations',
-    issue: 22
-  },
-  {
     path: '/billing',
     name: 'billing',
     component: 'account/BillingPage.vue',
@@ -259,14 +251,6 @@ export const screens = [
     title: 'Reporting',
     group: 'reporting',
     issue: 59
-  },
-  {
-    path: '/secrets',
-    name: 'secrets',
-    component: 'settings/SecretsPage.vue',
-    title: 'Secrets',
-    group: 'secrets',
-    issue: 60
   },
   {
     path: '/settings',

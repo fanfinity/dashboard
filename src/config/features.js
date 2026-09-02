@@ -176,6 +176,10 @@ export const FEATURES = [
     description: 'The demo store and event inspector.',
     enabled: false
   },
+  // Two keys that no longer gate a route. Secrets and Authorizations are tabs on
+  // /settings rather than screens of their own, so switching one off removes its
+  // tab instead of turning its page into ComingSoonPanel — same switch, same
+  // meaning, one surface further in.
   {
     key: 'secrets',
     label: 'Secrets',

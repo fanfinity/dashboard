@@ -23,30 +23,27 @@
     />
 
     <template v-else>
-      <!-- The tab bar itself must not depend on `workspace` loading: Your
-           role / Feature activation / Data source are per-browser
-           preferences, not workspace data, and Data source is the one screen
-           that must stay reachable even when everything workspace-shaped is
-           empty — it is the way back to demo data. -->
+      <!-- The tab bar itself must not depend on `workspace` loading: General,
+           Feature activation and Data source are per-browser preferences, not
+           workspace data, and Data source is the one screen that must stay
+           reachable even when everything workspace-shaped is empty — it is the
+           way back to demo data. -->
       <TabNav v-model="tab" :tabs="tabs" />
 
-      <SettingsPersonaPanel v-if="tab === 'persona'" />
+      <!-- General leads with the role. It used to be a tab of its own next to
+           this one, which put the single most personal setting on the screen one
+           click further away than the workspace's data-retention windows. The
+           tabs below General are all workspace records, so in real mode there is
+           nothing to show and they are not offered — this one always has the
+           role, so it is always here. -->
+      <div v-if="tab === 'general'" class="flex max-w-3xl flex-col gap-4">
+        <SettingsPersonaPanel />
 
-      <SettingsFeaturePanel v-else-if="tab === 'features'" />
-
-      <SettingsDataSourcePanel v-else-if="tab === 'data-source'" />
-
-      <!-- The load succeeded and there is no workspace record. That is an
-           answer, not a failure, so it must not render ErrorState — and it
-           only applies to the tabs below, which are actually workspace data. -->
-      <EmptyState
-        v-else-if="!workspace"
-        title="No workspace settings"
-        description="This account is not attached to a workspace yet. Ask an admin to add you to one."
-      />
-
-      <div v-else-if="tab === 'general'" class="flex max-w-3xl flex-col gap-4">
-        <form class="flex flex-col gap-4" @submit.prevent="save">
+        <form
+          v-if="workspace"
+          class="flex flex-col gap-4"
+          @submit.prevent="save"
+        >
           <FormSection
             title="Workspace"
             description="How this workspace is named, and where its data physically lives."
@@ -124,7 +121,10 @@
           </div>
         </form>
 
-        <CardPanel>
+        <!-- Workspace data too, so it goes when the form does: an empty alert
+             list with no workspace behind it would read as "nobody is being
+             told when a pipe fails", which is a measurement nothing took. -->
+        <CardPanel v-if="workspace">
           <template #header>
             <span class="text-sm font-semibold text-ink">Error alerts</span>
             <StatusBadge tone="neutral" :label="String(alertChannels.length)" />
@@ -172,6 +172,18 @@
           </template>
         </CardPanel>
       </div>
+
+      <SettingsFeaturePanel v-else-if="tab === 'features'" />
+
+      <SettingsDataSourcePanel v-else-if="tab === 'data-source'" />
+
+      <!-- Two former sidebar rows, now tabs. Each is gated on its own feature
+           key, the same one that used to decide whether its route rendered
+           ComingSoonPanel — so switching `secrets` off in Feature activation
+           still takes the surface away, it just takes a tab rather than a row. -->
+      <SettingsAuthorizationsPanel v-else-if="tab === 'authorizations'" />
+
+      <SettingsSecretsPanel v-else-if="tab === 'secrets'" />
 
       <SettingsMembersPanel
         v-else-if="tab === 'members'"
@@ -242,7 +254,7 @@
       />
 
       <SettingsDangerZone
-        v-else
+        v-else-if="tab === 'danger' && workspace"
         :workspace-name="workspace.name"
         :region-label="workspace.regionLabel"
         @purge="askPurgeEvents"
@@ -293,6 +305,7 @@
 
 <script setup>
 import { computed, onMounted, reactive, ref, watch } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import { useQuasar } from 'quasar'
 import PageHeader from '@/components/ui/PageHeader.vue'
 import TabNav from '@/components/ui/TabNav.vue'
@@ -321,6 +334,8 @@ import { notifyMutationResult } from '@/composables/useMutationFeedback'
 import SettingsDangerZone from '@/components/settings/SettingsDangerZone.vue'
 import SettingsFeaturePanel from '@/components/settings/SettingsFeaturePanel.vue'
 import SettingsPersonaPanel from '@/components/settings/SettingsPersonaPanel.vue'
+import SettingsAuthorizationsPanel from '@/components/settings/SettingsAuthorizationsPanel.vue'
+import SettingsSecretsPanel from '@/components/settings/SettingsSecretsPanel.vue'
 import SettingsDataSourcePanel from '@/components/settings/SettingsDataSourcePanel.vue'
 import { useFeatures } from '@/composables/useFeatures'
 import { useDataSource } from '@/composables/useDataSource'
@@ -334,6 +349,8 @@ import {
 } from '@/composables/useSettingsWorkspace'
 
 const $q = useQuasar()
+const route = useRoute()
+const router = useRouter()
 
 // The workspace record is the PRIMARY resource: without it there is no screen,
 // so its failure is the only one that escalates to a page-level ErrorState.
@@ -361,7 +378,12 @@ const {
   revoke: revokeToken
 } = useApiTokens()
 
-const tab = ref('general')
+// Seeded from ?tab= so the /secrets and /authorizations redirects land on the
+// right panel. Validated against `tabs` by the watcher below, which also catches
+// a tab that is not offered in this mode.
+const tab = ref(
+  typeof route.query.tab === 'string' ? route.query.tab : 'general'
+)
 const confirmOpen = ref(false)
 const pendingAction = ref(null)
 
@@ -428,60 +450,30 @@ const dirty = computed(() => {
 })
 
 // Only the count is needed here — the panel itself reads the registry.
-const { activeCount } = useFeatures()
+// `isActive` is the other half: two tabs below are former sidebar rows and keep
+// the feature key that used to gate their route.
+const { activeCount, isActive: isFeatureActive } = useFeatures()
 const { isReal } = useDataSource()
 const dataSourceLabel = computed(() => {
   if (isReal.value) return 'Data source (Real)'
   return 'Data source (Demo)'
 })
 
-const tabs = computed(() => [
-  { key: 'general', label: 'General' },
-  // Two per-person preferences sit next to each other on purpose: this one and
-  // Feature activation are the only tabs here that are about you and this
-  // browser rather than about the workspace everyone shares.
-  { key: 'persona', label: 'Your role' },
-  // Counted so the tab reads "6 of 16 on" at a glance — this is the panel you
-  // come here to check, and the number is the answer to the question.
-  {
-    key: 'features',
-    label: 'Feature activation',
-    count: activeCount.value
-  },
-  {
-    key: 'data-source',
-    label: dataSourceLabel.value
-  },
-  {
-    key: 'members',
-    label: 'Members',
-    count: membersError.value ? undefined : members.value.length
-  },
-  {
-    key: 'tokens',
-    label: 'API tokens',
-    count: tokensError.value ? undefined : tokens.value.length
-  },
-  // Three surfaces backend PR #16 made real. Tabs here rather than sidebar rows,
-  // following the same reasoning that put the connector catalog on /sources: each
-  // is workspace configuration you set up once, not a screen you work in.
-  {
-    key: 'domains',
-    label: 'Ingest domains',
-    count: domainsApiMissing.value ? undefined : domains.value.length
-  },
-  {
-    key: 'notifications',
-    label: 'Notifications',
-    count: channelsApiMissing.value ? undefined : channels.value.length
-  },
-  {
-    key: 'images',
-    label: 'Connector images',
-    count: imagesApiMissing.value ? undefined : images.value.length
-  },
-  { key: 'danger', label: 'Danger zone' }
-])
+// Whether the workspace-shaped tabs are worth offering at all.
+//
+// Nothing behind Members, API tokens, Ingest domains, Notifications, Connector
+// images or Danger zone has a workspace endpoint yet, so in the default real mode
+// every one of them opened on "No workspace settings — ask an admin to add you to
+// one": six tabs, one answer, and an answer that blames the reader for a missing
+// backend. Demo data is the mode where they have something to show, so that is
+// the mode that offers them.
+//
+// Written as "demo, OR a workspace actually loaded" rather than "demo" alone so
+// the day a real workspace endpoint ships the tabs come back on their own instead
+// of staying hidden behind a mode switch nobody remembers to remove.
+const hasWorkspaceTabs = computed(
+  () => !isReal.value || Boolean(workspace.value)
+)
 
 const workspaceFacts = computed(() => [
   { label: 'Workspace ID', value: workspace.value?.id },
@@ -886,7 +878,107 @@ function onTokenRevealClosed() {
   newTokenName.value = ''
 }
 
+// -------------------------------------------------------------------- the tabs
+//
+// DECLARED DOWN HERE, after every resource above, and that is load-bearing rather
+// than tidy. `tabs` reads the ingest-domain, notification and connector-image
+// state, and `watch(tabs, …)` evaluates its source once to capture the initial
+// value — so with this block in its old place, high up next to the other
+// computeds, setup threw a temporal-dead-zone ReferenceError and the whole screen
+// failed to render. A plain computed got away with it because only the template
+// ever read it, and the template runs after setup.
+
+const tabs = computed(() => [
+  // General carries the role now, so it is the one workspace-shaped tab that is
+  // never withheld: it always has something of its own to show.
+  { key: 'general', label: 'General' },
+  // Counted so the tab reads "6 of 16 on" at a glance — this is the panel you
+  // come here to check, and the number is the answer to the question.
+  {
+    key: 'features',
+    label: 'Feature activation',
+    count: activeCount.value
+  },
+  {
+    key: 'data-source',
+    label: dataSourceLabel.value
+  },
+  ...(isFeatureActive('authorizations')
+    ? [{ key: 'authorizations', label: 'Authorizations' }]
+    : []),
+  ...(isFeatureActive('secrets') ? [{ key: 'secrets', label: 'Secrets' }] : []),
+  ...(hasWorkspaceTabs.value
+    ? [
+        {
+          key: 'members',
+          label: 'Members',
+          count: membersError.value ? undefined : members.value.length
+        },
+        {
+          key: 'tokens',
+          label: 'API tokens',
+          count: tokensError.value ? undefined : tokens.value.length
+        },
+        // Three surfaces backend PR #16 made real. Tabs here rather than sidebar
+        // rows, following the same reasoning that put the connector catalog on
+        // /sources: each is workspace configuration you set up once, not a screen
+        // you work in.
+        {
+          key: 'domains',
+          label: 'Ingest domains',
+          count: domainsApiMissing.value ? undefined : domains.value.length
+        },
+        {
+          key: 'notifications',
+          label: 'Notifications',
+          count: channelsApiMissing.value ? undefined : channels.value.length
+        },
+        {
+          key: 'images',
+          label: 'Connector images',
+          count: imagesApiMissing.value ? undefined : images.value.length
+        },
+        { key: 'danger', label: 'Danger zone' }
+      ]
+    : [])
+])
+
+// Which tab you are on, held in ?tab= for the same reason /sources does it: two
+// of these were routes of their own until this change, and /secrets and
+// /authorizations redirect straight into their tab (src/router/routes.js). Both
+// halves are the same screen with the same <h1>, so a query beats a child route.
+//
+// `replace` so flipping tabs does not stack history entries the back button then
+// has to chew through. General writes no query at all, keeping /settings clean as
+// the canonical URL.
+watch(tab, next => {
+  const tabQuery = next === 'general' ? undefined : next
+  if (route.query.tab === tabQuery) return
+  router.replace({ query: { ...route.query, tab: tabQuery } })
+})
+
+watch(
+  () => route.query.tab,
+  next => {
+    if (next && next !== tab.value && tabs.value.some(t => t.key === next)) {
+      tab.value = next
+    }
+  }
+)
+
+// A tab can vanish under you: flipping Data source back to Real takes the six
+// workspace tabs with it, and switching `secrets` off in Feature activation takes
+// that one. Falling through to nothing would leave the page blank below the tab
+// bar, so the selection comes home to General.
+watch(tabs, list => {
+  if (!list.some(t => t.key === tab.value)) tab.value = 'general'
+})
+
 onMounted(() => {
+  // A ?tab= naming a tab this mode does not offer — /settings?tab=members in real
+  // mode, say — settles on General rather than rendering nothing under the bar.
+  if (!tabs.value.some(t => t.key === tab.value)) tab.value = 'general'
+
   load()
   loadMembers()
   loadTokens()

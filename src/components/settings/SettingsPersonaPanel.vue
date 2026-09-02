@@ -45,9 +45,17 @@
 
       <template #footer>
         <div class="flex flex-wrap items-center justify-between gap-3">
-          <p class="max-w-[58ch] text-xs text-subtle">
-            It changes what onboarding shows you first, never what the sidebar
-            contains. Every screen stays where it is whichever you pick.
+          <!-- "Every screen stays where it is" was true when this answer only
+               steered onboarding. It is not any more: the role sets the ORDER of
+               the sidebar and what the Dashboard leads with, so a screen does
+               move. What it still cannot do is remove one, which is the promise
+               worth keeping and the one this sentence now makes. The question
+               overlay's own footer says "stays IN THE SIDEBAR", which is still
+               exactly right — that one does not need this edit. -->
+          <p class="max-w-[64ch] text-xs text-subtle">
+            It sets the order of the sidebar and what the dashboard leads with.
+            Nothing is removed or locked: every screen your workspace has is
+            still in the sidebar whichever you pick.
           </p>
           <button
             type="button"

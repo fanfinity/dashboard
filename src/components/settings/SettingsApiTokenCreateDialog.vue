@@ -126,7 +126,7 @@ const emit = defineEmits(['update:modelValue', 'create'])
 
 const cardClasses = [
   'flex w-[min(560px,92vw)]! max-w-[min(560px,92vw)]! flex-col overflow-hidden',
-  'rounded-sfere-xl border border-sfere-line bg-sfere-surface shadow-sfere-pop'
+  'rounded-sfere-xl! border border-sfere-line bg-sfere-surface shadow-sfere-pop'
 ]
 
 const open = computed({

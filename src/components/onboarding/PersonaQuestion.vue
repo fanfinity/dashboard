@@ -13,11 +13,43 @@
     transition-hide="fade"
     :transition-duration="180"
   >
+    <!-- THE SURFACE IS THE HOUSE DIALOG STRING, COPIED VERBATIM:
+         `rounded-sfere-xl border border-sfere-line bg-sfere-surface
+         shadow-sfere-pop`, the same four utilities ConfirmDialog,
+         SecretRevealDialog, SettingsNotificationChannelDialog,
+         SettingsApiTokenCreateDialog, ProfileBuilderEditDialog and
+         SourceSyncRunLogsDialog carry. This one had improvised
+         `rounded-xl border-line2 bg-white shadow-lg`, and two of those four are
+         visibly wrong rather than merely off-token: Tailwind's `rounded-xl` is
+         12px where the Sfere card radius is 16px — so the panel was LESS rounded
+         than the SelectableCards nested inside it, which is what reads as out of
+         sync — and `shadow-lg` is a tight neutral drop where every other dialog
+         in the app sits on the wide plum-tinted `shadow-sfere-pop`. The other two
+         (`border-line2`, `bg-white`) resolve to the same values as their tokens
+         today and are switched anyway, because the alias layer only keeps the
+         brand in one place if nothing bypasses it.
+
+         Radius has NO alias layer in `tailwind.css`, unlike colour: `rounded-lg`
+         and `rounded-xl` resolve to Tailwind's own 8px/12px scale, not to
+         `--radius-sfere-*`. So an off-system radius is silent — it looks
+         plausible and is simply the wrong number.
+
+         AND IT NEEDS THE IMPORTANT SUFFIX, which is a cascade collision that was
+         not on CLAUDE.md's list. Quasar ships unlayered
+         `.q-dialog__inner > div { border-radius: 4px }` — the same selector as
+         the 560px max-width in collision #3 — so a layered `rounded-*` of any
+         value loses to it and EVERY dialog in this app renders at 4px, including
+         the six that correctly declare `rounded-sfere-xl`. The class was not the
+         wrong number, it was dead. `rounded-sfere-xl!` is what beats it, for the
+         reason `flex-nowrap!` does: layered `!important` outranks unlayered
+         non-important. The tell is a dialog whose corners are visibly squarer
+         than the cards nested inside it. -->
     <div
       role="dialog"
       aria-modal="true"
       aria-labelledby="persona-question-title"
-      class="flex max-h-[86vh] w-[820px]! max-w-[92vw]! flex-col flex-nowrap! gap-6 overflow-y-auto rounded-xl border border-line2 bg-white p-6 shadow-lg sm:p-7"
+      aria-describedby="persona-question-scope"
+      class="flex max-h-[86vh] w-[760px]! max-w-[92vw]! flex-col flex-nowrap! gap-6 overflow-y-auto rounded-sfere-xl! border border-sfere-line bg-sfere-surface p-6 shadow-sfere-pop sm:p-7"
     >
       <div class="flex flex-col gap-1.5">
         <!-- An h2, never an h1. scripts/smoke.mjs asserts on the FIRST <h1> on
@@ -29,76 +61,112 @@
         >
           Before we start, what do you do?
         </h2>
-        <p class="max-w-[62ch] text-sm text-muted">
-          It sets what you see first. Change it any time in Settings → Your
-          role.
+        <!-- ONE sentence about the stakes, not two in two places. The subtitle
+             used to say "It sets what you see first" and a footer rule below the
+             cards said "Nothing is locked by this answer. Every screen stays in
+             the sidebar whichever you pick." — two reassurances about the same
+             answer, 400px apart, and the first of them vague about what actually
+             changes. Merged here, next to the question they qualify, and made
+             specific: the role sets the ORDER of the sidebar and what the
+             dashboard leads with, and that is all it does.
+             `aria-describedby` points at it so the promise is read out with the
+             question rather than found by exploring the dialog. -->
+        <p
+          id="persona-question-scope"
+          class="max-w-[64ch] text-pretty text-sm text-muted"
+        >
+          It sets the order of your sidebar and what the dashboard leads with.
+          Nothing is hidden, and you can change it any time in Settings →
+          General.
         </p>
       </div>
 
-      <div class="grid grid-cols-1 gap-3 sm:grid-cols-3">
+      <!-- Labelled group rather than three loose buttons: with the heading tied
+           to the set, a screen reader hears "what do you do?" before the first
+           option instead of three unrelated controls. Not a `radiogroup` — these
+           commit on click rather than holding a selection, and radio semantics
+           would promise arrow-key roving and a separate submit that do not
+           exist here. -->
+      <div
+        role="group"
+        aria-labelledby="persona-question-title"
+        class="grid grid-cols-1 gap-3 sm:grid-cols-3"
+      >
+        <!-- CENTRED, and both utilities need the important SUFFIX. SelectableCard
+             is `items-start ... text-left` because every other picker in the app
+             is a left-aligned card with a paragraph of body copy; these three
+             have no body copy left, so left alignment left the divider and the
+             Start row looking like the remains of something. Quasar ships
+             unlayered `.items-start` and `.text-left`, which beat any layered
+             utility — but both are non-important, so layered `!important` wins.
+             A bare `items-center` here would silently lose to the card's own
+             class. -->
         <SelectableCard
-          v-for="(persona, index) in personas"
+          v-for="persona in personas"
           :key="persona.key"
-          class="group"
+          class="items-center! text-center! active:translate-y-px"
           @select="emit('choose', persona.key)"
         >
-          <div class="flex w-full items-start justify-between gap-2">
-            <SfereIconChip size="sm">
-              <PersonaIcon :persona="persona.key" />
-            </SfereIconChip>
-            <!-- The digit is the shortcut below, shown so it is discoverable
-                 rather than a secret. No room for it on a stacked phone
-                 layout, where there is no keyboard to press it with either. -->
-            <SfereKbd :label="String(index + 1)" class="max-sm:hidden" />
-          </div>
+          <SfereIconChip size="sm">
+            <PersonaIcon :persona="persona.key" />
+          </SfereIconChip>
 
-          <p class="mt-3.5 text-sm font-semibold text-ink">{{
-            persona.label
-          }}</p>
-          <p class="mt-0.5 text-xs font-medium text-muted">{{
-            persona.cardTitle
-          }}</p>
-          <p class="mt-1.5 text-xs leading-5 text-muted">{{
-            persona.outcome
-          }}</p>
+          <!-- Two lines and nothing else — no third line, and NO `Start →` row.
+               The third line this used to carry described the onboarding run
+               ("Fire a real event and follow it all the way to delivery"), which
+               is an answer to "should I start the tour?" — a question nobody is
+               asking two seconds into their first sign-in, and one the tour
+               cannot answer yet either.
 
-          <!-- `mt-auto!` needs the important suffix: Quasar's unlayered base
-               stylesheet sets a margin on bare block elements and beats a
-               layered Tailwind utility, which leaves the three meta rows on
-               three different baselines when the outcomes wrap unevenly. -->
-          <div
-            class="mt-auto! flex w-full items-center justify-between gap-2 border-t border-line pt-3"
-          >
-            <span class="text-xs text-subtle">{{ persona.estimate }}</span>
-            <span
-              class="flex items-center gap-1 text-xs font-medium text-subtle transition-colors duration-200 group-hover:text-brand"
-            >
-              Start
-              <svg
-                class="size-3.5 transition-transform duration-200 group-hover:translate-x-0.5 motion-reduce:transition-none"
-                viewBox="0 0 256 256"
-                fill="currentColor"
-                aria-hidden="true"
-              >
-                <path
-                  d="m221.66 133.66-72 72a8 8 0 0 1-11.32-11.32L196.69 136H40a8 8 0 0 1 0-16h156.69l-58.35-58.34a8 8 0 0 1 11.32-11.32l72 72a8 8 0 0 1 0 11.32Z"
-                />
-              </svg>
-            </span>
+               The `Start →` under it went for a different reason: the card IS
+               the control, so the word was a second, smaller call to action
+               inside the thing you already click — printed three times, which
+               reads as three CTAs rather than one question with three answers.
+               No other SelectableCard in the app labels itself, and matching the
+               picker vocabulary on `/sources/new` matters more here than a
+               per-card verb. What signals the affordance is what signals it
+               everywhere else: the hover border and lift, the focus outline, and
+               `active:translate-y-px` acknowledging the press.
+
+               WRAPPED, AND SPACED BY `gap` RATHER THAN `mt-*`, which is rule 11
+               rather than taste. Quasar's unlayered `p { margin: 0 0 16px }` is
+               the shorthand, so it sets `margin-top: 0` on every paragraph in
+               the app and a layered `mt-0.5` between these two computes to
+               nothing. The wrapper's `items-center` then trips sfere.css's
+               `[class~='items-center'] > p { margin: 0 }`, which kills the
+               trailing 16px that would otherwise sit under the last line of a
+               card whose neighbours have none. `gap` has no Quasar counterpart
+               and therefore actually applies. -->
+          <div class="mt-3.5 flex flex-col items-center gap-1">
+            <p class="text-sm font-semibold text-ink">{{ persona.label }}</p>
+            <p class="text-xs font-medium text-muted">{{
+              persona.cardTitle
+            }}</p>
           </div>
         </SelectableCard>
       </div>
 
-      <div
-        class="flex flex-wrap items-center justify-between gap-3 border-t border-line pt-4"
-      >
-        <p class="max-w-[54ch] text-xs text-subtle">
-          Nothing is locked by this answer. Every screen stays in the sidebar
-          whichever you pick.
-        </p>
+      <!-- Skip is a QUIET TEXT CONTROL, and that is a hierarchy fix rather than
+           a restyle. It used to be a bordered, shadowed, white button — the only
+           element on the overlay that looked like a button at all, since the
+           three answers are outlined cards. So the escape hatch carried more
+           visual weight than the question, and the most button-shaped thing on
+           a screen asking you to choose a role was the one that declines to.
+           The three cards are the emphasis now; this is the way past them.
+
+           No rule above it either: a full-width border over a single quiet link
+           announces a section boundary, which is the same thing that took the
+           divider off the cards.
+
+           `py-2.5` rather than the `py-1` a text control looks right with:
+           measured at 420px the button was 28px tall, which is under any touch
+           minimum, and the padding is invisible on a borderless control. The
+           negative right margin pulls the padding back off the card's edge so
+           the label still optically aligns with the last card. -->
+      <div class="flex justify-end">
         <button
           type="button"
-          class="flex h-9 shrink-0 items-center gap-1.5 rounded-lg border border-line2 bg-white px-3 text-sm text-ink shadow-sm hover:bg-fill"
+          class="-mr-2 rounded-sfere px-2 py-2.5 text-sm text-subtle underline-offset-4 transition-colors duration-200 hover:text-ink hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sfere-brand"
           @click="emit('skip')"
         >
           Skip, just show me the app
@@ -109,10 +177,8 @@
 </template>
 
 <script setup>
-import { onBeforeUnmount, watch } from 'vue'
 import SelectableCard from '@/components/ui/SelectableCard.vue'
 import SfereIconChip from '@/components/ui/SfereIconChip.vue'
-import SfereKbd from '@/components/ui/SfereKbd.vue'
 import { PERSONAS } from '@/config/personas'
 import PersonaIcon from './PersonaIcon.vue'
 
@@ -132,17 +198,25 @@ import PersonaIcon from './PersonaIcon.vue'
 // would bring it back on the next load looking like a bug. MainLayout only mounts
 // this on `/`, so a deep link from Slack is never ambushed by it.
 //
+// THERE ARE NO 1/2/3 SHORTCUTS AND NO NUMBER CHIPS ON THE CARDS. The digits were
+// printed on the cards so the shortcut was an affordance rather than an easter
+// egg, which means the two go together: keeping the binding after dropping the
+// chips would leave an undiscoverable hotkey that can silently answer the
+// question for someone typing into the header search behind the overlay. They
+// also read as a ranking — Engineer 1, Marketer 2 — which is the wrong thing to
+// say about three equal roles, and is why they came off.
+//
 // TWO IMPORTANT SUFFIXES IN THE TEMPLATE, both the Quasar cascade collision
 // documented in CLAUDE.md rather than taste. Quasar ships an unlayered
 // `.q-dialog__inner--minimized > div { max-width: 560px }`, which silently
-// shrinks a three-card row to two-and-a-bit columns, and unlayered margins on
-// bare block elements, which beat `mt-auto`. Unlayered CSS wins over Tailwind's
-// @layer utilities, so `w-[820px]!` and `mt-auto!` are the only forms that work.
+// shrinks a three-card row to two-and-a-bit columns, so `w-[760px]!` is the only
+// form that widens it; and unlayered `.items-start` / `.text-left` on
+// SelectableCard's own class list, which only a layered `!important` beats.
 //
 // Not in the kit and not prefixed Sfere*: it is one product surface, not a
 // primitive, so the "one Quasar dependency" carve-out in docs/ui-conventions.md
 // does not apply here — MainLayout, which owns it, is Quasar throughout.
-const props = defineProps({
+defineProps({
   open: { type: Boolean, default: false }
 })
 
@@ -152,41 +226,4 @@ const props = defineProps({
 const emit = defineEmits(['choose', 'skip'])
 
 const personas = PERSONAS
-
-// 1 / 2 / 3 pick a card. Cheap to add, and the population most likely to be
-// annoyed by a modal is the one most likely to try it — the digits are printed on
-// the cards so it is an affordance rather than an easter egg.
-//
-// Bound to the window rather than the dialog because q-dialog teleports its
-// content to the end of <body>, outside this component's tree, so a template
-// @keydown here would never see the event.
-function onKeydown(event) {
-  if (!props.open) return
-  if (event.metaKey || event.ctrlKey || event.altKey) return
-  // Never steal a digit from a field. The backdrop makes this hard to reach by
-  // mouse, but focus can be there — the header search is still mounted behind
-  // the overlay — and "typing 2 into a search box silently picked marketer and
-  // closed the question" is not a bug anyone would think to report.
-  const target = event.target
-  if (target?.isContentEditable) return
-  if (/^(INPUT|TEXTAREA|SELECT)$/.test(target?.tagName ?? '')) return
-  const index = Number(event.key)
-  if (!Number.isInteger(index) || index < 1 || index > personas.length) return
-  event.preventDefault()
-  emit('choose', personas[index - 1].key)
-}
-
-// Only listening while the question is actually up: the layout keeps this
-// component mounted for the life of the session, so a permanent listener would
-// have 1/2/3 firing on every screen forever.
-watch(
-  () => props.open,
-  isOpen => {
-    if (isOpen) window.addEventListener('keydown', onKeydown)
-    else window.removeEventListener('keydown', onKeydown)
-  },
-  { immediate: true }
-)
-
-onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown))
 </script>

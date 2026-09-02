@@ -920,6 +920,7 @@ failure, and it must not trip the smoke gate.
 | `title`       | String                                      | `''`     |                   |
 | `message`     | String                                      | `''`     |                   |
 | `dismissible` | Boolean                                     | `false`  | adds a close ×    |
+| `collapsible` | Boolean                                     | `false`  | see below         |
 
 | Slot    | Scope | Notes                                         |
 | ------- | ----- | --------------------------------------------- |
@@ -934,6 +935,22 @@ That is rule 11 in miniature: the `mt-0.5` it used to carry computed to zero, so
 title and message rendered on Quasar's flat 16px rhythm with another 16px of dead
 space under the last line — which is what pushed the copy to the top of the
 banner and read as "text not vertically centred".
+
+`collapsible` turns the title into a real `<button type="button">` carrying
+`aria-expanded` and `aria-controls`, and hides the default slot behind it until
+clicked. It is **default off**, which is what makes it a safe addition to a file
+every screen renders: not one existing banner changes. Three notes.
+
+It only does anything with slot content — a banner whose whole payload is `title`
+has nothing to disclose, so the branch is guarded on `$slots.default` too. Its
+chevron uses a conditional class (`:class="expanded ? 'rotate-90' : ''"`), never
+a `rotate-0` variant, because Quasar's unlayered `.rotate-90` means a layered
+utility can turn the rotation on and can never turn it off — rule 2's collision,
+and the same pattern `MainLayout` uses. And it is for a list that is a
+distraction to one reader and the point of the screen to another — the Dashboard's
+needs-attention list, which an engineer wants open and a marketer wants as a
+count. It is **not** a way to make a long banner shorter: if the detail is not
+worth a click, it is not worth the banner.
 
 Use this rather than stretching a `StatusBadge` — a badge is a pill sized for one
 or two words, and a whole sentence in one looks like a bug. `info` is brand,
