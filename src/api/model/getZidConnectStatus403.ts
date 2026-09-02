@@ -6,7 +6,7 @@
  */
 
 /**
- * RFC 9457 problem details.
+ * RFC 9457 problem details, served as `application/problem+json`. Every error response in this contract uses this shape. The dashboard surfaces `detail` and throws `ApiError` carrying `status` plus this body.
  */
 export type GetZidConnectStatus403 = {
   type?: string | null

@@ -1,0 +1,50 @@
+[
+  {
+    "id": "fn_drop_internal",
+    "accountId": "acc_sfere_demo",
+    "name": "Drop internal test traffic",
+    "slug": "drop-internal-test-traffic",
+    "description": "Removes events from staff devices before they reach the warehouse.",
+    "kind": "filter",
+    "code": "export default function (event) {\n  // Return the event to keep it, or nothing to drop it.\n  const email = event.context?.traits?.email ?? ''\n  if (email.endsWith('@sfere.io')) return\n  if (event.context?.userAgent?.includes('HeadlessChrome')) return\n  return event\n}\n",
+    "version": 4,
+    "template": "filter-by-trait",
+    "templateVersion": 2,
+    "latestTemplateVersion": 3,
+    "attachedPipelineIds": ["pipe_web_to_snowflake"],
+    "createdAt": "2026-06-02T09:12:00.000Z",
+    "updatedAt": "2026-08-14T11:40:00.000Z"
+  },
+  {
+    "id": "fn_normalise_currency",
+    "accountId": "acc_sfere_demo",
+    "name": "Normalise currency to SAR",
+    "slug": "normalise-currency-to-sar",
+    "description": "Converts order revenue to SAR so reporting can sum across storefronts.",
+    "kind": "transform",
+    "code": "const RATES = { SAR: 1, USD: 3.75, AED: 1.02 }\n\nexport default function (event) {\n  const currency = event.properties?.currency\n  const revenue = event.properties?.revenue\n  if (!currency || typeof revenue !== 'number') return event\n  const rate = RATES[currency]\n  if (!rate) return event\n  return {\n    ...event,\n    properties: {\n      ...event.properties,\n      revenue_sar: Math.round(revenue * rate * 100) / 100\n    }\n  }\n}\n",
+    "version": 7,
+    "template": null,
+    "templateVersion": null,
+    "latestTemplateVersion": null,
+    "attachedPipelineIds": ["pipe_web_to_snowflake", "pipe_web_to_meta"],
+    "createdAt": "2026-05-19T14:05:00.000Z",
+    "updatedAt": "2026-08-27T08:22:00.000Z"
+  },
+  {
+    "id": "fn_enrich_campaign",
+    "accountId": "acc_sfere_demo",
+    "name": "Attach campaign from UTM",
+    "slug": "attach-campaign-from-utm",
+    "description": "Reads utm_* off the page URL and adds a flat campaign object.",
+    "kind": "enrich",
+    "code": "export default function (event) {\n  const url = event.context?.page?.url\n  if (!url) return event\n  const params = new URL(url).searchParams\n  const campaign = {\n    source: params.get('utm_source'),\n    medium: params.get('utm_medium'),\n    name: params.get('utm_campaign')\n  }\n  if (!campaign.source && !campaign.name) return event\n  return { ...event, context: { ...event.context, campaign } }\n}\n",
+    "version": 2,
+    "template": "enrich-utm",
+    "templateVersion": 1,
+    "latestTemplateVersion": 1,
+    "attachedPipelineIds": [],
+    "createdAt": "2026-07-30T16:41:00.000Z",
+    "updatedAt": "2026-07-30T16:41:00.000Z"
+  }
+]

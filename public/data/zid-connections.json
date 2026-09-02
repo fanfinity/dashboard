@@ -1,0 +1,14 @@
+[
+  {
+    "storeId": "store_88412",
+    "name": "Flagship store",
+    "domain": "flagship.example.sa",
+    "connectedAt": "2026-07-18T08:12:00.000Z"
+  },
+  {
+    "storeId": "store_91077",
+    "name": "Outlet store",
+    "domain": "outlet.example.sa",
+    "connectedAt": "2026-08-26T15:44:00.000Z"
+  }
+]

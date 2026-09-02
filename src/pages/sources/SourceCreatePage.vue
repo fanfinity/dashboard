@@ -119,6 +119,15 @@
         >
       </div>
 
+      <!-- First thing on the form for a Zid source, above its own name, because
+           it is the only thing here that can stop the source working and the
+           only one that runs on someone else's schedule — the store owner leaves
+           for Zid's site and comes back. It gates the submit rather than merely
+           advising: an unauthorised store gives a source that can read nothing.
+           It sits below the template picker only because picking Zid is what
+           reveals it. -->
+      <ZidAuthorizePanel v-if="isZid" v-model="form.storeId" />
+
       <FormSection
         title="Details"
         description="How this source appears in lists, and the slug its ingest endpoint uses."
@@ -163,21 +172,6 @@
             v-model="form.description"
             :rows="3"
             placeholder="First-party web tracker on sfere.io"
-          />
-        </FormField>
-
-        <FormField
-          v-if="isZid"
-          label="Zid store ID"
-          required
-          for-id="source-store-id"
-          :error="errors.storeId"
-          hint="The store this source connects to. Find it in your Zid dashboard."
-        >
-          <SfereInput
-            id="source-store-id"
-            v-model="form.storeId"
-            placeholder="e.g. 12345678"
           />
         </FormField>
       </FormSection>
@@ -253,13 +247,23 @@
       </FormSection>
 
       <StickyActionBar>
-        <SfereButton type="submit" :loading="saving">{{
+        <!-- The one disabled submit in this flow, and it is disabled because the
+             click could not succeed: the backend refuses a Zid source with no
+             store, and the store id only exists once the grant does. Every other
+             failure here is a validation message on submit, which is the house
+             rule — a control that does nothing and explains nothing is what that
+             rule exists to prevent, so the sentence beside it says which step is
+             missing. -->
+        <SfereButton type="submit" :loading="saving" :disabled="!canSubmit">{{
           saving ? 'Creating…' : 'Create source →'
         }}</SfereButton>
         <SfereButton variant="secondary" @click="backToIntent"
           >Back</SfereButton
         >
-        <p v-if="!isReal" class="min-w-0 flex-1 text-xs text-subtle"
+        <p v-if="!canSubmit" class="min-w-0 flex-1 text-xs text-subtle"
+          >Authorize your Zid store above to continue.</p
+        >
+        <p v-else-if="!isReal" class="min-w-0 flex-1 text-xs text-subtle"
           >Demo data mode. This will walk you through setup but save nothing.
           Switch Settings → Data source to real to persist.</p
         >
@@ -290,12 +294,24 @@
            driven by the one lookup and both open only on `found`, so neither can
            claim a pipe for a source that got none. -->
       <SourceProvisionedOverlay
-        v-if="!preview"
+        v-if="showProvisionedOverlay"
         :state="provisioningState"
         :source="created"
         :pipe="provisionedPipe"
         :destination="provisionedDestination"
       />
+
+      <!-- The one deliberate exception to "lead with what the backend already
+           did". A Zid source gets the same provisioned chain as a web one, but
+           the chain is DRY until the store owner grants the app access on Zid's
+           own domain — nothing the backend can do for them. Showing the pipe
+           first and the authorisation below the fold would say "you're live"
+           to someone whose store has not let us read a single order, so for
+           Zid the outstanding step goes above the record of the finished ones.
+           Same component as the source detail page renders, for the same reason
+           SourceInstallGuide is shared: whoever closes this tab mid-setup meets
+           the identical three steps when they come back. -->
+      <ZidSetupWizard v-if="showZidWizard" :source="created" />
 
       <ProvisionedPipePanel
         v-if="!preview"
@@ -373,6 +389,8 @@ import SourceInstallGuide from '@/components/sources/SourceInstallGuide.vue'
 import ProvisionedPipePanel from '@/components/sources/ProvisionedPipePanel.vue'
 import SourceProvisionedOverlay from '@/components/sources/SourceProvisionedOverlay.vue'
 import SourceTemplatePicker from '@/components/sources/SourceTemplatePicker.vue'
+import ZidSetupWizard from '@/components/sources/ZidSetupWizard.vue'
+import ZidAuthorizePanel from '@/components/sources/ZidAuthorizePanel.vue'
 import { intentByKey } from '@/config/sourceIntents'
 import { slugify, useSourceTemplates } from '@/composables/useSources'
 import { useSourcesAPI } from '@/composables/useSourcesAPI'
@@ -396,6 +414,11 @@ const {
   discover: discoverProvisioning
 } = useSourceProvisioning()
 
+// Three steps for every template, Zid included. Authorising a Zid store is a
+// field of the form, not a step of its own: it was briefly a fourth step, which
+// made the stepper grow a rung the moment someone picked Zid on step 2 and moved
+// them backwards to reach it. A wizard whose shape changes under you is worse
+// than one question asked in place.
 const STEPS = [
   { key: 'intent', label: 'What are you connecting?' },
   { key: 'configure', label: 'Add the source' },
@@ -446,6 +469,33 @@ const intentTemplates = computed(() => {
 const selectedTemplate = computed(() => findById(form.templateId))
 
 const isZid = computed(() => form.templateId === 'zid')
+
+// A Zid store id only ever comes from an authorization now, so its presence IS
+// "the store granted access". Nothing else on this form can block submitting —
+// name, slug and template all report their problems on submit instead.
+const canSubmit = computed(() => !isZid.value || Boolean(form.storeId.trim()))
+
+// The remaining go-live steps for a Zid source: register webhooks and run the
+// first backfill. Both need a source id, so unlike authorisation they can only
+// be offered after the create call. The wizard re-checks `zid-status` on mount,
+// so a store authorised on the step before renders step 1 already ticked and the
+// merchant lands on the two that are actually left.
+//
+// `preview` is excluded for the reason the banner above it gives: Demo mode
+// saved nothing, so there is no source to register webhooks for.
+const showZidWizard = computed(
+  () => !preview.value && isReal.value && created.value?.sourceType === 'zid'
+)
+
+// The celebratory overlay is suppressed for Zid, and it is the same judgement
+// that puts the wizard above ProvisionedPipePanel: the chain the backend built
+// is real but DRY until webhooks are registered and the first sync has run, so
+// two seconds of it lighting up would be the loudest claim on the screen and the
+// least true. The panel still states the chain, under the steps that make it
+// carry anything.
+const showProvisionedOverlay = computed(
+  () => !preview.value && created.value?.sourceType !== 'zid'
+)
 
 // A cloud app is polled, so no key is ever issued for it and the Keys section
 // would be describing something that does not exist.
@@ -614,7 +664,12 @@ async function submit() {
         templateId: form.templateId,
         sourceType: sourceType ?? result.sourceType ?? null,
         slug: result.slug ?? form.slug.trim(),
-        name: result.name ?? form.name.trim()
+        name: result.name ?? form.name.trim(),
+        // The Zid wizard builds `/redirect-url?store_id=…` from this, and a
+        // missing one would open the OAuth page against `undefined` — a dead end
+        // with no error, on the one step the merchant cannot skip. `Source`
+        // does carry `store_id`, so this is the same belt as `slug` above.
+        storeId: result.storeId ?? (isZid.value ? form.storeId.trim() : null)
       }
       preview.value = false
       step.value = 'install'

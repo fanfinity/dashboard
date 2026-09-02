@@ -1,6 +1,7 @@
 import { NOT_KNOWN } from '@/lib/emptyValue'
 import { useQuasar } from 'quasar'
 import { useMockResource } from '@/composables/useMockResource'
+import { useIdentifierTypes } from '@/composables/useIdentifierTypes'
 
 /**
  * Profile DWH syncs — scheduled batch writes of resolved fan profiles into a
@@ -366,8 +367,13 @@ export function useProfileDwhSyncAttributes() {
 /**
  * The identifier types a sync can write as key columns.
  *
- * Soft-deleted identifier types carry a `deletedAt` and must not be offered as
- * a sync key, so they are filtered out here rather than in every caller.
+ * The identifier types a DWH sync may key on.
+ *
+ * The fixture carried a `deletedAt` and this used to filter on it. The wire
+ * `IdentifierType` has no such field — the catalog is fixed, not soft-deleted —
+ * so the filter is gone rather than being applied to a key that is always
+ * undefined. `useIdentifierTypes()` is now the single reader of
+ * `GET …/identifier-types`, which is why this is a straight pass-through.
  *
  * @returns {{
  *   identifierTypes: import('vue').Ref<Array>,
@@ -377,15 +383,5 @@ export function useProfileDwhSyncAttributes() {
  * }}
  */
 export function useProfileDwhSyncIdentifierTypes() {
-  const {
-    data: identifierTypes,
-    loading,
-    error,
-    load
-  } = useMockResource('identifier-types', {
-    select: payload =>
-      Array.isArray(payload) ? payload.filter(t => !t.deletedAt) : payload
-  })
-
-  return { identifierTypes, loading, error, load }
+  return useIdentifierTypes()
 }

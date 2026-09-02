@@ -29,9 +29,10 @@ use.
 
 The replacement kept the sixteen original filenames — `PageHeader.vue`,
 `DataTable.vue`, `StatusBadge.vue` and the rest — which is what let 104 screen
-files pick up Sfere implementations without rewriting 571 imports. The other
-twenty-three components have no pre-Sfere counterpart and keep their `Sfere*`
-names.
+files pick up Sfere implementations without rewriting 571 imports. Twenty-five
+components have no pre-Sfere counterpart and keep their `Sfere*` names. The
+remaining two, `StickyActionBar` and `SecretRevealDialog`, are newer than the
+swap and simply describe what they do: 16 + 25 + 2 = 43.
 
 ---
 
@@ -40,7 +41,7 @@ names.
 | Path                         | What                                                           |
 | ---------------------------- | -------------------------------------------------------------- |
 | `src/css/sfere.css`          | The token layer: `@theme` tokens + seven `@utility` treatments |
-| `src/components/ui/`         | 42 components. The kit every screen is built from              |
+| `src/components/ui/`         | 43 components. The kit every screen is built from              |
 | `src/components/sfere-docs/` | Doc-page scaffolding. **Not** part of the kit                  |
 | `src/pages/design-system/`   | The showcase page itself                                       |
 | `public/brand/`              | Logo lockups and the mark, as real SVG files                   |
@@ -207,7 +208,7 @@ inexplicably invisible, check for a bare `hidden`.
 
 ## Components
 
-42, in `src/components/ui/`, imported by path:
+43, in `src/components/ui/`, imported by path:
 
 ```js
 import SfereButton from '@/components/ui/SfereButton.vue'
@@ -221,7 +222,7 @@ the data and hands down strings. The one carve-out is a declarative
 **Screen primitives** — `PageHeader` `DataTable` `ErrorState` `LoadingState`
 `EmptyState` `FormSection` `FormField` `ConfirmDialog` `DefinitionList`
 `SelectableCard` `ToolbarSearch` `CardPanel` `NoticeBanner` `StatCard`
-`StatusBadge` `TabNav` `StickyActionBar`
+`StatusBadge` `TabNav` `StickyActionBar` `SecretRevealDialog`
 **Actions & markers** — `SfereButton` `SfereIconButton` `SfereIcon`
 `SfereLinkArrow` `SferePill` `SfereEyebrow` `SfereIconChip` `SfereAvatar`
 `SfereKbd` `SfereTooltip`
@@ -297,7 +298,7 @@ its own. Adding a glyph means one entry in that file; nothing else changes.
 
 ### Screen primitives
 
-Sixteen of the 42 carry the filenames of the components they replaced, so that
+Sixteen of the 43 carry the filenames of the components they replaced, so that
 every screen picked up a Sfere implementation without an import changing. What
 each one is underneath:
 
@@ -382,12 +383,29 @@ They were right the first time and they still apply:
   selector, so a kit with no failure surface would have left the only
   behavioural gate in the repo with nothing to assert on.
 
-- **One Quasar dependency, and it is named too.** `ConfirmDialog` wraps
-  `q-dialog`. A modal owes the user a focus trap, Escape, scroll lock, a
-  backdrop and a teleport out of any `overflow: hidden` ancestor; all five are
-  invisible when they work and all five are subtle to hand-roll. Only the shell
-  is borrowed — the card, the buttons and the type are Sfere. No other component
-  in the kit may reach for a `q-*` element.
+- **Two Quasar dependencies, and they are both named.** `ConfirmDialog` and
+  `SecretRevealDialog` each wrap `q-dialog`. A modal owes the user a focus trap,
+  Escape, scroll lock, a backdrop and a teleport out of any `overflow: hidden`
+  ancestor; all five are invisible when they work and all five are subtle to
+  hand-roll. Only the shell is borrowed — the card, the buttons and the type are
+  Sfere. **No other component in the kit may reach for a `q-*` element**, and the
+  carve-out is for `q-dialog` specifically rather than for Quasar generally.
+
+  It read "one dependency" until `SecretRevealDialog` arrived, and the honest
+  version of that rule is a list rather than a number: the second entry is a
+  second modal, which is the one thing the first entry already licensed. A third
+  entry that is not a modal is the change worth arguing about.
+
+  `SecretRevealDialog` also inverts the dismissal contract, which is why it is a
+  separate component rather than a `ConfirmDialog` prop. It is `persistent` with
+  **no Cancel and no `v-close-popup`**, because it shows a write-once secret —
+  `ApiTokenCreated.plaintext` and `WriteKeyCreated.plaintext` come back on the
+  create response and never again — so a stray backdrop click is an
+  unrecoverable loss the person had no way to see coming. Its width also needs
+  the **literal** pair `w-[min(620px,92vw)]! max-w-[min(620px,92vw)]!`: Tailwind
+  v4 extracts class names from source text, so a runtime-built
+  `` `w-[${n}]!` `` is never generated and Quasar's unlayered 560px cap stays in
+  charge.
 
 ---
 
@@ -459,7 +477,7 @@ the company prompting Claude Design gets the Sfere palette and typefaces by
 default.
 
 **Only the tokens cross over — the component kit does not.** Claude Design's
-agent builds in React; `src/components/ui/` is 42 Vue SFCs and cannot be
+agent builds in React; `src/components/ui/` is 43 Vue SFCs and cannot be
 imported there. The uploaded `_ds_bundle.js` is an empty namespace and says so.
 Anyone using it composes their own components from the tokens.
 

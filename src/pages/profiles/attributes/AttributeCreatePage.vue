@@ -306,6 +306,7 @@ import StatusBadge from '@/components/ui/StatusBadge.vue'
 import StickyActionBar from '@/components/ui/StickyActionBar.vue'
 import AttributeDimensionsField from '@/components/profiles/attributes/AttributeDimensionsField.vue'
 import { useMockResource } from '@/composables/useMockResource'
+import { useIdentifierTypes } from '@/composables/useIdentifierTypes'
 import {
   ALGORITHMS,
   DIMENSION_TYPES,
@@ -339,11 +340,11 @@ const {
 } = useMockResource('warehouse-models')
 
 const {
-  data: identifierTypes,
+  identifierTypes,
   loading: identifiersLoading,
   error: identifiersError,
   load: loadIdentifierTypes
-} = useMockResource('identifier-types')
+} = useIdentifierTypes()
 
 // Loaded for one reason only: to refuse a name that is already taken before the
 // user submits it. If it fails, the check is skipped rather than blocking the

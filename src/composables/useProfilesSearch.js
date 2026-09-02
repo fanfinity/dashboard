@@ -1,6 +1,7 @@
 import { NEVER } from '@/lib/emptyValue'
 import { computed } from 'vue'
 import { useMockResource } from '@/composables/useMockResource'
+import { useIdentifierTypes } from '@/composables/useIdentifierTypes'
 import {
   formatAgo,
   formatAttributeValue,
@@ -49,10 +50,10 @@ export function useProfilesSearch() {
   } = useMockResource('profiles')
 
   const {
-    data: identifierTypes,
+    identifierTypes,
     error: typesError,
     load: loadTypes
-  } = useMockResource('identifier-types')
+  } = useIdentifierTypes()
 
   const {
     data: attributes,

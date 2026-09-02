@@ -1,5 +1,11 @@
 import { NOT_KNOWN, NOT_SET } from '@/lib/emptyValue'
 import { useMockResource } from '@/composables/useMockResource'
+import { useIdentifierTypes } from '@/composables/useIdentifierTypes'
+import {
+  canReadProfiles,
+  useApiTokens,
+  LEGACY_PROFILE_READ_SCOPE
+} from '@/composables/useApiTokens'
 
 /**
  * Profile API = the read side of the fan graph.
@@ -283,14 +289,10 @@ export function useProfileApiEndpoints() {
  * }}
  */
 export function useProfileApiIdentifierTypes() {
-  const {
-    data: identifierTypes,
-    loading,
-    error,
-    load
-  } = useMockResource('identifier-types')
+  const { identifierTypes, loading, error, apiMissing, load } =
+    useIdentifierTypes()
 
-  return { identifierTypes, loading, error, load }
+  return { identifierTypes, loading, error, apiMissing, load }
 }
 
 /**
@@ -327,23 +329,41 @@ export function useProfileApiAttributes() {
  * }}
  */
 export function useProfileApiTokens() {
-  const { data: tokens, loading, error, load } = useMockResource('api-tokens')
+  const { tokens, loading, error, apiMissing, load } = useApiTokens()
 
-  return { tokens, loading, error, load }
+  return { tokens, loading, error, apiMissing, load }
 }
 
-/** Scope a token needs before it can read a profile. */
-export const PROFILE_READ_SCOPE = 'profiles:read'
+/**
+ * Scope a token needs before it can read a profile.
+ *
+ * @deprecated The wire vocabulary is coarse — `ApiTokenScope` is
+ * `read | write | admin` — so there is no per-resource profile scope to match
+ * on. This string is the fixture's, kept only so the two modes can be told
+ * apart; ask `canReadProfiles()` instead of comparing against it.
+ */
+export const PROFILE_READ_SCOPE = LEGACY_PROFILE_READ_SCOPE
 
 /**
- * Live tokens carrying `profiles:read`, newest use first.
+ * Tokens that can read a profile, newest use first.
+ *
+ * The scope test moved to `canReadProfiles()` in `useApiTokens`, which accepts
+ * both vocabularies. This used to require the literal `'profiles:read'`, which
+ * no live token can ever carry — so against the real endpoint the list was
+ * always empty and the screen said no token could reach the Profile API while
+ * several could.
  *
  * @param {Array} tokens
  * @returns {Array}
  */
 export function profileReadTokens(tokens) {
-  return (tokens ?? [])
-    .filter(t => !t.isRevoked && (t.scopes ?? []).includes(PROFILE_READ_SCOPE))
-    .slice()
-    .sort((a, b) => String(b.lastUsedAt).localeCompare(String(a.lastUsedAt)))
+  return (
+    (tokens ?? [])
+      .filter(t => !t.isRevoked && canReadProfiles(t))
+      .slice()
+      // `lastUsedAt` is null on every live token (nothing writes it), so in real
+      // mode this sort is a no-op rather than a wrong order. Left as it is: it is
+      // the right order the moment the backend starts recording it.
+      .sort((a, b) => String(b.lastUsedAt).localeCompare(String(a.lastUsedAt)))
+  )
 }

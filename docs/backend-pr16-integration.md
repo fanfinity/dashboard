@@ -114,6 +114,31 @@ These are live and have nothing in `public/data/` — new screens or new tabs:
 
 ---
 
+## What this closes from the four backend asks
+
+`todos/backend-ask-*.md` holds four drafted asks. Checked against the router source at PR head
+`11acd93`, not against the spec's `x-sfere-status` labels: **one is partly closed, three are
+untouched.**
+
+| Ask                                 | Status                  | Detail                                                                                                                                                                                           |
+| ----------------------------------- | ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `backend-ask-source-settings.md`    | **3 of 5 items closed** | Rotation, server-to-server keys and strict mode all shipped. Rename (`SourceUpdate`) and `template_id` still open — see Problems 4–6                                                             |
+| `backend-ask-source-trash.md`       | untouched               | No trash router exists, and `Source` has no `deleted_at`. The spec drafts a **generic** `/trash/{resource}/{resource_id}` instead of the `/sources/trash` the ask requests                       |
+| `backend-ask-account-clickhouse.md` | untouched               | `Account` is still `{id, name, slug, created_at, jitsu_workspace_id}`. `…/warehouse/connections` is **not** this ask — those are customer-owned connections, this is infrastructure we provision |
+| `backend-ask-auth-onboarding.md`    | untouched               | `register.py` is a one-line diff in this PR. No password rule, no email verification, no reset, no domain matching                                                                               |
+
+Two side answers this PR's source settles for free:
+
+- **`/members` is real** — `listMembers`, `invite_member_route` and `remove_member_route` are
+  implemented in `app/api/routes/members.py`, untouched by this PR. There is **no
+  pending/approval state**, so the roster half of the domain-matching ask is buildable now and
+  the approval-queue half is not. `/team` can stop reading a fixture whenever we want.
+- **Rotation semantics**: revocation takes effect immediately and there is no overlap window —
+  but rotation is two-step (mint, paste, revoke), so the user creates their own window. That is
+  a better answer than the single `rotate-write-key` route the ask asked for.
+
+---
+
 ## Full list of what shipped
 
 ### Sources (`sources.py` +1169)
@@ -304,6 +329,73 @@ is not. Either add it to the spec or mark the router out of schema.
 The spec declares 24 title-case tags but uses `Admin` (never declared) and a lowercase `sources`
 on `/api/sources/by-store`. Fires `operation-tag-defined` ×4.
 
+### Problem 4: `template_id` is written, mapped, and then silently dropped
+
+**This one is already built and the response does not carry it.** Three facts that only make
+sense together:
+
+- `app/db/models.py:276` — the ORM model has a `template_id` column.
+- `app/api/routes/_mappers.py:234` — `to_source_out()` passes `template_id=source.template_id`.
+- `spec/openapi.yml` — the `Source` schema has **no `template_id` property**. `SourceCreate`
+  does; `Source` does not.
+
+Because `make gen` builds `app/generated/models.py` from that spec, the generated
+`class Source(BaseModel)` has no such field and does not set `extra="allow"` (only two schemas
+in the file do). Pydantic's default is `extra="ignore"`, so the mapper's keyword argument is
+**discarded without an error**. The value is stored, retrieved, passed to the response model,
+and thrown away one layer from the wire.
+
+Adding the property to the `Source` schema is the entire fix. It is worth doing in this PR
+because it costs one line and it is the **highest-leverage field in the whole diff for us**:
+`SourceCreate` has accepted `template_id` all along, so today it is write-only. Without it a
+re-read carries only `source_type`, and `event_stream` covers `ios-sdk`, `android-sdk` and
+`http-api` — indistinguishable — so `SourceInstallGuide` has to show all five method tabs on a
+source detail page instead of the one that fits. `methodsForSource()` in
+`src/lib/sourceInstallSnippets.js` already prefers `templateId` and only falls back because the
+field is absent, so this closes a QA finding with **zero frontend change**.
+
+It is also the failure mode this repo's `CLAUDE.md` singles out as the expensive one: a silent
+drop nobody reports, rather than a visible `vundefined` somebody files.
+
+### Problem 5: `WriteKey.last_used_at` is always `null`
+
+`stream_write_keys()` (`app/services/sources.py`) hardcodes `last_used_at=None` on the branch
+that merges the local `write_keys` row — which is the branch every key created through
+`POST …/write-keys` takes. So the field is in the schema and never populated.
+
+That field is the one that makes revocation safe: with it, "revoke this key" is a decision;
+without it, a list of four keys all reading "never used" is a guess. Until it is real the
+dashboard has to print `NOT_KNOWN` rather than "Never" — asserting a key is unused when it may
+be serving production traffic is exactly the confident-lie class above.
+
+### Problem 6: `is_event_stream()` excludes `source_type == "event_stream"`
+
+`app/services/sources.py:228` is:
+
+```python
+def is_event_stream(source: Source) -> bool:
+    """Event-stream sources (Web SDK) are the ones with ingest settings."""
+    return source.source_type == "web"
+```
+
+So `GET/PUT …/sources/{id}/ingest-settings` `404`s for `zid`, `cloud_app`, **and** for sources
+whose `source_type` is literally `event_stream`. If the scope is deliberate — only a Web SDK
+site has browser origins to authorize — that is fine and we will gate the strict-mode control
+on `web`. But the predicate's name says the opposite of what it does, and the docstring's
+parenthetical is the only thing that resolves it. Worth a rename or a comment before the next
+reader trusts the name.
+
+Related, not a bug, just undocumented: `…/write-keys` answers **`400`**, not `404`, when a
+source has no `jitsu_site_id`. That is a real branch for us ("no Jitsu site provisioned yet")
+rather than an `apiMissing` read, so it is worth keeping.
+
+One stale docstring in the same file, same silent-mismatch class as Problem 4 and free to fix:
+`create_source_write_key_route` says the optional `name` label "is echoed in this response but
+not persisted", but the handler calls `record_write_key(..., name=body.name)` two lines later
+and `listSourceWriteKeys` merges that local row back in — so the name **does** survive a
+re-read. The code is right and the docstring is wrong. We would have built a UI that refuses to
+show key names on the strength of that sentence.
+
 ---
 
 ## Spectral
@@ -369,6 +461,15 @@ JSON, the ruleset needs a stripped-down variant.
 - [ ] Fix the lowercase `sources` tag on `/api/sources/by-store`
 - [ ] Decide `/api/zid/install-report`: add to spec, or `include_in_schema=False` on `internal_router`
 - [ ] Commit `.spectral.yaml` (currently untracked in the backend) and wire it into `make check` / CI, or it lints nothing
+- [ ] **Add `template_id` to the `Source` schema** (Problem 4) — one line, already mapped and
+      currently discarded; closes a QA finding with no frontend change
+- [ ] Populate `WriteKey.last_used_at` (Problem 5), or tell us it is not coming so we print
+      `NOT_KNOWN` rather than "Never"
+- [ ] Rename or comment `is_event_stream()` (Problem 6), and confirm ingest settings are
+      `web`-only by design
+- [ ] Widen `SourceUpdate` to accept optional `name` and `description` — still exactly
+      `{is_enabled}`, required, so a source cannot be renamed. Tracked in
+      `todos/backend-ask-source-settings.md`
 
 ### Dashboard (this PR)
 
@@ -381,6 +482,13 @@ JSON, the ruleset needs a stripped-down variant.
 - [ ] Swap `api-tokens.json` → `…/api-tokens` in `useSettingsWorkspace.js` + `useProfileApi.js`
 - [ ] Add the write-once copy-modal pattern for `WriteKeyCreated` / `ApiTokenCreated`
 - [ ] Add narrowing helpers for `AnyDestinationConfig` keyed on `destination_type`
+- [ ] Un-disable three of the five controls on `SourceSettingsPanel.vue` — but **not as a
+      straight un-disable**, the shapes changed: write keys are a collection read from
+      `GET …/write-keys` (browser and server keys in one list, discriminated by `kind`), rotation
+      is two controls and two confirms rather than one, strict mode has to be gated on
+      `source_type === 'web'`, and `PUT …/ingest-settings` is a full replacement so the panel must
+      read current settings before writing or a strict toggle silently clears the domain
+      allowlists. Detail in `todos/backend-ask-source-settings.md`
 - [ ] Leave the 🚫 mocks alone; add a note in those composables that the endpoint is spec-only
 - [ ] Decide whether to build any of the 🆕 no-mock modules in this PR or a follow-up
 

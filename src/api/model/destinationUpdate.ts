@@ -4,7 +4,13 @@
  * Sfere Backend
  * OpenAPI spec version: 0.1.0
  */
+import type { AnyDestinationConfig } from './anyDestinationConfig'
 
+/**
+ * Partial update. Omitted fields are left unchanged. `config`, when given, is merged per-field into the stored config: a secret field set to `"***"`, `"__MASKED_BY_JITSU__"`, `""`, or `null` keeps the stored value, any other string replaces it, and webhook `headers` merge per key.
+ */
 export interface DestinationUpdate {
-  is_enabled: boolean
+  name?: string | null
+  is_enabled?: boolean | null
+  config?: AnyDestinationConfig | null
 }

@@ -40,6 +40,16 @@ loads `.env` itself** via `process.loadEnvFile()`, so bare `pnpm smoke:dist` wor
 shell. That call does not overwrite variables already set, so `--env-file=.env` and a
 workflow's `env:` block still win where they are used.
 
+**It asserts a route only after the network has gone quiet twice**, and that is not belt and
+braces. Almost every composable awaits `waitForAccount()` before it can build an account-scoped
+URL, so its fetch is issued only once `GET /v1/me` has settled — and a single
+`waitForLoadState('networkidle')` resolves _inside_ that gap, so the route gets asserted before
+the request that would have failed it was even sent. Measured: in real mode the same nine-route
+run reported between one and seven console-error failures on identical code. `settle()` idles,
+pauses 400ms, then idles again; the same run is now byte-identical across repeats. **Do not
+collapse it back to one wait** — a gate that fails a random subset also passes a random subset,
+and the second half is the one that hurts.
+
 **It serves on port 9000, and that is load-bearing, not a default nobody thought about.**
 Sign-in is a real cross-origin `POST` to `VITE_API_BASE` now, so the browser's origin has to be
 one the backend's `CORS_ALLOW_ORIGINS` names — and the only localhost origin staging accepts is
@@ -154,13 +164,26 @@ not-allowed }`, so `disabled:opacity-45` and `disabled:cursor-not-allowed` are d
    enough** — the Quasar rule is a `max-width`, so the override has to be one too:
    `w-[min(720px,92vw)]! max-w-[min(720px,92vw)]!`, as on `/team` and `/billing`. A flat pixel
    max-width would stop the dialog shrinking on a narrow window, hence the `min()`.
-4. **`class="flex"` wraps, and `flex-nowrap` cannot stop it.** Quasar's `.flex` is
+4. **`class="flex"` wraps, and plain `flex-nowrap` cannot stop it.** Quasar's `.flex` is
    `display:flex; flex-wrap:wrap`, unlayered, so _every_ flex container in this repo wraps and
    the layered `flex-nowrap` utility loses to it. The symptom is a `justify-between` row whose
    label jumps **above** its control once the text gets long — which means it ships looking fine
    and breaks on the copy edit. Fix: `min-w-0 flex-1` on the child that should give way (that
    sets `flex-basis: 0` and removes the wrap decision), `shrink-0` on the one that must not.
    Full worked example in `docs/ui-conventions.md` rule 10.
+   **In a column it fails differently, and worse**: `flex flex-col` under a height cap does not
+   scroll when it overflows, it wraps into a **second column**. A dialog card
+   (`flex max-h-[85vh] … flex-col overflow-hidden`) put its header in column one and its whole
+   scrollable form in column two, off the card's right edge and clipped — which reads as "the
+   dialog is cut in half", not as a wrap. The tell is a `border-b` that stops mid-card instead of
+   spanning it. Here the child-side fix does not apply (the body already had `min-h-0 flex-1`),
+   so use the **important suffix**: `flex-nowrap!` beats the unlayered rule, because layered
+   `!important` outranks unlayered non-important. It is on every viewport-capped dialog and
+   overlay card — `SettingsNotificationChannelDialog`, `ProfileBuilderEditDialog`,
+   `SourceSyncRunLogsDialog` and `PersonaQuestion` — and a new one needs it too. Height-capped
+   columns whose children are auto-sized (`SelectableCard`, `MainLayout`'s rail,
+   `LoginPage`'s panel) deliberately do not carry it: nothing there overflows into a
+   second column.
 5. **`mt-*` on a `<p>` does nothing** — this is #3's margin problem, and it is the one that
    silently degrades a card. Every `<p>` carries Quasar's unlayered `margin-bottom: 16px`, and a
    layered `mt-3` on it computes to `margin-top: 0`, so a card spaced `mt-3` / `mt-1.5` / `mt-3`
@@ -177,7 +200,7 @@ not-allowed }`, so `disabled:opacity-45` and `disabled:cursor-not-allowed` are d
    `.sfere-flush > p` for a container that already spaces its children with `gap`. There is
    deliberately **no blanket `p { margin: 0 }`**: stacked prose still wants its rhythm, and
    the smoke gate cannot see a spacing regression, so a global reset would be an unverifiable
-   change to all 54 screens at once.
+   change to all 60 screens at once.
 6. **`auto-fit` grid tracks measure a card at min-content and keep the answer.** An
    `auto-fit` track is min-content-sized in the first pass, and the min-content height of a
    `SelectableCard` — a #4 wrapping flex — at that width is enormous, so the row keeps it:
@@ -285,6 +308,59 @@ nothing lit, rather than the card appearing fully lit. See the provisioning tabl
 architecture for which source types this applies to; the panel, the overlay and the CTA all
 follow the lookup rather than the type.
 
+**A Zid source starts with an authorization, and it is the first thing on the create form.**
+`ZidAuthorizePanel.vue` sits above Details on step 2, in the same numbered-step grammar as
+`ZidSetupWizard` so the merchant reads one continuous 1-2-3, and it **gates the submit**: Create
+is disabled until the store has granted access, because an unauthorised store gives a source
+that can read nothing. It is the only disabled submit in the flow, and it is disabled because
+the click could not succeed — the backend answers `400 store_id is required for Zid sources`.
+Every other problem on this form is a validation message on submit, which is the house rule, so
+the sentence beside the button names the missing step rather than leaving a dead control.
+
+**It asks for a grant, not for a store id.** The id is still required by the backend, but it is
+read off `…/zid-connections` rather than typed — an empty `store_id` is therefore exactly "not
+authorised yet", which is the single signal `canSubmit` reads. The free-text "Zid store ID" box
+this replaced asked for an id nothing checked, so a source could be built against a store that
+had never heard of us and only say so three screens later. One authorised store is used
+silently; two or more render as name pills, since picking between real stores is a genuine
+question and typing an id was never the way to answer it. **`apiMissing` is the one branch that
+still asks**: with no `…/zid-connections` there is nothing to read the id off and no way to
+confirm the grant, and the backend still refuses a Zid source without one.
+
+**It is a field, not a fourth step, and that was a considered reversal.** Making it a step
+looked tidier and behaved worse: the "An online store" intent carries Zid _and_ Shopify, so the
+template is settled halfway down step 2 — and a stepper that grows a rung and walks you
+backwards the moment you pick Zid is a wizard changing shape under you. The stepper stays three
+rungs for every template.
+
+**The authorization URL is fetched, never built.** Both `…/zid-authorize` and `zid-status`'s
+`authorize_url` return the same start hop, `/api/zid/start?start={code}`: it consumes a
+single-use code and sets an HMAC-signed first-party cookie carrying the `account_id`. That
+cookie is load-bearing — Zid drops the URL `state` for a merchant who is not already signed in,
+so it is the only thing telling the callback which account finished — and the backend trusts no
+client-supplied account id, so a URL assembled in the browser cannot be account-linked. Each is
+spent once opened. `src/lib/zidAuthorize.js` holds this, plus the pre-PR-#16
+`{VITE_ZID_APP_URL}/redirect-url?store_id=…` fallback: measured against `api-staging`,
+`/redirect-url` answers 302 there today while all three PR #16 routes answer 404, so preferring
+the backend's URL means the signed flow switches itself on when the PR deploys. The fallback is
+a real downgrade, not a synonym — it stores tokens against the store but links it to no account,
+so it never appears in `zid-connections`. Always `window.open`, never a fetch: `connect-src`
+names the Sfere hosts only, and the whole point is that the merchant signs in on Zid's domain.
+
+**`ZidSetupWizard.vue` owns what is left, and on step 3 it sits _above_ `ProvisionedPipePanel`**
+— the one deliberate exception to "lead with what the backend already did", and an exception
+about truth rather than taste. Its remaining steps are register webhooks → run first sync, and
+the provisioned chain is **dry** until both have run, so showing the pipe first would say
+"you're live" to someone whose store has delivered nothing. For the same reason
+`SourceProvisionedOverlay` is **suppressed for Zid**: two seconds of the chain lighting up would
+be the loudest claim on the screen and the least true. A store authorized on the form renders
+the wizard's step 1 already ticked, so the merchant lands on the two genuinely left. It is the
+same component the source detail page renders, for the reason `SourceInstallGuide` is shared.
+
+**Neither surface can observe the grant, which is why "I've authorized" exists.** Zid's callback
+returns the merchant to _Zid's_ dashboard, not to this tab, so nothing here sees the handshake
+complete — every authorize button is paired with a control that re-reads the backend.
+
 `SourceInstallGuide.vue` renders step 3 _and_ the source detail page's "Setup instructions" tab —
 one component, two entry points, because someone who closed the tab mid-setup wants exactly the
 same page a week later. Its snippets live in `src/lib/sourceInstallSnippets.js` for the reason
@@ -310,7 +386,18 @@ that closes it**; do not reconstruct the template from a slug or a local cache.
 
 The product backlog (54 screens, GitHub issues #16–#69) is scaffolded: every screen already
 exists as a stub page at its final path. Implementing one means **rewriting that file in place**,
-never creating a file and registering a route.
+never creating a file and registering a route. The manifest itself is **60 screens** now — the
+backlog count is the issue count, not the route count, and the two have not matched since
+`/team`, `/billing` and the Functions screens were added outside it.
+
+**Functions is the newest top-level section** (`/functions`, `/functions/new`, `/functions/:id`),
+sitting under Pipes because a function is what runs _on_ a pipe's events. Two things about it
+worth knowing before touching either: `usePipelineFunctions()` is the per-pipe **attachment**
+list and `useFunctions()` is the account **library**, and the same function can be attached to
+several pipes — so they are not two names for one thing. And `reorder()` takes the **complete**
+list of attached ids; omitting one is a `422`, not a detach, which is why `move()` exists rather
+than a swap helper. `/profile-builders` is the fourth new screen, a child under Profiles gated by
+its own `profile-builders` key.
 
 **The sidebar has an ACCOUNT section**, between FANS and ACTIVATE: `/team` (members, roles and
 the domain-match approval queue) and `/billing` (plan, usage, add-ons, invoices). It sits above
@@ -336,12 +423,13 @@ back in the sidebar, which is exactly what this undid.
 ## Feature activation — most of the sidebar is switched off
 
 `enabled: true` in `features.js` today covers **Dashboard, Live events, Sources, Destinations,
-Pipes, Settings, Warehouse, Monitoring, Profiles, Secrets, Authorizations, Team** and
-**Billing** — thirteen top-level keys, not six. Two of those are partly on: Warehouse and Profiles each gate their own
+Pipes, Functions, Settings, Warehouse, Monitoring, Profiles, Secrets, Authorizations, Team** and
+**Billing** — fourteen top-level keys, not six. Two of those are partly on: Warehouse and Profiles each gate their own
 children by a separate key (`dwh-syncs`, `warehouse-models`, `identity-resolution`, `attributes`,
-`profile-api`, `live-profile-syncs`, `profile-dwh-syncs`), so switching the parent on only exposes
-the child screens whose own key is _also_ `true` — right now that's just Warehouse connections and
-Profile search, everything else under those two stays a `Soon` row. Audiences, Campaigns, Engage,
+`profile-builders`, `profile-api`, `live-profile-syncs`, `profile-dwh-syncs`), so switching the
+parent on only exposes the child screens whose own key is _also_ `true` — right now that's
+Warehouse connections, Profile search and Profile builders, everything else under those two stays
+a `Soon` row. Audiences, Campaigns, Engage,
 Reporting and Demo lab remain fully dark and get switched on one at a time as they become real.
 
 `src/config/features.js` is the registry — pure data, one entry per module, `enabled` being the
@@ -371,7 +459,7 @@ of** `<router-view>` when `route.meta.group` is inactive. Deliberately not a `be
 guard can only redirect, which throws away the URL you asked for. This way the address survives,
 the real page component never mounts (so nothing it fetches on mount runs), and
 `ComingSoonPanel` renders the screen's own title as a real `<h1>` — which is what lets
-`pnpm smoke:dist` keep walking **all 54 routes** instead of being narrowed to the active few.
+`pnpm smoke:dist` keep walking **all 60 routes** instead of being narrowed to the active few.
 Any new gating must preserve that; a redirect would silently drop the gate to ~6 routes.
 
 ## Onboarding — one question, asked once
@@ -383,7 +471,7 @@ numbers"). `src/config/personas.js` is the registry — pure data, no imports, s
 
 **The question is an overlay over a fully-rendered Home, never a route.** A `/welcome` route
 would replace `MainLayout`, so `[data-smoke="nav"]` would never appear and `pnpm smoke:dist`
-would fail at sign-in for all 54 routes rather than on one screen. Three consequences that any
+would fail at sign-in for all 60 routes rather than on one screen. Three consequences that any
 change here has to preserve: the page beneath stays mounted and visible, the overlay renders
 **no `<h1>`** (smoke asserts on the first one, which belongs to the page), and it opens **only on
 `/`** — a deep link to `/errors` from Slack must not be met by a modal demanding a role.
@@ -483,7 +571,7 @@ need endpoints, and neither has a placeholder in the UI.
 matching. Keep exactly one of each — that is why sign-up has no confirm-password field, and why
 the password show/hide toggle is `type="button"` and the input starts as `type="password"`. A
 bare `<button>` inside a `<form>` submits by default, so an unmarked toggle would give the gate
-two matches for `button[type=submit]` and fail sign-in for all 54 routes before a single screen
+two matches for `button[type=submit]` and fail sign-in for all 60 routes before a single screen
 rendered.
 
 **Settings → Your role** (`SettingsPersonaPanel.vue`) is the other surface, so changing the answer
@@ -524,7 +612,7 @@ reports `NOT_KNOWN` regardless of the fallback — that is a different failure.
 
 The wider copy rule that goes with it: **an em dash is punctuation, and the UI keeps very few
 of them.** Page subtitles, banners, toasts, validation messages and status lines were
-rewritten to sentences, colons or parentheses across all 54 screens, `public/data/*.json` and
+rewritten to sentences, colons or parentheses across every screen, `public/data/*.json` and
 the screen manifest — `screens.js` titles used to read `Warehouse Models — list view` and now
 read `Warehouse models`, which matters because that string is the real `<h1>`
 `ComingSoonPanel` renders. `src/components/sfere-docs/**` (the `/design-system` reference
@@ -532,16 +620,17 @@ page) is the deliberate exception: it is long-form editorial prose, not product 
 
 ## UI primitives
 
-`src/components/ui/` is **the** component kit — 42 components, all built on the Sfere token
+`src/components/ui/` is **the** component kit — 43 components, all built on the Sfere token
 layer. **Use them; do not re-implement their markup and do not copy their class strings into a
 page.** Read `docs/ui-conventions.md` before writing any new screen.
 
 Two naming schemes live in the folder, for a reason worth knowing:
 
-- **17 screen primitives carry plain, unprefixed names** — `PageHeader`,
+- **18 screen primitives carry plain, unprefixed names** — `PageHeader`,
   `DataTable`, `EmptyState`, `ErrorState`, `LoadingState`, `StatusBadge`, `CardPanel`,
   `NoticeBanner`, `StatCard`, `TabNav`, `FormField`, `FormSection`, `ConfirmDialog`,
-  `DefinitionList`, `SelectableCard`, `ToolbarSearch` and `StickyActionBar`. Sixteen of them
+  `DefinitionList`, `SelectableCard`, `ToolbarSearch`, `StickyActionBar` and
+  `SecretRevealDialog`. Sixteen of them
   keep the names the screens already imported, which is what let the Sfere implementations
   replace the originals across 104 files without rewriting 571 imports; `StickyActionBar` is
   newer and simply describes what it does. A few of the older names are now worse than what
@@ -583,6 +672,18 @@ already names the noun, and wrong anywhere the action is not guessable from its 
 states, form submits and destructive confirmations keep their words — and so do row-level
 actions in a `DataTable`, where the noun that matters is _which row_, not the `<h1>`.
 
+**A secret the backend returns once goes through `SecretRevealDialog`, and its rules are the
+opposite of every other dialog's.** `ApiTokenCreated` and `WriteKeyCreated` carry a `plaintext`
+alongside the record; every later read carries a masked prefix, so the create response is the
+only moment the value exists anywhere. The dialog is therefore `persistent`, has **no Cancel and
+no `v-close-popup`**, and its one button says it is the last time — because a stray click on the
+backdrop is otherwise an unrecoverable loss the person had no way to see coming. Two
+implementation notes it will bite you on: the width has to be a **literal** utility pair
+(`w-[min(620px,92vw)]! max-w-[min(620px,92vw)]!`) since Tailwind v4 extracts class names from
+source text and a runtime-built `` `w-[${n}]!` `` is never generated, leaving Quasar's unlayered
+560px cap in charge (collision #3); and the close glyph is inlined rather than taken from
+`sfereIcons.js`, which has no `close` entry.
+
 **But the confirm rule is not tied to the icons: every state change asks first, everywhere.**
 The row-level Pause/Enable on the **twelve** list screens that have one — Sources,
 Destinations, Pipes, Profile API, Profile DWH syncs, Live profile syncs, Warehouse models, DWH
@@ -604,7 +705,7 @@ measured. Say what stops and what is left alone; do not promise a resume behavio
 ## The Sfere design system
 
 `src/css/sfere.css` holds the token layer, measured off the live marketing site
-(<https://sfere.io>) rather than eyeballed, and `src/components/ui/` holds the 42-component kit
+(<https://sfere.io>) rather than eyeballed, and `src/components/ui/` holds the 43-component kit
 built on it. Browse the whole thing at **`#/design-system`** (hash mode — not `/design-system`);
 no sign-in required.
 
@@ -615,7 +716,7 @@ so Quasar's own controls match. **Never hardcode a hex in a screen** — that is
 brand changed, and the alias layer only works if nothing bypasses it.
 
 **There is one kit.** The pre-Sfere primitives were replaced in place, not deprecated alongside
-it: all 54 screens now render Sfere components.
+it: all 60 screens now render Sfere components.
 
 Rules for touching it:
 
@@ -678,7 +779,7 @@ Nothing in this repo is off-limits to edit. But a handful of files are load-bear
 changing one changes every screen at once, so they are worth a moment's thought and a line in the
 commit message rather than a drive-by edit mid-task:
 
-`src/router/**` (the manifest generates all 54 routes) · `src/layouts/MainLayout.vue` (the nav
+`src/router/**` (the manifest generates all 60 routes) · `src/layouts/MainLayout.vue` (the nav
 is the IA, and the feature gate lives in its `q-page-container`) · `src/components/ui/**` (the
 kit) · `src/config/features.js` + `src/composables/useFeatures.js` (which modules are switched
 on at all) · `src/composables/{useMockResource,useEntitlements,useDiagram,useTemplates}.js` (the
@@ -772,8 +873,40 @@ exists to prevent.`sendMutation()`and`fetchCollection()`resolve`path` the same w
    `/sources` behind the stream selector) and `useDashboardHome()`
    (`/v1/accounts/{account_id}/dashboard` — one aggregate call that feeds the whole home
    screen, adapted into the three mock payload shapes rather than read through
-   `useMockResource`). **Wired to a drafted endpoint that does not exist yet**:
-   `useConnectorCatalog()` (`/v1/connectors`). Everything else has no `api` at all.
+   `useMockResource`).
+
+   **Then thirty more, wired against backend PR #16 (`feat: jitsu proxy`) before it merged** —
+   see `docs/backend-pr16-implementation.md` for the endpoint-by-endpoint list and
+   `docs/backend-pr16-integration.md` for the review it came out of.
+   `docs/jitsu-parity.md` is the forward-looking half: what Jitsu's own model has that we do not
+   yet, bucketed by who owns each gap (backend proxies it and we have no UI / needs a backend ask
+   / deliberate non-parity / we already claim it and it is not true). The readers:
+   `useIdentifierTypes()` (`…/identifier-types` — **one** reader, which replaced seven copies of
+   `useMockResource('identifier-types')`, so a missing endpoint there reaches eight screens),
+   `useMonitoringHealth()` (`…/health`), `useDiagram()` (`…/pipelines/diagram`),
+   `useApiTokens()` (`…/api-tokens`), `useFunctions()` (`…/functions`),
+   `useProfileBuilders()` (`…/profile-builders`), `useIngestDomains()` (`…/domains`),
+   `useNotificationChannels()` (`…/notification-channels`), `useConnectorImages()`
+   (`…/connector-images`), `useZidConnections()`, `useSourceWriteKeys()`,
+   `useSourceIngestSettings()`, `useSourceCatalogAPI()`, `useDestinationBrowser()`
+   (`…/destinations/{id}/tables`, `…/query`, `…/test`), `useTeam()` (`…/members`), and
+   `usePipelineFunctions()`'s new attach/detach/reorder half.
+
+   **That is a merge-order constraint, not just a list.** Ten of those endpoints do not exist on
+   `api-staging` until PR #16 lands, and a wired-but-missing endpoint answers `404` — which the
+   app handles as `apiMissing`, but which Chromium logs as a console error, which
+   `scripts/smoke.mjs` fails on. Measured: `SMOKE_DATA_SOURCE=real` is **44/60** today and
+   **60/60** in the default local `mock` mode. So the backend PR merges first, staging deploys,
+   then this. Do **not** buy a green run by adding a `404` pattern to `IGNORED_CONSOLE`.
+
+   **`useConnectorCatalog()` (`/v1/connectors`, `/v1/connectors/{id}/spec`) is in the
+   contract too** — it used to be the one reader wired to a purely drafted endpoint, and PR
+   #16's spec carries both. Everything else has no `api` at all.
+
+   **Two write-once plaintexts** live behind these: `ApiTokenCreated.plaintext` and
+   `WriteKeyCreated.plaintext`. The create response is the only time the value exists — every
+   later read carries a masked prefix — so both render through `SecretRevealDialog`; see the UI
+   primitives section.
 
    **The fixture is wider than the endpoint, and that is the bug class to look for
    on the three live domains.** `pipes.json` carries `version`, `sourceName`,
@@ -822,6 +955,22 @@ exists to prevent.`sendMutation()`and`fetchCollection()`resolve`path` the same w
    | `event_stream` | `ios-sdk`, `android-sdk`, `http-api` | none                                                     | none                    |
    | `cloud_app`    | `shopify`, `stripe`                  | none                                                     | none                    |
 
+   **That table describes `POST …/sources/provisioned`, not `POST …/sources`.** The agreed
+   contract (backend PR #16) splits the two: the plain create makes "the row, its Jitsu site,
+   and a first write key" and **no destination, pipeline or ClickHouse database**, while the
+   full-stack create moved to `…/sources/provisioned` — which the backend labels **legacy**.
+   **`useSourcesAPI().create()` therefore posts to `…/sources/provisioned`, deliberately.** On
+   the plain endpoint a `web` or `zid` create yields no pipeline, `useSourceProvisioning()`
+   settles on `state: 'none'`, and step 3's `ProvisionedPipePanel` and
+   `SourceProvisionedOverlay` render nothing while the primary action reverts to "Add a
+   destination" — the hand-build that flow exists to remove. That failure is **silent**: no
+   console error, no `ErrorState`, so `pnpm smoke:dist` stays green and only a human reading
+   step 3 would catch it. Since the backend calls the endpoint legacy, this buys time rather
+   than settling it: if it goes, step 3 needs a real answer (create then provision in two
+   calls, or a narrowed reveal) before anything drops back to the plain create. Reasoning and
+   exit condition are in `create()`'s doc comment; the full check is
+   `docs/contract-check-pr16.md`.
+
    All of it is **synchronous** — both records are present on the very next read, so nothing
    needs polling. Two consequences. First, a `web` or `zid` user finishes all three setup steps
    by doing one, so any screen telling them to "add a destination" next is wrong; `/sources/new`
@@ -864,16 +1013,24 @@ exists to prevent.`sendMutation()`and`fetchCollection()`resolve`path` the same w
    days", which is a measured-sounding claim about a collection nobody asked for. The other
    eight still swallow it.
 
-   **A source's Settings tab is read-only except Delete**, and says so in a banner rather than
-   in a toast. `SourceUpdate` carries `is_enabled` and nothing else, and `Source` has no
-   `description`, no strict-mode flag and no server-key list — so renaming, rotating a write
-   key, revoking one, issuing a server-to-server key and Strict mode are all disabled controls.
-   They used to fire a "would be saved" toast, which is indistinguishable from one describing a
-   save. Rotation's helper text also described an impossible order ("update your snippet first,
-   then rotate" — the new key does not exist until the rotation issues it); it now states the
-   real sequence and that there is no endpoint behind it.
+   **A source's Settings tab is now mostly real, and the banner narrowed with it.** PR #16
+   closed three of the five things that used to be disabled controls there: write keys are a
+   full CRUD list (`…/sources/{id}/write-keys`, mint / list / revoke), a server-to-server key is
+   one of the kinds that endpoint mints, and Strict mode is a field on the real ingest settings
+   (`…/sources/{id}/ingest-settings`). What is left disabled is **renaming** — `SourceUpdate`
+   still carries `is_enabled` and nothing else — so the banner says "Renaming a source is not
+   available yet" rather than the old blanket read-only claim. Nothing there fires a "would be
+   saved" toast: a toast indistinguishable from one describing a real save is what this
+   replaced, and a control with no endpoint behind it stays disabled and says why.
 
-   **`pnpm smoke:dist` now walks all 54 routes against whatever `VITE_API_BASE` points at**,
+   **`…/write-keys` answers `400`, not `404`, on a source with no Jitsu site**, which is an
+   ordinary state for three of the seven templates. The shared gate reads any non-404 as a real
+   failure and would render a red `ErrorState` for it, so `useSourceWriteKeys()` is hand-written
+   fetching rather than a `useMockResource` call: it branches `400` to a `noSite` flag the panel
+   explains, `404` to `apiMissing`, and everything else to `error`. `hasIngestSettings(source)`
+   is the matching narrowing on the other panel — `source_type === 'web'` and nothing else.
+
+   **`pnpm smoke:dist` now walks all 60 routes against whatever `VITE_API_BASE` points at**,
    because that is what the default mode does. It used to be hermetic. If you need the old
    behaviour, set `sfere_data_source_mode` to `mock` in the browser profile the run uses, or
    flip the default — do not add a smoke-only branch to `useDataSource`, which would mean the
@@ -1006,8 +1163,24 @@ sends no `tenantId` and needs no `VITE_FIREBASE_*` config.
 ## Environment / secrets
 
 Config lives in a gitignored `.env` at the project root, and it is short on purpose:
-`VITE_API_BASE`, the two smoke credentials, and the two build-identity stamps. See
-`.env.example`.
+`VITE_API_BASE`, `VITE_ZID_APP_URL`, the two smoke credentials, and the two build-identity
+stamps. See `.env.example`.
+
+`VITE_ZID_APP_URL` is the host serving `/redirect-url`, the page a merchant lands on to grant
+the Sfere app access to their Zid store. It is **the backend** — the same host as
+`VITE_API_BASE` on staging, not Zid and not a tunnel; it used to be an ngrok forward to the
+old GCF zid-app (client 7241) and is now the staging backend's own route against the new Zid
+app (client 7003), so it is not an exception to the rule below. **`src/lib/zidAuthorize.js` is
+the one file that reads it**, and it reads it only for the **pre-PR-#16 fallback**: the
+authorization URL is fetched from `…/zid-authorize` or `zid-status` where those exist, and the
+var is what the fallback needs because a legacy `/redirect-url` hop carries no account context.
+Every path **opens** the URL with `window.open` and never fetches it, which is why
+`connect-src` does not name it: the whole point is that the merchant signs in on Zid's own
+domain. There is **no in-code default for the var** — with no backend URL and no
+`VITE_ZID_APP_URL`, `Authorize with Zid` is disabled, because a button that opens
+`undefined/redirect-url` is worse than one that visibly cannot run yet. That is exactly how it
+shipped for a while: the wizard was built, the var never was, so step 1 was inert in every
+environment.
 
 **A var naming a non-Sfere host does not belong here.** The three `VITE_FIREBASE_*` values are
 gone with client-side sign-in, and `EVENTS_API_KEY`, `VITE_JITSU_HOST`, `VITE_JITSU_WRITE_KEY`,

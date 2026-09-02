@@ -1,0 +1,32 @@
+[
+  {
+    "id": "cimg_hubspot",
+    "accountId": "acc_sfere_demo",
+    "package": "airbyte/source-hubspot",
+    "version": "4.2.1",
+    "protocol": "airbyte",
+    "status": "ready",
+    "error": null,
+    "createdAt": "2026-07-09T11:22:00.000Z"
+  },
+  {
+    "id": "cimg_intercom",
+    "accountId": "acc_sfere_demo",
+    "package": "airbyte/source-intercom",
+    "version": "0.9.4",
+    "protocol": "airbyte",
+    "status": "pending",
+    "error": null,
+    "createdAt": "2026-08-31T09:05:00.000Z"
+  },
+  {
+    "id": "cimg_internal",
+    "accountId": "acc_sfere_demo",
+    "package": "registry.example.sa/data/source-ticketing",
+    "version": "1.4.0",
+    "protocol": "airbyte",
+    "status": "failed",
+    "error": "Pull failed: unauthorized. Re-register the image with registry credentials.",
+    "createdAt": "2026-08-22T14:40:00.000Z"
+  }
+]

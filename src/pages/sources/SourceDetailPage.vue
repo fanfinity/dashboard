@@ -72,12 +72,7 @@
         />
       </div>
 
-      <ZidSetupWizard
-        v-if="showZidWizard"
-        :source="source"
-        :zid-app-url="zidAppUrl"
-        @complete="load"
-      />
+      <ZidSetupWizard v-if="showZidWizard" :source="source" @complete="load" />
 
       <WebSdkSetupPanel
         v-if="showWebSdkSetup"
@@ -213,10 +208,6 @@ const {
 } = useSources()
 
 const { isReal } = useDataSource()
-
-// Passed to the Zid wizard so its "Authorize with Zid" button can open the
-// zid-app OAuth page. Empty in envs where the zid-app isn't exposed.
-const zidAppUrl = import.meta.env.VITE_ZID_APP_URL || ''
 
 const tab = ref('overview')
 const confirmDelete = ref(false)

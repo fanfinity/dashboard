@@ -1,6 +1,7 @@
 import { NOT_KNOWN } from '@/lib/emptyValue'
 import { computed } from 'vue'
 import { useMockResource } from '@/composables/useMockResource'
+import { useIdentifierTypes } from '@/composables/useIdentifierTypes'
 import {
   formatDate,
   formatDateTime,
@@ -172,11 +173,11 @@ function proximityOf(anchor, joined) {
 
 export function useProfilesIdentityResolution() {
   const {
-    data: identifierTypes,
+    identifierTypes,
     loading: typesLoading,
     error: typesError,
     load: loadTypes
-  } = useMockResource('identifier-types')
+  } = useIdentifierTypes()
 
   const {
     data: profiles,

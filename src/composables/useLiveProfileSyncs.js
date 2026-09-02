@@ -1,6 +1,7 @@
 import { NOT_KNOWN } from '@/lib/emptyValue'
 import { useQuasar } from 'quasar'
 import { useMockResource } from '@/composables/useMockResource'
+import { useIdentifierTypes } from '@/composables/useIdentifierTypes'
 
 /**
  * Live profile syncs domain data access.
@@ -189,13 +190,9 @@ export function useLiveProfileSyncDestinations() {
  * @returns {{ identifierTypes: import('vue').Ref<object[]>, loading: import('vue').Ref<boolean>, error: import('vue').Ref<string|null>, load: () => Promise<void> }}
  */
 export function useLiveProfileSyncIdentifierTypes() {
-  const {
-    data: identifierTypes,
-    loading,
-    error,
-    load
-  } = useMockResource('identifier-types')
-  return { identifierTypes, loading, error, load }
+  const { identifierTypes, loading, error, apiMissing, load } =
+    useIdentifierTypes()
+  return { identifierTypes, loading, error, apiMissing, load }
 }
 
 /**

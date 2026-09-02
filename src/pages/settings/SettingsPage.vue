@@ -190,9 +190,55 @@
         :tokens="tokens"
         :loading="tokensLoading"
         :error="tokensError"
+        :api-missing="tokensApiMissing"
         @retry="loadTokens"
         @revoke="askRevokeToken"
-        @create="createToken"
+        @create="openTokenCreate"
+      />
+
+      <SettingsIngestDomainsPanel
+        v-else-if="tab === 'domains'"
+        :domains="domains"
+        :loading="domainsLoading"
+        :error="domainsError"
+        :api-missing="domainsApiMissing"
+        :selected="selectedDomain"
+        :creating="domainCreating"
+        :verifying="verifyingDomainId"
+        @retry="loadDomains"
+        @create="onCreateDomain"
+        @verify="onVerifyDomain"
+        @remove="onRemoveDomain"
+        @show-records="row => (selectedDomainId = row.id)"
+        @close-records="selectedDomainId = ''"
+      />
+
+      <SettingsNotificationsPanel
+        v-else-if="tab === 'notifications'"
+        :channels="channels"
+        :loading="channelsLoading"
+        :error="channelsError"
+        :api-missing="channelsApiMissing"
+        :testing="testingChannelId"
+        @retry="loadChannels"
+        @create="openChannelCreate"
+        @edit="openChannelEdit"
+        @test="onTestChannel"
+        @toggle="onToggleChannel"
+        @remove="onRemoveChannel"
+      />
+
+      <SettingsConnectorImagesPanel
+        v-else-if="tab === 'images'"
+        :images="images"
+        :loading="imagesLoading"
+        :error="imagesError"
+        :api-missing="imagesApiMissing"
+        :has-pending="imagesPending"
+        :creating="imageCreating"
+        @retry="loadImages"
+        @create="onCreateImage"
+        @remove="onRemoveImage"
       />
 
       <SettingsDangerZone
@@ -214,6 +260,34 @@
       destructive
       @confirm="runPendingAction"
     />
+
+    <SettingsNotificationChannelDialog
+      v-model="channelDialogOpen"
+      :channel="editingChannel"
+      :submitting="channelSubmitting"
+      :api-missing="!isReal"
+      @submit="onSubmitChannel"
+    />
+
+    <SettingsApiTokenCreateDialog
+      v-model="tokenCreateOpen"
+      :api-missing="!isReal"
+      :submitting="tokenSubmitting"
+      @create="createToken"
+    />
+
+    <!-- The created token, shown once. Separate from the create dialog on
+         purpose: `POST …/api-tokens` returns the plaintext on that one response
+         and the backend stores only a hash, so this is the single moment it
+         exists anywhere the user can reach. -->
+    <SecretRevealDialog
+      v-model="tokenRevealOpen"
+      :secret="newTokenPlaintext"
+      title="Copy your API token now"
+      :subtitle="`“${newTokenName}” is live. Paste it into whatever is going to call the API.`"
+      label="API token"
+      @close="onTokenRevealClosed"
+    />
   </q-page>
 </template>
 
@@ -233,6 +307,17 @@ import EmptyState from '@/components/ui/EmptyState.vue'
 import ConfirmDialog from '@/components/ui/ConfirmDialog.vue'
 import SettingsMembersPanel from '@/components/settings/SettingsMembersPanel.vue'
 import SettingsApiTokensPanel from '@/components/settings/SettingsApiTokensPanel.vue'
+import SettingsApiTokenCreateDialog from '@/components/settings/SettingsApiTokenCreateDialog.vue'
+import SettingsIngestDomainsPanel from '@/components/settings/SettingsIngestDomainsPanel.vue'
+import SettingsNotificationsPanel from '@/components/settings/SettingsNotificationsPanel.vue'
+import SettingsNotificationChannelDialog from '@/components/settings/SettingsNotificationChannelDialog.vue'
+import SettingsConnectorImagesPanel from '@/components/settings/SettingsConnectorImagesPanel.vue'
+import { useIngestDomains } from '@/composables/useIngestDomains'
+import { useNotificationChannels } from '@/composables/useNotificationChannels'
+import { useConnectorImages } from '@/composables/useConnectorImages'
+import SecretRevealDialog from '@/components/ui/SecretRevealDialog.vue'
+import { useApiTokens } from '@/composables/useApiTokens'
+import { notifyMutationResult } from '@/composables/useMutationFeedback'
 import SettingsDangerZone from '@/components/settings/SettingsDangerZone.vue'
 import SettingsFeaturePanel from '@/components/settings/SettingsFeaturePanel.vue'
 import SettingsPersonaPanel from '@/components/settings/SettingsPersonaPanel.vue'
@@ -244,7 +329,6 @@ import {
   RETENTION_MAX_DAYS,
   RETENTION_MIN_DAYS,
   retentionError,
-  useSettingsApiTokens,
   useSettingsMembers,
   useSettingsWorkspace
 } from '@/composables/useSettingsWorkspace'
@@ -271,9 +355,11 @@ const {
   tokens,
   loading: tokensLoading,
   error: tokensError,
+  apiMissing: tokensApiMissing,
   load: loadTokens,
+  create: createTokenRequest,
   revoke: revokeToken
-} = useSettingsApiTokens()
+} = useApiTokens()
 
 const tab = ref('general')
 const confirmOpen = ref(false)
@@ -375,6 +461,24 @@ const tabs = computed(() => [
     key: 'tokens',
     label: 'API tokens',
     count: tokensError.value ? undefined : tokens.value.length
+  },
+  // Three surfaces backend PR #16 made real. Tabs here rather than sidebar rows,
+  // following the same reasoning that put the connector catalog on /sources: each
+  // is workspace configuration you set up once, not a screen you work in.
+  {
+    key: 'domains',
+    label: 'Ingest domains',
+    count: domainsApiMissing.value ? undefined : domains.value.length
+  },
+  {
+    key: 'notifications',
+    label: 'Notifications',
+    count: channelsApiMissing.value ? undefined : channels.value.length
+  },
+  {
+    key: 'images',
+    label: 'Connector images',
+    count: imagesApiMissing.value ? undefined : images.value.length
   },
   { key: 'danger', label: 'Danger zone' }
 ])
@@ -490,14 +594,20 @@ function askRevokeInvite(invite) {
   })
 }
 
+// Names the one thing the fixture's model got wrong: the backend deletes the
+// row rather than marking it revoked, so there is no audit trail afterwards and
+// the table has one fewer entry, not one more badge.
 function askRevokeToken(token) {
   ask({
-    title: 'Revoke this token?',
-    message: `“${token.name}” stops authenticating immediately. Anything using it starts failing on its next call, and the value cannot be recovered.`,
-    confirmLabel: 'Revoke token',
-    run: () => {
-      revokeToken(token.id)
-      notifyLocal(`${token.name} revoked`)
+    title: 'Delete this token?',
+    message: `“${token.name}” stops authenticating immediately, and anything using it starts failing on its next call. The value was only ever shown once and cannot be recovered. The token is deleted rather than marked revoked, so it leaves this list and no record of it is kept.`,
+    confirmLabel: 'Delete token',
+    run: async () => {
+      const res = await revokeToken(token.id)
+      notifyMutationResult($q, res, {
+        success: `${token.name} deleted`,
+        apiMissing: `Can't delete ${token.name} yet.`
+      })
     }
   })
 }
@@ -525,13 +635,263 @@ function inviteMember() {
   notifyLocal('Member invitations need the accounts backend')
 }
 
-function createToken() {
-  notifyLocal('Token creation needs the accounts backend')
+// --------------------------------------------- ingest domains, alerts, images
+
+// Three domains backend PR #16 made real. Each keeps its own loading and
+// apiMissing so one failing tab does not take the others with it — the same
+// reason members and tokens were already split out above.
+
+const {
+  domains,
+  loading: domainsLoading,
+  error: domainsError,
+  apiMissing: domainsApiMissing,
+  load: loadDomains,
+  create: createDomain,
+  verify: verifyDomain,
+  remove: removeDomain
+} = useIngestDomains()
+
+const domainCreating = ref(false)
+const verifyingDomainId = ref('')
+// Held as an id rather than the row, so the open records panel re-renders from
+// the refreshed record after a Re-check instead of showing the pre-verify copy.
+const selectedDomainId = ref('')
+const selectedDomain = computed(
+  () => domains.value.find(d => d.id === selectedDomainId.value) ?? null
+)
+
+async function onCreateDomain(domain) {
+  domainCreating.value = true
+  try {
+    const res = await createDomain(domain)
+    notifyMutationResult($q, res, {
+      success: `${domain} added. Add its DNS records next.`,
+      apiMissing: `Can't add ${domain} yet.`
+    })
+    // Opens the records panel straight away: the DNS records are the whole point
+    // of the create response, and burying them behind a second click is how
+    // someone leaves thinking the domain is live.
+    if (res.ok && !res.skipped) selectedDomainId.value = res.data.id
+  } finally {
+    domainCreating.value = false
+  }
+}
+
+async function onVerifyDomain(row) {
+  verifyingDomainId.value = row.id
+  try {
+    const res = await verifyDomain(row.id)
+    if (!res.ok) {
+      notifyMutationResult($q, res, {
+        success: '',
+        apiMissing: "Can't re-check a domain yet."
+      })
+      return
+    }
+    // Reports what the backend actually said, not "verified". A re-check that
+    // still cannot find the records comes back pending or failed, and saying
+    // otherwise would send someone away from a broken setup.
+    const record = res.data ?? row
+    $q.notify({
+      message:
+        record.status === 'verified'
+          ? `${row.domain} is verified`
+          : `${row.domain} is still ${record.status}`,
+      caption:
+        record.status === 'verified'
+          ? record.certificateStatus === 'issued'
+            ? 'The certificate is issued too, so it is ready to collect.'
+            : 'The certificate is still being issued. That usually takes a few minutes.'
+          : (record.error ??
+            'DNS changes can take a while to propagate. Check the records and try again shortly.'),
+      color: 'dark',
+      position: 'top-right',
+      timeout: 6000
+    })
+  } finally {
+    verifyingDomainId.value = ''
+  }
+}
+
+async function onRemoveDomain(row) {
+  const res = await removeDomain(row.id)
+  notifyMutationResult($q, res, {
+    success: `${row.domain} removed`,
+    apiMissing: `Can't remove ${row.domain} yet.`
+  })
+  if (res.ok && selectedDomainId.value === row.id) selectedDomainId.value = ''
+}
+
+const {
+  channels,
+  loading: channelsLoading,
+  error: channelsError,
+  apiMissing: channelsApiMissing,
+  load: loadChannels,
+  create: createChannel,
+  update: updateChannel,
+  setEnabled: setChannelEnabled,
+  test: testChannel,
+  remove: removeChannel
+} = useNotificationChannels()
+
+const channelDialogOpen = ref(false)
+const editingChannel = ref(null)
+const channelSubmitting = ref(false)
+const testingChannelId = ref('')
+
+function openChannelCreate() {
+  editingChannel.value = null
+  channelDialogOpen.value = true
+}
+
+function openChannelEdit(row) {
+  editingChannel.value = row
+  channelDialogOpen.value = true
+}
+
+async function onSubmitChannel(payload) {
+  channelSubmitting.value = true
+  try {
+    const res = editingChannel.value
+      ? await updateChannel(editingChannel.value.id, {
+          ...editingChannel.value,
+          ...payload
+        })
+      : await createChannel(payload)
+    notifyMutationResult($q, res, {
+      success: editingChannel.value
+        ? `${payload.name} saved`
+        : `${payload.name} created`,
+      apiMissing: "Can't save a notification channel yet."
+    })
+    if (res.ok) channelDialogOpen.value = false
+  } finally {
+    channelSubmitting.value = false
+  }
+}
+
+async function onTestChannel(row) {
+  testingChannelId.value = row.id
+  try {
+    const res = await testChannel(row.id)
+    notifyMutationResult($q, res, {
+      success:
+        row.channel === 'slack'
+          ? `Test posted to ${row.name}`
+          : `Test sent to ${row.emails.length} address${row.emails.length === 1 ? '' : 'es'}`,
+      apiMissing: "Can't send a test yet."
+    })
+  } finally {
+    testingChannelId.value = ''
+  }
+}
+
+async function onToggleChannel(row) {
+  const res = await setChannelEnabled(row.id, !row.isEnabled)
+  notifyMutationResult($q, res, {
+    success: `${row.name} ${row.isEnabled ? 'paused' : 'enabled'}`,
+    apiMissing: `Can't ${row.isEnabled ? 'pause' : 'enable'} ${row.name} yet.`
+  })
+}
+
+async function onRemoveChannel(row) {
+  const res = await removeChannel(row.id)
+  notifyMutationResult($q, res, {
+    success: `${row.name} deleted`,
+    apiMissing: `Can't delete ${row.name} yet.`
+  })
+}
+
+const {
+  images,
+  loading: imagesLoading,
+  error: imagesError,
+  apiMissing: imagesApiMissing,
+  load: loadImages,
+  hasPending: imagesHasPending,
+  create: createImage,
+  remove: removeImage
+} = useConnectorImages()
+
+const imageCreating = ref(false)
+const imagesPending = computed(() => imagesHasPending())
+
+async function onCreateImage(input) {
+  imageCreating.value = true
+  try {
+    const res = await createImage(input)
+    notifyMutationResult($q, res, {
+      success: `${input.package}:${input.version} registered. It is being prepared.`,
+      apiMissing: "Can't register a connector image yet."
+    })
+  } finally {
+    imageCreating.value = false
+  }
+}
+
+async function onRemoveImage(row) {
+  const res = await removeImage(row.id)
+  notifyMutationResult($q, res, {
+    success: `${row.package}:${row.version} removed`,
+    apiMissing: `Can't remove ${row.package} yet.`
+  })
+}
+
+// -------------------------------------------------------------- token creation
+
+const tokenCreateOpen = ref(false)
+const tokenSubmitting = ref(false)
+// Held only between the create response and the moment the reveal dialog is
+// dismissed. Nothing persists it, and closing the dialog clears it — the
+// backend stores a hash, so a value kept around here would be the only copy in
+// existence and the one place it could leak from.
+const newTokenPlaintext = ref('')
+const newTokenName = ref('')
+const tokenRevealOpen = ref(false)
+
+function openTokenCreate() {
+  tokenCreateOpen.value = true
+}
+
+async function createToken({ name, scopes, expiresAt }) {
+  tokenSubmitting.value = true
+  try {
+    const res = await createTokenRequest({ name, scopes, expiresAt })
+    if (!res.ok) {
+      notifyMutationResult($q, res, {
+        success: '',
+        apiMissing: "Can't create a token yet."
+      })
+      return
+    }
+    tokenCreateOpen.value = false
+    if (res.skipped) {
+      // Demo mode. There is no token and therefore no plaintext; opening the
+      // reveal dialog on an empty string would show a blank secret.
+      notifyLocal(`${name} would be created. Demo data mode saves nothing.`)
+      return
+    }
+    newTokenName.value = name
+    newTokenPlaintext.value = res.data.plaintext
+    tokenRevealOpen.value = true
+  } finally {
+    tokenSubmitting.value = false
+  }
+}
+
+function onTokenRevealClosed() {
+  newTokenPlaintext.value = ''
+  newTokenName.value = ''
 }
 
 onMounted(() => {
   load()
   loadMembers()
   loadTokens()
+  loadDomains()
+  loadChannels()
+  loadImages()
 })
 </script>

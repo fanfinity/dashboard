@@ -1,0 +1,62 @@
+[
+  {
+    "id": "dom_events_primary",
+    "accountId": "acc_sfere_demo",
+    "domain": "events.example.sa",
+    "status": "verified",
+    "certificateStatus": "issued",
+    "dnsRecords": [
+      {
+        "type": "CNAME",
+        "name": "events.example.sa",
+        "value": "ingest.sfere.io",
+        "ttl": 300
+      }
+    ],
+    "error": null,
+    "verifiedAt": "2026-07-21T10:04:00.000Z",
+    "createdAt": "2026-07-21T09:48:00.000Z"
+  },
+  {
+    "id": "dom_events_staging",
+    "accountId": "acc_sfere_demo",
+    "domain": "events-staging.example.sa",
+    "status": "pending",
+    "certificateStatus": "pending",
+    "dnsRecords": [
+      {
+        "type": "CNAME",
+        "name": "events-staging.example.sa",
+        "value": "ingest.sfere.io",
+        "ttl": null
+      },
+      {
+        "type": "TXT",
+        "name": "_sfere-challenge.events-staging.example.sa",
+        "value": "sfere-verify=7c1f9a02d4",
+        "ttl": 300
+      }
+    ],
+    "error": null,
+    "verifiedAt": null,
+    "createdAt": "2026-08-30T16:20:00.000Z"
+  },
+  {
+    "id": "dom_events_old",
+    "accountId": "acc_sfere_demo",
+    "domain": "collect.example.sa",
+    "status": "verified",
+    "certificateStatus": "failed",
+    "dnsRecords": [
+      {
+        "type": "CNAME",
+        "name": "collect.example.sa",
+        "value": "ingest.sfere.io",
+        "ttl": 3600
+      }
+    ],
+    "error": "The certificate authority refused the request: CAA record on example.sa does not permit this issuer.",
+    "verifiedAt": "2026-06-02T11:15:00.000Z",
+    "createdAt": "2026-06-02T11:00:00.000Z"
+  }
+]
