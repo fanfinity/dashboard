@@ -210,8 +210,14 @@ const emit = defineEmits(['update:modelValue', 'submit'])
 // Both halves, and a `min()`: Quasar's unlayered 560px `max-width` on a dialog
 // child would otherwise win, and a flat pixel max-width would stop this
 // shrinking on a narrow window.
+//
+// `flex-nowrap!` is the other half, and the important suffix is the whole point:
+// Quasar's unlayered `.flex` sets `flex-wrap: wrap`, so a capped-height column
+// does not scroll when it overflows, it wraps into a SECOND COLUMN. The header
+// sat in column one and the whole form in column two, clipped by
+// `overflow-hidden`. The plain `flex-nowrap` utility is layered and loses.
 const cardClasses = [
-  'flex max-h-[85vh] w-[min(600px,94vw)]! max-w-[min(600px,94vw)]! flex-col overflow-hidden',
+  'flex max-h-[85vh] w-[min(600px,94vw)]! max-w-[min(600px,94vw)]! flex-col flex-nowrap! overflow-hidden',
   'rounded-sfere-xl border border-sfere-line bg-sfere-surface shadow-sfere-pop'
 ]
 

@@ -17,7 +17,7 @@
       role="dialog"
       aria-modal="true"
       aria-labelledby="persona-question-title"
-      class="flex max-h-[86vh] w-[820px]! max-w-[92vw]! flex-col gap-6 overflow-y-auto rounded-xl border border-line2 bg-white p-6 shadow-lg sm:p-7"
+      class="flex max-h-[86vh] w-[820px]! max-w-[92vw]! flex-col flex-nowrap! gap-6 overflow-y-auto rounded-xl border border-line2 bg-white p-6 shadow-lg sm:p-7"
     >
       <div class="flex flex-col gap-1.5">
         <!-- An h2, never an h1. scripts/smoke.mjs asserts on the FIRST <h1> on

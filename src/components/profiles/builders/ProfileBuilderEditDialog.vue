@@ -228,7 +228,7 @@ const emit = defineEmits(['update:modelValue', 'submit'])
 // width alone loses to it, and a flat pixel max-width would stop the dialog
 // shrinking on a narrow window.
 const cardClasses = [
-  'flex max-h-[85vh] w-[min(640px,94vw)]! max-w-[min(640px,94vw)]! flex-col overflow-hidden',
+  'flex max-h-[85vh] w-[min(640px,94vw)]! max-w-[min(640px,94vw)]! flex-col flex-nowrap! overflow-hidden',
   'rounded-sfere-xl border border-sfere-line bg-sfere-surface shadow-sfere-pop'
 ]
 

@@ -136,7 +136,7 @@ the smoke test can assert on a single selector across every route.
    `DataTable` does this for you. A form or detail page must do it by hand with
    `LoadingState` / `ErrorState` / `EmptyState`.
 
-10. **`class="flex"` wraps, and `flex-nowrap` cannot stop it.** Quasar ships an
+10. **`class="flex"` wraps, and plain `flex-nowrap` cannot stop it.** Quasar ships an
     unlayered `.flex { display: flex; flex-wrap: wrap }`, so every `flex` in this
     repo is a _wrapping_ flex container, and Tailwind's layered `flex-nowrap`
     loses to it the same way a layered `text-2xl` loses to Quasar's `h2`. The
@@ -165,6 +165,22 @@ the smoke test can assert on a single selector across every route.
     `flex-nowrap!` would also work, but `min-w-0 flex-1` is what you want anyway:
     it makes `truncate` behave on the child, and it says which side is meant to
     give way. Use `shrink-0` on the side that must keep its intrinsic width.
+
+    **In a column under a height cap, the child-side fix does not apply and the
+    important suffix is the answer.** A `flex flex-col` with a `max-h-*` does not
+    scroll when its content overflows — it wraps into a **second column**, which
+    is a different bug wearing the same cause. The
+    `New notification channel` dialog put its header in column one and its whole
+    scrollable form in column two, past the card's right edge and clipped by
+    `overflow-hidden`; it reads as "the dialog is cut in half", not as a wrap.
+    The tell is a header `border-b` that stops mid-card instead of spanning it.
+    Measured on the real cascade, the three children sat at `offsetLeft`
+    `0 / 600 / 674` inside a 600px card. There is no slack for a child to absorb
+    here — the scrolling body already had `min-h-0 flex-1` — so put
+    `flex-nowrap!` on the container, which restores `0 / 0 / 0`. Every
+    viewport-capped dialog and overlay card carries it:
+    `SettingsNotificationChannelDialog`, `ProfileBuilderEditDialog`,
+    `SourceSyncRunLogsDialog` and `PersonaQuestion`. A new one needs it too.
 
 11. **`mt-*` on a `<p>` does nothing, so space cards with `gap`, not margins.**
     Quasar's unlayered paragraph rule wins twice over: every `<p>` in this repo

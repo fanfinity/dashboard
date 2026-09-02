@@ -164,13 +164,26 @@ not-allowed }`, so `disabled:opacity-45` and `disabled:cursor-not-allowed` are d
    enough** — the Quasar rule is a `max-width`, so the override has to be one too:
    `w-[min(720px,92vw)]! max-w-[min(720px,92vw)]!`, as on `/team` and `/billing`. A flat pixel
    max-width would stop the dialog shrinking on a narrow window, hence the `min()`.
-4. **`class="flex"` wraps, and `flex-nowrap` cannot stop it.** Quasar's `.flex` is
+4. **`class="flex"` wraps, and plain `flex-nowrap` cannot stop it.** Quasar's `.flex` is
    `display:flex; flex-wrap:wrap`, unlayered, so _every_ flex container in this repo wraps and
    the layered `flex-nowrap` utility loses to it. The symptom is a `justify-between` row whose
    label jumps **above** its control once the text gets long — which means it ships looking fine
    and breaks on the copy edit. Fix: `min-w-0 flex-1` on the child that should give way (that
    sets `flex-basis: 0` and removes the wrap decision), `shrink-0` on the one that must not.
    Full worked example in `docs/ui-conventions.md` rule 10.
+   **In a column it fails differently, and worse**: `flex flex-col` under a height cap does not
+   scroll when it overflows, it wraps into a **second column**. A dialog card
+   (`flex max-h-[85vh] … flex-col overflow-hidden`) put its header in column one and its whole
+   scrollable form in column two, off the card's right edge and clipped — which reads as "the
+   dialog is cut in half", not as a wrap. The tell is a `border-b` that stops mid-card instead of
+   spanning it. Here the child-side fix does not apply (the body already had `min-h-0 flex-1`),
+   so use the **important suffix**: `flex-nowrap!` beats the unlayered rule, because layered
+   `!important` outranks unlayered non-important. It is on every viewport-capped dialog and
+   overlay card — `SettingsNotificationChannelDialog`, `ProfileBuilderEditDialog`,
+   `SourceSyncRunLogsDialog` and `PersonaQuestion` — and a new one needs it too. Height-capped
+   columns whose children are auto-sized (`SelectableCard`, `MainLayout`'s rail,
+   `LoginPage`'s panel) deliberately do not carry it: nothing there overflows into a
+   second column.
 5. **`mt-*` on a `<p>` does nothing** — this is #3's margin problem, and it is the one that
    silently degrades a card. Every `<p>` carries Quasar's unlayered `margin-bottom: 16px`, and a
    layered `mt-3` on it computes to `margin-top: 0`, so a card spaced `mt-3` / `mt-1.5` / `mt-3`
@@ -811,7 +824,10 @@ exists to prevent.`sendMutation()`and`fetchCollection()`resolve`path` the same w
 
    **Then thirty more, wired against backend PR #16 (`feat: jitsu proxy`) before it merged** —
    see `docs/backend-pr16-implementation.md` for the endpoint-by-endpoint list and
-   `docs/backend-pr16-integration.md` for the review it came out of. The readers:
+   `docs/backend-pr16-integration.md` for the review it came out of.
+   `docs/jitsu-parity.md` is the forward-looking half: what Jitsu's own model has that we do not
+   yet, bucketed by who owns each gap (backend proxies it and we have no UI / needs a backend ask
+   / deliberate non-parity / we already claim it and it is not true). The readers:
    `useIdentifierTypes()` (`…/identifier-types` — **one** reader, which replaced seven copies of
    `useMockResource('identifier-types')`, so a missing endpoint there reaches eight screens),
    `useMonitoringHealth()` (`…/health`), `useDiagram()` (`…/pipelines/diagram`),
