@@ -45,7 +45,7 @@
       />
       <StatCard
         label="Reading from these"
-        :value="usageError ? '—' : formatCount(usageTotal)"
+        :value="usageError ? NOT_KNOWN : formatCount(usageTotal)"
         hint="Warehouse syncs, models and profile syncs."
       />
     </div>
@@ -112,7 +112,7 @@
             :label="statusMeta(row.status).label"
           />
           <span class="text-xs text-subtle">{{
-            formatDate(row.lastValidatedAt)
+            formatDate(row.lastValidatedAt, NEVER)
           }}</span>
         </div>
         <p v-if="row.status === 'error'" class="mt-1 text-xs text-rose-600">{{
@@ -200,6 +200,7 @@
 </template>
 
 <script setup>
+import { NEVER, NOT_KNOWN } from '@/lib/emptyValue'
 import { computed, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import PageHeader from '@/components/ui/PageHeader.vue'
@@ -330,7 +331,7 @@ function schemaPath(row) {
 // The usage counts come from three other packets' collections, so a failed
 // count reads as "not known" rather than as "nothing".
 function usageLabel(row) {
-  if (usageError.value) return '—'
+  if (usageError.value) return NOT_KNOWN
   const parts = usageParts(row.id)
   return parts.length ? parts.join(' · ') : 'Not in use'
 }
@@ -371,7 +372,7 @@ function test(row) {
     applyTestResult(row.id, result.ok)
     toast(
       `${row.name}: ${result.title.toLowerCase()}`,
-      'Simulated locally — no connection was opened.'
+      'Simulated locally. No connection was opened.'
     )
   }, 400)
 }

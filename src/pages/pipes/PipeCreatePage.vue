@@ -450,7 +450,7 @@ async function submit() {
   saving.value = false
 
   $q.notify({
-    message: `“${pipe.name}” created — nothing was saved, this preview has no backend.`,
+    message: `“${pipe.name}” created. Nothing was saved, because this preview has no backend.`,
     color: 'dark',
     position: 'bottom',
     timeout: 2500

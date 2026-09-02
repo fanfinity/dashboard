@@ -47,7 +47,7 @@
         >
 
         <p class="text-xs text-subtle"
-          >Last used {{ formatDateTime(token.lastUsedAt) }}</p
+          >Last used {{ formatDateTime(token.lastUsedAt, NEVER) }}</p
         >
       </li>
     </ul>
@@ -62,6 +62,7 @@
 </template>
 
 <script setup>
+import { NEVER } from '@/lib/emptyValue'
 import { reactive } from 'vue'
 import CardPanel from '@/components/ui/CardPanel.vue'
 import StatusBadge from '@/components/ui/StatusBadge.vue'

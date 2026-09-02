@@ -131,7 +131,7 @@
         <EmptyState
           v-else
           title="No goals yet"
-          description="A goal turns an attribute into a target — how much merch revenue, how many renewals — so a journey has something to optimise for."
+          description="A goal turns an attribute into a target (how much merch revenue, how many renewals) so a journey has something to optimise for."
         >
           <template #cta>
             <button
@@ -277,7 +277,7 @@ const secondaryError = computed(() => {
   if (journeysError.value) failed.push('the journeys attached to each goal')
   if (attributesError.value) failed.push('the attribute catalog')
   if (!failed.length) return ''
-  return `Progress and targets are unaffected — ${failed.join(' and ')} could not be loaded.`
+  return `Progress and targets are unaffected. ${failed.join(' and ')} could not be loaded.`
 })
 
 function loadSecondary() {

@@ -67,7 +67,7 @@
         row-key="id"
         :per-page="10"
         empty-title="No identifiers"
-        empty-description="This fan has no identifier on the graph, which should not be possible — check the source that created it."
+        empty-description="This fan has no identifier on the graph, which should not be possible. Check the source that created it."
       >
         <template #cell-typeLabel="{ row }">
           <p class="font-medium text-ink">{{ row.typeLabel }}</p>

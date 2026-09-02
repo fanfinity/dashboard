@@ -50,7 +50,7 @@
           >Creative</h3
         >
         <p class="mt-1 text-xs text-muted"
-          >Assets attached to this campaign. Images are not previewed here —
+          >Assets attached to this campaign. Images are not previewed here;
           nothing off this origin is loaded.</p
         >
 
@@ -109,6 +109,7 @@
 </template>
 
 <script setup>
+import { NEVER } from '@/lib/emptyValue'
 import { computed } from 'vue'
 import CardPanel from '@/components/ui/CardPanel.vue'
 import DefinitionList from '@/components/ui/DefinitionList.vue'
@@ -152,7 +153,7 @@ const facts = computed(() => {
     { label: 'Audience', value: c.audienceName },
     { label: 'Journey', value: c.journeyName },
     { label: 'Created', value: formatDateTime(c.createdAt) },
-    { label: 'Last sent', value: formatDateTime(c.lastSentAt) }
+    { label: 'Last sent', value: formatDateTime(c.lastSentAt, NEVER) }
   ]
 })
 

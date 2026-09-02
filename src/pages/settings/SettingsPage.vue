@@ -96,7 +96,7 @@
 
           <FormSection
             title="Identity resolution"
-            description="How separate signals are folded into one fan. Changing these is a migration, not a setting — talk to support first."
+            description="How separate signals are folded into one fan. Changing these is a migration, not a setting. Talk to support first."
           >
             <DefinitionList :items="identityFacts" :columns="2" />
           </FormSection>
@@ -118,7 +118,7 @@
               Discard
             </button>
             <p class="text-xs text-subtle"
-              >Nothing is persisted yet — there is no backend behind this
+              >Nothing is persisted yet. There is no backend behind this
               form.</p
             >
           </div>
@@ -166,7 +166,7 @@
 
           <template #footer>
             <p class="text-xs text-subtle"
-              >Webhook URLs are stored with their token segment redacted — the
+              >Webhook URLs are stored with their token segment redacted, so the
               part shown here is all there is to show.</p
             >
           </template>
@@ -421,7 +421,7 @@ const alertChannels = computed(() => {
 function notifyLocal(message) {
   $q.notify({
     message,
-    caption: 'Local preview only — no backend is connected yet.',
+    caption: 'Local preview only. No backend is connected yet.',
     color: 'dark',
     timeout: 2500
   })

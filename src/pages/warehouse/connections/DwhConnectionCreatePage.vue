@@ -86,7 +86,7 @@
 
       <FormSection
         :title="credentialsTitle"
-        description="Held in this page for as long as you are on it. Nothing is transmitted or stored — there is no backend behind this form."
+        description="Held in this page for as long as you are on it. Nothing is transmitted or stored. There is no backend behind this form."
       >
         <!-- Until an engine is picked there is nothing to label these fields
              with, so the section says so rather than guessing at Postgres. -->
@@ -94,7 +94,7 @@
           v-if="!form.type"
           variant="inline"
           title="Pick a warehouse type first"
-          description="A Postgres host is a BigQuery project and a Databricks workspace — the fields change with the engine."
+          description="A Postgres host is a BigQuery project and a Databricks workspace. The fields change with the engine."
         />
 
         <template v-else>
@@ -239,7 +239,7 @@
           Cancel
         </button>
         <p class="text-xs text-subtle"
-          >Nothing is persisted yet — there is no backend behind this form.</p
+          >Nothing is persisted yet. There is no backend behind this form.</p
         >
       </StickyActionBar>
     </form>
@@ -376,7 +376,7 @@ function test() {
       ok: false,
       title: 'Nothing to test yet',
       message:
-        'Fill in the required fields first — the test reads the form, not the network.'
+        'Fill in the required fields first. The test reads the form, not the network.'
     }
     return
   }

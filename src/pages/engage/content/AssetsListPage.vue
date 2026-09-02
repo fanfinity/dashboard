@@ -289,7 +289,7 @@ function openDetails(asset) {
 }
 
 function upload() {
-  toast('Uploading is not wired up in this preview — no file was stored.')
+  toast('Uploading is not wired up in this preview. No file was stored.')
 }
 
 function askDelete(asset) {

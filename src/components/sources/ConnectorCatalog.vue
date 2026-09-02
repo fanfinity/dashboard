@@ -9,8 +9,8 @@
            search box onto a line of its own. -->
       <p class="max-w-xl text-sm text-muted">
         Browse the connector catalog and pick what to pull into Sfere. This is
-        the list of connector types Sfere supports — not the streams this
-        account has configured.
+        the list of connector types Sfere supports, not the streams this account
+        has configured.
       </p>
       <ToolbarSearch v-model="query" placeholder="Search connectors..." />
     </div>

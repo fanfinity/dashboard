@@ -1,3 +1,4 @@
+import { NOT_KNOWN } from '@/lib/emptyValue'
 import { computed } from 'vue'
 import { useMockResource } from '@/composables/useMockResource'
 import { DEMO_PROFILE_ID, DEMO_SOURCE_ID } from '@/composables/useDemoEvents'
@@ -32,7 +33,7 @@ export const DEMO_PRODUCTS = [
     id: 'prd_derby_ticket',
     slug: 'derby-ticket-east',
     sku: 'FF-TCKT-DRBY-E',
-    name: 'Derby Ticket — East Stand',
+    name: 'Derby ticket, East Stand',
     category: 'ticketing',
     price: 180,
     art: 'ticket',
@@ -46,13 +47,13 @@ export const DEMO_PRODUCTS = [
     category: 'apparel',
     price: 75,
     art: 'scarf',
-    description: 'Knitted club scarf — the cheap add-on that lifts basket size.'
+    description: 'Knitted club scarf. The cheap add-on that lifts basket size.'
   },
   {
     id: 'prd_season_pass',
     slug: 'season-pass-digital',
     sku: 'FF-PASS-2627',
-    name: 'Season Pass — Digital',
+    name: 'Season pass, digital',
     category: 'subscription',
     price: 1290,
     art: 'pass',
@@ -117,7 +118,7 @@ export const DEMO_JOURNEY = [
  */
 export function formatPrice(amount) {
   const value = Number(amount)
-  if (!Number.isFinite(value)) return '—'
+  if (!Number.isFinite(value)) return NOT_KNOWN
   return `${CURRENCY} ${value.toLocaleString('en-GB')}`
 }
 
@@ -162,7 +163,7 @@ export function demoEventSpec(actionKey, product, context = {}) {
       eventName: 'page_view',
       properties: {
         path: `/store/${product.slug}`,
-        title: `${product.name} — Sfere Demo Store`,
+        title: `${product.name} · Sfere Demo Store`,
         referrer: 'https://demo.sfere.io/store',
         productId: product.id
       }

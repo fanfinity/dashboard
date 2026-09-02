@@ -68,6 +68,7 @@
 </template>
 
 <script setup>
+import { NOT_KNOWN } from '@/lib/emptyValue'
 import { computed } from 'vue'
 import CardPanel from '@/components/ui/CardPanel.vue'
 import StatusBadge from '@/components/ui/StatusBadge.vue'
@@ -101,7 +102,7 @@ const ENTITY_ROUTES = {
 const kind = computed(
   () =>
     KINDS[props.entry.kind] ?? {
-      label: String(props.entry.kind ?? '—'),
+      label: String(props.entry.kind ?? NOT_KNOWN),
       variant: 'neutral'
     }
 )

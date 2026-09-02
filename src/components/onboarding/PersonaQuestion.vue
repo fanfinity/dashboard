@@ -1,5 +1,18 @@
 <template>
-  <q-dialog :model-value="open" persistent>
+  <!-- Explicit fade in and out, rather than Quasar's default `scale`.
+       QA saw a frame of the card overlapping the dashboard on close: the
+       default hide is a transform-based scale-out that runs against a backdrop
+       fading on its own curve, so for a moment a shrinking card sits over
+       already-visible page content. A fade moves nothing, so there is nothing
+       to catch mid-flight, and 180ms is short enough that the answer feels
+       acted on rather than animated. -->
+  <q-dialog
+    :model-value="open"
+    persistent
+    transition-show="fade"
+    transition-hide="fade"
+    :transition-duration="180"
+  >
     <div
       role="dialog"
       aria-modal="true"
@@ -14,7 +27,7 @@
           id="persona-question-title"
           class="font-sfere-display! text-xl! font-semibold! leading-7! tracking-[-0.01em]! text-ink"
         >
-          Before we start — what do you do?
+          Before we start, what do you do?
         </h2>
         <p class="max-w-[62ch] text-sm text-muted">
           It sets what you see first. Change it any time in Settings → Your
@@ -88,7 +101,7 @@
           class="flex h-9 shrink-0 items-center gap-1.5 rounded-lg border border-line2 bg-white px-3 text-sm text-ink shadow-sm hover:bg-fill"
           @click="emit('skip')"
         >
-          Skip — just show me the app
+          Skip, just show me the app
         </button>
       </div>
     </div>

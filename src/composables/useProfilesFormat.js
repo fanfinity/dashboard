@@ -9,6 +9,7 @@
 // box in another region — and these strings land in screenshots and in the
 // smoke run's DOM, so they have to be byte-stable.
 
+import { NOT_KNOWN } from '@/lib/emptyValue'
 const INTEGER = new Intl.NumberFormat('en-GB')
 
 const DECIMAL = new Intl.NumberFormat('en-GB', { maximumFractionDigits: 2 })
@@ -49,7 +50,7 @@ export function timeOf(iso) {
  */
 export function formatNumber(value) {
   const n = Number(value)
-  return Number.isFinite(n) ? INTEGER.format(n) : '—'
+  return Number.isFinite(n) ? INTEGER.format(n) : NOT_KNOWN
 }
 
 /**
@@ -58,9 +59,9 @@ export function formatNumber(value) {
  * @param {string|null|undefined} iso
  * @returns {string}
  */
-export function formatDate(iso) {
+export function formatDate(iso, fallback = NOT_KNOWN) {
   const t = timeOf(iso)
-  return t === null ? '—' : DATE.format(t)
+  return t === null ? fallback : DATE.format(t)
 }
 
 /**
@@ -71,9 +72,9 @@ export function formatDate(iso) {
  * @param {string|null|undefined} iso
  * @returns {string}
  */
-export function formatDateTime(iso) {
+export function formatDateTime(iso, fallback = NOT_KNOWN) {
   const t = timeOf(iso)
-  return t === null ? '—' : `${DATE_TIME.format(t)} UTC`
+  return t === null ? fallback : `${DATE_TIME.format(t)} UTC`
 }
 
 /**
@@ -81,12 +82,13 @@ export function formatDateTime(iso) {
  * the mock data cannot render `-3m ago`.
  *
  * @param {string|null|undefined} iso
+ * @param {string} [fallback] what to print when there is no timestamp
  * @param {number} [now]
  * @returns {string}
  */
-export function formatAgo(iso, now = Date.now()) {
+export function formatAgo(iso, fallback = NOT_KNOWN, now = Date.now()) {
   const t = timeOf(iso)
-  if (t === null) return '—'
+  if (t === null) return fallback
   const seconds = Math.floor((now - t) / 1000)
   if (seconds < 60) return 'just now'
   const minutes = Math.floor(seconds / 60)

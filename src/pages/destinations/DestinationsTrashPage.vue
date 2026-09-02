@@ -36,7 +36,7 @@
       </template>
 
       <template #cell-deletedByName="{ row }">
-        {{ row.deletedByName || row.deletedBy || '—' }}
+        {{ row.deletedByName || row.deletedBy || NOT_KNOWN }}
       </template>
 
       <template #cell-deletedAt="{ value }">{{
@@ -116,6 +116,7 @@
 </template>
 
 <script setup>
+import { NOT_KNOWN } from '@/lib/emptyValue'
 import { computed, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import PageHeader from '@/components/ui/PageHeader.vue'
@@ -171,7 +172,7 @@ function drop(row) {
 
 function restore(row) {
   drop(row)
-  toast(`“${row.name}” restored — demo data, nothing was saved.`)
+  toast(`“${row.name}” restored. Demo data, nothing was saved.`)
 }
 
 function askPurge(row) {
@@ -184,13 +185,13 @@ function purge() {
   if (!row) return
   drop(row)
   target.value = null
-  toast(`“${row.name}” deleted forever — demo data, nothing was saved.`)
+  toast(`“${row.name}” deleted forever. Demo data, nothing was saved.`)
 }
 
 function purgeAll() {
   const n = deleted.value.length
   deleted.value = []
-  toast(`Trash emptied — ${n} destination(s) removed. Nothing was saved.`)
+  toast(`Trash emptied. ${n} destination(s) removed, and nothing was saved.`)
 }
 
 onMounted(load)

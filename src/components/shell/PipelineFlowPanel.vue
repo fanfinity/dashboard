@@ -92,7 +92,7 @@
             <span
               class="shrink-0 text-xs tabular-nums"
               :class="item.volume > 0 ? 'font-medium text-ink' : 'text-subtle'"
-              >{{ item.volume > 0 ? formatNumber(item.volume) : '—' }}</span
+              >{{ formatNumber(item.volume) }}</span
             >
           </li>
         </ul>
@@ -112,6 +112,7 @@
 </template>
 
 <script setup>
+import { NOT_KNOWN } from '@/lib/emptyValue'
 import CardPanel from '@/components/ui/CardPanel.vue'
 import EmptyState from '@/components/ui/EmptyState.vue'
 import { formatNumber } from '@/composables/useDashboardHome'

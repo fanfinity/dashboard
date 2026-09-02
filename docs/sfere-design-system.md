@@ -243,7 +243,7 @@ one case that earns it: a toolbar action whose noun is already the page title.
 Every list screen pairs a Trash and a New button under an `<h1>` that names what
 they act on, so the words were restating the heading beside them.
 
-Four things it does that a hand-rolled icon button will not:
+Five things it does that a hand-rolled icon button will not:
 
 - **`label` is required**, and it is both the `aria-label` and the tooltip text.
   A CSS-only hover bubble reaches neither a screen reader nor a touch user, so
@@ -252,6 +252,16 @@ Four things it does that a hand-rolled icon button will not:
 - **The tooltip defaults to `bottom`.** There is no positioning engine in
   `SfereTooltip`; the usual home for this button is a `PageHeader` at the very
   top of the page, where a bubble placed above renders off the viewport.
+- **The tooltip also defaults to `align="end"`**, and that default is a fix, not
+  a taste. A bubble centred on a 40px button hangs roughly half its own width off
+  either side, and the rightmost action in a `PageHeader` sits against the window
+  — so "Delete this pipe" was cut off at the right edge on all three detail
+  screens, and "New source" on ten list screens. `end` pins the bubble's right
+  edge to the button's, `start` pins its left (for the one control at the LEFT
+  edge of the viewport, `MainLayout`'s nav toggle), and `center` is still there
+  where there is room either side. All three are plain CSS — `right-0`,
+  `left-0`, `left-1/2 -translate-x-1/2` — so nothing measures anything on hover
+  and `SfereTooltip` still has no positioning engine.
 - **`grid place-items-center`, not `flex`.** Quasar's unlayered `.flex` forces
   `flex-wrap: wrap` and the layered `flex-nowrap` utility loses to it —
   `docs/ui-conventions.md` rule 10. `SfereIconChip` centres its glyph the same

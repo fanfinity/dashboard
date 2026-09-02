@@ -1,3 +1,4 @@
+import { NOT_KNOWN } from '@/lib/emptyValue'
 import { computed, ref } from 'vue'
 import { useMockResource } from '@/composables/useMockResource'
 
@@ -40,7 +41,7 @@ const CALL_TYPES = {
 const SAMPLE_PROPERTIES = {
   page_view: {
     path: '/fixtures/al-hilal-al-nassr',
-    title: 'Riyadh Derby — Fixtures',
+    title: 'Riyadh Derby fixtures',
     referrer: 'https://www.google.com/'
   },
   add_to_cart: {
@@ -113,8 +114,8 @@ const DATE_TIME = new Intl.DateTimeFormat('en-GB', {
  * @param {string|null|undefined} iso
  * @returns {string}
  */
-export function formatEventTime(iso) {
-  if (!iso) return '—'
+export function formatEventTime(iso, fallback = NOT_KNOWN) {
+  if (!iso) return fallback
   const d = new Date(iso)
   if (Number.isNaN(d.getTime())) return String(iso)
   return `${TIME.format(d)} UTC`
@@ -126,8 +127,8 @@ export function formatEventTime(iso) {
  * @param {string|null|undefined} iso
  * @returns {string}
  */
-export function formatEventDateTime(iso) {
-  if (!iso) return '—'
+export function formatEventDateTime(iso, fallback = NOT_KNOWN) {
+  if (!iso) return fallback
   const d = new Date(iso)
   if (Number.isNaN(d.getTime())) return String(iso)
   return `${DATE_TIME.format(d)} UTC`
@@ -141,7 +142,7 @@ export function formatEventDateTime(iso) {
  */
 export function formatCount(n) {
   const value = Number(n)
-  if (!Number.isFinite(value)) return '—'
+  if (!Number.isFinite(value)) return NOT_KNOWN
   return value.toLocaleString('en-GB')
 }
 

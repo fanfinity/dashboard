@@ -1,3 +1,4 @@
+import { NOT_KNOWN } from '@/lib/emptyValue'
 import { computed, ref } from 'vue'
 import { getDashboardOverview } from '@/api/fanfinity'
 import { ApiError } from '@/api/mutator'
@@ -18,7 +19,7 @@ const INTEGER = new Intl.NumberFormat('en-US')
  */
 export function formatNumber(value) {
   const n = Number(value)
-  return Number.isFinite(n) ? INTEGER.format(n) : '—'
+  return Number.isFinite(n) ? INTEGER.format(n) : NOT_KNOWN
 }
 
 /**

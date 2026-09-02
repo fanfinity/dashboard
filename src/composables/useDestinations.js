@@ -1,3 +1,4 @@
+import { NOT_KNOWN } from '@/lib/emptyValue'
 import { useQuasar } from 'quasar'
 import { useMockResource, sendMutation } from '@/composables/useMockResource'
 import { currentAccount } from '@/composables/useMe'
@@ -153,10 +154,10 @@ export function useDestinationToasts() {
  *
  * @example
  * formatCount(24218) // '24,218'
- * formatCount(null)  // '—'
+ * formatCount(null)  // NOT_KNOWN
  */
 export function formatCount(n) {
-  if (n === null || n === undefined || Number.isNaN(Number(n))) return '—'
+  if (n === null || n === undefined || Number.isNaN(Number(n))) return NOT_KNOWN
   return Number(n).toLocaleString('en-GB')
 }
 
@@ -179,23 +180,23 @@ const TIME = new Intl.DateTimeFormat('en-GB', {
  * `'2026-02-11T09:31:48.400Z'` -> `'11 Feb 2026'`.
  *
  * @param {string|null|undefined} iso
- * @returns {string} `'—'` when absent or unparseable.
+ * @returns {string} `NOT_KNOWN` when absent or unparseable.
  */
-export function formatDate(iso) {
-  if (!iso) return '—'
+export function formatDate(iso, fallback = NOT_KNOWN) {
+  if (!iso) return fallback
   const d = new Date(iso)
-  return Number.isNaN(d.getTime()) ? '—' : DATE.format(d)
+  return Number.isNaN(d.getTime()) ? NOT_KNOWN : DATE.format(d)
 }
 
 /**
  * `'2026-02-11T09:31:48.400Z'` -> `'11 Feb 2026 · 09:31 UTC'`.
  *
  * @param {string|null|undefined} iso
- * @returns {string} `'—'` when absent or unparseable.
+ * @returns {string} `NOT_KNOWN` when absent or unparseable.
  */
-export function formatDateTime(iso) {
-  if (!iso) return '—'
+export function formatDateTime(iso, fallback = NOT_KNOWN) {
+  if (!iso) return fallback
   const d = new Date(iso)
-  if (Number.isNaN(d.getTime())) return '—'
+  if (Number.isNaN(d.getTime())) return NOT_KNOWN
   return `${DATE.format(d)} · ${TIME.format(d)} UTC`
 }

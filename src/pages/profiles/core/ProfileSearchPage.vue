@@ -19,7 +19,7 @@
           label="Profile ID or identifier value"
           for-id="profile-query"
           :error="formError"
-          hint="Matches any identifier — email, phone, browser cookie, account id, device id or ticket reference."
+          hint="Matches any identifier: email, phone, browser cookie, account id, device id or ticket reference."
         >
           <input
             id="profile-query"

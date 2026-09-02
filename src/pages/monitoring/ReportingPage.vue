@@ -171,7 +171,7 @@
           <span
             class="tabular-nums"
             :class="row.failures ? 'text-rose-600' : 'text-subtle'"
-            >{{ row.failures ? row.failuresLabel : '—' }}</span
+            >{{ row.failures ? row.failuresLabel : NOT_KNOWN }}</span
           >
         </template>
 
@@ -182,13 +182,14 @@
 
       <p v-if="idleCount" class="text-xs text-subtle"
         >{{ idleCount }} of {{ rollupRows.length }} carried no volume in this
-        window — paused, or connected but not yet sending.</p
+        window, so they are paused, or connected but not yet sending.</p
       >
     </div>
   </q-page>
 </template>
 
 <script setup>
+import { NOT_KNOWN } from '@/lib/emptyValue'
 import { computed, onMounted, ref } from 'vue'
 import CardPanel from '@/components/ui/CardPanel.vue'
 import DataTable from '@/components/ui/DataTable.vue'
@@ -233,7 +234,7 @@ const subtitle = computed(() => {
   const range = rangeLabel.value
   const updated = updatedAtLabel.value
   if (!range) return 'Volume by source, destination and pipe.'
-  return updated === '—' ? range : `${range} · updated ${updated}`
+  return updated === NOT_KNOWN ? range : `${range} · updated ${updated}`
 })
 
 const TITLES = {

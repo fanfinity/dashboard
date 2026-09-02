@@ -1,7 +1,7 @@
 [
   {
     "id": "camp_welcome_1",
-    "name": "Welcome — step 1",
+    "name": "Welcome, step 1",
     "channel": "email",
     "status": "sending",
     "journeyId": "jrn_welcome_series",

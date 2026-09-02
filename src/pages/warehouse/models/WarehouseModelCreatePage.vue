@@ -96,7 +96,7 @@
         <FormField
           label="Description"
           for-id="model-description"
-          hint="Optional. One line on what a row means — whoever writes the next attribute reads this."
+          hint="Optional. One line on what a row means, because whoever writes the next attribute reads this."
         >
           <textarea
             id="model-description"
@@ -151,7 +151,7 @@
           required
           id="model-identifier"
           :error="errors.identifierColumn"
-          hint="The value matched against the fan graph — a resolved profile id, an email, a ticket reference."
+          hint="The value matched against the fan graph: a resolved profile id, an email, a ticket reference."
         />
 
         <WarehouseModelColumnSelect
@@ -212,7 +212,7 @@
           Cancel
         </button>
         <p class="text-xs text-subtle"
-          >Nothing is persisted yet — there is no backend behind this form.</p
+          >Nothing is persisted yet. There is no backend behind this form.</p
         >
       </StickyActionBar>
     </form>
@@ -370,7 +370,7 @@ const checkMessage = computed(() => {
     ? check.value.errors.join(' ')
     : check.value.warnings.join(' ')
   const where = selectedConnection.value?.name ?? 'the warehouse'
-  const preamble = `Checked in the browser — nothing was sent to ${where}, so row counts and column types appear only after the first refresh.`
+  const preamble = `Checked in the browser. Nothing was sent to ${where}, so row counts and column types appear only after the first refresh.`
   return detail ? `${detail} ${preamble}` : preamble
 })
 
@@ -465,7 +465,7 @@ function submit() {
   // there. Pretending otherwise would be the dishonest option.
   $q.notify({
     message: `“${form.name.trim()}” configured`,
-    caption: 'Local preview only — no backend is connected yet.',
+    caption: 'Local preview only. No backend is connected yet.',
     color: 'dark',
     timeout: 2500
   })

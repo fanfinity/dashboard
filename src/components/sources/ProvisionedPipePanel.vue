@@ -23,7 +23,7 @@
     v-if="state === 'unavailable'"
     tone="info"
     title="Finishing your pipeline"
-    message="Your source is created. We also set up its warehouse and the pipe feeding it, but we couldn't confirm that just now — open Pipes in a moment to see it."
+    message="Your source is created. We also set up its warehouse and the pipe feeding it, but we couldn't confirm that just now. Open Pipes in a moment to see it."
   />
 
   <!-- `role="status" aria-live="polite"`, as on AccountSetupOverlay: this card
@@ -249,7 +249,7 @@ const nodes = computed(() => [
 
 const lede = computed(
   () =>
-    `Connecting a source is normally three steps. ${props.source.name} needed one — we provisioned its warehouse and the pipe feeding it while you waited.`
+    `Connecting a source is normally three steps. ${props.source.name} needed one, because we provisioned its warehouse and the pipe feeding it while you waited.`
 )
 
 const deliveryLine = computed(() => {

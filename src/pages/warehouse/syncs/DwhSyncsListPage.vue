@@ -106,7 +106,9 @@
 
       <template #cell-schedule="{ row }">
         <p class="text-muted">{{ syncScheduleLabel(row) }}</p>
-        <p class="text-xs text-subtle">Next: {{ formatDate(row.nextRunAt) }}</p>
+        <p class="text-xs text-subtle"
+          >Next: {{ formatDate(row.nextRunAt, NOT_SET) }}</p
+        >
       </template>
 
       <template #cell-lastRunAt="{ row }">
@@ -115,7 +117,7 @@
           :label="runStatusMeta(row.lastRunStatus).label"
         />
         <p class="mt-1 text-xs text-subtle"
-          >{{ formatDate(row.lastRunAt) }} ·
+          >{{ formatDate(row.lastRunAt, NEVER) }} ·
           {{ formatCount(row.lastRunRowCount) }} rows</p
         >
       </template>
@@ -204,6 +206,7 @@
 </template>
 
 <script setup>
+import { NEVER, NOT_SET } from '@/lib/emptyValue'
 import { computed, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import PageHeader from '@/components/ui/PageHeader.vue'
@@ -396,7 +399,7 @@ const toggleMessage = computed(() => {
   const row = toggleTarget.value
   if (!row) return ''
   return row.isEnabled
-    ? `“${row.name}” stops copying events from ${row.sourceTable} into ${row.dwhConnectionName} — no scheduled run starts while it is paused. Rows it has already written are left alone.`
+    ? `“${row.name}” stops copying events from ${row.sourceTable} into ${row.dwhConnectionName}, and no scheduled run starts while it is paused. Rows it has already written are left alone.`
     : `“${row.name}” goes back on its schedule and copies from ${row.sourceTable} into ${row.dwhConnectionName} on its next run.`
 })
 

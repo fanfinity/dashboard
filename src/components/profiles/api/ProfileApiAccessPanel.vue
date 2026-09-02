@@ -198,7 +198,7 @@ const keyHint = computed(() => {
     return 'No key has been issued for this endpoint yet.'
   }
   const rotated = formatDate(selected.value.keyRotatedAt)
-  return `Only the last four characters are kept — the full key was shown once, when it was issued. Last rotated ${rotated}.`
+  return `Only the last four characters are kept. The full key was shown once, when it was issued. Last rotated ${rotated}.`
 })
 
 const curl = computed(() => buildCurlSnippet(selected.value))

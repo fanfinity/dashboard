@@ -7,7 +7,7 @@
       class="flex h-9 items-center justify-center gap-2 px-3 text-center text-xs font-medium tracking-[-0.2px]"
     >
       <span class="size-1.5 shrink-0 rounded-full bg-sfere-warn" />
-      <span>Viewing demo data — nothing here is saved.</span>
+      <span>Viewing demo data. Nothing here is saved.</span>
       <router-link
         to="/settings"
         class="underline decoration-white/40 underline-offset-2 hover:decoration-white"

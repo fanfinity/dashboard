@@ -38,7 +38,7 @@
       "name": "Rania Nasser",
       "signedUpAt": "2026-08-27T06:52:00.000Z",
       "matchedBy": "domain",
-      "note": "Matched by email domain — no invite on file."
+      "note": "Matched by email domain, with no invite on file."
     },
     {
       "id": "pend_omar",
@@ -46,7 +46,7 @@
       "name": "Omar Khalid",
       "signedUpAt": "2026-08-27T04:10:00.000Z",
       "matchedBy": "domain",
-      "note": "Matched by email domain — no invite on file."
+      "note": "Matched by email domain, with no invite on file."
     }
   ],
   "members": [

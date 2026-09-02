@@ -67,7 +67,7 @@
       </div>
 
       <template #footer>
-        <p class="text-xs text-subtle">Read-only — demo data.</p>
+        <p class="text-xs text-subtle">Read-only demo data.</p>
         <button
           v-close-popup
           class="rounded-lg border border-line2 bg-white px-3 py-1.5 text-sm font-medium text-brand hover:bg-fill"
@@ -80,6 +80,7 @@
 </template>
 
 <script setup>
+import { NEVER, NOT_SET } from '@/lib/emptyValue'
 import { computed } from 'vue'
 import CardPanel from '@/components/ui/CardPanel.vue'
 import DefinitionList from '@/components/ui/DefinitionList.vue'
@@ -139,10 +140,10 @@ const facts = computed(() => {
       value: syncScheduleLabel(s),
       hint: s.schedule
     },
-    { label: 'Last run', value: formatDateTime(s.lastRunAt) },
+    { label: 'Last run', value: formatDateTime(s.lastRunAt, NEVER) },
     { label: 'Rows last run', value: formatCount(s.lastRunRowCount) },
     { label: 'Run duration', value: formatDuration(s.lastRunDurationMs) },
-    { label: 'Next run', value: formatDateTime(s.nextRunAt) },
+    { label: 'Next run', value: formatDateTime(s.nextRunAt, NOT_SET) },
     { label: 'Created', value: formatDateTime(s.createdAt) },
     { label: 'Last updated', value: formatDateTime(s.updatedAt) },
     { label: 'Config version', value: `v${s.version}` }

@@ -1,3 +1,4 @@
+import { NEVER } from '@/lib/emptyValue'
 import { computed } from 'vue'
 import { useMockResource } from '@/composables/useMockResource'
 import {
@@ -139,7 +140,7 @@ export function useProfilesSearch() {
       identifierCount: (profile.identifiers ?? []).length,
       audienceCount: (profile.audiences ?? []).length,
       lastSeenAt: profile.lastSeenAt,
-      lastSeen: formatAgo(profile.lastSeenAt)
+      lastSeen: formatAgo(profile.lastSeenAt, NEVER)
     }
   }
 
@@ -302,7 +303,7 @@ export function useProfilesSearch() {
           hint:
             identifierRows.length > 1
               ? `${identifierRows.length - 1} stitched onto the anchor.`
-              : 'Never stitched — one identifier only.'
+              : 'Never stitched. One identifier only.'
         },
         {
           label: 'Audiences',
@@ -318,8 +319,8 @@ export function useProfilesSearch() {
         },
         {
           label: 'Last seen',
-          value: formatAgo(profile.lastSeenAt),
-          hint: formatDateTime(profile.lastSeenAt)
+          value: formatAgo(profile.lastSeenAt, NEVER),
+          hint: formatDateTime(profile.lastSeenAt, NEVER)
         }
       ],
       facts: [
@@ -329,7 +330,7 @@ export function useProfilesSearch() {
           value: profile.primaryEmail,
           hint: profile.primaryEmail
             ? ''
-            : 'Anonymous — no declared identity yet.'
+            : 'Anonymous. No declared identity yet.'
         },
         { label: 'First seen', value: formatDate(profile.createdAt) },
         { label: 'Profile updated', value: formatDateTime(profile.updatedAt) },

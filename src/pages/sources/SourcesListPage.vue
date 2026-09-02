@@ -129,11 +129,14 @@
       </DataTable>
     </template>
 
+    <!-- Same verb and the same sentence as the detail screen's confirm: one
+         action told two ways is how "Delete" and "Move to trash" ended up
+         describing the same 204. -->
     <ConfirmDialog
       v-model="confirmDelete"
-      title="Move source to trash?"
+      :title="deleteTitle"
       :message="deleteMessage"
-      confirm-label="Move to trash"
+      confirm-label="Delete source"
       destructive
       @confirm="remove"
     />
@@ -356,9 +359,16 @@ function ask(row) {
   confirmDelete.value = true
 }
 
+const deleteTitle = computed(() =>
+  target.value ? `Delete “${target.value.name}”?` : 'Delete this source?'
+)
+
+// The closing sentence is interim, and it is the honest one: the backend's
+// DELETE is a hard 204 with no soft delete, no trash listing and no restore, so
+// "restorable for 30 days" was a promise nothing kept.
 const deleteMessage = computed(() =>
   target.value
-    ? `“${target.value.name}” stops collecting events and moves to the trash, where it can be restored for 30 days.`
+    ? `“${target.value.name}” stops collecting events straight away, and any pipe reading from it stops delivering. Events already written to a destination are untouched; they live in the warehouse, not here. Restoring from trash is not available yet, so this cannot be undone.`
     : ''
 )
 
@@ -368,7 +378,7 @@ async function remove() {
   target.value = null
   const res = await removeSource(row.id)
   notifyMutationResult($q, res, {
-    success: `${row.name} moved to trash`,
+    success: `${row.name} deleted`,
     apiMissing: `Can't delete ${row.name} yet.`
   })
 }

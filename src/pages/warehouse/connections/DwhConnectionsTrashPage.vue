@@ -213,7 +213,7 @@ function retentionLabel(row) {
   if (Number.isNaN(deleted.getTime())) return ''
   const elapsed = Math.floor((Date.now() - deleted.getTime()) / 86400000)
   const left = RETENTION_DAYS - elapsed
-  if (left <= 0) return 'Past retention — purged on the next sweep'
+  if (left <= 0) return 'Past retention. Purged on the next sweep.'
   return `${left} day${left === 1 ? '' : 's'} left`
 }
 
@@ -225,7 +225,7 @@ function askRestore(row) {
 function onRestore(row) {
   if (!row) return
   restore(row)
-  toast(`“${row.name}” restored — re-enter its password before using it`)
+  toast(`“${row.name}” restored. Re-enter its password before using it.`)
   target.value = null
 }
 
@@ -246,7 +246,7 @@ const restoreMessage = computed(() => {
 
 const purgeMessage = computed(() =>
   target.value
-    ? `“${target.value.name}” and its configuration are removed permanently. Nothing in ${target.value.database} is touched — this only forgets how to reach it. This cannot be undone.`
+    ? `“${target.value.name}” and its configuration are removed permanently. Nothing in ${target.value.database} is touched; this only forgets how to reach it. This cannot be undone.`
     : ''
 )
 

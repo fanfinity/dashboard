@@ -66,7 +66,7 @@
             <span class="text-sm text-muted">/{{ plan?.period }}</span>
           </p>
           <p class="mt-2 text-xs text-subtle"
-            >Renews {{ formatDate(plan?.renewsOn) }}</p
+            >Renews {{ formatDate(plan?.renewsOn, NOT_SET) }}</p
           >
 
           <dl class="mt-5 flex flex-col">
@@ -89,7 +89,7 @@
               >Usage this billing period</span
             >
             <p class="text-xs text-subtle"
-              >Resets {{ formatDate(plan?.renewsOn) }}</p
+              >Resets {{ formatDate(plan?.renewsOn, NOT_SET) }}</p
             >
           </template>
 
@@ -333,6 +333,7 @@
 </template>
 
 <script setup>
+import { NOT_KNOWN, NOT_SET } from '@/lib/emptyValue'
 import { computed, onMounted, ref } from 'vue'
 import { useQuasar } from 'quasar'
 import PageHeader from '@/components/ui/PageHeader.vue'
@@ -439,7 +440,10 @@ const meters = computed(() =>
 )
 
 const paymentFacts = computed(() => [
-  { label: 'Billing email', value: paymentMethod.value?.billingEmail ?? '—' },
+  {
+    label: 'Billing email',
+    value: paymentMethod.value?.billingEmail ?? NOT_SET
+  },
   { label: 'Provider', value: 'Not connected' }
 ])
 

@@ -47,7 +47,7 @@
                 :label="tag"
               />
             </div>
-            <span v-else class="text-subtle">—</span>
+            <span v-else class="text-subtle">None</span>
           </template>
         </DefinitionList>
 

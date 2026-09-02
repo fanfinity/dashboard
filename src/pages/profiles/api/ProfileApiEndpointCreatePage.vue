@@ -216,7 +216,7 @@
           Cancel
         </button>
         <p class="text-xs text-subtle"
-          >Nothing is persisted yet — there is no backend behind this form.</p
+          >Nothing is persisted yet. There is no backend behind this form.</p
         >
       </StickyActionBar>
     </form>
@@ -282,7 +282,7 @@ const RATE_LIMIT_OPTIONS = [
 ]
 
 const CACHE_TTL_OPTIONS = [
-  { label: 'No cache — always resolve fresh', value: 0 },
+  { label: 'No cache, always resolve fresh', value: 0 },
   { label: '30 seconds', value: 30 },
   { label: '1 minute', value: 60 },
   { label: '5 minutes', value: 300 }
@@ -379,7 +379,7 @@ function submit() {
   // not there. Pretending otherwise would be the dishonest option.
   $q.notify({
     message: `“${form.name.trim()}” configured`,
-    caption: 'Local preview only — no backend is connected yet.',
+    caption: 'Local preview only. No backend is connected yet.',
     color: 'dark',
     timeout: 2500
   })

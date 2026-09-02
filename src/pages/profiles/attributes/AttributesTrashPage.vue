@@ -49,7 +49,7 @@
       </template>
 
       <template #cell-deletedByName="{ row }">
-        {{ row.deletedByName || row.deletedBy || '—' }}
+        {{ row.deletedByName || row.deletedBy || NOT_KNOWN }}
       </template>
 
       <template #cell-actions="{ row }">
@@ -91,6 +91,7 @@
 </template>
 
 <script setup>
+import { NOT_KNOWN } from '@/lib/emptyValue'
 import { computed, onMounted, ref } from 'vue'
 import { useQuasar } from 'quasar'
 import PageHeader from '@/components/ui/PageHeader.vue'
@@ -156,7 +157,7 @@ function retentionLabel(row) {
   if (Number.isNaN(deleted.getTime())) return ''
   const elapsed = Math.floor((Date.now() - deleted.getTime()) / 86400000)
   const left = RETENTION_DAYS - elapsed
-  if (left <= 0) return 'Past retention — purged on the next sweep'
+  if (left <= 0) return 'Past retention. Purged on the next sweep.'
   return `${left} day${left === 1 ? '' : 's'} left`
 }
 
@@ -164,7 +165,7 @@ function retentionLabel(row) {
 function notifyLocal(message) {
   $q.notify({
     message,
-    caption: 'Local preview only — no backend is connected yet.',
+    caption: 'Local preview only. No backend is connected yet.',
     color: 'dark',
     timeout: 2500
   })

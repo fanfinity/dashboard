@@ -1,3 +1,4 @@
+import { NOT_KNOWN } from '@/lib/emptyValue'
 import { computed, ref } from 'vue'
 import { useMockResource } from '@/composables/useMockResource'
 import {
@@ -39,9 +40,9 @@ const PERCENT = new Intl.NumberFormat('en-GB', {
  * @returns {string}
  */
 export function formatPercent(ratio) {
-  if (ratio === null || ratio === undefined) return '—'
+  if (ratio === null || ratio === undefined) return NOT_KNOWN
   const value = Number(ratio)
-  return Number.isFinite(value) ? PERCENT.format(value) : '—'
+  return Number.isFinite(value) ? PERCENT.format(value) : NOT_KNOWN
 }
 
 /**
@@ -52,7 +53,9 @@ export function formatPercent(ratio) {
  */
 export function formatMultiple(ratio) {
   const value = Number(ratio)
-  return Number.isFinite(value) && value > 0 ? `${value.toFixed(2)}×` : '—'
+  return Number.isFinite(value) && value > 0
+    ? `${value.toFixed(2)}×`
+    : NOT_KNOWN
 }
 
 const RANGE_LABELS = {
@@ -96,7 +99,7 @@ export function useMonitoringReporting() {
     const preset = RANGE_LABELS[range.preset]
     const from = formatDay(range.from)
     const to = formatDay(range.to)
-    if (from === '—' || to === '—') return preset ?? ''
+    if (from === NOT_KNOWN || to === NOT_KNOWN) return preset ?? ''
     return preset ? `${preset} · ${from} – ${to}` : `${from} – ${to}`
   })
 
@@ -218,7 +221,7 @@ export function useMonitoringReporting() {
         shareLabel: '',
         failures,
         failuresLabel: formatCount(failures),
-        rateLabel: deliveries ? formatPercent(rate) : '—'
+        rateLabel: deliveries ? formatPercent(rate) : NOT_KNOWN
       }
     })
   })

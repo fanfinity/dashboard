@@ -30,7 +30,7 @@
             >
             <p class="mt-0.5 text-xs text-muted">
               Paste this tag into the &lt;head&gt; of every page you want to
-              track. The write key was generated for this source — everything
+              track. The write key was generated for this source, so everything
               else is fixed configuration.
             </p>
           </div>
@@ -47,7 +47,7 @@
               Copy snippet
             </button>
             <p v-if="!source.writeKey" class="text-xs text-amber-600">
-              The write key is still provisioning — reload in a moment.
+              The write key is still provisioning. Reload in a moment.
             </p>
           </div>
         </div>

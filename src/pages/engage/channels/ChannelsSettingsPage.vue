@@ -203,7 +203,7 @@
               Discard
             </button>
             <p class="text-xs text-subtle"
-              >Nothing is persisted yet — there is no backend behind this
+              >Nothing is persisted yet. There is no backend behind this
               form.</p
             >
           </div>
@@ -255,7 +255,7 @@
         <NoticeBanner
           tone="info"
           title="Provider credentials live in Secrets"
-          message="No API key, token or signing key is stored on this screen — a transport only holds the identity it sends as."
+          message="No API key, token or signing key is stored on this screen. A transport only holds the identity it sends as."
         >
           <router-link
             :to="{ name: 'secrets' }"
@@ -405,7 +405,7 @@ const whatsappFacts = computed(() => [
 function notifyLocal(message) {
   $q.notify({
     message,
-    caption: 'Local preview only — no backend is connected yet.',
+    caption: 'Local preview only. No backend is connected yet.',
     color: 'dark',
     timeout: 2500
   })

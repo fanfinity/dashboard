@@ -215,7 +215,7 @@
             >
 
             <p v-else class="mt-2 text-sm text-muted"
-              >Not known — this destination reports no managed warehouse.</p
+              >Not known. This destination reports no managed warehouse.</p
             >
           </CardPanel>
         </section>
@@ -249,6 +249,7 @@
 </template>
 
 <script setup>
+import { NOT_KNOWN } from '@/lib/emptyValue'
 import { computed, onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useQuasar } from 'quasar'
@@ -341,7 +342,7 @@ const inboundPipes = computed(() =>
 // failure this row was rebuilt to stop.
 const pipeCountLabel = computed(() =>
   pipesLoading.value || pipesError.value || pipesApiMissing.value
-    ? '—'
+    ? NOT_KNOWN
     : formatCount(inboundPipes.value.length)
 )
 
@@ -471,7 +472,7 @@ function upgrade() {
   const d = destination.value
   d.templateVersion = d.latestTemplateVersion
   toast(
-    `“${d.name}” moved to template ${d.templateVersion} — demo data, nothing was saved.`
+    `“${d.name}” moved to template ${d.templateVersion}. Demo data, nothing was saved.`
   )
 }
 

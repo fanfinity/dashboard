@@ -37,7 +37,7 @@ export const SOURCE_INTENTS = [
   {
     key: 'app',
     title: 'A mobile app',
-    body: 'Our iOS or Android SDK — the same event model on both platforms.',
+    body: 'Our iOS or Android SDK, with the same event model on both platforms.',
     outcome: 'App source',
     templates: ['ios-sdk', 'android-sdk']
   },
@@ -65,7 +65,7 @@ export const SOURCE_INTENTS = [
   {
     key: 'connector',
     title: 'Something else',
-    body: 'Browse pre-built connectors — Firebase, MongoDB, Attio, Linear. One login, no code.',
+    body: 'Browse pre-built connectors: Firebase, MongoDB, Attio, Linear. One login, no code.',
     outcome: 'Go to Connectors',
     templates: [],
     to: { name: 'sources', query: { tab: 'connectors' } }

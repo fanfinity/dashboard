@@ -10,7 +10,7 @@
   <div class="grid gap-5">
     <NoticeBanner
       tone="info"
-      message="Not sure which one? Pick the closest match — you can add more sources later, and every option leads to the exact setup steps for that platform."
+      message="Not sure which one? Pick the closest match. You can add more sources later, and every option leads to the exact setup steps for that platform."
     />
 
     <!-- CONTAINER QUERIES, NOT VIEWPORT BREAKPOINTS, and NOT `auto-fit`.

@@ -131,14 +131,14 @@ const sections = computed(() => {
 const overrideMessage = computed(() =>
   overriddenCount.value
     ? `${overriddenCount.value} module${overriddenCount.value === 1 ? '' : 's'} differ${overriddenCount.value === 1 ? 's' : ''} from the shipped defaults. To make a change permanent for everyone, flip its \`enabled\` flag in src/config/features.js.`
-    : 'Everything matches the shipped defaults. Flipping a switch here turns a module on for you only — to ship it, flip its `enabled` flag in src/config/features.js.'
+    : 'Everything matches the shipped defaults. Flipping a switch here turns a module on for you only. To ship it, flip its `enabled` flag in src/config/features.js.'
 )
 
 function onToggle(feature, value) {
   setActive(feature.key, value)
   $q.notify({
     message: `${feature.label} ${value ? 'activated' : 'switched off'}`,
-    caption: 'This browser only — edit src/config/features.js to ship it.',
+    caption: 'This browser only. Edit src/config/features.js to ship it.',
     color: 'dark',
     timeout: 2500
   })

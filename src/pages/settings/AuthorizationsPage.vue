@@ -40,7 +40,9 @@
       <StatCard
         label="Providers connected"
         :value="
-          providersError ? '—' : `${connectedCount} of ${providers.length}`
+          providersError
+            ? NOT_KNOWN
+            : `${connectedCount} of ${providers.length}`
         "
         :hint="providersError ? 'Provider catalog unavailable' : 'Catalog'"
       />
@@ -195,6 +197,7 @@
 </template>
 
 <script setup>
+import { NOT_KNOWN } from '@/lib/emptyValue'
 import { computed, onMounted, ref } from 'vue'
 import { useQuasar } from 'quasar'
 import PageHeader from '@/components/ui/PageHeader.vue'
@@ -334,7 +337,7 @@ function scopeCount(row) {
 function notifyLocal(message) {
   $q.notify({
     message,
-    caption: 'Local preview only — no backend is connected yet.',
+    caption: 'Local preview only. No backend is connected yet.',
     color: 'dark',
     timeout: 2500
   })

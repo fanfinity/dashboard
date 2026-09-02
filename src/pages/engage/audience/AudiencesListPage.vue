@@ -23,7 +23,7 @@
         :value="formatCount(totalProfiles)"
         :delta="formatChange(totalChange)"
         :direction="trendDirection(totalChange)"
-        hint="Counted once per audience — a fan can be in several."
+        hint="Counted once per audience. A fan can be in several."
       />
       <StatCard
         label="Feeding a destination"
@@ -105,7 +105,9 @@
 
       <template #cell-deletedAt="{ row }">
         <p>{{ formatDateTime(row.deletedAt) }}</p>
-        <p class="text-xs text-subtle">by {{ row.deletedByName ?? '—' }}</p>
+        <p class="text-xs text-subtle"
+          >by {{ row.deletedByName ?? NOT_KNOWN }}</p
+        >
       </template>
 
       <template #cell-actions="{ row }">
@@ -172,7 +174,7 @@
         <EmptyState
           v-else
           title="No audiences yet"
-          description="An audience is a set of conditions over fan attributes — everyone who matches is a member, and stays one only while they match."
+          description="An audience is a set of conditions over fan attributes. Everyone who matches is a member, and stays one only while they match."
         >
           <template #cta>
             <button
@@ -212,6 +214,7 @@
 </template>
 
 <script setup>
+import { NOT_KNOWN } from '@/lib/emptyValue'
 import { computed, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import PageHeader from '@/components/ui/PageHeader.vue'
@@ -394,7 +397,7 @@ const secondaryError = computed(() => {
   if (attributesError.value) failed.push('the attribute catalog')
   if (liveSyncsError.value) failed.push('the live profile syncs')
   if (!failed.length) return ''
-  return `Conditions and destinations may be incomplete — ${failed.join(' and ')} could not be loaded.`
+  return `Conditions and destinations may be incomplete. ${failed.join(' and ')} could not be loaded.`
 })
 
 function loadSecondary() {

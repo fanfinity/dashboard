@@ -159,7 +159,7 @@ const emptyDescription = computed(() =>
 function notifyLocal(message) {
   $q.notify({
     message,
-    caption: 'Local preview only — no backend is connected yet.',
+    caption: 'Local preview only. No backend is connected yet.',
     color: 'dark',
     timeout: 2500
   })
@@ -167,7 +167,7 @@ function notifyLocal(message) {
 
 function onRestore(row) {
   restore(row)
-  notifyLocal(`${row.name} restored — issue a new key before it serves traffic`)
+  notifyLocal(`${row.name} restored. Issue a new key before it serves traffic.`)
 }
 
 function ask(row) {

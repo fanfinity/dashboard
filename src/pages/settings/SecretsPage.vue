@@ -32,7 +32,7 @@
       />
       <StatCard
         label="In trash"
-        :value="trashError ? '—' : formatCount(deleted.length)"
+        :value="trashError ? NOT_KNOWN : formatCount(deleted.length)"
         :hint="
           trashError ? 'Open the Trash tab to retry' : 'Restorable for 30 days'
         "
@@ -188,6 +188,7 @@
 </template>
 
 <script setup>
+import { NOT_KNOWN } from '@/lib/emptyValue'
 import { computed, onMounted, ref } from 'vue'
 import { useQuasar } from 'quasar'
 import PageHeader from '@/components/ui/PageHeader.vue'
@@ -354,7 +355,7 @@ function usedByNames(row) {
 function notifyLocal(message) {
   $q.notify({
     message,
-    caption: 'Local preview only — no backend is connected yet.',
+    caption: 'Local preview only. No backend is connected yet.',
     color: 'dark',
     timeout: 2500
   })
@@ -368,7 +369,7 @@ async function copyReference(row) {
   try {
     await navigator.clipboard.writeText(secretReference(row))
   } catch {
-    message = "Couldn't copy the reference — select it and copy by hand."
+    message = "Couldn't copy the reference . Select it and copy by hand."
   }
   $q.notify({ message, color: 'dark', timeout: 2500 })
 }

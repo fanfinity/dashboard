@@ -59,6 +59,6 @@ const subtitle = computed(
 
 const description = computed(
   () =>
-    `The screen is already built into the app — it is switched off until ${featureLabel.value} is ready. Turn it on under Settings → Feature activation to work on it, or leave it dark.`
+    `The screen is already built into the app. It stays switched off until ${featureLabel.value} is ready. Turn it on under Settings → Feature activation to work on it, or leave it dark.`
 )
 </script>

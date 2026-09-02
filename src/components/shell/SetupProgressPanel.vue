@@ -141,7 +141,7 @@ function countLabel(step) {
 const headline = computed(() => {
   if (props.complete) return 'Your pipeline is live'
   if (props.doneCount === 0) return "Nothing's moving yet"
-  return `Almost there — ${props.doneCount} of ${props.total} done`
+  return `Almost there: ${props.doneCount} of ${props.total} done`
 })
 
 const blurb = computed(() => {

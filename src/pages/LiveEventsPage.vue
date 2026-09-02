@@ -95,7 +95,7 @@
       class="mb-4"
       tone="info"
       title="No API yet"
-      message="No live events to read on this backend — this account has no source with a provisioned stream yet. Switch Settings → Data source to Demo data to see the feed."
+      message="No live events to read on this backend. This account has no source with a provisioned stream yet. Switch Settings → Data source to Demo data to see the feed."
     />
 
     <!-- Error -->
@@ -144,7 +144,7 @@
             <td colspan="5" class="px-3 py-10 text-center text-sm text-muted">
               {{
                 apiMissing
-                  ? 'No API yet — nothing to read on this backend.'
+                  ? 'No API yet. Nothing to read on this backend.'
                   : 'No events found for this site and filters.'
               }}
             </td>
@@ -342,6 +342,7 @@
 </template>
 
 <script setup>
+import { NONE, NOT_KNOWN } from '@/lib/emptyValue'
 import { computed, nextTick, onMounted, ref, watch } from 'vue'
 import NoticeBanner from '@/components/ui/NoticeBanner.vue'
 import { useLiveEvents } from '@/composables/useLiveEvents'
@@ -456,14 +457,14 @@ const drawerRows = computed(() => {
 // page's world any more, so there is nothing to scrub.
 const headersText = computed(() => {
   const h = selected.value?.httpHeaders
-  if (!h) return '—'
+  if (!h) return NONE
   return JSON.stringify(h, null, 2)
 })
 
 const payloadText = computed(() =>
   selected.value?.payload
     ? JSON.stringify(selected.value.payload, null, 2)
-    : '—'
+    : NONE
 )
 
 // --- Render helpers ---
@@ -479,7 +480,7 @@ function formatUTC(date) {
 
 function typeLabel(ev) {
   const name = ev.type === 'track' ? ev.payload?.event || ev.type : ev.type
-  return name || '—'
+  return name || NOT_KNOWN
 }
 
 function geoLabel(ev) {

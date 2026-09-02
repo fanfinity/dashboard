@@ -38,7 +38,7 @@
     "summary": "Replaced welcome-hero.png with the 26/27 kit variant across the welcome series.",
     "entityType": "campaign",
     "entityId": "camp_welcome_1",
-    "entityName": "Welcome — step 1",
+    "entityName": "Welcome, step 1",
     "actor": "user",
     "actorName": "Faisal Al-Otaibi",
     "riskLevel": "low"

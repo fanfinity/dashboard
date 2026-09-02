@@ -3,12 +3,22 @@
        bare form on grey. Two panes: the dark pane says what the product does,
        the light pane does the one job this page has.
 
+       ONE COMPONENT, TWO ROUTES. `/login` and `/signup` are separate entries in
+       routes.js pointing here, and the mode is read off `route.name` rather than
+       held in a ref — so each view is linkable, the browser's back button moves
+       between them, and a marketing CTA can deep-link straight at sign-up. Both
+       routes carry `redirect` through the switch, so someone bounced off a deep
+       link who decides to register still lands where they were going.
+
        THREE SELECTORS ON THIS PAGE ARE LOAD-BEARING. scripts/smoke.mjs — the
        only behavioural gate in the repo — drives `input[type=email]`,
        `input[type=password]` and `button[type=submit]`, and it fills them by
        type with Playwright's strict matching. Keep exactly one of each. That is
        why sign-up has no confirm-password field: a second password input would
-       fail the gate for all 54 routes before a single screen rendered. -->
+       fail the gate for all 54 routes before a single screen rendered. It is
+       also why the show/hide toggle is `type="button"` and starts on
+       `type="password"` — a bare <button> in a <form> submits by default, which
+       would give the gate two matches for `button[type=submit]`. -->
   <div class="flex min-h-screen">
     <!-- Left: the pitch. Hidden below lg with `max-lg:hidden`, never a bare
          `hidden` — Quasar ships `.hidden { display:none !important }` unlayered,
@@ -93,13 +103,22 @@
         <p class="mt-1.5 text-sm text-muted">
           {{
             isSignUp
-              ? 'Use your work email — it is how we match you to your company workspace.'
+              ? 'Use your work email. It is how we match you to your company workspace.'
               : 'Sign in to pick up where your pipeline left off.'
           }}
         </p>
 
-        <form class="mt-8 flex flex-col gap-4" @submit.prevent="submit">
-          <FormField label="Work email" required for-id="login-email">
+        <!-- `novalidate`: the messages below are ours. Left to the browser, an
+             invalid address raises a native bubble that disappears on the next
+             keystroke, is styled by the OS, and cannot say the sign-up-specific
+             things this form needs to say about passwords. -->
+        <form class="mt-8 flex flex-col gap-4" novalidate @submit="submit">
+          <FormField
+            label="Work email"
+            required
+            for-id="login-email"
+            :error="emailError"
+          >
             <SfereInput
               id="login-email"
               v-model="email"
@@ -107,84 +126,191 @@
               placeholder="you@yourcompany.com"
               name="email"
               autocomplete="email"
+              :invalid="Boolean(emailError)"
+              :described-by="emailError ? 'login-email-error' : ''"
             />
+
+            <!-- A warning, not an error, and never a blocker. A consumer
+                 mailbox is a legitimate address for a contractor or a small
+                 company; what it cannot do is domain-match anyone into a
+                 shared workspace, so signing up with one means a workspace of
+                 one. Better said here than discovered when a colleague signs
+                 up and lands somewhere else. -->
+            <p
+              v-if="showsPersonalEmailWarning"
+              class="flex items-start gap-1.5 text-sfere-xs text-sfere-warn"
+            >
+              <svg
+                viewBox="0 0 256 256"
+                class="mt-px size-3.5 shrink-0"
+                fill="currentColor"
+                aria-hidden="true"
+              >
+                <path
+                  d="M128 24a104 104 0 1 0 104 104A104.11 104.11 0 0 0 128 24m-8 56a8 8 0 0 1 16 0v56a8 8 0 0 1-16 0Zm8 104a12 12 0 1 1 12-12a12 12 0 0 1-12 12"
+                />
+              </svg>
+              <!-- `min-w-0 flex-1`: Quasar's unlayered `.flex` sets
+                   `flex-wrap: wrap`, so a text child wider than the row drops
+                   below the icon instead of sitting beside it. -->
+              <span class="min-w-0 flex-1"
+                >This looks like a personal email. You can carry on, but
+                teammates on
+                <strong class="font-medium">{{ personalDomain }}</strong> will
+                not be matched into your workspace. Use your company address if
+                you want them to join it.</span
+              >
+            </p>
           </FormField>
 
           <FormField
             label="Password"
             required
             for-id="login-password"
-            :hint="isSignUp ? 'At least 8 characters.' : ''"
+            :error="passwordError"
+            :hint="isSignUp && !passwordError ? PASSWORD_HINT : ''"
           >
             <SfereInput
               id="login-password"
               v-model="password"
-              type="password"
+              :type="passwordVisible ? 'text' : 'password'"
               placeholder="••••••••"
               name="password"
               :autocomplete="isSignUp ? 'new-password' : 'current-password'"
-            />
+              :invalid="Boolean(passwordError)"
+              :described-by="
+                passwordError
+                  ? 'login-password-error'
+                  : isSignUp
+                    ? 'login-password-hint'
+                    : ''
+              "
+            >
+              <template #trailing>
+                <!-- `type="button"` is load-bearing, not tidiness: a bare
+                     <button> inside a <form> defaults to submit, which would
+                     give scripts/smoke.mjs two matches for
+                     `button[type=submit]` and fail sign-in for all 54 routes. -->
+                <button
+                  type="button"
+                  class="grid size-7 place-items-center rounded-sfere-sm text-muted transition-colors duration-150 hover:text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sfere-400"
+                  :aria-label="
+                    passwordVisible ? 'Hide password' : 'Show password'
+                  "
+                  :aria-pressed="passwordVisible ? 'true' : 'false'"
+                  @click="passwordVisible = !passwordVisible"
+                >
+                  <SfereIcon
+                    :name="passwordVisible ? 'eye-slash' : 'eye'"
+                    size="lg"
+                  />
+                </button>
+              </template>
+            </SfereInput>
+
+            <!-- The meter reports; `signUpPasswordProblem` decides. They are
+                 separate on purpose: a password can clear the rule and still be
+                 worth improving, and a bar that only ever showed pass/fail
+                 would say nothing the error message does not. -->
+            <div v-if="isSignUp && password" class="flex flex-col gap-1.5 pt-1">
+              <div class="flex items-center gap-1" aria-hidden="true">
+                <span
+                  v-for="segment in 4"
+                  :key="segment"
+                  class="h-1 flex-1 rounded-full transition-colors duration-200"
+                  :class="
+                    segment <= strength.score ? strengthBarClass : 'bg-line2'
+                  "
+                ></span>
+              </div>
+              <!-- No `aria-live`. It would announce "Weak... Fair... Good" on
+                   every keystroke; the moment that actually needs announcing is
+                   a rejected submit, and FormField's error carries
+                   `role="alert"` for that. -->
+              <p class="text-sfere-xs" :class="strengthTextClass"
+                >Password strength: {{ strength.label }}</p
+              >
+            </div>
           </FormField>
 
-          <SfereButton
-            type="submit"
-            :loading="loading"
-            :disabled="!canSubmit"
-            block
-            class="mt-2"
-            >{{ isSignUp ? 'Create account' : 'Sign in' }}</SfereButton
-          >
+          <!-- Enabled unless a request is already in flight. The button used to
+               be disabled until both fields passed, which is what QA filed as
+               "invalid input is rejected completely silently" — a control that
+               does nothing and says nothing gives the user no way to find out
+               what is wrong with what they typed. Validation now runs on submit
+               and puts a sentence under the offending field. -->
+          <SfereButton type="submit" :loading="loading" block class="mt-2">{{
+            isSignUp ? 'Create account' : 'Sign in'
+          }}</SfereButton>
         </form>
 
-        <p class="mt-6 text-center text-sm text-muted">
-          <template v-if="isSignUp">
-            Already have an account?
-            <button
-              type="button"
-              class="font-medium text-brand hover:underline"
-              @click="mode = 'signin'"
-            >
-              Sign in
-            </button>
-          </template>
-          <template v-else>
-            Don't have an account?
-            <button
-              type="button"
-              class="font-medium text-brand hover:underline"
-              @click="mode = 'signup'"
-            >
-              Create one
-            </button>
-          </template>
-        </p>
+        <!-- `sfere-flush` and a `gap`, not `mt-6` on each <p>. A layered
+             `mt-*` on a paragraph computes to 0 against Quasar's unlayered
+             paragraph margin, so the two lines below used to sit against the
+             button on a rhythm nobody chose. See CLAUDE.md collision 5. -->
+        <div class="sfere-flush mt-6 flex flex-col gap-5">
+          <p class="text-center text-sm text-muted">
+            <template v-if="isSignUp">
+              Already have an account?
+              <router-link
+                :to="otherModeRoute"
+                class="font-medium text-brand hover:underline"
+              >
+                Sign in
+              </router-link>
+            </template>
+            <template v-else>
+              Don't have an account?
+              <router-link
+                :to="otherModeRoute"
+                class="font-medium text-brand hover:underline"
+              >
+                Create one
+              </router-link>
+            </template>
+          </p>
 
-        <!-- Said here rather than discovered at the approval queue: someone
-             signing up second on a domain needs to know why they are waiting. -->
-        <p v-if="isSignUp" class="mt-6 text-center text-xs text-subtle">
-          The first person from a company domain becomes the workspace Owner.
-          Anyone after that joins the same workspace once an Owner or Admin
-          approves them.
-        </p>
+          <!-- Said here rather than discovered at the approval queue: someone
+               signing up second on a domain needs to know why they are
+               waiting. -->
+          <p v-if="isSignUp" class="text-center text-xs text-subtle">
+            The first person from a company domain becomes the workspace Owner.
+            Anyone after that joins the same workspace once an Owner or Admin
+            approves them.
+          </p>
+        </div>
       </div>
     </main>
 
-    <!-- The post-auth transition. Mounted only after auth actually succeeded,
-         so it can never be the thing standing between a bad password and its
-         error message. -->
+    <!-- The post-registration transition, and SIGN-UP ONLY. It exists because a
+         brand-new account really is being provisioned behind it; a returning
+         user has nothing being set up, and telling them otherwise for two and a
+         half seconds on every sign-in is both untrue and a delay. Sign-in now
+         goes straight to the destination. Mounted only after auth succeeded, so
+         it can never be the thing standing between a bad password and its error
+         message. -->
     <AccountSetupOverlay v-if="settingUp" @done="finish" />
   </div>
 </template>
 
 <script setup>
-import { computed, ref } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { Notify } from 'quasar'
 import { useRouter, useRoute } from 'vue-router'
 import { useAuth } from '@/composables/useAuth'
 import { loadMe, accountMissing } from '@/composables/useMe'
+import {
+  emailDomain,
+  emailProblem,
+  isPersonalEmail,
+  passwordStrength,
+  signInPasswordProblem,
+  signUpPasswordProblem
+} from '@/lib/authValidation'
 import AccountSetupOverlay from '@/components/onboarding/AccountSetupOverlay.vue'
 import FormField from '@/components/ui/FormField.vue'
 import SfereButton from '@/components/ui/SfereButton.vue'
+import SfereIcon from '@/components/ui/SfereIcon.vue'
 import SfereInput from '@/components/ui/SfereInput.vue'
 import SfereLogo from '@/components/ui/SfereLogo.vue'
 
@@ -192,23 +318,68 @@ const router = useRouter()
 const route = useRoute()
 const { loading, signIn, signUp, logOut } = useAuth()
 
-const mode = ref('signin')
 const email = ref('')
 const password = ref('')
+const passwordVisible = ref(false)
+const emailError = ref('')
+const passwordError = ref('')
 const settingUp = ref(false)
 
-const isSignUp = computed(() => mode.value === 'signup')
+// The mode is the route, not a ref. Both routes render this component, so
+// vue-router reuses the instance and whatever has been typed survives the
+// switch — which is the point of making it navigation rather than a toggle.
+const isSignUp = computed(() => route.name === 'signup')
 
-// Deliberately not a work-email check. Personal-domain rejection was proposed
-// and dropped: it blocks contractors, agencies and anyone whose company uses a
-// consumer domain, for a benefit — domain-matching a workspace — the backend
-// gets from the address either way.
-const canSubmit = computed(
+const PASSWORD_HINT =
+  'At least 8 characters, mixing three of: lower case, upper case, numbers, symbols.'
+
+// Carries `redirect` across the switch. Without it, someone who followed a deep
+// link to /errors, got bounced to sign-in and then decided to register would
+// land on Home instead of where they were going.
+const otherModeRoute = computed(() => ({
+  name: isSignUp.value ? 'login' : 'signup',
+  query: route.query.redirect ? { redirect: route.query.redirect } : {}
+}))
+
+const personalDomain = computed(() => emailDomain(email.value))
+
+const showsPersonalEmailWarning = computed(
   () =>
-    Boolean(email.value) &&
-    password.value.length >= (isSignUp.value ? 8 : 1) &&
-    !loading.value
+    isSignUp.value &&
+    !emailError.value &&
+    !emailProblem(email.value) &&
+    isPersonalEmail(email.value)
 )
+
+const strength = computed(() => passwordStrength(password.value))
+
+const STRENGTH_BAR = {
+  danger: 'bg-sfere-danger',
+  warning: 'bg-sfere-warn',
+  success: 'bg-sfere-success'
+}
+
+const STRENGTH_TEXT = {
+  danger: 'text-sfere-danger',
+  warning: 'text-sfere-warn',
+  success: 'text-sfere-success'
+}
+
+const strengthBarClass = computed(() => STRENGTH_BAR[strength.value.tone])
+const strengthTextClass = computed(() => STRENGTH_TEXT[strength.value.tone])
+
+// An error is a verdict on what was submitted, so it goes the moment the value
+// it judged changes — leaving it up while someone fixes the field is how a form
+// ends up shouting at a value that is already correct.
+watch(email, () => (emailError.value = ''))
+watch(password, () => (passwordError.value = ''))
+
+// Switching between sign-in and sign-up changes the password rule, so a message
+// written under the other rule must not survive the trip.
+watch(isSignUp, () => {
+  emailError.value = ''
+  passwordError.value = ''
+})
 
 const POINTS = [
   {
@@ -223,7 +394,7 @@ const POINTS = [
   },
   {
     title: 'Send it anywhere',
-    body: 'A warehouse, an ad platform, a webhook — a pipe per destination.',
+    body: 'A warehouse, an ad platform, a webhook. One pipe per destination.',
     icon: 'M5 12h14m-6-6 6 6-6 6'
   }
 ]
@@ -237,16 +408,46 @@ const apiHost = computed(() => {
   }
 })
 
-// Where to go once the transition finishes. Captured at submit time rather than
-// read inside `finish()` so a query change mid-animation cannot redirect
-// somewhere the user never asked for.
+// Where to go once auth settles. Captured at submit time rather than read later
+// so a query change mid-flight cannot redirect somewhere the user never asked
+// for.
 const destination = ref('/')
 
-async function submit() {
+// SfereInput owns its <input> and exposes no ref, so the id it was given is the
+// handle. Focusing the first field that failed is the difference between a
+// message you have to go looking for and one you are standing in.
+function focusField(id) {
+  document.getElementById(id)?.focus()
+}
+
+// Returns true when the form is worth sending. Both fields are always checked,
+// so someone with two problems is told about both rather than one per attempt.
+function validate() {
+  emailError.value = emailProblem(email.value)
+  passwordError.value = isSignUp.value
+    ? signUpPasswordProblem(password.value)
+    : signInPasswordProblem(password.value)
+
+  if (emailError.value) {
+    focusField('login-email')
+    return false
+  }
+  if (passwordError.value) {
+    focusField('login-password')
+    return false
+  }
+  return true
+}
+
+async function submit(event) {
+  event.preventDefault()
+  if (loading.value) return
+  if (!validate()) return
+
   // Sign-up provisions the backend account (POST /v1/register) then signs in,
   // so a success here already means a real account exists.
   if (isSignUp.value) {
-    if (await signUp(email.value, password.value)) {
+    if (await signUp(email.value.trim(), password.value)) {
       destination.value = route.query.redirect || '/'
       settingUp.value = true
     }
@@ -256,7 +457,7 @@ async function submit() {
   // Sign-in: auth can succeed for an identity that has no backend account
   // (self-provisioning is disabled server-side). Confirm the account exists via
   // GET /v1/me; if not, sign back out rather than strand the user.
-  if (!(await signIn(email.value, password.value))) return
+  if (!(await signIn(email.value.trim(), password.value))) return
   await loadMe()
   if (accountMissing.value) {
     await logOut()
@@ -267,8 +468,10 @@ async function submit() {
     })
     return
   }
-  destination.value = route.query.redirect || '/'
-  settingUp.value = true
+  // No setup overlay for a returning user: nothing is being set up, and a
+  // fixed 2.5s of "Opening your workspace" on every sign-in is a delay
+  // pretending to be work.
+  router.replace(route.query.redirect || '/')
 }
 
 function finish() {

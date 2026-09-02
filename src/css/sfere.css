@@ -427,3 +427,48 @@
     transform: none;
   }
 }
+
+/* ------------------------------------------------------------------
+   PARAGRAPH BLOCK MARGINS — the two cases where Quasar's are always wrong.
+
+   Quasar's base stylesheet ships an unlayered `p { margin: 0 0 16px }`.
+   Unlayered beats layered, so every `mt-*` / `mb-*` a screen puts on a `<p>`
+   computes to nothing (docs/ui-conventions.md rule 11) and the 16px stays.
+   Two consequences ship as visible bugs, and neither is ever what the author
+   meant:
+
+   1. A `<p>` sharing a row with a control. `items-center` centres the MARGIN
+      box, so a paragraph beside a button sits 8px high — which is why "Pick one
+      to continue." floated above its Continue button, the setup strip's line
+      floated above "See full setup progress", and "Setting up Web SDK …"
+      floated above Change. Keyed on `items-center`/`items-baseline` rather than
+      on `flex`, because a container that declares cross-axis alignment is
+      exactly the one the phantom margin misaligns, and every such container in
+      this repo sets its own `gap`.
+
+   2. A trailing `<p>`. Sixteen pixels of dead space under the last line of a
+      card, which knocks its footer off the baseline the cards beside it sit on.
+
+   Deliberately NOT a blanket `p { margin: 0 }`: paragraphs that stack inside
+   prose still want their rhythm, and a global reset would silently retighten
+   every screen at once with no gate able to see it. Space a `<p>` stack with
+   the parent's `gap`, which has no Quasar counterpart and therefore applies.
+   ------------------------------------------------------------------ */
+[class~='items-center'] > p,
+[class~='items-baseline'] > p {
+  margin: 0;
+}
+
+p:last-child {
+  margin-bottom: 0;
+}
+
+/* The opt-in for the third case: a container that already spaces its own
+   children with grid/flex `gap`. CSS cannot ask whether a parent declares a
+   gap, so this one is a class the component adds — NoticeBanner stacks a title
+   and a message 4px apart and got 20px, because the non-final `<p>` still
+   carried Quasar's 16px on top of the gap. Reach for it only where the parent
+   really does own the spacing; a plain prose column still wants its rhythm. */
+.sfere-flush > p {
+  margin: 0;
+}

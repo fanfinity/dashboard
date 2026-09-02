@@ -1,3 +1,4 @@
+import { NOT_KNOWN } from '@/lib/emptyValue'
 import { computed, ref } from 'vue'
 import { useQuasar } from 'quasar'
 import { useMockResource } from '@/composables/useMockResource'
@@ -44,12 +45,12 @@ const TIME = new Intl.DateTimeFormat('en-GB', {
  *
  * @example
  * formatCount(1204) // '1,204'
- * formatCount(null) // '—'
+ * formatCount(null) // NOT_KNOWN
  */
 export function formatCount(n) {
-  if (n === null || n === undefined || n === '') return '—'
+  if (n === null || n === undefined || n === '') return NOT_KNOWN
   const value = Number(n)
-  return Number.isFinite(value) ? value.toLocaleString('en-GB') : '—'
+  return Number.isFinite(value) ? value.toLocaleString('en-GB') : NOT_KNOWN
 }
 
 /**
@@ -58,10 +59,10 @@ export function formatCount(n) {
  * @param {string|null|undefined} iso
  * @returns {string}
  */
-export function formatDateTime(iso) {
-  if (!iso) return '—'
+export function formatDateTime(iso, fallback = NOT_KNOWN) {
+  if (!iso) return fallback
   const d = new Date(iso)
-  if (Number.isNaN(d.getTime())) return '—'
+  if (Number.isNaN(d.getTime())) return NOT_KNOWN
   return `${DATE.format(d)} · ${TIME.format(d)} UTC`
 }
 
@@ -83,10 +84,10 @@ export function formatTime(iso) {
  * @param {string|null|undefined} iso
  * @returns {string}
  */
-export function formatDay(iso) {
-  if (!iso) return '—'
+export function formatDay(iso, fallback = NOT_KNOWN) {
+  if (!iso) return fallback
   const d = new Date(iso)
-  return Number.isNaN(d.getTime()) ? '—' : DATE.format(d)
+  return Number.isNaN(d.getTime()) ? NOT_KNOWN : DATE.format(d)
 }
 
 // The nine entity kinds `error-stats.json` buckets by. Kept here rather than
@@ -115,7 +116,7 @@ const ENTITY_TYPE_LABELS = {
 
 /** `'dwh_sync'` -> `'DWH sync'`, falling back to a de-underscored string. */
 function labelFor(map, key) {
-  if (!key) return '—'
+  if (!key) return NOT_KNOWN
   if (map[key]) return map[key]
   const words = String(key).replaceAll('_', ' ')
   return words.charAt(0).toUpperCase() + words.slice(1)
@@ -157,7 +158,7 @@ export function useMonitoringToasts() {
   function toast(message) {
     $q.notify({
       message,
-      caption: 'Local preview only — no backend is connected yet.',
+      caption: 'Local preview only. No backend is connected yet.',
       color: 'dark',
       timeout: 2500
     })
@@ -401,14 +402,14 @@ export function useMonitoringErrors() {
         label: 'Errors in the last hour',
         value: Number.isFinite(totalLastHour.value)
           ? formatCount(totalLastHour.value)
-          : '—',
+          : NOT_KNOWN,
         hint: 'Across every entity kind'
       },
       {
         label: 'Errors in the last 24 hours',
         value: Number.isFinite(totalLast24Hours.value)
           ? formatCount(totalLast24Hours.value)
-          : '—',
+          : NOT_KNOWN,
         hint: 'Hourly breakdown below'
       },
       {
@@ -418,7 +419,7 @@ export function useMonitoringErrors() {
       },
       {
         label: 'Loudest issue',
-        value: top ? top.countLabel : '—',
+        value: top ? top.countLabel : NOT_KNOWN,
         hint: top ? `${top.code} on ${top.entityName}` : 'Nothing logged'
       }
     ]

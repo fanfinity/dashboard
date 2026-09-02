@@ -2,7 +2,7 @@
   <q-page class="p-6">
     <PageHeader
       title="Journeys"
-      subtitle="Multi-step orchestration over an audience — wait, branch, send — measured against a goal."
+      subtitle="Multi-step orchestration over an audience: wait, branch, send, all measured against a goal."
     >
       <template #actions>
         <ToolbarSearch v-model="query" placeholder="Search journeys..." />

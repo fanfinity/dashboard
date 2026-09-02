@@ -23,9 +23,9 @@
         </span>
         <div>
           <p class="text-sm font-semibold text-ink"
-            >Verified — {{ source.name }} is live</p
+            >Verified. {{ source.name }} is live</p
           >
-          <p class="mt-1 text-sm text-muted">{{ verifiedMessage }}</p>
+          <p class="mt-1! text-sm text-muted">{{ verifiedMessage }}</p>
         </div>
       </div>
     </CardPanel>
@@ -38,8 +38,8 @@
         <StatusBadge tone="neutral" label="Pull source" />
       </template>
       <p class="text-sm text-muted">
-        {{ source.name }} is a cloud app — Sfere signs in and pulls from it on a
-        schedule, so there is no snippet, no write key and no endpoint to wire
+        {{ source.name }} is a cloud app, so Sfere signs in and pulls from it on
+        a schedule, so there is no snippet, no write key and no endpoint to wire
         up. Its credentials live with the connector, and the first sync starts
         on its own.
       </p>
@@ -84,18 +84,26 @@
       />
 
       <CardPanel>
-        <TabNav v-model="method" :tabs="methodTabs" />
+        <!-- A source is only offered the methods that fit it, so a mobile
+             source has exactly one. A one-item tab bar is decoration that looks
+             like a choice, so it is not rendered — the lede below already names
+             the method. -->
+        <TabNav
+          v-if="methodTabs.length > 1"
+          v-model="method"
+          :tabs="methodTabs"
+        />
 
-        <p v-if="active?.lede" class="mb-4 text-sm text-muted">{{
+        <p v-if="active?.lede" class="mb-4! text-sm text-muted">{{
           active.lede
         }}</p>
 
         <div class="flex flex-col gap-5">
           <div v-for="(block, i) in active?.blocks ?? []" :key="i">
-            <p v-if="block.title" class="mb-1 text-sm font-medium text-ink">{{
+            <p v-if="block.title" class="mb-1! text-sm font-medium text-ink">{{
               block.title
             }}</p>
-            <p v-if="block.body" class="mb-2 text-xs text-muted">{{
+            <p v-if="block.body" class="mb-2! text-xs text-muted">{{
               block.body
             }}</p>
             <SfereCode :code="block.code" :filename="block.filename">
@@ -119,7 +127,7 @@
         <!-- Optional attributes, for the tab that has them. A table rather than
              prose: the reader is scanning for one row, not reading. -->
         <div v-if="active?.attributes?.length" class="mt-5">
-          <p class="mb-2 text-sm font-medium text-ink">Optional attributes</p>
+          <p class="mb-2! text-sm font-medium text-ink">Optional attributes</p>
           <SfereTable
             :columns="ATTRIBUTE_COLUMNS"
             :rows="active.attributes"
@@ -133,7 +141,7 @@
           </SfereTable>
         </div>
 
-        <p v-if="active?.note" class="mt-4 text-xs text-muted">{{
+        <p v-if="active?.note" class="mt-4! text-xs text-muted">{{
           active.note
         }}</p>
       </CardPanel>
@@ -158,7 +166,7 @@
 
         <p class="text-sm text-muted">
           Load a page with the snippet installed, then check. We look for a real
-          event that reached this source — not just whether the tag is on the
+          event that reached this source, not just whether the tag is on the
           page, because a tag can be present and still be blocked by a consent
           tool or a mistyped key.
         </p>
@@ -272,21 +280,21 @@ const shownKey = computed(() => {
 
 const verifiedMessage = computed(() =>
   props.preview
-    ? 'Simulated for this preview — no events were actually received, because nothing was saved to the backend.'
-    : 'A real event reached this source, so the whole path — snippet, key, ingest — is working end to end.'
+    ? 'Simulated for this preview. No events were actually received, because nothing was saved to the backend.'
+    : 'A real event reached this source, so the whole path (snippet, key, ingest) is working end to end.'
 )
 
 // The sentence after "N events received". Two different truths, and the old copy
 // only ever told one of them.
 const arrivedNext = computed(() =>
   props.deliversTo
-    ? `They are already being delivered to ${props.deliversTo} — nothing else to set up.`
-    : 'Nothing else to do here — add a destination next so they have somewhere to go.'
+    ? `They are already being delivered to ${props.deliversTo}, so there is nothing else to set up.`
+    : 'Nothing else to do here. Add a destination next so they have somewhere to go.'
 )
 
 const FIXES = [
   'Did you save and publish the page after adding the snippet?',
-  'View the page source, not the editor — is the tag actually in the served HTML?',
+  'View the page source, not the editor. Is the tag actually in the served HTML?',
   'Is an ad blocker or a consent tool on that page blocking third-party scripts?',
   'Does the write key in the snippet match the one shown above?',
   'Behind a CDN or a cache? A change can take a few minutes to go live.'

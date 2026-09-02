@@ -119,7 +119,7 @@
           v-if="!models.length"
           variant="inline"
           title="No data models yet"
-          description="A warehouse attribute is computed over a model. Create one, then come back — or switch this attribute to Realtime."
+          description="A warehouse attribute is computed over a model. Create one and come back, or switch this attribute to Realtime."
         >
           <template #cta>
             <button
@@ -284,7 +284,7 @@
           Cancel
         </button>
         <p class="text-xs text-subtle"
-          >Nothing is persisted yet — there is no backend behind this form.</p
+          >Nothing is persisted yet. There is no backend behind this form.</p
         >
       </StickyActionBar>
     </form>
@@ -321,13 +321,13 @@ const KINDS = [
     value: 'realtime',
     label: 'Realtime',
     description:
-      'Computed from the event stream as events arrive — a last-seen city, the newest consent flag.'
+      'Computed from the event stream as events arrive: a last-seen city, the newest consent flag.'
   },
   {
     value: 'warehouse',
     label: 'Warehouse',
     description:
-      'Computed over a warehouse model on its refresh cycle — a lifetime spend, a season-ticket tier.'
+      'Computed over a warehouse model on its refresh cycle: a lifetime spend, a season-ticket tier.'
   }
 ]
 
@@ -499,7 +499,7 @@ function submit() {
   // not there. Pretending otherwise would be the dishonest option.
   $q.notify({
     message: `“${form.name.trim()}” configured`,
-    caption: 'Local preview only — no backend is connected yet.',
+    caption: 'Local preview only. No backend is connected yet.',
     color: 'dark',
     timeout: 2500
   })

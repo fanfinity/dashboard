@@ -1,3 +1,4 @@
+import { NOT_KNOWN } from '@/lib/emptyValue'
 import { useQuasar } from 'quasar'
 
 /**
@@ -54,9 +55,9 @@ export function timeOf(iso) {
  * @returns {string}
  */
 export function formatCount(value) {
-  if (value === null || value === undefined || value === '') return '—'
+  if (value === null || value === undefined || value === '') return NOT_KNOWN
   const n = Number(value)
-  return Number.isFinite(n) ? INTEGER.format(n) : '—'
+  return Number.isFinite(n) ? INTEGER.format(n) : NOT_KNOWN
 }
 
 /**
@@ -67,7 +68,7 @@ export function formatCount(value) {
  */
 export function formatPercent(ratio) {
   const n = Number(ratio)
-  return Number.isFinite(n) ? PERCENT.format(n) : '—'
+  return Number.isFinite(n) ? PERCENT.format(n) : NOT_KNOWN
 }
 
 /**
@@ -105,7 +106,7 @@ export function trendDirection(ratio) {
  */
 export function formatAmount(value, unit) {
   const n = formatCount(value)
-  if (n === '—' || !unit) return n
+  if (n === NOT_KNOWN || !unit) return n
   return CURRENCIES.has(unit) ? `${unit} ${n}` : `${n} ${unit}`
 }
 
@@ -115,9 +116,9 @@ export function formatAmount(value, unit) {
  * @param {string|null|undefined} iso
  * @returns {string}
  */
-export function formatDate(iso) {
+export function formatDate(iso, fallback = NOT_KNOWN) {
   const t = timeOf(iso)
-  return t === null ? '—' : DATE.format(t)
+  return t === null ? fallback : DATE.format(t)
 }
 
 /**
@@ -127,9 +128,9 @@ export function formatDate(iso) {
  * @param {string|null|undefined} iso
  * @returns {string}
  */
-export function formatDateTime(iso) {
+export function formatDateTime(iso, fallback = NOT_KNOWN) {
   const t = timeOf(iso)
-  return t === null ? '—' : `${DATE_TIME.format(t)} UTC`
+  return t === null ? fallback : `${DATE_TIME.format(t)} UTC`
 }
 
 /**
@@ -161,7 +162,7 @@ export function useEngageAudienceToasts() {
   function toast(message) {
     $q.notify({
       message,
-      caption: 'Local preview only — no backend is connected yet.',
+      caption: 'Local preview only. No backend is connected yet.',
       color: 'dark',
       timeout: 2500
     })

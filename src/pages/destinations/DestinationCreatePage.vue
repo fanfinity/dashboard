@@ -67,7 +67,7 @@
             id="destination-name"
             v-model="form.name"
             type="text"
-            placeholder="e.g. Meta CAPI — production"
+            placeholder="e.g. Meta CAPI production"
             class="h-9 rounded-lg border border-line2 bg-white px-2.5 text-sm text-ink outline-none placeholder:text-subtle"
           />
         </FormField>
@@ -119,7 +119,7 @@
       <FormSection
         v-if="selected.secrets?.length"
         title="Credentials"
-        description="Stored as workspace secrets and referenced by key — never shown again after saving."
+        description="Stored as workspace secrets and referenced by key. Never shown again after saving."
       >
         <FormField
           v-for="secret in selected.secrets"
@@ -157,8 +157,8 @@
           Cancel
         </button>
         <p v-if="!isReal" class="min-w-0 flex-1 text-xs text-subtle"
-          >Local preview — switch Settings → Data source to “real” to create
-          this destination on the backend.</p
+          >Local preview. Switch Settings → Data source to “real” to create this
+          destination on the backend.</p
         >
       </StickyActionBar>
     </form>
@@ -298,7 +298,7 @@ async function submit() {
   // Mock mode: writing back to public/data would be a lie in a file other
   // packets read — so the toast says what actually happened.
   toast(
-    `“${form.value.name}” created from ${selected.value.name} — demo data, nothing was saved.`
+    `“${form.value.name}” created from ${selected.value.name}. Demo data, nothing was saved.`
   )
   saving.value = false
   router.push({ name: 'destinations' })

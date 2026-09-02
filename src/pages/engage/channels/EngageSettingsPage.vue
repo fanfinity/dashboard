@@ -2,7 +2,7 @@
   <q-page class="p-6">
     <PageHeader
       title="Engage settings"
-      subtitle="Module-level rules every campaign, journey and channel obeys — how much the operator may do on its own, and how often a fan may be messaged."
+      subtitle="Module-level rules every campaign, journey and channel obeys: how much the operator may do on its own, and how often a fan may be messaged."
     >
       <template #actions>
         <button
@@ -151,7 +151,7 @@
               Discard
             </button>
             <p class="text-xs text-subtle"
-              >Nothing is persisted yet — there is no backend behind this
+              >Nothing is persisted yet. There is no backend behind this
               form.</p
             >
           </div>
@@ -237,7 +237,7 @@
           <NoticeBanner
             tone="warn"
             title="Quiet hours do not hold transactional mail"
-            message="Ticket confirmations and password resets are sent regardless — only campaign and journey messages wait."
+            message="Ticket confirmations and password resets are sent regardless. Only campaign and journey messages wait."
           />
 
           <div class="flex flex-wrap items-center gap-2">
@@ -257,7 +257,7 @@
               Discard
             </button>
             <p class="text-xs text-subtle"
-              >Nothing is persisted yet — there is no backend behind this
+              >Nothing is persisted yet. There is no backend behind this
               form.</p
             >
           </div>
@@ -432,7 +432,7 @@ const limitsDirty = computed(
 const approvalHint = computed(() =>
   operatorForm.mode === 'autopilot'
     ? 'Anything riskier than this waits for a human in the work log.'
-    : 'Only applies on autopilot — in Propose mode every change waits for a human.'
+    : 'Only applies on autopilot. In Propose mode every change waits for a human.'
 )
 
 const consentFacts = computed(() => {
@@ -466,7 +466,7 @@ const consentFacts = computed(() => {
 function notifyLocal(message) {
   $q.notify({
     message,
-    caption: 'Local preview only — no backend is connected yet.',
+    caption: 'Local preview only. No backend is connected yet.',
     color: 'dark',
     timeout: 2500
   })

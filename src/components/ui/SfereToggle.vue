@@ -27,16 +27,34 @@ const props = defineProps({
 
 const emit = defineEmits(['update:modelValue'])
 
+// OFF IS NOT THE SAME AS UNAVAILABLE, and the off track used to be drawn in
+// `--color-sfere-line` — the hairline token, the same grey as a card border. A
+// control the colour of chrome reads as chrome, so people stopped clicking the
+// ones that were merely off. Off is now a solid mid-grey with a hover state and
+// a pointer cursor; disabled keeps the pale hairline it gave up.
+//
+// The disabled half is deliberately a BACKGROUND change rather than a fade,
+// because the fade is not ours to set: Quasar ships unlayered
+// `[disabled] { opacity: .6 !important; cursor: not-allowed !important }`, so
+// `disabled:opacity-*` and `disabled:cursor-not-allowed` are dead classes here
+// (this is cascade collision #2 in CLAUDE.md, in its `!important` form). What a
+// layered utility can still win is the colour — `:disabled` outranks the plain
+// state classes on specificity, so `disabled:bg-*` applies whatever the order.
+// `enabled:` on the hover keeps a disabled track from lighting up under the
+// pointer, which CSS `:hover` would otherwise happily do.
 const trackClasses = computed(() => [
-  'relative inline-flex h-6 w-11 shrink-0 items-center rounded-full border border-transparent',
+  'relative inline-flex h-6 w-11 shrink-0 items-center rounded-full border',
   'transition-colors duration-200 ease-sfere-ui',
   'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sfere-500/60 focus-visible:ring-offset-2',
-  'disabled:cursor-not-allowed disabled:opacity-50',
+  'enabled:cursor-pointer',
   props.modelValue
-    ? 'bg-sfere-brand-fill'
+    ? 'border-transparent bg-sfere-brand-fill enabled:hover:bg-sfere-brand-text'
     : props.onDark
-      ? 'bg-white/15'
-      : 'bg-sfere-line',
+      ? 'border-white/25 bg-white/25 enabled:hover:bg-white/35'
+      : 'border-sfere-fg-muted/25 bg-sfere-fg-muted/50 enabled:hover:bg-sfere-fg-muted/65',
+  props.onDark
+    ? 'disabled:border-white/10 disabled:bg-white/10'
+    : 'disabled:border-sfere-line disabled:bg-sfere-line',
   props.onDark && 'focus-visible:ring-offset-transparent'
 ])
 

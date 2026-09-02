@@ -111,8 +111,8 @@
              line and strands the control beside it. -->
         <p class="min-w-0 flex-1 text-sm text-muted">
           Setting up
-          <span class="font-medium text-ink">{{ selectedTemplate?.name }}</span>
-          — {{ selectedTemplate?.description }}
+          <span class="font-medium text-ink">{{ selectedTemplate?.name }}</span
+          >. {{ selectedTemplate?.description }}
         </p>
         <SfereButton variant="ghost" size="sm" @click="backToIntent"
           >Change</SfereButton
@@ -128,7 +128,7 @@
           required
           for-id="source-name"
           :error="errors.name"
-          hint="Shown everywhere this source is referenced — pick something a teammate will recognise."
+          hint="Shown everywhere this source is referenced, so pick something a teammate will recognise."
         >
           <SfereInput
             id="source-name"
@@ -172,7 +172,7 @@
           required
           for-id="source-store-id"
           :error="errors.storeId"
-          hint="The store this source connects to — found in your Zid dashboard."
+          hint="The store this source connects to. Find it in your Zid dashboard."
         >
           <SfereInput
             id="source-store-id"
@@ -195,7 +195,7 @@
         >
           <p class="text-sm font-medium text-ink">Browser write key</p>
           <p class="mt-1 text-xs text-muted">
-            Public by design — it belongs in client-side code, the same way a
+            Public by design, so it belongs in client-side code, the same way a
             Google Analytics or Meta Pixel id does. Issued automatically.
           </p>
         </div>
@@ -207,7 +207,7 @@
             >
             <p class="mt-1 text-xs text-muted">
               Only if you will also send events from your own backend for this
-              source. Keep that one private — never in client-side code.
+              source. Keep that one private, never in client-side code.
             </p>
           </div>
           <SfereToggle
@@ -260,7 +260,7 @@
           >Back</SfereButton
         >
         <p v-if="!isReal" class="min-w-0 flex-1 text-xs text-subtle"
-          >Demo data mode — this will walk you through setup but save nothing.
+          >Demo data mode. This will walk you through setup but save nothing.
           Switch Settings → Data source to real to persist.</p
         >
       </StickyActionBar>
@@ -461,7 +461,7 @@ const continueLabel = computed(() =>
 
 const headerTitle = computed(() => {
   if (step.value === 'install')
-    return `Install & confirm — ${created.value?.name}`
+    return `Install & confirm ${created.value?.name}`
   if (step.value === 'configure' && selectedTemplate.value) {
     return `Add a ${selectedTemplate.value.name} source`
   }
@@ -475,7 +475,7 @@ const headerSubtitle = computed(() => {
   if (step.value === 'configure') {
     return 'This creates the place your events land. Setup instructions come right after.'
   }
-  return "Tell us what you're tracking — we'll show you exactly what to do next."
+  return "Tell us what you're tracking, and we'll show you exactly what to do next."
 })
 
 // The primary action on step 3. "Add a destination" is only right when we KNOW
@@ -676,7 +676,7 @@ async function copyValue({ label, value }) {
 function onVerified() {
   if (preview.value) return
   $q.notify({
-    message: 'Source verified — events are arriving',
+    message: 'Source verified. Events are arriving.',
     // The caption used to hand out homework that was already done. Where a pipe
     // was provisioned the events have somewhere to go, and saying so is the
     // whole point of confirming.

@@ -11,11 +11,15 @@
     v-if="visible"
     class="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-sfere-lg border border-sfere-200 bg-sfere-50 px-4 py-3"
   >
+    <!-- Two sentences, not one line hinged on two em dashes. It used to read
+         "You're on step 1 of 3 — this one is done — connect a source is what's
+         left", which QA picked out as the clearest case of the dash doing three
+         different jobs in one breath. -->
     <p class="min-w-0 flex-1 text-sm text-sfere-brand-text">
       <span class="font-semibold"
-        >You're on step {{ stepNumber }} of {{ total }}</span
+        >You're on step {{ stepNumber }} of {{ total }}.</span
       >
-      — {{ line }}
+      {{ line }}
     </p>
     <SfereLinkArrow :to="{ name: 'dashboard-home' }"
       >See full setup progress</SfereLinkArrow
@@ -58,7 +62,7 @@ const visible = computed(
 // there was exactly the bug this shape exists to prevent.
 const line = computed(() => {
   const current = props.steps.find(s => s.current)
-  if (!current) return 'finish the remaining steps to go live.'
+  if (!current) return 'Finish the remaining steps to go live.'
 
   if (current.key === props.step) {
     return `${current.description.replace(/\.$/, '')}, then move on to the next step.`
@@ -66,12 +70,12 @@ const line = computed(() => {
 
   const mine = props.steps.find(s => s.key === props.step)
   if (mine?.done) {
-    return `this one is done — ${current.label.toLowerCase()} is what's left.`
+    return `This one is done. Next up: ${current.label.toLowerCase()}.`
   }
 
   // Ahead of the current step. Doing it now is allowed (a destination without a
   // source is a valid thing to configure), so this points forward rather than
   // blocking.
-  return `${current.label.toLowerCase()} comes first, but you can set this up now if you'd rather.`
+  return `${current.label} comes first, but you can set this up now if you'd rather.`
 })
 </script>

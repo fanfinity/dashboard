@@ -70,6 +70,6 @@ export function retentionLabel(row) {
   if (Number.isNaN(deleted.getTime())) return ''
   const elapsed = Math.floor((Date.now() - deleted.getTime()) / 86400000)
   const left = RETENTION_DAYS - elapsed
-  if (left <= 0) return 'Past retention — purged on the next sweep'
+  if (left <= 0) return 'Past retention. Purged on the next sweep.'
   return `${left} day${left === 1 ? '' : 's'} left`
 }

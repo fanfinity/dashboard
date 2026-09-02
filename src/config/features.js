@@ -26,7 +26,7 @@ export const FEATURES = [
   {
     key: 'dashboard',
     label: 'Dashboard',
-    description: 'The landing screen — headline numbers and recent activity.',
+    description: 'The landing screen: headline numbers and recent activity.',
     enabled: true
   },
   // The CDP core, listed in the same order the sidebar shows it — Settings →
@@ -65,7 +65,7 @@ export const FEATURES = [
     key: 'settings',
     label: 'Settings',
     description:
-      'Workspace settings, members, API tokens — and this activation panel.',
+      'Workspace settings, members, API tokens, and this activation panel.',
     enabled: true,
     locked: true
   },

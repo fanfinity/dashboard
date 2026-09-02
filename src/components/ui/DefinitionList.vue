@@ -24,6 +24,7 @@
 </template>
 
 <script setup>
+import { NOT_KNOWN } from '@/lib/emptyValue'
 import { computed } from 'vue'
 
 // The label -> value read-out every detail screen needs. The props and the
@@ -97,7 +98,7 @@ function isBlank(value) {
 }
 
 function display(value) {
-  if (isBlank(value)) return '—'
+  if (isBlank(value)) return NOT_KNOWN
   if (typeof value === 'object') return JSON.stringify(value)
   return String(value)
 }

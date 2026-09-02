@@ -1,3 +1,4 @@
+import { NOT_KNOWN } from '@/lib/emptyValue'
 import { computed } from 'vue'
 import { useMockResource } from '@/composables/useMockResource'
 import { formatCount, formatDateTime } from '@/composables/useMonitoringErrors'
@@ -72,7 +73,7 @@ const RUN_STATUS = {
  */
 export function formatDuration(seconds) {
   if (seconds === null || seconds === undefined || !Number.isFinite(seconds)) {
-    return '—'
+    return NOT_KNOWN
   }
   const total = Math.max(0, Math.round(seconds))
   if (total < 60) return `${total}s`
@@ -91,7 +92,7 @@ export function formatDuration(seconds) {
  */
 export function formatMillis(ms) {
   const value = Number(ms)
-  if (!Number.isFinite(value)) return '—'
+  if (!Number.isFinite(value)) return NOT_KNOWN
   return value < 1000
     ? `${Math.round(value)}ms`
     : `${(value / 1000).toFixed(1)}s`
@@ -277,7 +278,7 @@ export function useMonitoringHealth() {
       },
       {
         label: 'Latest worker check',
-        value: latest ? latest.statusLabel : '—',
+        value: latest ? latest.statusLabel : NOT_KNOWN,
         hint: latest ? latest.startedAtLabel : 'No checks recorded'
       }
     ]

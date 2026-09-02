@@ -188,15 +188,15 @@ the smoke test can assert on a single selector across every route.
       <p class="mt-3 text-xs">Outcome →</p>
     </SelectableCard>
 
-    <!-- right: gap for rhythm, `1fr auto` for the footer, `m-0!` to kill the
-         inert margin so it stops adding itself to the gap -->
+    <!-- right: gap for rhythm, `1fr auto` for the footer, and `sfere-flush` on
+         the wrapper so the inert margin stops adding itself to the gap -->
     <SelectableCard>
       <div class="grid h-full w-full grid-rows-[1fr_auto] gap-5">
         <div class="grid content-start gap-3.5">
           <span class="chip">…</span>
-          <div class="grid min-w-0 gap-1.5">
-            <p class="m-0! text-sm">Title</p>
-            <p class="m-0! text-xs">Body copy of any length.</p>
+          <div class="sfere-flush grid min-w-0 gap-1.5">
+            <p class="text-sm">Title</p>
+            <p class="text-xs">Body copy of any length.</p>
           </div>
         </div>
         <div class="border-t border-sfere-line pt-4">Outcome →</div>
@@ -209,6 +209,28 @@ the smoke test can assert on a single selector across every route.
     container resolve per flex line. `grid-rows-[1fr_auto]` puts the footer on the
     bottom edge by construction, so a row of cards stays aligned through any copy
     edit. `SourceIntentPicker.vue` is the worked example.
+
+    **Three of the worst cases are now handled centrally, in `src/css/sfere.css`,
+    so you do not have to spot them.** They are the ones where the phantom margin
+    can never be what the author meant:
+
+    | Rule                                                 | Fixes                                                                                                 |
+    | ---------------------------------------------------- | ----------------------------------------------------------------------------------------------------- |
+    | `[class~='items-center'] > p` (and `items-baseline`) | a `<p>` sharing a row with a control: `items-center` centres the MARGIN box, so the text sat 8px high |
+    | `p:last-child`                                       | the 16px of dead space under a card's last line                                                       |
+    | `.sfere-flush > p` (opt-in class)                    | a container that already spaces its children with grid/flex `gap`                                     |
+
+    That row case is what QA reported as "text not vertically centred": "Pick one
+    to continue." floated above its Continue button, the setup strip's line above
+    "See full setup progress", and `SourceCreatePage`'s "Setting up …" above
+    Change. All three were the same 8px, and all three are fixed by the first rule
+    without touching the screens.
+
+    There is deliberately **no blanket `p { margin: 0 }`**. Stacked prose still
+    wants its rhythm, and a global reset would retighten every screen at once with
+    no gate able to see it — `pnpm smoke:dist` checks console errors and `<h1>`s,
+    not spacing. Where a parent owns the spacing, say so with `sfere-flush` (see
+    `NoticeBanner.vue`) or kill the margin per element with `m-0!`.
 
 12. **Do not size a card grid with `auto-fit`.** `grid-cols-1 sm:grid-cols-2` and
     friends expand to `repeat(N, minmax(0, 1fr))`, which is safe.
@@ -290,11 +312,41 @@ the smoke test can assert on a single selector across every route.
     Settings panels each hold several independent forms — stacking a sticky bar
     per panel would dock several of them at once.
 
+15. **A control inside `q-header` inherits white text, and a layered `text-*`
+    cannot stop it.** Quasar ships an unlayered `.q-header { color: #fff }` and an
+    unlayered `.q-btn { color: inherit }`. A layered `text-ink` on the header does
+    not match the button at all, and the one on the header loses to Quasar's own
+    rule, so every child that does not set its own colour renders white — on a
+    `bg-white!` bar, invisible.
+
+    This is not hypothetical: it is how the responsive nav toggle disappeared.
+    The hamburger was present, focusable and clickable at every width under
+    1024px; it was drawn in white on white, so the app looked like it had no
+    navigation at all below that breakpoint. It reads as a missing feature and was
+    filed as one.
+
+    Two halves to the fix, and both are needed:
+
+    ```html
+    <!-- 1. the important SUFFIX on the header's own colour -->
+    <q-header class="bg-white! text-ink! border-b border-line">
+      <!-- 2. a control that carries its own colour rather than inheriting -->
+      <SfereIconButton label="Open navigation" icon="menu" variant="ghost" />
+    </q-header>
+    ```
+
+    The same trap sits on `lg:hidden`: `.q-btn`'s unlayered `display: inline-flex`
+    beats a layered `hidden`, so a `q-btn` marked `lg:hidden` stays visible on
+    desktop. Write `lg:hidden!`. A kit component whose root is a plain `<span>`
+    (`SfereIconButton`, via `SfereTooltip`) has no unlayered competitor and does
+    not need the suffix — it carries it anyway, so the class survives a later swap
+    back to a Quasar control.
+
 ---
 
 ## House rules for screens
 
-Rules 1–14 are about the primitives. These are about how a screen uses them, and
+Rules 1–15 are about the primitives. These are about how a screen uses them, and
 every one of them is a bug wave 1 hit or narrowly avoided.
 
 ### A missing `:id` is empty, not an error
@@ -861,6 +913,12 @@ failure, and it must not trip the smoke gate.
 | --------- | ------------------------------------------- |
 | `dismiss` | — (only when `dismissible`; you own hiding) |
 
+Its text block is a `sfere-flush grid gap-1`, not a stack of `mt-*` paragraphs.
+That is rule 11 in miniature: the `mt-0.5` it used to carry computed to zero, so
+title and message rendered on Quasar's flat 16px rhythm with another 16px of dead
+space under the last line — which is what pushed the copy to the top of the
+banner and read as "text not vertically centred".
+
 Use this rather than stretching a `StatusBadge` — a badge is a pill sized for one
 or two words, and a whole sentence in one looks like a bug. `info` is brand,
 `warn` is amber, `danger` is rose; a genuine load failure is still `ErrorState`,
@@ -921,7 +979,7 @@ Label + control + hint/error. The control goes in the slot, so a page can use
 | `label`    | String  | `''`    |                                        |
 | `hint`     | String  | `''`    | suppressed while `error` is set        |
 | `error`    | String  | `''`    | replaces the hint rather than stacking |
-| `required` | Boolean | `false` | appends a danger asterisk              |
+| `required` | Boolean | `false` | **decorative** — see below             |
 | `optional` | Boolean | `false` | marks the field optional instead       |
 | `forId`    | String  | `''`    | **not `for`** — `for` is a JS keyword  |
 | `onDark`   | Boolean | `false` |                                        |
@@ -941,6 +999,36 @@ rather than a raw `<input>`:
   <SfereInput id="pipe-name" v-model="name" placeholder="e.g. Club shop" />
 </FormField>
 ```
+
+**`required` draws an asterisk and validates nothing.** It never reaches the
+control, and it cannot: `SfereInput` declares its props rather than letting
+attributes fall through, so a `required` written on the component would land on
+the positioning wrapper `<div>` and do nothing at all. A form that needs a value
+has to check for one in JS and set `:error`. This is not a gap to be plugged
+later — a native `required` raises an OS-styled bubble that vanishes on the next
+keystroke, which is not the message any screen in this app wants to show.
+
+The error and hint paragraphs are given ids derived from `for-id`
+(`<for-id>-error`, `<for-id>-hint`), and the error carries `role="alert"` so a
+message that appears after a failed submit is announced rather than silently
+painted. Point the control at whichever is showing with `SfereInput`'s
+`described-by`, which is what associates the two for a screen reader re-reading
+the field later:
+
+```html
+<FormField label="Work email" for-id="login-email" :error="emailError">
+  <SfereInput
+    id="login-email"
+    v-model="email"
+    :invalid="Boolean(emailError)"
+    :described-by="emailError ? 'login-email-error' : ''"
+  />
+</FormField>
+```
+
+`src/pages/LoginPage.vue` is the worked example: validate on submit, set the
+error, focus the first field that failed, and clear the message the moment the
+value it judged changes.
 
 ### ConfirmDialog.vue
 

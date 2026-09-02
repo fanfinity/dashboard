@@ -120,17 +120,17 @@ CSS v4** (via `@tailwindcss/vite` + PostCSS) used alongside Quasar's own compone
 both `app.scss` and `tailwind.css` are loaded. Charts use ApexCharts (`vue3-apexcharts`).
 
 Router uses **hash mode** (`vueRouterMode: 'hash'` in `quasar.config.js`). The `@/` alias maps
-to `src/`. All app routes are children of `src/layouts/MainLayout.vue`, except `/login` and
-`/design-system`, which are top-level and unauthenticated.
+to `src/`. All app routes are children of `src/layouts/MainLayout.vue`, except `/login`,
+`/signup` and `/design-system`, which are top-level and unauthenticated.
 
 Hash mode has one consequence worth internalising: the whole route lives after the first `#`,
 so an in-page `href="#some-id"` **replaces the route** instead of scrolling. Anchor navigation
 has to go through `scrollIntoView` — see `src/pages/design-system/DesignSystemPage.vue`.
 
-### Six Quasar/Tailwind cascade collisions
+### Seven Quasar/Tailwind cascade collisions
 
 Tailwind v4 emits utilities into `@layer utilities`; Quasar's base stylesheet is **unlayered**,
-and unlayered CSS beats layered CSS regardless of specificity. All six of these have cost real
+and unlayered CSS beats layered CSS regardless of specificity. All seven of these have cost real
 time:
 
 1. **Headings need the important _suffix_** — `text-2xl!`, never `!text-2xl`. Covered at length
@@ -142,6 +142,10 @@ time:
    pointed _down_ between three side-by-side boxes). Use the inverse variant —
    `max-lg:hidden`, `max-sm:rotate-90` — which generates a class name Quasar does not define.
    The tell: a utility that works in its "on" breakpoint and refuses to switch off.
+   The same `!important` form owns the disabled look: `[disabled] { opacity: .6; cursor:
+not-allowed }`, so `disabled:opacity-45` and `disabled:cursor-not-allowed` are dead classes
+   everywhere in this repo. A disabled state you actually control has to change something
+   Quasar does not set — a colour, say. `SfereToggle` is the worked example.
 3. **A `q-dialog` child is capped at 560px, and `mt-auto` does nothing on a bare block.** Quasar
    ships `.q-dialog__inner--minimized > div { max-width: 560px }` and margins on unclassed block
    elements, both unlayered. A three-column picker in a dialog silently renders as
@@ -166,6 +170,14 @@ time:
    `gap` (no Quasar counterpart, so it applies) and pin the footer with `grid-rows-[1fr_auto]` —
    not `mt-auto!`, which resolves per flex line inside #4's wrapping flex.
    `docs/ui-conventions.md` rule 11; `SourceIntentPicker.vue` is the worked example.
+   **Three unlayered rules in `sfere.css` now catch the cases that are never intentional**:
+   `[class~='items-center'] > p` (a paragraph sharing a row with a control — `items-center`
+   centres the _margin_ box, so the text sat 8px high next to every button it was paired
+   with), `p:last-child` (the dead 16px under a card's last line), and the opt-in
+   `.sfere-flush > p` for a container that already spaces its children with `gap`. There is
+   deliberately **no blanket `p { margin: 0 }`**: stacked prose still wants its rhythm, and
+   the smoke gate cannot see a spacing regression, so a global reset would be an unverifiable
+   change to all 54 screens at once.
 6. **`auto-fit` grid tracks measure a card at min-content and keep the answer.** An
    `auto-fit` track is min-content-sized in the first pass, and the min-content height of a
    `SelectableCard` — a #4 wrapping flex — at that width is enormous, so the row keeps it:
@@ -175,6 +187,19 @@ time:
    the wrong question — the sidebar collapses without changing it, so one 1024px window has two
    content widths — put a container query in front of those tracks (`@container` +
    `@min-[52rem]:grid-cols-3`). `docs/ui-conventions.md` rule 12.
+7. **Anything inside `q-header` inherits white text, and that is how the responsive nav
+   disappeared.** Quasar ships unlayered `.q-header { color: #fff }` and unlayered
+   `.q-btn { color: inherit }`, so a layered `text-ink` on the header loses and the button
+   never had a colour of its own — the hamburger was drawn in white on a `bg-white!` bar. It
+   was present, focusable and clickable at every width below 1024px; it was simply invisible,
+   which reads as "this app has no navigation under 1000px" and was filed as exactly that.
+   Two halves to the fix and both are needed: `text-ink!` (important **suffix**) on the
+   header, and a control that carries its own colour — `MainLayout` now uses
+   `SfereIconButton` with a `menu` glyph from `sfereIcons.js` rather than
+   `q-btn icon="menu"`. The same `.q-btn` unlayered `display: inline-flex` also beat the
+   layered `lg:hidden` that was supposed to hide it on desktop, so it showed up beside a
+   permanent sidebar too; `lg:hidden!` is what actually hides it.
+   `docs/ui-conventions.md` rule 15.
 
 ## Screen manifest — routes are generated, not hand-written
 
@@ -267,6 +292,21 @@ same page a week later. Its snippets live in `src/lib/sourceInstallSnippets.js` 
 Its verification asks the backend whether a real event arrived (`listSourceEvents`); the
 proposal's "paste your URL and we'll look for the script" checker was **not** built, because the
 CSP blocks that cross-origin fetch and it would only prove the tag is on the page.
+
+**The method tabs are a narrowing, not a re-ordering**, and `methodsForSource()` is the table
+that does it: a website gets HTML / React / NPM, a mobile source gets Native apps alone, an HTTP
+API source gets HTTP / NPM. It used to show all five to everyone and merely lead with the likely
+one, which reads as five equally valid ways to install — a website has no `AppDelegate.swift` to
+paste into, so an irrelevant tab is a wrong answer sitting beside the right one. A source
+narrowed to one method renders **no `TabNav`**; a one-item tab bar is decoration that looks like
+a choice.
+
+The signal is `templateId`, and **only the create flow reliably has it**: `SourceCreate` accepts
+a `template_id` but the `Source` record never returns one, so a re-read carries only
+`source_type`. `web` and `cloud_app` are exact, but `event_stream` covers `ios-sdk`,
+`android-sdk` _and_ `http-api` — indistinguishable — so that branch deliberately keeps all five
+tabs rather than guessing. **Returning `template_id` on `Source` is the one-field backend change
+that closes it**; do not reconstruct the template from a slug or a local cache.
 
 The product backlog (54 screens, GitHub issues #16–#69) is scaffolded: every screen already
 exists as a stub page at its final path. Implementing one means **rewriting that file in place**,
@@ -381,27 +421,114 @@ four copies of the same three steps is four things to keep in agreement. The str
 the _workspace_ is on, not the step the screen is; it hides itself once all three exist. The
 panel is dismissible only after that, and the dismissal is `localStorage`.
 
-**The post-auth interstitial** (`components/onboarding/AccountSetupOverlay.vue`) covers the gap
-between a successful sign-in and the dashboard, when the session settles, `/v1/me` is read and
-the acting account resolves. It runs for a fixed **2.5s** (`TOTAL_MS`), long enough that its four
-step labels can be read rather than flashed — it used to be a random 1.1–2s, which made the same
-sign-in feel different each time. Still a courtesy transition, not a fake loading screen, so the
-number is a deliberate ceiling and not somewhere to hide slow work. Like the persona question it is an overlay, not
-a route — a `/setting-up` route would need a guard exception and would be a second place the auth
-redirect has to agree with. It mounts only _after_ auth succeeds, so it can never stand between a
-bad password and its error message.
+**The post-registration interstitial** (`components/onboarding/AccountSetupOverlay.vue`) covers
+the gap between a created account and the dashboard, when the session settles, `/v1/me` is read
+and the acting account resolves. It runs for a fixed **2.5s** (`TOTAL_MS`), long enough that its
+four step labels can be read rather than flashed — it used to be a random 1.1–2s, which made the
+same sign-in feel different each time. Still a courtesy transition, not a fake loading screen, so
+the number is a deliberate ceiling and not somewhere to hide slow work. Like the persona question
+it is an overlay, not a route — a `/setting-up` route would need a guard exception and would be a
+second place the auth redirect has to agree with. It mounts only _after_ auth succeeds, so it can
+never stand between a bad password and its error message.
+
+**It is sign-up only**, and that is the fix to a QA finding rather than an optimisation. It used
+to run on sign-in too, so a returning user was told "Setting up your account" and "Opening your
+workspace" on their hundredth visit, and waited 2.5s for a sentence that was not true of them.
+`LoginPage` mounts it on the sign-up branch and sends a sign-in straight to its destination. If a
+returning-user transition is ever wanted it needs its own copy; do not soften this one to cover
+both.
+
+**Sign-in and sign-up are two routes over one component.** `/login` and `/signup` are separate
+entries in `routes.js` both pointing at `LoginPage.vue`, which reads `route.name` to decide which
+form it is. They used to be one route and a client-side toggle, so sign-up had no address: not
+linkable from a marketing CTA, invisible to the back button, and every page-view landing on
+`/login` whichever form the person saw. Both carry `redirect` across the switch, so someone
+bounced off a deep link who decides to register still lands where they were going. Neither
+belongs in `screens.js` — that would nest them under `MainLayout`, behind the auth guard.
+
+**Both forms validate on submit and say what is wrong.** `src/lib/authValidation.js` holds the
+rules; `FormField`'s `error` and `SfereInput`'s `invalid` render them, and the first failing
+field takes focus. The submit button is enabled unless a request is in flight — it used to be
+disabled until both fields passed, which is what QA filed as "invalid input is rejected
+completely silently": a control that does nothing and explains nothing leaves no way to find out
+what is wrong with what you typed. Two things there are worth not undoing. `FormField`'s
+`required` prop is **decorative** — it draws an asterisk and never reaches the input, and
+`SfereInput` declares its props rather than falling through, so a `required` attribute would land
+on the wrapper `<div>`; the JS check is the only check. And the form is `novalidate`, because a
+native bubble vanishes on the next keystroke and cannot say the sign-up-specific things about
+passwords.
+
+**The sign-up password rule is a UX guardrail, not a security control.** Minimum 8 characters, at
+least three of {lower case, upper case, digit, symbol}, and a short in-repo denylist of the
+passwords that top every breach corpus, plus a live strength meter. All of it runs in the
+browser: `POST /v1/register` still accepts `12345678`, and anything posting there directly
+bypasses the lot. Real enforcement is a backend ask, written up with the other three in
+`todos/backend-ask-auth-onboarding.md`. Sign-in checks only that a password was typed — applying
+the new rule there would lock out every account that predates it while telling people their own
+password is invalid.
+
+**A personal email warns, it does not block.** A consumer domain (`gmail.com` and friends) gets a
+non-blocking amber note saying teammates on that domain will not be matched into the workspace.
+This is not a reversal of the dropped work-email _validation_ — rejecting those addresses blocks
+contractors and agencies for a benefit the backend gets from the address either way, and that
+stays dropped. The warning states the one real consequence instead.
+
+**There is no "Forgot password?" link, deliberately.** No `/v1/auth/password-reset` exists, so
+there is nothing to link to and a control that opens an apology is worse than an absence. Same
+reasoning for email verification and domain-matched workspaces: both are in the QA report, both
+need endpoints, and neither has a placeholder in the UI.
 
 **Three selectors on `/login` are load-bearing**: `scripts/smoke.mjs` drives
 `input[type=email]`, `input[type=password]` and `button[type=submit]` with Playwright's strict
 matching. Keep exactly one of each — that is why sign-up has no confirm-password field, and why
-work-email validation was dropped rather than added (it blocks contractors and agencies for a
-benefit the backend gets from the address either way).
+the password show/hide toggle is `type="button"` and the input starts as `type="password"`. A
+bare `<button>` inside a `<form>` submits by default, so an unmarked toggle would give the gate
+two matches for `button[type=submit]` and fail sign-in for all 54 routes before a single screen
+rendered.
 
 **Settings → Your role** (`SettingsPersonaPanel.vue`) is the other surface, so changing the answer
 never means re-running a tour, and `Ask me again` clears it. Both surfaces render the same three
 cards and the same marks from `PersonaIcon.vue` — drawn there rather than reused from
 `src/assets/dashboard/`, because those are `<img>` with brand purple baked into a `stroke`
 attribute and cannot take the colour of the chip they sit in.
+
+## Empty values have four words, and none of them is `0`
+
+`src/lib/emptyValue.js` is the vocabulary a screen prints where a value is missing, and it is
+the whole of it: **`NEVER`**, **`NOT_SET`**, **`NOT_KNOWN`**, **`NONE`**. Every one of them
+used to be a bare em dash, in ~145 places, and the same glyph also appeared mid-sentence as
+punctuation — so a `—` in a table cell could not be told apart from a truncated label. QA
+raised the dashes as visual noise; the ambiguity underneath is why this is a module rather
+than a search-and-replace.
+
+Pick by what is true of the data, not by what reads shortest:
+
+| Word        | Means                                                | Example                |
+| ----------- | ---------------------------------------------------- | ---------------------- |
+| `NEVER`     | a dated event that has not happened                  | `Last run: Never`      |
+| `NOT_SET`   | an optional field nobody filled in — user-fixable    | `Next run: Not set`    |
+| `NOT_KNOWN` | nothing measures it: no endpoint, or the read failed | `Events/hr: Not known` |
+| `NONE`      | a collection that is genuinely empty                 | `Tags: None`           |
+
+**A count the backend never sent is `NOT_KNOWN`, never `0`.** That is the same warning the
+fixture-wider-than-the-endpoint note above gives: a formatter printing a confident `0` for
+`undefined` asserts a measurement nobody took, and unlike a visible gap nobody reports it.
+`0` is for a number that was counted and came back zero — `PipelineFlowPanel` prints it.
+
+The date formatters (`formatDate`, `formatDateTime`, `formatAgo`, and friends across the
+`use*` composables) take a **`fallback` second argument defaulting to `NOT_KNOWN`**, because
+one formatter serves both a `createdAt` column and a `lastRunAt` one and only the second can
+honestly say "Never". Pass the word at the call site: `formatDateTime(s.lastRunAt, NEVER)`,
+`formatDate(row.nextRunAt, NOT_SET)`. A date that IS present but will not parse always
+reports `NOT_KNOWN` regardless of the fallback — that is a different failure.
+
+The wider copy rule that goes with it: **an em dash is punctuation, and the UI keeps very few
+of them.** Page subtitles, banners, toasts, validation messages and status lines were
+rewritten to sentences, colons or parentheses across all 54 screens, `public/data/*.json` and
+the screen manifest — `screens.js` titles used to read `Warehouse Models — list view` and now
+read `Warehouse models`, which matters because that string is the real `<h1>`
+`ComingSoonPanel` renders. `src/components/sfere-docs/**` (the `/design-system` reference
+page) is the deliberate exception: it is long-form editorial prose, not product chrome.
 
 ## UI primitives
 
@@ -723,6 +850,29 @@ exists to prevent.`sendMutation()`and`fetchCollection()`resolve`path` the same w
    snake_case (`{ is_enabled }`), hence `camelizeKeys` on the way back in. Trash restore/purge
    stays local-only everywhere — the trash has no endpoint at all yet.
 
+   **That last sentence is why Sources says "Delete", not "Move to trash".**
+   `DELETE /v1/accounts/{account}/sources/{id}` is a hard `204`: no soft delete, no trash
+   listing, no restore. The confirm dialogs used to open as "Move source to trash?" and promise
+   30 days of recovery, then send the user to a Trash screen that could not have the record —
+   which is the failure this file warns about elsewhere, in its most expensive form. The
+   Sources list, the detail header and the Settings danger zone now share one verb and one
+   sentence, and each says restoring is not available yet. **Flip all of them back the day the
+   backend soft-deletes** — the wording is the product direction, it is just ahead of the API.
+   The nine `use*Trash.js` composables all read `trash.json` with no `api`, so they must
+   forward `apiMissing` and the screen must pass it to `DataTable`; `useSourcesTrash` swallowed
+   it, and the screen answered "Trash is empty — no source has been deleted in the last 30
+   days", which is a measured-sounding claim about a collection nobody asked for. The other
+   eight still swallow it.
+
+   **A source's Settings tab is read-only except Delete**, and says so in a banner rather than
+   in a toast. `SourceUpdate` carries `is_enabled` and nothing else, and `Source` has no
+   `description`, no strict-mode flag and no server-key list — so renaming, rotating a write
+   key, revoking one, issuing a server-to-server key and Strict mode are all disabled controls.
+   They used to fire a "would be saved" toast, which is indistinguishable from one describing a
+   save. Rotation's helper text also described an impossible order ("update your snippet first,
+   then rotate" — the new key does not exist until the rotation issues it); it now states the
+   real sequence and that there is no endpoint behind it.
+
    **`pnpm smoke:dist` now walks all 54 routes against whatever `VITE_API_BASE` points at**,
    because that is what the default mode does. It used to be hermetic. If you need the old
    behaviour, set `sfere_data_source_mode` to `mock` in the browser profile the run uses, or
@@ -847,7 +997,7 @@ removes the mismatch and makes the backend the single source of truth for the Fi
   a failed refresh clears the session so the guard bounces to `/login`.
 - `src/router/index.js`'s `beforeEach` gates `requiresAuth` routes on `isAuthenticated`
   (token presence), then confirms a backend account via `waitForAccount()`; a missing account
-  clears tokens and redirects to `/login`. `/login` carries no `requiresAuth` meta.
+  clears tokens and redirects to `/login`. neither `/login` nor `/signup` carries `requiresAuth` meta.
 
 The access token is a short-lived (~1h) Firebase ID token; the backend also returns a refresh
 token so sessions survive past that. **Multi-tenancy is now a backend concern** — the dashboard

@@ -1,14 +1,15 @@
 <template>
   <q-page class="p-6">
-    <PageHeader
-      title="Sources trash"
-      subtitle="Deleted sources are kept for 30 days, then removed for good."
-    >
+    <!-- The subtitle follows the data rather than describing the product.
+         Nothing keeps a deleted source yet — the backend's DELETE is a hard 204
+         with no trash listing and no restore — so the 30-day line only holds in
+         Demo mode, where the fixture is the whole story. -->
+    <PageHeader title="Sources trash" :subtitle="subtitle">
       <template #actions>
         <ToolbarSearch v-model="query" placeholder="Search trash..." />
         <button
-          :disabled="!items.length"
-          class="flex h-9 items-center gap-1.5 rounded-lg bg-rose-600 px-3.5 text-sm font-medium text-white shadow-sm hover:opacity-90 disabled:opacity-50"
+          :disabled="!items.length || apiMissing"
+          class="flex h-9 items-center gap-1.5 rounded-lg bg-rose-600 px-3.5 text-sm font-medium text-white shadow-sm hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
           @click="confirmEmpty = true"
         >
           Empty trash
@@ -21,6 +22,7 @@
       :rows="visible"
       :loading="loading"
       :error="error"
+      :api-missing="apiMissing"
       row-key="id"
       :empty-title="emptyTitle"
       :empty-description="emptyDescription"
@@ -90,7 +92,7 @@ import { formatDateTime, sourceTypeLabel } from '@/composables/useSources'
 import { useSourcesTrash } from '@/composables/useSourcesTrash'
 
 const $q = useQuasar()
-const { items, loading, error, load, restore, purge, purgeAll } =
+const { items, loading, error, apiMissing, load, restore, purge, purgeAll } =
   useSourcesTrash()
 
 const query = ref('')
@@ -99,6 +101,12 @@ const confirmEmpty = ref(false)
 const target = ref(null)
 
 const RETENTION_DAYS = 30
+
+const subtitle = computed(() =>
+  apiMissing.value
+    ? 'Deleting a source removes it outright today. Nothing keeps a copy to restore, so this list stays empty until the backend grows a trash.'
+    : `Deleted sources are kept for ${RETENTION_DAYS} days, then removed for good.`
+)
 
 const columns = [
   { key: 'name', label: 'Source', sortable: true },
@@ -138,7 +146,7 @@ function retentionLabel(row) {
   if (Number.isNaN(deleted.getTime())) return ''
   const elapsed = Math.floor((Date.now() - deleted.getTime()) / 86400000)
   const left = RETENTION_DAYS - elapsed
-  if (left <= 0) return 'Past retention — purged on the next sweep'
+  if (left <= 0) return 'Past retention. Purged on the next sweep.'
   return `${left} day${left === 1 ? '' : 's'} left`
 }
 
@@ -146,7 +154,7 @@ function retentionLabel(row) {
 function notifyLocal(message) {
   $q.notify({
     message,
-    caption: 'Local preview only — no backend is connected yet.',
+    caption: 'Local preview only. No backend is connected yet.',
     color: 'dark',
     timeout: 2500
   })

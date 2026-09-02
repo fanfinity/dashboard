@@ -1,3 +1,4 @@
+import { NOT_KNOWN } from '@/lib/emptyValue'
 import { useQuasar } from 'quasar'
 import { useMockResource } from '@/composables/useMockResource'
 
@@ -43,24 +44,24 @@ const TIME = new Intl.DateTimeFormat('en-GB', {
  * `'2026-07-31T04:00:44.100Z'` -> `'31 Jul 2026'`.
  *
  * @param {string|null|undefined} iso
- * @returns {string} `'—'` when absent or unparseable.
+ * @returns {string} `NOT_KNOWN` when absent or unparseable.
  */
-export function formatDate(iso) {
-  if (!iso) return '—'
+export function formatDate(iso, fallback = NOT_KNOWN) {
+  if (!iso) return fallback
   const d = new Date(iso)
-  return Number.isNaN(d.getTime()) ? '—' : DATE.format(d)
+  return Number.isNaN(d.getTime()) ? NOT_KNOWN : DATE.format(d)
 }
 
 /**
  * `'2026-07-31T04:00:44.100Z'` -> `'31 Jul 2026 · 04:00 UTC'`.
  *
  * @param {string|null|undefined} iso
- * @returns {string} `'—'` when absent or unparseable.
+ * @returns {string} `NOT_KNOWN` when absent or unparseable.
  */
-export function formatDateTime(iso) {
-  if (!iso) return '—'
+export function formatDateTime(iso, fallback = NOT_KNOWN) {
+  if (!iso) return fallback
   const d = new Date(iso)
-  if (Number.isNaN(d.getTime())) return '—'
+  if (Number.isNaN(d.getTime())) return NOT_KNOWN
   return `${DATE.format(d)} · ${TIME.format(d)} UTC`
 }
 
@@ -75,7 +76,7 @@ export function formatDateTime(iso) {
  * formatCount(412880) // '412,880'
  */
 export function formatCount(n) {
-  if (n === null || n === undefined || Number.isNaN(Number(n))) return '—'
+  if (n === null || n === undefined || Number.isNaN(Number(n))) return NOT_KNOWN
   return Number(n).toLocaleString('en-GB')
 }
 
@@ -91,7 +92,7 @@ export function formatCount(n) {
  */
 export function formatDuration(ms) {
   const value = Number(ms)
-  if (!Number.isFinite(value) || value < 0) return '—'
+  if (!Number.isFinite(value) || value < 0) return NOT_KNOWN
   if (value < 1000) return `${Math.round(value)}ms`
   if (value < 60000) return `${(value / 1000).toFixed(1)}s`
   const minutes = Math.floor(value / 60000)
@@ -255,7 +256,7 @@ export function useProfileDwhSyncToasts() {
   function toast(message) {
     $q.notify({
       message,
-      caption: 'Local preview only — no backend is connected yet.',
+      caption: 'Local preview only. No backend is connected yet.',
       color: 'dark',
       timeout: 2500
     })

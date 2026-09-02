@@ -2,12 +2,16 @@
   <div :class="rootClasses" :role="tone === 'danger' ? 'alert' : 'status'">
     <span :class="['mt-0.5 size-2 shrink-0 rounded-full', DOTS[tone]]" />
 
-    <div class="min-w-0 flex-1">
+    <!-- `grid gap-*` rather than `mt-*` on each line: an `mt-0.5` on a `<p>`
+         computes to zero against Quasar's unlayered paragraph margin, so this
+         block used to render on a flat 16px rhythm regardless of what it asked
+         for, plus 16px of dead space under the last line that pushed the text
+         to the top of the banner. Grid gap has no Quasar counterpart and so
+         actually applies. -->
+    <div class="sfere-flush grid min-w-0 flex-1 gap-1">
       <p v-if="title" :class="titleClasses">{{ title }}</p>
-      <p v-if="message" class="mt-0.5 text-sfere-sm opacity-80">{{
-        message
-      }}</p>
-      <div v-if="$slots.default" class="mt-3">
+      <p v-if="message" class="text-sfere-sm opacity-80">{{ message }}</p>
+      <div v-if="$slots.default" :class="title || message ? 'mt-2' : ''">
         <slot />
       </div>
     </div>

@@ -151,7 +151,7 @@ function daysLeft(row) {
 function retentionLabel(row) {
   const left = daysLeft(row)
   if (left === null) return ''
-  if (left <= 0) return 'Past retention — purged on the next sweep'
+  if (left <= 0) return 'Past retention. Purged on the next sweep.'
   return `${left} day${left === 1 ? '' : 's'} left`
 }
 

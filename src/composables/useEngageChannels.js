@@ -1,3 +1,4 @@
+import { NOT_KNOWN } from '@/lib/emptyValue'
 import { computed } from 'vue'
 import { useMockResource } from '@/composables/useMockResource'
 import { rate } from '@/composables/useEngageChannelsFormat'
@@ -30,7 +31,9 @@ export const CHANNELS = [
  * @returns {string}
  */
 export function channelLabel(value) {
-  return CHANNELS.find(c => c.value === value)?.label ?? String(value ?? '—')
+  return (
+    CHANNELS.find(c => c.value === value)?.label ?? String(value ?? NOT_KNOWN)
+  )
 }
 
 /** How a campaign's lifecycle state reads. */
@@ -49,7 +52,7 @@ export function campaignStatus(status) {
   return (
     CAMPAIGN_STATUSES.find(s => s.value === status) ?? {
       value: status,
-      label: String(status ?? '—'),
+      label: String(status ?? NOT_KNOWN),
       variant: 'neutral'
     }
   )
@@ -74,7 +77,7 @@ export function transportStatus(status) {
   return (
     TRANSPORT_STATUSES.find(s => s.value === status) ?? {
       value: status,
-      label: String(status ?? '—'),
+      label: String(status ?? NOT_KNOWN),
       variant: 'neutral'
     }
   )
@@ -92,7 +95,7 @@ const PROVIDER_LABELS = {
  * @returns {string}
  */
 export function providerLabel(provider) {
-  return PROVIDER_LABELS[provider] ?? String(provider ?? '—')
+  return PROVIDER_LABELS[provider] ?? String(provider ?? NOT_KNOWN)
 }
 
 /** What the operator is allowed to do without being asked. */
@@ -131,7 +134,7 @@ export function riskLevel(level) {
   return (
     RISK_LEVELS.find(r => r.value === level) ?? {
       value: level,
-      label: String(level ?? '—'),
+      label: String(level ?? NOT_KNOWN),
       variant: 'neutral'
     }
   )
@@ -153,7 +156,7 @@ export function workLogStatus(status) {
   return (
     WORK_LOG_STATUSES.find(s => s.value === status) ?? {
       value: status,
-      label: String(status ?? '—'),
+      label: String(status ?? NOT_KNOWN),
       variant: 'neutral'
     }
   )
@@ -204,7 +207,7 @@ export function timeError(value) {
 export function notifyChannelError(value) {
   const text = String(value ?? '').trim()
   if (!text) return 'Enter a channel to notify.'
-  if (!text.startsWith('#')) return 'Start with # — e.g. #engage-ops.'
+  if (!text.startsWith('#')) return 'Start with #, for example #engage-ops.'
   if (text.length > 60) return 'Keep it under 60 characters.'
   return ''
 }

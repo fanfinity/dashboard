@@ -1,3 +1,4 @@
+import { NOT_KNOWN } from '@/lib/emptyValue'
 import { computed } from 'vue'
 import { useMockResource } from '@/composables/useMockResource'
 
@@ -42,7 +43,7 @@ const REFRESH_STATUS = {
 
 /** Cron presets offered before the user reaches for a raw expression. */
 export const SCHEDULE_PRESETS = [
-  { value: '', label: 'Manual only — refreshed on demand' },
+  { value: '', label: 'Manual only, refreshed on demand' },
   { value: '*/15 * * * *', label: 'Every 15 minutes' },
   { value: '0 * * * *', label: 'Hourly, on the hour' },
   { value: '0 */6 * * *', label: 'Every 6 hours' },
@@ -120,7 +121,7 @@ export function isValidCron(value) {
  */
 export function formatCount(n) {
   const value = Number(n)
-  if (!Number.isFinite(value)) return '—'
+  if (!Number.isFinite(value)) return NOT_KNOWN
   return value.toLocaleString('en-GB')
 }
 
@@ -133,8 +134,8 @@ export function formatCount(n) {
  * @param {string|null|undefined} iso
  * @returns {string}
  */
-export function formatDate(iso) {
-  if (!iso) return '—'
+export function formatDate(iso, fallback = NOT_KNOWN) {
+  if (!iso) return fallback
   const d = new Date(iso)
   if (Number.isNaN(d.getTime())) return String(iso)
   return d.toLocaleDateString('en-GB', {
@@ -151,8 +152,8 @@ export function formatDate(iso) {
  * @param {string|null|undefined} iso
  * @returns {string}
  */
-export function formatDateTime(iso) {
-  if (!iso) return '—'
+export function formatDateTime(iso, fallback = NOT_KNOWN) {
+  if (!iso) return fallback
   const d = new Date(iso)
   if (Number.isNaN(d.getTime())) return String(iso)
   return `${formatDate(iso)}, ${d.toLocaleTimeString('en-GB', {
@@ -288,13 +289,13 @@ export function validateModelSql(sql) {
   if (!text) {
     errors.push('Write the select the model reads from.')
   } else if (WRITE_STATEMENT.test(text)) {
-    errors.push('A model only reads — the statement has to be a select.')
+    errors.push('A model only reads, so the statement has to be a select.')
   } else if (!/\bselect\b/i.test(text)) {
     errors.push('No select found. A model is defined by one select statement.')
   } else if (!/\bfrom\b/i.test(text)) {
     errors.push('The select needs a from clause naming the table to read.')
   } else if (/;\s*\S/.test(text)) {
-    errors.push('One statement per model — remove everything after the first.')
+    errors.push('One statement per model. Remove everything after the first.')
   }
 
   const columns = errors.length ? [] : parseModelColumns(text)

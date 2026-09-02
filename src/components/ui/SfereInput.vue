@@ -17,13 +17,18 @@
       :name="name || undefined"
       :autocomplete="autocomplete || undefined"
       :aria-invalid="invalid ? 'true' : undefined"
+      :aria-describedby="describedBy || undefined"
       :class="classes"
       @input="emit('update:modelValue', $event.target.value)"
     />
 
+    <!-- No `opacity-60` here, unlike the leading slot: a leading slot holds a
+         decorative glyph, a trailing one holds a control (the password
+         show/hide toggle is the first caller), and a dimmed interactive target
+         is both harder to see and harder to trust. -->
     <span
       v-if="$slots.trailing"
-      class="absolute inset-y-0 right-3 grid place-items-center opacity-60"
+      class="absolute inset-y-0 right-2 grid place-items-center"
     >
       <slot name="trailing" />
     </span>
@@ -55,6 +60,10 @@ const props = defineProps({
   // the kind of bug that never gets reported.
   name: { type: String, default: '' },
   autocomplete: { type: String, default: '' },
+  // Pair with FormField's `for-id`: the wrapper renders its error as
+  // `<for-id>-error`, so passing that here is what makes the message part of the
+  // field rather than a paragraph that happens to sit under it.
+  describedBy: { type: String, default: '' },
   onDark: { type: Boolean, default: false }
 })
 

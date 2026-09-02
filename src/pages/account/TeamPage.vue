@@ -81,7 +81,7 @@
             <StatusBadge tone="warn" :label="String(pending.length)" dot />
           </div>
           <p class="text-xs text-subtle"
-            >Matched by email domain — no invite on file</p
+            >Matched by email domain, with no invite on file</p
           >
         </template>
 
@@ -170,7 +170,7 @@
         <template #cell-lastActiveAt="{ row }">
           <span class="text-muted">{{
             row.status === 'active'
-              ? formatAgo(row.lastActiveAt)
+              ? formatAgo(row.lastActiveAt, NEVER)
               : `Invited ${formatAgo(row.invitedAt)}`
           }}</span>
         </template>
@@ -220,8 +220,8 @@
           >What each role can do</h2
         >
         <p class="mt-1 text-sm text-muted"
-          >Roles are additive within a workspace — nobody has to be an Admin to
-          get their own job done.</p
+          >Roles are additive within a workspace, so nobody has to be an Admin
+          to get their own job done.</p
         >
 
         <div class="mt-5 flex flex-col gap-3">
@@ -260,8 +260,8 @@
           >Invite a member</h2
         >
         <p class="mt-1 text-sm text-muted"
-          >They get access as soon as they accept — no approval step, because
-          you are picking the role now.</p
+          >They get access as soon as they accept, with no approval step,
+          because you are picking the role now.</p
         >
 
         <div class="mt-5 flex flex-col gap-4">
@@ -317,6 +317,7 @@
 </template>
 
 <script setup>
+import { NEVER } from '@/lib/emptyValue'
 import { computed, onMounted, reactive, ref } from 'vue'
 import { useQuasar } from 'quasar'
 import PageHeader from '@/components/ui/PageHeader.vue'
@@ -403,7 +404,7 @@ function countByRole(key) {
 
 const removeMessage = computed(() =>
   target.value
-    ? `${target.value.name} loses access immediately. Anything they created — sources, pipes, audiences — stays where it is.`
+    ? `${target.value.name} loses access immediately. Anything they created (sources, pipes, audiences) stays where it is.`
     : ''
 )
 
@@ -413,7 +414,7 @@ function onApprove(joiner) {
   delete draftRole[joiner.id]
   $q.notify({
     message: `${joiner.name} approved as ${roleLabel(role)}`,
-    caption: 'Local to this browser — the members API is not live yet.',
+    caption: 'Local to this browser. The members API is not live yet.',
     color: 'dark',
     position: 'top-right'
   })
@@ -432,7 +433,7 @@ function onDecline(joiner) {
 function invite() {
   $q.notify({
     message: `Invitation drafted for ${inviteEmail.value}`,
-    caption: 'Nothing was sent — there is no invitations endpoint yet.',
+    caption: 'Nothing was sent. There is no invitations endpoint yet.',
     color: 'dark',
     position: 'top-right'
   })

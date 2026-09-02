@@ -158,7 +158,7 @@
           :error="errors.attributes"
           hint="One column per selected attribute."
           empty-title="No attributes defined yet"
-          empty-description="Define a profile attribute first — there is nothing for a sync to write."
+          empty-description="Define a profile attribute first. There is nothing for a sync to write."
         />
 
         <LoadingState v-if="identifiersLoading" variant="form" :rows="3" />
@@ -233,8 +233,8 @@
           Cancel
         </button>
         <p class="min-w-0 flex-1 text-xs text-subtle"
-          >No backend is connected to this screen yet — creating a sync updates
-          this session only and is gone on reload.</p
+          >No backend is connected to this screen yet, so creating a sync
+          updates this session only and is gone on reload.</p
         >
       </StickyActionBar>
     </form>
@@ -347,7 +347,7 @@ const identifierItems = computed(() =>
     column: columnName(t.name),
     description:
       t.maxIdentifiers === 1
-        ? 'One per profile — safe as a unique key.'
+        ? 'One per profile, so it is safe as a unique key.'
         : `Up to ${t.maxIdentifiers ?? 'many'} per profile.`
   }))
 )
@@ -416,7 +416,7 @@ function validate() {
 
   errors.identifierTypes = form.identifierTypes.length
     ? ''
-    : 'Pick at least one identifier column — rows are matched on it.'
+    : 'Pick at least one identifier column. Rows are matched on it.'
 
   if (!form.schedule.trim()) {
     errors.schedule = 'A schedule is required.'

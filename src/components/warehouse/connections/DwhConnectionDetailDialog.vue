@@ -65,7 +65,7 @@
       </div>
 
       <template #footer>
-        <p class="text-xs text-subtle">Read-only — demo data.</p>
+        <p class="text-xs text-subtle">Read-only demo data.</p>
         <div class="flex items-center gap-2">
           <button
             v-if="connection && !connection.isPrimary"
@@ -87,6 +87,7 @@
 </template>
 
 <script setup>
+import { NEVER } from '@/lib/emptyValue'
 import { computed } from 'vue'
 import CardPanel from '@/components/ui/CardPanel.vue'
 import DefinitionList from '@/components/ui/DefinitionList.vue'
@@ -149,7 +150,10 @@ const facts = computed(() => {
     { label: 'Credentials', value: 'masked' },
     { label: 'Tables catalogued', value: formatCount(c.tableCount) },
     { label: 'In use by', value: props.usageParts },
-    { label: 'Last validated', value: formatDateTime(c.lastValidatedAt) },
+    {
+      label: 'Last validated',
+      value: formatDateTime(c.lastValidatedAt, NEVER)
+    },
     { label: 'Created', value: formatDateTime(c.createdAt) },
     { label: 'Last updated', value: formatDateTime(c.updatedAt) },
     { label: 'Config version', value: `v${c.version}` }

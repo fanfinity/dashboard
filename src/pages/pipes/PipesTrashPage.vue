@@ -80,7 +80,7 @@
       </template>
 
       <template #cell-deletedByName="{ row }">
-        {{ row.deletedByName || row.deletedBy || '—' }}
+        {{ row.deletedByName || row.deletedBy || NOT_KNOWN }}
       </template>
 
       <template #cell-actions="{ row }">
@@ -149,6 +149,7 @@
 </template>
 
 <script setup>
+import { NOT_KNOWN } from '@/lib/emptyValue'
 import { computed, onMounted, ref } from 'vue'
 import { useQuasar } from 'quasar'
 import PageHeader from '@/components/ui/PageHeader.vue'
@@ -211,7 +212,7 @@ function restoreTarget() {
   restore(item)
   const extra = item.cascade.map(c => `“${c.name}”`).join(' and ')
   notify(
-    `“${item.name}”${extra ? ` and ${extra}` : ''} restored — nothing was saved, this preview has no backend.`
+    `“${item.name}”${extra ? ` and ${extra}` : ''} restored. Nothing was saved, because this preview has no backend.`
   )
   target.value = null
 }
@@ -226,7 +227,7 @@ function purgeTarget() {
   if (!item) return
   purge(item)
   notify(
-    `“${item.name}” deleted forever — nothing was saved, this preview has no backend.`
+    `“${item.name}” deleted forever. Nothing was saved, because this preview has no backend.`
   )
   target.value = null
 }
@@ -235,7 +236,7 @@ function emptyTrash() {
   const count = items.value.length
   purgeAll()
   notify(
-    `${count} ${count === 1 ? 'pipe' : 'pipes'} deleted forever — nothing was saved, this preview has no backend.`
+    `${count} ${count === 1 ? 'pipe' : 'pipes'} deleted forever. Nothing was saved, because this preview has no backend.`
   )
 }
 

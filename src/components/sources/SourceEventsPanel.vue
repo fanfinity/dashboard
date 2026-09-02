@@ -36,7 +36,9 @@
         }}</span>
       </template>
       <template #cell-eventName="{ row }">
-        <span class="font-medium text-ink">{{ row.eventName || '—' }}</span>
+        <span class="font-medium text-ink">{{
+          row.eventName || NOT_KNOWN
+        }}</span>
       </template>
       <template #cell-payload="{ row }">
         <span class="line-clamp-1 block max-w-[420px] text-xs text-muted">{{
@@ -48,6 +50,7 @@
 </template>
 
 <script setup>
+import { NONE, NOT_KNOWN } from '@/lib/emptyValue'
 import { computed, onMounted } from 'vue'
 import CardPanel from '@/components/ui/CardPanel.vue'
 import DataTable from '@/components/ui/DataTable.vue'
@@ -79,12 +82,12 @@ const rows = computed(() =>
 
 function payloadSummary(row) {
   const payload = row.event
-  if (payload === undefined || payload === null || payload === '') return '—'
+  if (payload === undefined || payload === null || payload === '') return NONE
   if (typeof payload === 'string') return payload
   try {
     return JSON.stringify(payload)
   } catch {
-    return '—'
+    return NOT_KNOWN
   }
 }
 

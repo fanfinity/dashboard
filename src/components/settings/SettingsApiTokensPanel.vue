@@ -59,7 +59,7 @@
         <StatusBadge
           v-else
           tone="neutral"
-          :label="`Revoked ${formatDate(row.revokedAt)}`"
+          :label="`Revoked ${formatDate(row.revokedAt, NEVER)}`"
         />
       </div>
     </template>
@@ -83,6 +83,7 @@
 </template>
 
 <script setup>
+import { NEVER } from '@/lib/emptyValue'
 import DataTable from '@/components/ui/DataTable.vue'
 import StatusBadge from '@/components/ui/StatusBadge.vue'
 import EmptyState from '@/components/ui/EmptyState.vue'
