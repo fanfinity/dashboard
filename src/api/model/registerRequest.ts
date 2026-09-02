@@ -4,6 +4,7 @@
  * Sfere Backend
  * OpenAPI spec version: 0.1.0
  */
+import type { DisplayName1 } from './displayName1'
 
 export interface RegisterRequest {
   email: string
@@ -12,5 +13,5 @@ export interface RegisterRequest {
    * @maxLength 128
    */
   password: string
-  display_name?: string | null
+  display_name?: DisplayName1 | null
 }

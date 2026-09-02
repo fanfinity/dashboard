@@ -4,7 +4,7 @@
  * Sfere Backend
  * OpenAPI spec version: 0.1.0
  */
-import type { DestinationConfig } from './destinationConfig'
+import type { AnyDestinationConfig } from './anyDestinationConfig'
 
 export interface Destination {
   id: string
@@ -16,7 +16,8 @@ export interface Destination {
   is_enabled: boolean
   created_at: string
   updated_at: string
-  config?: DestinationConfig | null
+  /** The destination config, typed by `destination_type`. Credential fields are masked to `"***"` in responses. */
+  config?: AnyDestinationConfig | null
   /** Auto-provisioned ClickHouse database name. Null while provisioning is pending. */
   clickhouse_database?: string | null
 }

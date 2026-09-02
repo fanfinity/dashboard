@@ -4,7 +4,7 @@
  * Sfere Backend
  * OpenAPI spec version: 0.1.0
  */
-import type { DestinationConfig } from './destinationConfig'
+import type { AnyDestinationConfig } from './anyDestinationConfig'
 
 export interface DestinationCreate {
   /**
@@ -19,5 +19,5 @@ export interface DestinationCreate {
    */
   slug: string
   destination_type?: string | null
-  config?: DestinationConfig | null
+  config?: AnyDestinationConfig | null
 }

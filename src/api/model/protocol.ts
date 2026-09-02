@@ -8,8 +8,6 @@
 export type Protocol = (typeof Protocol)[keyof typeof Protocol]
 
 export const Protocol = {
-  http: 'http',
-  https: 'https',
-  clickhouse: 'clickhouse',
-  'clickhouse-secure': 'clickhouse-secure'
+  native: 'native',
+  airbyte: 'airbyte'
 } as const

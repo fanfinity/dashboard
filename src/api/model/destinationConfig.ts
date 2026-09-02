@@ -4,14 +4,21 @@
  * Sfere Backend
  * OpenAPI spec version: 0.1.0
  */
-import type { Protocol } from './protocol'
+import type { DestinationConfigParameters } from './destinationConfigParameters'
+import type { ProtocolModel } from './protocolModel'
 
 export interface DestinationConfig {
   /** host:port pairs, e.g. ['my-ch.example.com:443'] */
   hosts: string[]
-  protocol?: Protocol | null
+  protocol?: ProtocolModel | null
+  /** The backend provisions a fresh per-destination database when this is omitted. Supplying a name that already exists is rejected with 409. */
   database?: string | null
+  /** Ignored — ClickHouse credentials are server-managed. */
   username?: string | null
-  /** Always "***" in API responses */
+  /** Always "***" in API responses. Ignored — ClickHouse credentials are server-managed. */
   password?: string | null
+  /** ClickHouse cluster name, for distributed deployments. */
+  cluster?: string | null
+  /** Extra connection parameters, e.g. `secure`, `verify`, `connection_timeout`. */
+  parameters?: DestinationConfigParameters
 }

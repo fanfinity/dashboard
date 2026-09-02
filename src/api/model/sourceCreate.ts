@@ -4,6 +4,7 @@
  * Sfere Backend
  * OpenAPI spec version: 0.1.0
  */
+import type { SourceWriteKeyInput } from './sourceWriteKeyInput'
 
 export interface SourceCreate {
   /**
@@ -21,4 +22,6 @@ export interface SourceCreate {
   template_id?: string | null
   /** The Zid store id (required when source_type is "zid"). */
   store_id?: string | null
+  /** Client-generated write keys to attach when the source's Jitsu site is provisioned (Jitsu-console style: the browser mints the id/secret and stages them before save). When present and non-empty, these replace the single auto-provisioned key. Each secret is stored by Jitsu as-is and is shown to the user only at generation time. */
+  write_keys?: SourceWriteKeyInput[] | null
 }
