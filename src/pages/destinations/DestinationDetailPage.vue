@@ -516,10 +516,20 @@ watch(
 
 // The backend spells the type in snake_case (`event_destination`,
 // `clickhouse`), which is a key, not something a stat card's hint should print.
-// Only ClickHouse needs its capitalisation kept; anything else — including a
-// type nobody here anticipated — comes out as sentence-cased words rather than
-// as a raw identifier.
-const DESTINATION_TYPE_LABELS = { clickhouse: 'ClickHouse' }
+// The labels match the registry titles in src/config/destinationRegistry.js;
+// anything else — including a type nobody here anticipated — comes out as
+// sentence-cased words rather than as a raw identifier.
+const DESTINATION_TYPE_LABELS = {
+  clickhouse: 'ClickHouse',
+  postgres: 'PostgreSQL',
+  bigquery: 'Google BigQuery',
+  snowflake: 'Snowflake',
+  'meta-conversions-api': 'Meta Conversions API',
+  'tiktok-events-api': 'TikTok Events API',
+  'google-ads': 'Google Ads Offline Conversions',
+  webhook: 'Webhook',
+  s3: 'Amazon S3'
+}
 
 const destinationTypeLabel = computed(() => {
   const type = destination.value?.destinationType

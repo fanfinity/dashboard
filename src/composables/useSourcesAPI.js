@@ -4,6 +4,9 @@ import {
   connectZidSource,
   getZidConnectStatus
 } from '@/api/fanfinity'
+// Salla fetchers live in a hand-written sibling until the backend deploys to
+// staging and `pnpm openapi` regenerates them into fanfinity.ts (see src/api/salla.ts).
+import { connectSallaSource, getSallaConnectStatus } from '@/api/salla'
 import { camelizeKeys } from '@/lib/apiShape'
 import { currentAccount, waitForAccount } from '@/composables/useMe'
 
@@ -140,5 +143,42 @@ export function useSourcesAPI() {
     }
   }
 
-  return { saving, error, create, connectZid, zidStatus }
+  /**
+   * Salla equivalent of `connectZid`: register the Salla store's webhooks. The
+   * source must already have a write key + Jitsu site (set by `create()`).
+   *
+   * @returns {Promise<object>} SallaSourceConnectResult { status, storeId, webhooks, snippet }
+   */
+  async function connectSalla(sourceId) {
+    const id = await accountId()
+    const { data } = await connectSallaSource(id, sourceId)
+    return camelizeKeys(data)
+  }
+
+  /**
+   * Salla equivalent of `zidStatus`: whether the store finished OAuth and, when
+   * it has not, the start-hop URL to begin one. Returns the whole body.
+   *
+   * @returns {Promise<{connected: boolean, authorizeUrl: string, storeId: ?string}>}
+   */
+  async function sallaStatus(sourceId) {
+    const id = await accountId()
+    const { data } = await getSallaConnectStatus(id, sourceId)
+    const body = camelizeKeys(data) ?? {}
+    return {
+      connected: Boolean(body.connected),
+      authorizeUrl: body.authorizeUrl || '',
+      storeId: body.storeId ?? null
+    }
+  }
+
+  return {
+    saving,
+    error,
+    create,
+    connectZid,
+    zidStatus,
+    connectSalla,
+    sallaStatus
+  }
 }

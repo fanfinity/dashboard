@@ -62,6 +62,8 @@ export const SOURCE_INTENTS = [
     title: 'An online store',
     body: [
       { text: 'Zid', strong: true },
+      { text: ', ' },
+      { text: 'Salla', strong: true },
       { text: ' or ' },
       { text: 'Shopify', strong: true },
       {
@@ -70,7 +72,7 @@ export const SOURCE_INTENTS = [
     ],
     outcome: 'Store source',
     hero: true,
-    templates: ['zid', 'shopify']
+    templates: ['zid', 'salla', 'shopify']
   },
   {
     key: 'app',

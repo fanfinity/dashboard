@@ -49,6 +49,7 @@
            it: `ZidConnection` carries no source id and `Source` carries no
            connection id, only a matching `store_id`. -->
       <ZidConnectionsPanel v-else-if="view === 'zid'" :sources="sources" />
+      <SallaConnectionsPanel v-else-if="view === 'salla'" :sources="sources" />
 
       <template v-else>
         <div class="mb-4">
@@ -175,6 +176,7 @@ import SetupReminderStrip from '@/components/shell/SetupReminderStrip.vue'
 import { useSetupProgress } from '@/composables/useSetupProgress'
 import ConnectorCatalog from '@/components/sources/ConnectorCatalog.vue'
 import ZidConnectionsPanel from '@/components/sources/ZidConnectionsPanel.vue'
+import SallaConnectionsPanel from '@/components/sources/SallaConnectionsPanel.vue'
 import {
   formatCount,
   sourceTypeLabel,
@@ -215,7 +217,7 @@ const target = ref(null)
 // catalog is linkable and survives a reload. It is a query rather than a child
 // route because both halves are the same screen with the same <h1> — a route
 // would put "Connectors" back in the sidebar, which is what this change undid.
-const VIEWS = ['streams', 'connectors', 'zid']
+const VIEWS = ['streams', 'connectors', 'zid', 'salla']
 
 const view = ref(VIEWS.includes(route.query.tab) ? route.query.tab : 'streams')
 
@@ -224,7 +226,8 @@ const viewTabs = [
   { key: 'connectors', label: 'Connectors' },
   // Third view rather than a screen, same reasoning as Connectors: authorising a
   // Zid store is a step in adding a source, and both halves share this <h1>.
-  { key: 'zid', label: 'Zid stores' }
+  { key: 'zid', label: 'Zid stores' },
+  { key: 'salla', label: 'Salla stores' }
 ]
 
 // `replace` so flipping tabs does not stack history entries the back button then

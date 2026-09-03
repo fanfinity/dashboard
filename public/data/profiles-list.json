@@ -1,0 +1,77 @@
+{
+  "items": [
+    {
+      "id": "18473814",
+      "accountId": "acc_demo",
+      "profileBuilderId": "",
+      "traits": {
+        "name": "Dania Alzoubi",
+        "email": "dania.alzoubi@fanfinity.io",
+        "phone": "+962792833857"
+      },
+      "identifiers": [
+        {
+          "type": "user_id",
+          "value": "18473814",
+          "firstSeenAt": "2026-08-30T10:00:00.000Z",
+          "lastSeenAt": "2026-08-31T13:37:37.094Z",
+          "match": "deterministic"
+        },
+        {
+          "type": "email",
+          "value": "dania.alzoubi@fanfinity.io",
+          "firstSeenAt": "2026-08-30T10:00:00.000Z",
+          "lastSeenAt": "2026-08-31T13:37:37.094Z",
+          "match": "deterministic"
+        },
+        {
+          "type": "phone",
+          "value": "+962792833857",
+          "firstSeenAt": "2026-08-30T10:00:00.000Z",
+          "lastSeenAt": "2026-08-31T13:37:37.094Z",
+          "match": "deterministic"
+        },
+        {
+          "type": "anonymous_id",
+          "value": "c5057b11-81d5-483a-a698-721426b40e93",
+          "firstSeenAt": "2026-08-30T10:00:00.000Z",
+          "lastSeenAt": "2026-08-31T13:37:37.094Z",
+          "match": "deterministic"
+        }
+      ],
+      "confidence": 1.0,
+      "firstSeenAt": "2026-08-30T10:00:00.000Z",
+      "lastSeenAt": "2026-08-31T13:37:37.094Z",
+      "eventCount": 3,
+      "updatedAt": "2026-08-31T13:37:37.094Z"
+    },
+    {
+      "id": "layla.alharbi@example.com",
+      "accountId": "acc_demo",
+      "profileBuilderId": "",
+      "traits": {
+        "name": "Layla Alharbi",
+        "email": "layla.alharbi@example.com",
+        "phone": null
+      },
+      "identifiers": [
+        {
+          "type": "email",
+          "value": "layla.alharbi@example.com",
+          "firstSeenAt": "2026-08-12T08:05:00.000Z",
+          "lastSeenAt": "2026-08-28T19:22:10.000Z",
+          "match": "deterministic"
+        }
+      ],
+      "confidence": 1.0,
+      "firstSeenAt": "2026-08-12T08:05:00.000Z",
+      "lastSeenAt": "2026-08-28T19:22:10.000Z",
+      "eventCount": 1,
+      "updatedAt": "2026-08-28T19:22:10.000Z"
+    }
+  ],
+  "total": 2,
+  "page": 1,
+  "size": 50,
+  "pages": 1
+}
