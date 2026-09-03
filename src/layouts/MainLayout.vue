@@ -572,6 +572,7 @@ const navGroups = [
     label: 'Profiles',
     icon: icContacts,
     children: [
+      { label: 'Profiles', to: '/profiles' },
       { label: 'Profile search', to: '/profiles/search' },
       {
         label: 'Identity resolution',

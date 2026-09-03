@@ -127,6 +127,7 @@
            It sits below the template picker only because picking Zid is what
            reveals it. -->
       <ZidAuthorizePanel v-if="isZid" v-model="form.storeId" />
+      <SallaAuthorizePanel v-if="isSalla" v-model="form.storeId" />
 
       <FormSection
         title="Details"
@@ -261,7 +262,8 @@
           >Back</SfereButton
         >
         <p v-if="!canSubmit" class="min-w-0 flex-1 text-xs text-subtle"
-          >Authorize your Zid store above to continue.</p
+          >Authorize your {{ isSalla ? 'Salla' : 'Zid' }} store above to
+          continue.</p
         >
         <p v-else-if="!isReal" class="min-w-0 flex-1 text-xs text-subtle"
           >Demo data mode. This will walk you through setup but save nothing.
@@ -312,6 +314,7 @@
            SourceInstallGuide is shared: whoever closes this tab mid-setup meets
            the identical three steps when they come back. -->
       <ZidSetupWizard v-if="showZidWizard" :source="created" />
+      <SallaSetupWizard v-if="showSallaWizard" :source="created" />
 
       <ProvisionedPipePanel
         v-if="!preview"
@@ -391,6 +394,8 @@ import SourceProvisionedOverlay from '@/components/sources/SourceProvisionedOver
 import SourceTemplatePicker from '@/components/sources/SourceTemplatePicker.vue'
 import ZidSetupWizard from '@/components/sources/ZidSetupWizard.vue'
 import ZidAuthorizePanel from '@/components/sources/ZidAuthorizePanel.vue'
+import SallaSetupWizard from '@/components/sources/SallaSetupWizard.vue'
+import SallaAuthorizePanel from '@/components/sources/SallaAuthorizePanel.vue'
 import { intentByKey } from '@/config/sourceIntents'
 import { slugify, useSourceTemplates } from '@/composables/useSources'
 import { useSourcesAPI } from '@/composables/useSourcesAPI'
@@ -469,11 +474,18 @@ const intentTemplates = computed(() => {
 const selectedTemplate = computed(() => findById(form.templateId))
 
 const isZid = computed(() => form.templateId === 'zid')
+const isSalla = computed(() => form.templateId === 'salla')
+// Zid and Salla share the OAuth-store shape: a store id read off an authorization
+// grant, gating the submit. Everything keyed on "is this an authorized store
+// source" uses this rather than naming each platform.
+const isStoreOAuth = computed(() => isZid.value || isSalla.value)
 
-// A Zid store id only ever comes from an authorization now, so its presence IS
-// "the store granted access". Nothing else on this form can block submitting —
-// name, slug and template all report their problems on submit instead.
-const canSubmit = computed(() => !isZid.value || Boolean(form.storeId.trim()))
+// A store id only ever comes from an authorization now, so its presence IS "the
+// store granted access". Nothing else on this form can block submitting — name,
+// slug and template all report their problems on submit instead.
+const canSubmit = computed(
+  () => !isStoreOAuth.value || Boolean(form.storeId.trim())
+)
 
 // The remaining go-live steps for a Zid source: register webhooks and run the
 // first backfill. Both need a source id, so unlike authorisation they can only
@@ -487,6 +499,10 @@ const showZidWizard = computed(
   () => !preview.value && isReal.value && created.value?.sourceType === 'zid'
 )
 
+const showSallaWizard = computed(
+  () => !preview.value && isReal.value && created.value?.sourceType === 'salla'
+)
+
 // The celebratory overlay is suppressed for Zid, and it is the same judgement
 // that puts the wizard above ProvisionedPipePanel: the chain the backend built
 // is real but DRY until webhooks are registered and the first sync has run, so
@@ -494,7 +510,10 @@ const showZidWizard = computed(
 // least true. The panel still states the chain, under the steps that make it
 // carry anything.
 const showProvisionedOverlay = computed(
-  () => !preview.value && created.value?.sourceType !== 'zid'
+  () =>
+    !preview.value &&
+    created.value?.sourceType !== 'zid' &&
+    created.value?.sourceType !== 'salla'
 )
 
 // A cloud app is polled, so no key is ever issued for it and the Keys section
@@ -604,8 +623,8 @@ function validate() {
   errors.templateId = form.templateId ? '' : 'Pick a source template.'
   errors.name = form.name.trim() ? '' : 'A source name is required.'
   errors.storeId =
-    isZid.value && !form.storeId.trim()
-      ? 'A Zid source needs its store ID.'
+    isStoreOAuth.value && !form.storeId.trim()
+      ? `A ${isSalla.value ? 'Salla' : 'Zid'} source needs its store ID.`
       : ''
 
   if (!form.slug.trim()) {
@@ -629,21 +648,23 @@ async function submit() {
   // a second fetch.
   if (isReal.value) {
     try {
-      // The zid and web-sdk templates map to the backend's own source types —
-      // both provision a Jitsu stream + write key + ClickHouse destination and
-      // pipeline in the create call.
+      // The zid, salla and web-sdk templates map to the backend's own source
+      // types — all provision a Jitsu stream + write key + ClickHouse destination
+      // and pipeline in the create call.
       const sourceType = isZid.value
         ? 'zid'
-        : form.templateId === 'web-sdk'
-          ? 'web'
-          : (findById(form.templateId)?.sourceType ?? null)
+        : isSalla.value
+          ? 'salla'
+          : form.templateId === 'web-sdk'
+            ? 'web'
+            : (findById(form.templateId)?.sourceType ?? null)
 
       const result = await createSourceReal({
         name: form.name.trim(),
         slug: form.slug.trim(),
         sourceType,
         templateId: form.templateId || null,
-        storeId: isZid.value ? form.storeId.trim() : null
+        storeId: isStoreOAuth.value ? form.storeId.trim() : null
       })
 
       $q.notify({
@@ -669,7 +690,8 @@ async function submit() {
         // missing one would open the OAuth page against `undefined` — a dead end
         // with no error, on the one step the merchant cannot skip. `Source`
         // does carry `store_id`, so this is the same belt as `slug` above.
-        storeId: result.storeId ?? (isZid.value ? form.storeId.trim() : null)
+        storeId:
+          result.storeId ?? (isStoreOAuth.value ? form.storeId.trim() : null)
       }
       preview.value = false
       step.value = 'install'
