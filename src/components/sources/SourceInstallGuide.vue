@@ -176,6 +176,7 @@
             :loading="checking"
             :disabled="checking"
             size="sm"
+            data-tour="source-verify"
             @click="check"
             >{{ verified ? 'Check again' : 'Check for events' }}</SfereButton
           >
@@ -215,6 +216,8 @@ import SfereTable from '@/components/ui/SfereTable.vue'
 import { methodsForSource } from '@/lib/sourceInstallSnippets'
 import { listSourceEvents } from '@/api/fanfinity'
 import { currentAccount, waitForAccount } from '@/composables/useMe'
+import { useConfetti } from '@/composables/useConfetti'
+import { useGuidedTour } from '@/composables/useGuidedTour'
 
 // Step 3 of the guided source flow, and also the "Setup instructions" tab on a
 // source's detail page — the same content in both places, because the person who
@@ -249,6 +252,27 @@ const checking = ref(false)
 const verified = ref(false)
 const result = ref(null)
 const lastChecked = ref('')
+
+// The first real event is the moment the whole setup was for, so it gets the
+// same burst the provisioned pipeline does.
+//
+// GATED ON THE RESULT, NOT ON `verified`, and that distinction is the bug this
+// avoids rather than a style choice: the preview branch below also sets
+// `verified` and emits, while reporting `tone: 'info'` and saying plainly that
+// nothing was checked. Celebrating there would be confetti for a source that was
+// never saved.
+//
+// ONE-WAY, because the button becomes "Check again" and every later click
+// re-enters the same success branch — a burst per click would turn the
+// celebration into a toy.
+const { fire: fireConfetti } = useConfetti()
+// The last step of the walkthrough is this button, so a real event is also where
+// the walkthrough ends. Ended here rather than on the create page because this
+// component is the one that learns the answer — and because it is shared with
+// the source detail page, so somebody who closed the tab mid-setup and came back
+// a week later finishes the same walkthrough on the same control.
+const { end: endTour } = useGuidedTour()
+let celebrated = false
 
 const methods = computed(() => methodsForSource(props.source))
 
@@ -342,6 +366,13 @@ async function check() {
         tone: 'success',
         title: 'Events are arriving',
         message: `${data.total} event${data.total === 1 ? '' : 's'} received so far. ${arrivedNext.value}`
+      }
+      if (!celebrated) {
+        celebrated = true
+        // Lower and smaller than the create page's burst: this one sits over a
+        // result panel someone is reading, not over a full-screen overlay.
+        fireConfetti({ count: 80, origin: { x: 0.5, y: 0.55 } })
+        endTour()
       }
       emit('verified')
     } else {

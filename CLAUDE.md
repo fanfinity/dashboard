@@ -706,7 +706,7 @@ Any new gating must preserve that; a redirect would silently drop the gate to ~6
 **Hiding the sidebar rows did not touch this**: `/audiences` still renders `ComingSoonPanel` with
 its own `<h1>`, it just has no row pointing at it. Hide the rows, keep the gate.
 
-## Onboarding — one question, asked once
+## Onboarding — one question, then one path
 
 First sign-in asks **"Before we start — what do you do?"** and offers three personas:
 engineer ("I build the pipes"), marketer ("I run the campaigns"), analyst ("I answer for the
@@ -841,6 +841,47 @@ leads with, and nothing is hidden. `aria-describedby` points at that line so the
 out with the question, and the three cards sit in a `role="group"` labelled by the heading — not a
 `radiogroup`, which would promise arrow-key roving and a separate submit that a commit-on-click
 picker does not have.
+
+**Answering does not close the card — it swaps its contents for the path.** All three roles get
+the same second beat: the three setup steps as numbered nodes, one sentence in that role's own
+vocabulary, and one button onto the first step. That is the whole of the "guide them to their
+first source" hand-off, and there are four things about its shape worth not undoing.
+
+It is **one card, two beats, not two dialogs.** The dark canvas is the app's single deliberate
+exception (see the dialog rules above), and a second dark dialog is a change worth arguing about
+rather than a precedent already set — so `PersonaQuestion.vue` swaps its own contents in place,
+keeping the canvas, the bloom and the wordmark continuous. `MainLayout` owns which beat is
+showing, because everything between them is the layout's: recording the answer, starting the
+setup read, deciding whether the path is worth showing at all.
+
+It is **a beat, not a redirect.** Picking a role could push straight to `/sources/new`, and being
+thrown onto a form by a click you thought only recorded a preference reads as a misfire. The
+button is the consent; `I'll look around first` is the quiet way past, in the same weight as Skip
+on beat one and for the same reason.
+
+**Taking the button hands over to the spotlight walkthrough**, so the guidance does not stop at
+the card: `/sources/new` dims itself and rings the intent picker, then the Create row, then the
+event check, and the walkthrough ends when the first real event arrives. That is `SpotlightTour`
+and `useGuidedTour` — see "UI primitives" for how a page joins in, and note that the tour is armed
+by the CTA's click rather than by the role being recorded, so skipping the question arms nothing.
+
+**The button follows the workspace, not an assumption about it.** `MainLayout` calls
+`useSetupProgress()` — lazily: the factory only makes refs, and `load()` runs when someone
+actually answers, once ever. Someone invited into an account that already has a source is not a
+new workspace, and `Connect your first source` would be the product's first sentence to them and
+wrong; the CTA is the first _undone_ step's, or `Take me to my dashboard` at three of three. Until
+the reads land the marks are absent rather than green — `stepsKnown` gates them, because a tick is
+a claim a record exists and only a successful read can make it.
+
+**The per-role difference is copy, and that is a constraint rather than a lack of ambition.** Each
+persona carries an `onboarding: { headline, lede, payoff }` in `personas.js` — data on the
+persona, never a conditional in the consumer, the same invariant `nav` and `home` are held to. It
+has **no default**, unlike those two, because the beat only ever opens for a role that was just
+chosen: skipping goes straight back to Home, so there is no reader a `DEFAULT_ONBOARDING` would
+speak for and engineer is authored in full rather than left `null`. The three chapter scripts in
+`todos/site-overhaul-plan.md` §6 route the marketer and analyst through `/audiences`, `/journeys`
+and `/reporting`, every one of which is dark in `features.js`; three roles pointed at the one path
+that works today beats three roles pointed at two dead ends.
 
 **Both answers are acknowledged.** Choosing toasts the role; skipping toasts `No role set` with
 the pointer to Settings. Skip used to make the overlay simply vanish, which is indistinguishable
@@ -1028,7 +1069,7 @@ page) is the deliberate exception: it is long-form editorial prose, not product 
 
 ## UI primitives
 
-`src/components/ui/` is **the** component kit — 44 components, all built on the Sfere token
+`src/components/ui/` is **the** component kit — 46 components, all built on the Sfere token
 layer. **Use them; do not re-implement their markup and do not copy their class strings into a
 page.** Read `docs/ui-conventions.md` before writing any new screen.
 
@@ -1044,9 +1085,11 @@ Two naming schemes live in the folder, for a reason worth knowing:
   `StickyActionBar`, `SecretRevealDialog` and `RowActionsMenu` — are newer than that swap and
   simply describe what they do. A few of the older names are now worse than what
   they hold (`CardPanel` is a card, `NoticeBanner` is an alert); that was the price of the swap.
-- **25 keep their `Sfere*` names** — `SfereButton`, `SfereInput`, `SfereTable`, `SfereSection`,
-  `SfereFeatureCard` and friends. These have no pre-Sfere counterpart, and the prefix keeps
-  `SfereTable` distinguishable from a bare `<table>` and from `QTable`.
+- **27 keep their `Sfere*` names** — `SfereButton`, `SfereInput`, `SfereTable`, `SfereSection`,
+  `SfereFeatureCard`, `SfereConfetti` and friends. These have no pre-Sfere counterpart, and the
+  prefix keeps `SfereTable` distinguishable from a bare `<table>` and from `QTable`.
+  `SpotlightTour` is the one unprefixed newcomer, for `RowActionsMenu`'s reason: it is newer than
+  the swap and its name already describes what it does.
 
 This is not only about consistency: `scripts/smoke.mjs` detects a broken screen by looking for
 the single `[data-smoke="error"]` selector that `ErrorState` renders. Hand-rolled error blocks
@@ -1116,6 +1159,66 @@ each file says so and says not to simplify it back without changing all three. N
 a row-level Delete in the process: writing destructive confirm copy for two screens from scratch
 is a product decision, not a side effect of a control swap.
 
+**The guided walkthrough is a spotlight, and it is driven by the page rather than by itself.**
+`SpotlightTour` is mounted once in `MainLayout`, dims the window with a single `0 0 0 9999px`
+box-shadow whose own box is the hole, rings the control someone should use next, and floats a
+callout beside it. A page joins in two ways and no others: it calls
+`useGuidedTour().show(stepId)` when its own state changes, and it carries a `data-tour="…"`
+attribute on the thing to point at. `src/config/tours.js` holds the steps as pure data, the same
+idiom as `features.js` and `personas.js`.
+
+**`show()` from the page, never inference from the route, and that is what keeps a coachmark from
+outliving what it points at.** `SourceCreatePage` watches its own three-step flow and names the
+step; the tour knows nothing about routes or forms. A tour that guesses is a tour that says
+"click Create" on a screen with no Create — and because the page calls `show()` on mount as well
+as on change, the coachmark is re-derived from the screen on every load rather than remembered.
+Which step is showing is therefore **in memory**, while _whether a walkthrough is running_ is the
+`tour` field on the onboarding record: it has to survive the navigation off Home and a plausible
+reload, since step 3 is where somebody leaves to paste a snippet on their own site. A persisted
+step index would come back pointing at a control the create flow deliberately does not restore.
+
+**Three rules on the spotlight itself.** The layer is `pointer-events-none` apart from the
+callout, so **the dim blocks nothing** — step 2 spotlights the action row while its copy says the
+details above are still editable, and a blocking scrim would make that false. The anchor is
+measured every frame and its position is **not** CSS-transitioned; the travel between steps comes
+from the smooth `scrollIntoView` instead, because a transition on top of per-frame updates is the
+wobbling spotlight every tour library ends up filing a bug about. And **a missing or unlaid-out
+anchor renders nothing at all** rather than a callout pointing at empty space. There is no Next
+button: the step advances when the page does, because only the page knows whether the work was
+done, and the single control ends the walkthrough.
+
+**One tour today, and all three roles run it** — `source-setup`, three steps: pick an intent,
+create the source, check for the first event. The last of those ends the walkthrough in
+`SourceInstallGuide` beside the confetti, so finishing and celebrating are the same moment. Step 3
+waits for `SourceProvisionedOverlay`'s `close` when a pipe was provisioned, because pointing at a
+button under a full-screen curtain scrolls the page behind it and reveals a coachmark nobody saw
+arrive; `state` being `none` or `unavailable` means there is no curtain coming and it shows at
+once. `MainLayout` arms the tour **on the click** that takes the arrival's CTA, and only when that
+CTA leads to `/sources/new` — so a skipped question, which is the path `scripts/smoke.mjs` walks,
+never arms it, and no other CTA arms a spotlight with no step to show.
+
+**Celebration is a component, and its gate is never in it.** `SfereConfetti` is the kit's one
+canvas component and the one nothing on a screen mounts: a single renderer sits in `MainLayout`,
+and any screen anywhere below it says `useConfetti().fire()`. Hand-rolled rather than a dependency
+for the reason the glyph registry is inline — `default-src 'self'` blocks a CDN script and
+`assetsInlineLimit: 0` blocks the data URI those packages want — and its palette is read off
+`:root` with `getComputedStyle` at fire time, since a canvas cannot take a Tailwind class and a
+pasted hex is what broke last time the brand changed. Under `prefers-reduced-motion: reduce` it
+draws **nothing at all**, not a slower burst; that is only acceptable because every moment that
+fires one also states its result in words that stay on screen.
+
+**Two call sites today, and both gates are worth copying rather than loosening.** A burst is the
+loudest claim a screen can make, so it goes where the backend has already made something true:
+`/sources/new` step 3 fires on `provisioningState === 'found'` beside a shown
+`SourceProvisionedOverlay` — never on "a source was created", since three of the seven templates
+provision nothing, Zid's chain is dry until webhooks and a first sync have run, and Demo mode
+saved nothing — and `SourceInstallGuide` fires when the event check comes back with a real count,
+gated on `result.tone === 'success'` rather than on its `verified` emit, because the preview
+branch sets that too while reporting that nothing was checked. Each holds a one-way flag: `state`
+re-notifies when a late destinations read fills in a name, and `Check again` re-enters the success
+branch on every click. The create-page burst carries `delay: 700` so it lands as the overlay's
+chain finishes drawing rather than before it starts.
+
 **A secret the backend returns once goes through `SecretRevealDialog`, and its rules are the
 opposite of every other dialog's.** `ApiTokenCreated` and `WriteKeyCreated` carry a `plaintext`
 alongside the record; every later read carries a masked prefix, so the create response is the
@@ -1184,7 +1287,7 @@ sidebar collapses without changing the viewport, so one 1024px window has two co
 ## The Sfere design system
 
 `src/css/sfere.css` holds the token layer, measured off the live marketing site
-(<https://sfere.io>) rather than eyeballed, and `src/components/ui/` holds the 44-component kit
+(<https://sfere.io>) rather than eyeballed, and `src/components/ui/` holds the 46-component kit
 built on it. Browse the whole thing at **`#/design-system`** (hash mode — not `/design-system`);
 no sign-in required.
 

@@ -1,6 +1,9 @@
 import { computed, ref } from 'vue'
 import { PERSONA_KEYS, PERSONAS } from '@/config/personas'
+import { TOURS } from '@/config/tours'
 import { me } from '@/composables/useMe'
+
+const TOUR_IDS = Object.keys(TOURS)
 
 // What we know about the person using the dashboard, and how far through
 // onboarding they are.
@@ -23,11 +26,23 @@ const STATE_VERSION = 1
 
 // Shape in storage:
 //
-//   { v: 1, uid, persona, askedAt, skipped, completedAt, chapters: {}, runs: [] }
+//   { v: 1, uid, persona, askedAt, skipped, completedAt, tour, chapters: {}, runs: [] }
 //
 // `chapters` and `runs` are written empty today and are here on purpose: the tour
 // itself (the stepper, the strip, the completion card) is a later phase, and
 // having it find a record it can extend beats having it invent a second key.
+//
+// `tour` IS THE FIRST INSTALMENT OF THAT, and it is one string: the id of the
+// walkthrough currently running, or null. It lives here rather than in a
+// `sfere_guided_tour` key of its own for the reason above — and it is persisted
+// at all because the walkthrough spans a navigation AND a plausible reload:
+// `/sources/new` step 3 is where someone leaves to paste a snippet on their own
+// site, and `useSourceDraft` already restores the form they come back to. Losing
+// the guidance exactly there would drop it at the one moment it is worth most.
+//
+// NO VERSION BUMP FOR ADDING IT. STATE_VERSION is for a shape a reader cannot
+// make sense of; a record written before this field simply has no `tour`, which
+// reads as "no walkthrough running" — which is true of it.
 //
 // `uid` is what makes "ask on first login" true rather than "ask once per
 // browser". A shared machine would otherwise hand the second person to sign in
@@ -41,6 +56,7 @@ function emptyRecord() {
     askedAt: null,
     skipped: false,
     completedAt: null,
+    tour: null,
     chapters: {},
     runs: []
   }
@@ -71,6 +87,10 @@ function readRecord() {
       skipped: parsed.skipped === true,
       completedAt:
         typeof parsed.completedAt === 'string' ? parsed.completedAt : null,
+      // Validated against the registry the same way `persona` is: a tour id
+      // that no longer exists must read as "nothing running", not as a truthy
+      // tour whose steps nothing can resolve.
+      tour: TOUR_IDS.includes(parsed.tour) ? parsed.tour : null,
       chapters:
         parsed.chapters &&
         typeof parsed.chapters === 'object' &&
@@ -167,6 +187,31 @@ export function useOnboarding() {
     })
   }
 
+  // Which walkthrough is running, if any. Null for a record that is not ours,
+  // the same as `persona` — a tour is guidance for one person's account, and
+  // resuming a stranger's would spotlight a step they took, not one you owe.
+  const tour = computed(() => (isOurs.value ? record.value.tour : null))
+
+  /**
+   * Start a walkthrough. Refuses an unknown id rather than storing it, so a
+   * caller cannot leave the record naming a tour nothing can render.
+   *
+   * @param {string} id A key of TOURS.
+   */
+  function startTour(id) {
+    if (!TOUR_IDS.includes(id)) return
+    commit({ ...base(), uid: me.value?.id ?? null, tour: id })
+  }
+
+  // Finished, skipped or abandoned — one exit, because none of the three should
+  // leave a coachmark waiting on the next load and there is nothing else to
+  // distinguish them with yet. When `runs` grows a real writer, that is where
+  // the difference belongs.
+  function endTour() {
+    if (!isOurs.value) return
+    commit({ ...record.value, tour: null })
+  }
+
   // Back to unanswered, so the question appears again on Home. Exposed for the
   // Settings control, where "I would rather not say" needs somewhere to go.
   function askAgain() {
@@ -183,6 +228,9 @@ export function useOnboarding() {
     needsPersona,
     setPersona,
     skip,
-    askAgain
+    askAgain,
+    tour,
+    startTour,
+    endTour
   }
 }

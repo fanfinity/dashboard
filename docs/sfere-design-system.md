@@ -32,7 +32,7 @@ The replacement kept the sixteen original filenames — `PageHeader.vue`,
 files pick up Sfere implementations without rewriting 571 imports. Twenty-five
 components have no pre-Sfere counterpart and keep their `Sfere*` names. The
 remaining three — `StickyActionBar`, `SecretRevealDialog` and `RowActionsMenu` —
-are newer than the swap and simply describe what they do: 16 + 25 + 3 = 44.
+are newer than the swap and simply describe what they do: 16 + 27 + 3 = 46.
 
 ---
 
@@ -41,7 +41,7 @@ are newer than the swap and simply describe what they do: 16 + 25 + 3 = 44.
 | Path                         | What                                                           |
 | ---------------------------- | -------------------------------------------------------------- |
 | `src/css/sfere.css`          | The token layer: `@theme` tokens + seven `@utility` treatments |
-| `src/components/ui/`         | 44 components. The kit every screen is built from              |
+| `src/components/ui/`         | 46 components. The kit every screen is built from              |
 | `src/components/sfere-docs/` | Doc-page scaffolding. **Not** part of the kit                  |
 | `src/pages/design-system/`   | The showcase page itself                                       |
 | `public/brand/`              | Logo lockups and the mark, as real SVG files                   |
@@ -208,7 +208,7 @@ inexplicably invisible, check for a bare `hidden`.
 
 ## Components
 
-44, in `src/components/ui/`, imported by path:
+46, in `src/components/ui/`, imported by path:
 
 ```js
 import SfereButton from '@/components/ui/SfereButton.vue'
@@ -231,7 +231,7 @@ the data and hands down strings. The one carve-out is a declarative
 **Surfaces & data** — `SfereSection` `SfereSectionHeading` `SfereFeatureCard`
 `SfereTable` `SfereCode`
 **Feedback** — `SfereBreadcrumbs` `SfereProgress` `SfereSkeleton`
-`SfereSpinner`
+`SfereSpinner` `SfereConfetti` `SpotlightTour`
 **Brand** — `SfereLogo`
 
 The first group is the one every screen is built from; the rest came from the
@@ -296,9 +296,94 @@ Every icon is `aria-hidden` with `focusable="false"` and takes no `title` prop �
 it is decorative beside a label, or the whole content of a control that carries
 its own. Adding a glyph means one entry in that file; nothing else changes.
 
+### The celebration canvas
+
+`SfereConfetti` is the one component in the kit that draws to a `<canvas>`, and
+the one nothing on a screen ever mounts. A single renderer sits in
+`MainLayout`; a page says `useConfetti().fire()` and is done. `/login`,
+`/signup` and `/design-system` are outside that layout, so the docs page mounts
+its own — which is also the demonstration that a second one is safe, since
+bursts are drained from a queue rather than broadcast.
+
+Hand-rolled rather than a dependency, for the reason the glyph registry is
+inline: `default-src 'self'` blocks a CDN script and `assetsInlineLimit: 0`
+blocks the data URI or worker the usual packages want. Its palette is read off
+`:root` with `getComputedStyle` at fire time, since a canvas cannot take a
+Tailwind class and a pasted hex is exactly what broke last time the brand
+changed. Only the hex-valued tokens are used — several greys are `oklch()`,
+which not every engine accepts as a canvas `fillStyle`.
+
+Two rules that are not decoration:
+
+- **Under `prefers-reduced-motion: reduce` it draws nothing at all**, not a
+  slower burst. There is no quiet version of confetti that is still confetti.
+  That is only acceptable because every moment that fires one also states its
+  result in words that stay on screen — "Your pipeline is live", "Events are
+  arriving" — so the information is never carried by the animation.
+- **The gate belongs at the call site.** A burst is the loudest claim a screen
+  can make, and this repo's whole posture is refusing to claim more than the
+  backend did. `SourceCreatePage` fires on `state === 'found'`, never on "a
+  source was created"; `SourceInstallGuide` fires on a real event count, never
+  on the preview branch that reports success with no backend behind it. Both
+  hold a one-way flag, because both moments can re-notify.
+
+It is not a modal, so it is not a third entry against the two-Quasar-dependency
+carve-out below: no focus trap, no Escape, no scroll lock, nothing to dismiss.
+`Teleport` plus `pointer-events-none` and `aria-hidden`, which is the
+`RowActionsMenu` precedent rather than the `ConfirmDialog` one. It carries no
+`data-smoke` attribute either — the kit still has exactly two.
+
+### The spotlight
+
+`SpotlightTour` is the other mounted-once component, and the only one that reads
+the DOM. It dims the window, cuts a hole around one control and says what the
+control is for. A page takes part in two ways and no others: it calls
+`useGuidedTour().show(stepId)` when its own state changes, and it puts a
+`data-tour="…"` attribute on the thing to point at. The step copy lives in
+`src/config/tours.js`.
+
+The dim and the hole are **one element** — a `0 0 0 9999px` spread box-shadow
+paints everything outside the box, so the box is the hole and a rounded hole is
+just a border radius. No clip-path, no four rectangles to keep in agreement.
+
+Four rules it will otherwise be got wrong on:
+
+- **The whole layer is `pointer-events-none` except the callout, so the dim
+  blocks nothing.** This is emphasis, not a modal. Step 2 of the source flow
+  spotlights the action row while its copy says the details above are still
+  editable, and a blocking scrim would make that sentence false — so the dimmed
+  area stays readable and stays clickable, and nobody can be trapped in a
+  walkthrough.
+- **The anchor is measured every frame, and its position is not transitioned.**
+  One `getBoundingClientRect` per frame is cheaper than the five listeners that
+  would replace it — scroll, resize, a ResizeObserver on the anchor, the sticky
+  bar settling, the card's own transitions — and a CSS transition on top of
+  per-frame updates is the wobbling, lagging spotlight every tour library
+  eventually files a bug about. The travel between steps comes from the smooth
+  `scrollIntoView` instead: the page moves under a ring that stays glued.
+- **A missing anchor renders nothing** — no ring, no callout — rather than a card
+  in the corner pointing at empty space. Same for a zero-sized box, which is an
+  element in the DOM but not laid out.
+- **There is no Next button.** The step advances when the page advances, because
+  the page is the only thing that knows whether the work was done; a Next would
+  let someone walk past it and then be pointed at a control that is not there.
+  The one control ends the walkthrough.
+
+It renders no heading and no `data-smoke` attribute, and it is not a modal, so it
+is not a third entry against the two-Quasar-dependency carve-out below.
+`aria-live="polite"` on the copy rather than moving focus — a coachmark that
+stole focus on every step would take the cursor out of the field being typed in.
+
+**There is deliberately no live specimen on `/design-system`.** A walkthrough
+only runs for a signed-in account whose onboarding record names it, and that page
+is unauthenticated by design, so the only demo available there would be a static
+mock-up of a ring — a picture of a component rather than the component. Drive the
+real thing instead: sign in with an empty `sfere_onboarding`, answer the role
+question, and take the button on the second beat.
+
 ### Screen primitives
 
-Sixteen of the 44 carry the filenames of the components they replaced, so that
+Sixteen of the 46 carry the filenames of the components they replaced, so that
 every screen picked up a Sfere implementation without an import changing. What
 each one is underneath:
 
@@ -494,7 +579,7 @@ the company prompting Claude Design gets the Sfere palette and typefaces by
 default.
 
 **Only the tokens cross over — the component kit does not.** Claude Design's
-agent builds in React; `src/components/ui/` is 44 Vue SFCs and cannot be
+agent builds in React; `src/components/ui/` is 46 Vue SFCs and cannot be
 imported there. The uploaded `_ds_bundle.js` is an empty namespace and says so.
 Anyone using it composes their own components from the tokens.
 

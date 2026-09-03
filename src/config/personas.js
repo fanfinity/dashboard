@@ -9,8 +9,9 @@
 // derivation is in todos/site-overhaul-plan.md §3.
 //
 // WHAT A PERSONA IS ALLOWED TO DO: pick which onboarding script runs, the ORDER
-// of the sidebar (`nav`), which nav group starts expanded, and the ORDER and
-// emphasis of the Dashboard's blocks (`home`). WHAT IT MUST NEVER DO: change
+// of the sidebar (`nav`), which nav group starts expanded, the ORDER and
+// emphasis of the Dashboard's blocks (`home`), and the WORDING of the arrival's
+// second beat (`onboarding`). WHAT IT MUST NEVER DO: change
 // what exists in the sidebar. A nav that hides rows by role means support and
 // documentation can no longer say "click Pipes" and be sure it is there, and a
 // marketer who needs Secrets once a quarter concludes the feature does not
@@ -38,6 +39,15 @@ export const PERSONAS = [
     cardTitle: 'I build the pipes',
     job: 'Get data in, correct, routed and observable.',
 
+    // The arrival's second beat, in this reader's own terms. See the note under
+    // DEFAULT_HOME for why this one is authored per persona with no default.
+    onboarding: {
+      headline: "Let's build your first pipeline",
+      lede: 'Connect a source and we provision its warehouse and the pipe feeding it in the same call. There is no glue to write between them.',
+      payoff:
+        'You end up with an ingest endpoint, a write key, and a delivery path you can watch.'
+    },
+
     // BOTH null, which means "as authored" — see DEFAULT_HOME below. The
     // sidebar and the Dashboard were designed for this reader, so engineer is
     // the identity ordering; spelling it out as a list that happens to match
@@ -52,6 +62,13 @@ export const PERSONAS = [
     label: 'Marketer',
     cardTitle: 'I run the campaigns',
     job: 'Turn fans into audiences and messages.',
+
+    onboarding: {
+      headline: "Let's get your fans flowing in",
+      lede: 'Campaigns need fans, and fans come from events. Connect the place they happen — your website or your store — and we set up where that data lands.',
+      payoff:
+        'Every visit and purchase then starts building the profiles you will segment.'
+    },
 
     nav: {
       // Profiles is promoted out of FANS and up next to Dashboard: it is this
@@ -93,6 +110,13 @@ export const PERSONAS = [
     label: 'Analyst or exec',
     cardTitle: 'I answer for the numbers',
     job: 'Trust the numbers, and get them out.',
+
+    onboarding: {
+      headline: "Let's get numbers you can stand behind",
+      lede: 'Nothing can be measured until something is collected. Connect a source and we provision its warehouse and the pipe feeding it in the same call.',
+      payoff:
+        'The dashboard then has something behind its counts, and your warehouse has a table to query.'
+    },
 
     nav: {
       // Watching the stream is this reader's first move, so it leads.
@@ -152,6 +176,23 @@ export const DEFAULT_HOME = {
   // is dismissed — it is this reader's own checklist.
   hideSetupWhenComplete: false
 }
+
+// `onboarding` HAS NO DEFAULT, and that asymmetry with `nav` and `home` is the
+// point rather than an oversight. Those two describe surfaces every reader sees,
+// so an unanswered or skipped question needs something to fall back to. The
+// arrival's second beat is the opposite: it exists only because a role was just
+// chosen, and MainLayout never opens it without one — skipping goes straight
+// back to Home, which is the whole meaning of skipping. So there is no reader a
+// DEFAULT_ONBOARDING would ever speak for, and engineer is authored in full here
+// rather than left `null` like its `nav`/`home`.
+//
+// All three say the same thing in three vocabularies: connect one source, and
+// the warehouse and the pipe come with it. That is deliberate and it is a
+// constraint, not a lack of imagination — the marketer and analyst chapter
+// scripts in todos/site-overhaul-plan.md §6 route through /audiences,
+// /journeys and /reporting, every one of which is switched off in features.js.
+// Three roles pointed at the one path that actually works today beats three
+// roles pointed at two dead ends.
 
 // There is deliberately no fourth "not sure" card. Three cards is already at the
 // limit of a question someone will answer in two seconds, and a fourth undermines

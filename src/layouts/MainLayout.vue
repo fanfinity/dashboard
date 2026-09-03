@@ -323,12 +323,39 @@
          on `/`: a deep link from Slack must not be met by a modal demanding a
          role, and the smoke gate needs the nav and every <h1> to stay in the
          DOM. Binding it to the route rather than to a one-shot flag is what
-         makes it close itself the moment you navigate away. -->
+         makes it close itself the moment you navigate away.
+
+         TWO BEATS, ONE CARD: the question, then the path onto the first setup
+         step. The layout drives the swap because everything between the beats is
+         the layout's — recording the answer, starting the setup read, and
+         deciding whether a workspace that is already wired up should see the
+         path at all. -->
     <PersonaQuestion
-      :open="personaQuestionOpen"
+      :open="arrivalOpen"
+      :step="arrivalStep"
+      :persona="personaMeta"
+      :steps="setupSteps"
+      :steps-known="setupKnown"
+      :cta-label="arrivalCta.label"
       @choose="onChoosePersona"
       @skip="onSkipPersona"
+      @start="onStartPath"
+      @dismiss="onDismissPath"
     />
+
+    <!-- The guided walkthrough's spotlight, mounted once for the same reason the
+         canvas below it is: it dims the whole window and points at one control,
+         and a per-page copy would mean every page owning a layer that has to
+         agree with the others. It draws nothing unless a page has named a step
+         AND that step's `data-tour` anchor is on screen. -->
+    <SpotlightTour />
+
+    <!-- The app-wide celebration canvas, mounted once. Every screen below this
+         layout fires it with `useConfetti().fire()` and owns no canvas of its
+         own; it draws nothing until something does. `/login`, `/signup` and
+         `/design-system` sit outside this layout, so anything there that wants a
+         burst mounts its own — the docs page does. -->
+    <SfereConfetti />
   </q-layout>
 </template>
 
@@ -341,11 +368,15 @@ import { useMe } from '@/composables/useMe'
 import { useEntitlements } from '@/composables/useEntitlements'
 import { useFeatures } from '@/composables/useFeatures'
 import { useOnboarding } from '@/composables/useOnboarding'
+import { useSetupProgress } from '@/composables/useSetupProgress'
+import { useGuidedTour } from '@/composables/useGuidedTour'
 import { useDataSource } from '@/composables/useDataSource'
 import { orderNavGroups, toFlat, toSections } from '@/lib/navOrder'
 import ComingSoonPanel from '@/components/ComingSoonPanel.vue'
 import PersonaQuestion from '@/components/onboarding/PersonaQuestion.vue'
 import DemoModeBanner from '@/components/DemoModeBanner.vue'
+import SfereConfetti from '@/components/ui/SfereConfetti.vue'
+import SpotlightTour from '@/components/ui/SpotlightTour.vue'
 import SfereIcon from '@/components/ui/SfereIcon.vue'
 import SfereIconButton from '@/components/ui/SfereIconButton.vue'
 
@@ -743,8 +774,81 @@ const visibleBottomMenu = computed(() =>
   bottomMenu.filter(item => !isInactive(item))
 )
 
-const personaQuestionOpen = computed(
-  () => needsPersona.value && route.path === '/'
+// The arrival is two beats on one card: the question, then the path from an
+// empty account to a working pipeline. `arrivalStep` is which one is showing.
+//
+// SEPARATE FROM `needsPersona`, and it has to be: the moment a role is recorded
+// `needsPersona` goes false, so a single computed keyed on it would close the
+// card in the same tick the answer arrives — which is precisely the beat this
+// adds. Beat one is gated on the question being unanswered; beat two on not
+// having been finished with.
+const arrivalStep = ref('question')
+const arrivalFinished = ref(false)
+
+// The three setup reads, and the only reason this load-bearing layout knows
+// about them. LAZY ON PURPOSE: the factory call here just makes refs, and
+// `load()` runs only when someone actually answers the question — once ever,
+// per account, rather than on every render of every route. DashboardHomePage
+// runs its own copy for the tracker; sharing one would mean a module singleton
+// whose `load()` two unrelated surfaces have to agree about, and this reads
+// three list endpoints that are cheap and already cached by the browser.
+const {
+  steps: setupSteps,
+  currentStep: setupCurrentStep,
+  complete: setupComplete,
+  loaded: setupLoaded,
+  unavailable: setupUnavailable,
+  load: loadSetup
+} = useSetupProgress()
+
+// Whether the marks on the path mean anything yet. False while the reads are in
+// flight and false if any of them failed or has no endpoint — in which case the
+// nodes still render the path, just without ticks. A tick is a claim that a
+// record exists, and only a successful read can make it.
+const setupKnown = computed(() => setupLoaded.value && !setupUnavailable.value)
+
+// Only to arm it. Which step is showing is named by the page that owns the
+// state, and the spotlight above renders whatever it was last told.
+const { startTour } = useGuidedTour()
+
+const arrivalOpen = computed(() => {
+  if (route.path !== '/') return false
+  if (arrivalStep.value === 'question') return needsPersona.value
+  return !arrivalFinished.value
+})
+
+// What the one button on beat two offers. It follows the workspace rather than
+// assuming an empty one: someone invited into an account that already has a
+// source is not a new workspace, and telling them to connect their first one
+// would be the screen's first sentence to them and wrong. Until the reads land
+// it offers the first step, which is right for every genuinely new account and
+// is a suggestion rather than a claim either way.
+const arrivalCta = computed(() => {
+  if (!setupKnown.value) {
+    return { label: 'Connect your first source →', to: { name: 'sources-new' } }
+  }
+  if (setupComplete.value) {
+    return { label: 'Take me to my dashboard', to: null }
+  }
+  const step = setupCurrentStep.value
+  return step
+    ? { label: `${step.cta} →`, to: step.to }
+    : { label: 'Connect your first source →', to: { name: 'sources-new' } }
+})
+
+function finishArrival() {
+  arrivalFinished.value = true
+  arrivalStep.value = 'question'
+}
+
+// Leaving `/` ends the beat rather than parking it. Without this, walking off to
+// Sources and coming back would reopen the card over a Home the reader has
+// already seen — an arrival is a thing that happens once.
+watch(
+  () => route.path,
+  path => {
+    if (path !== '/' && arrivalStep.value === 'path') finishArrival()
+  }
 )
 
 function onChoosePersona(key) {
@@ -755,6 +859,35 @@ function onChoosePersona(key) {
     color: 'dark',
     timeout: 2500
   })
+  // Deliberately not awaited: the path beat is worth showing immediately, and
+  // the marks and the button label sharpen when the reads land a moment later.
+  // Errors are already folded into `unavailable`, which is why there is nothing
+  // to catch here.
+  loadSetup()
+  arrivalStep.value = 'path'
+}
+
+// The button on beat two. `to: null` is the one case where there is nowhere to
+// go — a workspace already wired end to end — and closing onto the dashboard
+// behind the card is the honest answer to it.
+//
+// TAKING IT STARTS THE WALKTHROUGH, and only when it leads to `/sources/new`.
+// That is the one journey with a script behind it (see src/config/tours.js);
+// starting a tour before "Add a destination" or "Take me to my dashboard" would
+// arm a spotlight with no step to show, which renders as nothing and reads as
+// broken. Started from the CLICK rather than from the persona being recorded, so
+// somebody who skips the question — the path `scripts/smoke.mjs` walks — never
+// arms it at all.
+function onStartPath() {
+  const target = arrivalCta.value.to
+  finishArrival()
+  if (!target) return
+  if (target.name === 'sources-new') startTour('source-setup')
+  router.push(target)
+}
+
+function onDismissPath() {
+  finishArrival()
 }
 
 // Skipping is acknowledged, for the same reason choosing is. The overlay used to

@@ -97,7 +97,11 @@
          twice. `continueFromIntent` still owns what "continue" means — the
          connector intent navigates elsewhere, a single-template intent settles
          its template — it is just fired by the card now. -->
-    <div v-else-if="step === 'intent'" class="w-full max-w-[1400px]">
+    <div
+      v-else-if="step === 'intent'"
+      class="w-full max-w-[1400px]"
+      data-tour="source-intent"
+    >
       <SourceIntentPicker
         v-model="intent"
         :available-template-ids="templateIds"
@@ -140,6 +144,7 @@
            is about. -->
       <FormSection
         v-if="intentTemplates.length > 1"
+        data-tour="source-template"
         title="Which one?"
         :description="`${chosenIntent?.title} covers ${intentTemplates.length} templates. Pick the platform you are wiring up.`"
         class="@min-[64rem]:col-span-2"
@@ -298,7 +303,10 @@
         </FormSection>
       </div>
 
-      <StickyActionBar class="@min-[64rem]:col-span-2">
+      <StickyActionBar
+        class="@min-[64rem]:col-span-2"
+        data-tour="source-submit"
+      >
         <!-- A DISABLED SUBMIT IS ONLY ALLOWED WITH A SENTENCE BESIDE IT. QA
              filed the unexplained version of this as "invalid input is rejected
              completely silently", and the precedent that survived that — the Zid
@@ -371,6 +379,7 @@
         :source="created"
         :pipe="provisionedPipe"
         :destination="provisionedDestination"
+        @close="onProvisionedOverlayClose"
       />
 
       <!-- The one deliberate exception to "lead with what the backend already
@@ -473,6 +482,8 @@ import { useSourcesAPI } from '@/composables/useSourcesAPI'
 import { useSourceProvisioning } from '@/composables/useSourceProvisioning'
 import { useSourceDraft } from '@/composables/useSourceDraft'
 import { useDataSource } from '@/composables/useDataSource'
+import { useConfetti } from '@/composables/useConfetti'
+import { useGuidedTour } from '@/composables/useGuidedTour'
 
 const router = useRouter()
 const $q = useQuasar()
@@ -480,6 +491,8 @@ const { templates, loading, error, load, findById } = useSourceTemplates()
 const { isReal } = useDataSource()
 const { create: createSourceReal } = useSourcesAPI()
 const { hasDraft, draft, save: saveDraft, clear: clearDraft } = useSourceDraft()
+const { fire: fireConfetti } = useConfetti()
+const { show: showTourStep } = useGuidedTour()
 
 // What the create call built besides the source. Discovered, never assumed — a
 // `cloud_app` source gets no destination and no pipe, so the answer decides both
@@ -569,6 +582,13 @@ const selectedTemplate = computed(() => findById(form.templateId))
 
 const isZid = computed(() => form.templateId === 'zid')
 
+// Whether the form still owes a platform choice — which is exactly when the
+// "Which one?" section renders, and the only time Create is not the next thing
+// to press on this step.
+const needsTemplateChoice = computed(
+  () => intentTemplates.value.length > 1 && !form.templateId
+)
+
 // What is actually wrong with the form right now, regardless of whether the
 // reader has earned the right to be told. `errors` below is this, gated on
 // touched-or-submitted; `canSubmit` is this, ungated. Keeping the two derived
@@ -656,6 +676,84 @@ const showZidWizard = computed(
 const showProvisionedOverlay = computed(
   () => !preview.value && created.value?.sourceType !== 'zid'
 )
+
+// The burst, on exactly the same gate as the overlay and no wider. Three of the
+// seven templates provision nothing, Zid's chain is dry until webhooks and a
+// first sync have run, and Demo mode saved nothing at all — so "a source was
+// created" is not the moment, and `state === 'found'` beside a shown overlay is.
+// This repo's whole posture is refusing to claim more than the backend did, and
+// confetti is the loudest claim a screen can make.
+//
+// ONE-WAY, for the reason the overlay's own `started` flag exists: `state` can
+// settle to 'found' and notify again when a late destinations read fills in the
+// name, and a second burst over someone already reading their write key is
+// noise. A plain `let`, not a ref — nothing renders it.
+//
+// The delay lands it on the beat rather than ahead of it: the overlay lights its
+// three nodes 340ms apart, so the chain completes at ~800ms and a burst at
+// creation time would be over before the thing it celebrates had drawn.
+let celebratedProvisioning = false
+
+watch(
+  () => provisioningState.value,
+  state => {
+    if (state !== 'found' || celebratedProvisioning) return
+    if (!showProvisionedOverlay.value) return
+    celebratedProvisioning = true
+    fireConfetti({ count: 120, delay: 700, origin: { x: 0.5, y: 0.5 } })
+  }
+)
+
+// THE WALKTHROUGH IS DRIVEN FROM HERE, not inferred by the tour. This page is
+// the only thing that knows which of its three steps is showing, so it names the
+// coachmark for that step and the spotlight renders it; `show()` is a no-op
+// unless a walkthrough is actually running, which is what lets this be
+// unconditional. `immediate` covers a reload landing back on step 2 from the
+// draft, where nothing changes and the guidance still applies.
+//
+// STEP 3 WAITS ITS TURN. `SourceProvisionedOverlay` covers the whole screen for
+// two seconds when a pipe was provisioned, so pointing at a button underneath it
+// would scroll the page behind a curtain and reveal a coachmark somebody never
+// saw arrive. The overlay only ever opens on `state === 'found'`, so that is the
+// one case that waits for its `close`; every other answer — 'none' on a mobile
+// or HTTP source, 'unavailable' on a failed read, or no overlay at all in
+// preview — has no curtain to wait for. 'idle' and 'looking' wait because the
+// lookup may still turn into 'found'.
+watch(
+  [step, provisioningState, needsTemplateChoice],
+  () => {
+    if (step.value === 'intent') {
+      showTourStep('source-intent')
+      return
+    }
+    if (step.value === 'configure') {
+      // Rung 2 has two callouts and this is the page's own answer to which. An
+      // intent covering several platforms — "An online store" is Zid and
+      // Shopify — opens this form with the choice still outstanding, so Create
+      // is disabled and the next click is the picker, not the action row.
+      // Ringing Create there would dim the card someone actually has to press.
+      showTourStep(
+        needsTemplateChoice.value ? 'source-template' : 'source-configure'
+      )
+      return
+    }
+    if (showProvisionedOverlay.value) {
+      if (
+        provisioningState.value === 'none' ||
+        provisioningState.value === 'unavailable'
+      ) {
+        showTourStep('source-install')
+      }
+      return
+    }
+    showTourStep('source-install')
+  },
+  { immediate: true }
+)
+
+function onProvisionedOverlayClose() {
+  showTourStep('source-install')
+}
 
 // A cloud app is polled, so no key is ever issued for it and the Keys section
 // would be describing something that does not exist.
