@@ -1,5 +1,10 @@
 <template>
-  <q-page class="p-6">
+  <!-- 1400px cap, centred: the header, the toolbar and the table have to share
+       a right edge or the screen reads as three unrelated bands, and an
+       uncapped table stretches its columns into unreadable runs on a wide
+       monitor. No important suffix needed here — Quasar ships `.q-mx-auto`,
+       not `.mx-auto`, and no `max-w-*` rule at all. -->
+  <q-page class="mx-auto w-full max-w-[1400px] p-6">
     <PageHeader
       title="Goals"
       subtitle="The outcome a journey optimises for, measured over a fan attribute inside a rolling window."

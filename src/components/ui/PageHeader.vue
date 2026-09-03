@@ -13,13 +13,28 @@
            text is a 24px cap height, and it would compete with the actions group
            on the same line. Above, it reads as the trail it is. It is an <a>, so
            the <h1> underneath is still the first heading on the page — which is
-           what scripts/smoke.mjs asserts on. -->
+           what scripts/smoke.mjs asserts on.
+
+           `secondary`, not `ghost`, and that is the point of the control rather
+           than a styling preference: as a ghost it was bare text on the page
+           background that only grew a surface on hover, so on 15 sub-screens
+           the one way back out of a drill-down did not look like anything you
+           could press until you happened to be over it. Bordered and filled at
+           rest it reads as a control from across the page. Do not quieten it
+           back down. The `-ml-4` went with the ghost: that negative margin
+           existed to pull ghost PADDING off the left so its TEXT lined up with
+           the <h1>, and on a bordered pill it hangs the border into the gutter
+           instead. No instance class softens the weight or colour either —
+           `font-medium` against the variant's `font-semibold` is two layered
+           utilities in one layer, so which wins is Tailwind's ordering and not
+           the order written here. At 13px beside a 24px display <h1> there is
+           nothing to soften. -->
       <SfereButton
         v-if="backTarget"
         :to="{ name: backTarget.name }"
-        variant="ghost"
+        variant="secondary"
         size="sm"
-        class="-ml-4 mb-1.5"
+        class="mb-2"
       >
         <template #icon>
           <SfereIcon name="arrow-left" size="sm" />

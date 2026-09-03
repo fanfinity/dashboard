@@ -1,5 +1,10 @@
 <template>
-  <q-page class="p-6">
+  <!-- 1400px cap, centred: the header, the toolbar and the table have to share
+       a right edge or the screen reads as three unrelated bands, and an
+       uncapped table stretches its columns into unreadable runs on a wide
+       monitor. No important suffix needed here — Quasar ships `.q-mx-auto`,
+       not `.mx-auto`, and no `max-w-*` rule at all. -->
+  <q-page class="mx-auto w-full max-w-[1400px] p-6">
     <PageHeader
       title="Catalogs"
       subtitle="Product and content tables synced from your warehouse, so a message can name the exact item a fan cares about."
@@ -117,21 +122,15 @@
         />
       </template>
 
+      <!-- No wrapper: SfereTable puts `text-align: right` on a right-aligned
+           cell and the trigger's root is inline-level, so it reaches the right
+           edge without a flex row of its own. -->
       <template #cell-actions="{ row }">
-        <div class="flex items-center justify-end gap-2">
-          <button
-            class="rounded-lg border border-line2 bg-white px-3 py-1.5 text-sm font-medium text-brand hover:bg-fill"
-            @click.stop="sync(row)"
-          >
-            Sync now
-          </button>
-          <button
-            class="rounded-lg border border-line2 bg-white px-3 py-1.5 text-sm font-medium text-brand hover:bg-fill"
-            @click.stop="askToggle(row)"
-          >
-            {{ row.isEnabled ? 'Pause' : 'Enable' }}
-          </button>
-        </div>
+        <RowActionsMenu
+          :label="`Actions for ${row.name}`"
+          :actions="rowActions(row)"
+          @select="key => onRowAction(key, row)"
+        />
       </template>
 
       <template #empty>
@@ -175,6 +174,7 @@
 import { computed, onMounted, ref } from 'vue'
 import PageHeader from '@/components/ui/PageHeader.vue'
 import ConfirmDialog from '@/components/ui/ConfirmDialog.vue'
+import RowActionsMenu from '@/components/ui/RowActionsMenu.vue'
 import DataTable from '@/components/ui/DataTable.vue'
 import EmptyState from '@/components/ui/EmptyState.vue'
 import NoticeBanner from '@/components/ui/NoticeBanner.vue'
@@ -288,7 +288,8 @@ const columns = [
     align: 'right'
   },
   { key: 'isEnabled', label: 'Status', sortable: true },
-  { key: 'actions', label: '', align: 'right', width: '210px' }
+  // 72px: a 36px kebab plus the cell's own px-4. It held two text buttons.
+  { key: 'actions', label: '', align: 'right', width: '72px' }
 ]
 
 const SEARCH_FIELDS = [
@@ -345,6 +346,25 @@ function create() {
   toast(
     'Creating a catalog needs a warehouse connection this preview cannot make.'
   )
+}
+
+// No icons on this menu. sfereIcons.js has no glyph for "Sync now", and
+// RowActionsMenu lays an item out as `flex items-center gap-2` — so giving the
+// toggle a `pause`/`play` and leaving its neighbour bare would start the two
+// labels at different x. Per-menu rule: all of them, or none.
+function rowActions(row) {
+  return [
+    { key: 'sync', label: 'Sync now' },
+    { key: 'toggle', label: row.isEnabled ? 'Pause' : 'Enable' }
+  ]
+}
+
+// The menu reports a key and nothing else — the confirm dialog and its own
+// `toggleTarget` stay on the page. Syncing keeps its existing behaviour: it
+// has never opened a confirm, because nothing runs.
+function onRowAction(key, row) {
+  if (key === 'sync') sync(row)
+  else askToggle(row)
 }
 
 function sync(row) {

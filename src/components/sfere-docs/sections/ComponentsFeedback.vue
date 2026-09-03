@@ -58,6 +58,30 @@
           message="The access token expired 4 hours ago."
           dismissible
         />
+        <!-- `collapsible` turns the title into the disclosure control and hides
+             the slot behind it. Shown with slot content because that is the only
+             case it does anything in — a banner whose whole payload is `title`
+             has nothing to disclose. -->
+        <NoticeBanner
+          tone="warn"
+          title="3 issues need your attention"
+          collapsible
+        >
+          <ul class="grid gap-2">
+            <li class="grid gap-0.5">
+              <span class="text-sm font-medium text-ink">Android SDK</span>
+              <span class="text-sm text-muted"
+                >Enabled, but no events received in the last hour.</span
+              >
+            </li>
+            <li class="grid gap-0.5">
+              <span class="text-sm font-medium text-ink">S3 Cold Storage</span>
+              <span class="text-sm text-muted"
+                >Enabled, but no pipe delivers to it.</span
+              >
+            </li>
+          </ul>
+        </NoticeBanner>
       </div>
     </DocSpecimen>
 
@@ -146,6 +170,28 @@
         </div>
       </div>
     </DocSpecimen>
+
+    <DocSpecimen
+      title="SfereConfetti"
+      usage="One renderer is mounted in MainLayout, so a screen never mounts its own — it calls useConfetti().fire() and the layout draws it. Reserve it for a moment the backend actually made true: a provisioned pipeline, a first real event. It is the loudest claim a screen can make, and it draws nothing at all under prefers-reduced-motion, so the sentence beside it has to carry the meaning on its own."
+      code="const { fire } = useConfetti()
+fire({ count: 120, delay: 700, origin: { x: 0.5, y: 0.5 } })"
+    >
+      <!-- The docs page is registered directly in routes.js rather than in the
+           screen manifest, so it renders OUTSIDE MainLayout and there is no
+           app-wide canvas here to draw on. This specimen mounts its own, which
+           is also the demonstration that a second one is safe: bursts are
+           drained from the queue, not broadcast, so two renderers split them
+           rather than doubling them. -->
+      <div class="flex flex-wrap items-center gap-3">
+        <SfereButton @click="fireConfetti({ count: 120 })">Fire it</SfereButton>
+        <p class="text-sfere-sm text-sfere-fg-muted"
+          >Nothing happens if your system asks for reduced motion —
+          deliberately, and the reason is in the component.</p
+        >
+      </div>
+      <SfereConfetti />
+    </DocSpecimen>
   </DocSection>
 </template>
 
@@ -156,11 +202,15 @@ import DocSpecimen from '../DocSpecimen.vue'
 import NoticeBanner from '@/components/ui/NoticeBanner.vue'
 import SfereBreadcrumbs from '@/components/ui/SfereBreadcrumbs.vue'
 import SfereButton from '@/components/ui/SfereButton.vue'
+import SfereConfetti from '@/components/ui/SfereConfetti.vue'
 import EmptyState from '@/components/ui/EmptyState.vue'
 import SfereProgress from '@/components/ui/SfereProgress.vue'
 import SfereSkeleton from '@/components/ui/SfereSkeleton.vue'
 import SfereSpinner from '@/components/ui/SfereSpinner.vue'
 import TabNav from '@/components/ui/TabNav.vue'
+import { useConfetti } from '@/composables/useConfetti'
+
+const { fire: fireConfetti } = useConfetti()
 
 const tab = ref('all')
 

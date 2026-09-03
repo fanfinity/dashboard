@@ -1,152 +1,156 @@
 <template>
   <q-page class="p-6">
-    <PageHeader
-      title="Profile DWH syncs"
-      subtitle="Scheduled writes of the resolved profile set into your data warehouses."
-    >
-      <template #actions>
-        <ToolbarSearch v-model="query" placeholder="Search syncs..." />
-        <SfereIconButton
-          icon="trash"
-          label="Trash"
-          :to="{ name: 'profile-dwh-syncs-trash' }"
-        />
-        <SfereIconButton
-          icon="plus"
-          label="New sync"
-          variant="primary"
-          :to="{ name: 'profile-dwh-syncs-new' }"
-        />
-      </template>
-    </PageHeader>
-
-    <div
-      v-if="!loading && !error && syncs.length"
-      class="mb-5 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4"
-    >
-      <StatCard label="Syncs" :value="formatCount(syncs.length)" />
-      <StatCard
-        label="Enabled"
-        :value="`${enabledCount} of ${syncs.length}`"
-        :hint="nextRunHint"
-      />
-      <StatCard
-        label="Profiles written (last run)"
-        :value="formatCount(profilesLastRun)"
-        hint="Across every sync that has run."
-      />
-      <StatCard
-        label="Failing"
-        :value="formatCount(failingCount)"
-        :hint="
-          failingCount ? 'Last run ended in an error.' : 'All runs healthy.'
-        "
-      />
-    </div>
-
-    <TabNav v-model="tab" :tabs="tabs" />
-
-    <DataTable
-      :columns="columns"
-      :rows="visible"
-      :loading="loading"
-      :error="error"
-      row-key="id"
-      clickable-rows
-      @retry="load"
-      @row-click="inspect"
-    >
-      <template #cell-name="{ row }">
-        <p class="font-medium text-ink">{{ row.name }}</p>
-        <code class="font-mono text-xs text-subtle">{{ row.targetTable }}</code>
-      </template>
-
-      <template #cell-dwhConnectionName="{ row }">
-        <p class="text-muted">{{ row.dwhConnectionName }}</p>
-        <p class="text-xs text-subtle">{{ writeModeLabel(row.writeMode) }}</p>
-      </template>
-
-      <template #cell-payload="{ row }">
-        <p class="text-muted">{{ payloadLabel(row) }}</p>
-      </template>
-
-      <template #cell-schedule="{ row }">
-        <p class="text-muted">{{ scheduleLabel(row.schedule) }}</p>
-        <p class="text-xs text-subtle"
-          >Next: {{ formatDate(row.nextRunAt, NOT_SET) }}</p
-        >
-      </template>
-
-      <template #cell-lastRunAt="{ row }">
-        <div class="flex items-center gap-2">
-          <StatusBadge
-            :tone="runStatusMeta(row.lastRunStatus).variant"
-            :label="runStatusMeta(row.lastRunStatus).label"
+    <!-- One content cap for the header, the toolbar and the table, so all three
+         share a left AND a right edge. Same 1400px literal as DashboardHomePage
+         — deliberately wider than `--container-sfere-page` (80rem, the
+         marketing-site measure), which left ~40% of a wide monitor empty. On
+         the page, not in MainLayout: that layout is shared with screens which
+         want the full width. -->
+    <div class="mx-auto w-full max-w-[1400px]">
+      <PageHeader
+        title="Profile DWH syncs"
+        subtitle="Scheduled writes of the resolved profile set into your data warehouses."
+      >
+        <template #actions>
+          <ToolbarSearch v-model="query" placeholder="Search syncs..." />
+          <SfereIconButton
+            icon="plus"
+            label="New sync"
+            variant="primary"
+            :to="{ name: 'profile-dwh-syncs-new' }"
           />
-          <span class="text-xs text-subtle">{{
-            formatDate(row.lastRunAt, NEVER)
-          }}</span>
-        </div>
-      </template>
+        </template>
+      </PageHeader>
 
-      <template #cell-isEnabled="{ value }">
-        <StatusBadge
-          :tone="value ? 'success' : 'neutral'"
-          :label="value ? 'Enabled' : 'Paused'"
+      <div
+        v-if="!loading && !error && syncs.length"
+        class="mb-5 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4"
+      >
+        <StatCard label="Syncs" :value="formatCount(syncs.length)" />
+        <StatCard
+          label="Enabled"
+          :value="`${enabledCount} of ${syncs.length}`"
+          :hint="nextRunHint"
         />
-      </template>
+        <StatCard
+          label="Profiles written (last run)"
+          :value="formatCount(profilesLastRun)"
+          hint="Across every sync that has run."
+        />
+        <StatCard
+          label="Failing"
+          :value="formatCount(failingCount)"
+          :hint="
+            failingCount ? 'Last run ended in an error.' : 'All runs healthy.'
+          "
+        />
+      </div>
 
-      <template #cell-actions="{ row }">
-        <div class="flex items-center justify-end gap-2">
-          <button
-            class="rounded-lg border border-line2 bg-white px-3 py-1.5 text-sm font-medium text-brand hover:bg-fill"
-            @click.stop="askToggle(row)"
+      <TabNav v-model="tab" :tabs="tabs" />
+
+      <DataTable
+        :columns="columns"
+        :rows="visible"
+        :loading="loading"
+        :error="error"
+        row-key="id"
+        clickable-rows
+        @retry="load"
+        @row-click="inspect"
+      >
+        <template #cell-name="{ row }">
+          <p class="font-medium text-ink">{{ row.name }}</p>
+          <code class="font-mono text-xs text-subtle">{{
+            row.targetTable
+          }}</code>
+        </template>
+
+        <template #cell-dwhConnectionName="{ row }">
+          <p class="text-muted">{{ row.dwhConnectionName }}</p>
+          <p class="text-xs text-subtle">{{ writeModeLabel(row.writeMode) }}</p>
+        </template>
+
+        <template #cell-payload="{ row }">
+          <p class="text-muted">{{ payloadLabel(row) }}</p>
+        </template>
+
+        <template #cell-schedule="{ row }">
+          <p class="text-muted">{{ scheduleLabel(row.schedule) }}</p>
+          <p class="text-xs text-subtle"
+            >Next: {{ formatDate(row.nextRunAt, NOT_SET) }}</p
           >
-            {{ row.isEnabled ? 'Pause' : 'Enable' }}
-          </button>
-          <button
-            class="rounded-lg border border-line2 bg-white px-3 py-1.5 text-sm font-medium text-rose-600 hover:bg-fill"
-            @click.stop="ask(row)"
+        </template>
+
+        <template #cell-lastRunAt="{ row }">
+          <div class="flex items-center gap-2">
+            <StatusBadge
+              :tone="runStatusMeta(row.lastRunStatus).variant"
+              :label="runStatusMeta(row.lastRunStatus).label"
+            />
+            <span class="text-xs text-subtle">{{
+              formatDate(row.lastRunAt, NEVER)
+            }}</span>
+          </div>
+        </template>
+
+        <template #cell-isEnabled="{ value }">
+          <StatusBadge
+            :tone="value ? 'success' : 'neutral'"
+            :label="value ? 'Enabled' : 'Paused'"
+          />
+        </template>
+
+        <!-- No wrapper element: the column is `align: 'right'`, so SfereTable
+             puts `text-right` on the cell and the trigger is inline-level,
+             which is all the alignment it needs. A flex row here would be one
+             more of Quasar's unlayered wrapping `.flex` (collision #4) earning
+             nothing. The rows are clickable on this screen, so the trigger
+             stopping its own click matters: RowActionsMenu does that
+             internally, and `select` is a component emit, which does not bubble
+             to the <tr> at all. -->
+        <template #cell-actions="{ row }">
+          <RowActionsMenu
+            :label="`Actions for ${row.name}`"
+            :actions="actionsFor(row)"
+            @select="key => onRowAction(row, key)"
+          />
+        </template>
+
+        <!-- Two different "no rows" cases: nothing configured yet (offer the
+             primary CTA) and nothing matching the filters (offer a way back). -->
+        <template #empty>
+          <EmptyState
+            v-if="syncs.length"
+            title="No syncs match your filters"
+            description="Try a different search term, or switch back to the All tab."
           >
-            Delete
-          </button>
-        </div>
-      </template>
+            <template #cta>
+              <button
+                class="rounded-lg border border-line2 bg-white px-3 py-1.5 text-sm font-medium text-brand hover:bg-fill"
+                @click="clearFilters"
+              >
+                Clear filters
+              </button>
+            </template>
+          </EmptyState>
 
-      <!-- Two different "no rows" cases: nothing configured yet (offer the
-           primary CTA) and nothing matching the filters (offer a way back). -->
-      <template #empty>
-        <EmptyState
-          v-if="syncs.length"
-          title="No syncs match your filters"
-          description="Try a different search term, or switch back to the All tab."
-        >
-          <template #cta>
-            <button
-              class="rounded-lg border border-line2 bg-white px-3 py-1.5 text-sm font-medium text-brand hover:bg-fill"
-              @click="clearFilters"
-            >
-              Clear filters
-            </button>
-          </template>
-        </EmptyState>
-
-        <EmptyState
-          v-else
-          title="No profile DWH syncs yet"
-          description="A sync writes the resolved profile set into a warehouse table on a schedule, so analysts query the same fans your campaigns target."
-        >
-          <template #cta>
-            <button
-              class="flex h-9 items-center gap-1.5 rounded-lg bg-brand px-3.5 text-sm font-medium text-white shadow-sm hover:opacity-90"
-              @click="router.push({ name: 'profile-dwh-syncs-new' })"
-            >
-              Create your first sync
-            </button>
-          </template>
-        </EmptyState>
-      </template>
-    </DataTable>
+          <EmptyState
+            v-else
+            title="No profile DWH syncs yet"
+            description="A sync writes the resolved profile set into a warehouse table on a schedule, so analysts query the same fans your campaigns target."
+          >
+            <template #cta>
+              <button
+                class="flex h-9 items-center gap-1.5 rounded-lg bg-brand px-3.5 text-sm font-medium text-white shadow-sm hover:opacity-90"
+                @click="router.push({ name: 'profile-dwh-syncs-new' })"
+              >
+                Create your first sync
+              </button>
+            </template>
+          </EmptyState>
+        </template>
+      </DataTable>
+    </div>
 
     <ProfileDwhSyncDetailDialog v-model="showDetail" :sync="detailTarget" />
 
@@ -180,6 +184,7 @@ import StatusBadge from '@/components/ui/StatusBadge.vue'
 import EmptyState from '@/components/ui/EmptyState.vue'
 import ToolbarSearch from '@/components/ui/ToolbarSearch.vue'
 import SfereIconButton from '@/components/ui/SfereIconButton.vue'
+import RowActionsMenu from '@/components/ui/RowActionsMenu.vue'
 import ConfirmDialog from '@/components/ui/ConfirmDialog.vue'
 import ProfileDwhSyncDetailDialog from '@/components/profiles/dwh-syncs/ProfileDwhSyncDetailDialog.vue'
 import {
@@ -218,7 +223,7 @@ const columns = [
   { key: 'schedule', label: 'Schedule', sortable: true },
   { key: 'lastRunAt', label: 'Last run', sortable: true },
   { key: 'isEnabled', label: 'Status', sortable: true },
-  { key: 'actions', label: '', align: 'right', width: '190px' }
+  { key: 'actions', label: '', align: 'right', width: '72px' }
 ]
 
 // Each tab is a predicate over a sync; 'all' has none.
@@ -312,6 +317,24 @@ function inspect(row) {
   showDetail.value = true
 }
 
+// A function, not a constant: the toggle's label flips with `isEnabled`, so a
+// hoisted array would print "Pause" on a row that is already paused.
+//
+// The menu reports a choice and nothing else — every item still routes to the
+// handler it always had, so both actions keep their own ConfirmDialog, their
+// own target ref and their own per-screen sentence.
+function actionsFor(row) {
+  return [
+    { key: 'toggle', label: row.isEnabled ? 'Pause' : 'Enable' },
+    { key: 'delete', label: 'Delete', tone: 'destructive' }
+  ]
+}
+
+function onRowAction(row, key) {
+  if (key === 'toggle') askToggle(row)
+  else if (key === 'delete') ask(row)
+}
+
 const confirmToggle = ref(false)
 const toggleTarget = ref(null)
 
@@ -369,7 +392,10 @@ function remove() {
   if (!row) return
   removeSync(row.id)
   toast(`“${row.name}” moved to trash`)
-  target.value = null
+  // `target` is deliberately NOT nulled: `deleteMessage` reads it, so clearing it
+  // here blanks the dialog's sentence out while the dialog is still fading. The
+  // dialog's open state is its own ref, and `ask()` overwrites `target` before
+  // reopening, so nothing goes stale.
 }
 
 onMounted(load)

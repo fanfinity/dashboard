@@ -1,10 +1,14 @@
 <template>
-  <q-page class="p-6">
-    <PageHeader
-      title="Secrets"
-      subtitle="Encrypted credentials your pipe functions read back as secrets.KEY_NAME."
-    >
-      <template #actions>
+  <div>
+    <!-- The panel's own toolbar. This used to be PageHeader's #actions slot on a
+         screen of its own; as a Settings tab the <h1> belongs to Settings, so the
+         subtitle becomes a plain line and the two controls sit beside it. -->
+    <div class="mb-5 flex flex-wrap items-center justify-between gap-3">
+      <p class="min-w-0 flex-1 text-sm text-muted"
+        >Encrypted credentials your pipe functions read back as
+        <code class="font-mono text-[13px] text-ink">secrets.KEY_NAME</code>.</p
+      >
+      <div class="flex shrink-0 items-center gap-2">
         <ToolbarSearch v-model="query" placeholder="Search secrets..." />
         <button
           class="flex h-9 items-center gap-1.5 rounded-lg bg-brand px-3.5 text-sm font-medium text-white shadow-sm hover:opacity-90"
@@ -12,8 +16,8 @@
         >
           {{ showForm ? 'Close' : 'Add secret' }}
         </button>
-      </template>
-    </PageHeader>
+      </div>
+    </div>
 
     <div
       v-if="!loading && !error && secrets.length"
@@ -184,14 +188,13 @@
       destructive
       @confirm="purgeSecret"
     />
-  </q-page>
+  </div>
 </template>
 
 <script setup>
 import { NOT_KNOWN } from '@/lib/emptyValue'
 import { computed, onMounted, ref } from 'vue'
 import { useQuasar } from 'quasar'
-import PageHeader from '@/components/ui/PageHeader.vue'
 import TabNav from '@/components/ui/TabNav.vue'
 import DataTable from '@/components/ui/DataTable.vue'
 import StatCard from '@/components/ui/StatCard.vue'

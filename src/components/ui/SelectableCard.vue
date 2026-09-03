@@ -47,10 +47,27 @@ const classes = computed(() => [
     (props.onDark
       ? 'ring-2 ring-sfere-400'
       : 'border-sfere-300 ring-2 ring-sfere-brand-fill'),
+  // THE ON-DARK HOVER CARRIES THE BRAND, not just a brighter hairline. Both
+  // branches have to deliver the same signal — "this is the thing you press" —
+  // and the light one does it with a purple border plus a plum-tinted lift.
+  // On ink it used to be `hover:border-sfere-hairline-strong hover:bg-white/[0.06]`:
+  // a white wash and a slightly less faint white line, no brand and no
+  // elevation. That is thin anywhere and it was thinnest on the one surface
+  // where these cards are the only controls on screen (the first-run persona
+  // question), because there is no neighbouring button to borrow the
+  // affordance from.
+  //
+  // Fixed HERE rather than on the instance on purpose. An instance
+  // `hover:border-sfere-400` and this component's `hover:border-…` are two
+  // layered utilities setting the same property in the same layer, so which
+  // one wins is Tailwind's emission order rather than the order they were
+  // written — the same trap CLAUDE.md records for `font-medium` on the
+  // PageHeader back button. A component that owns the property has no
+  // ordering to lose.
   !props.disabled &&
     !props.selected &&
     (props.onDark
-      ? 'hover:border-sfere-hairline-strong hover:bg-white/[0.06]'
+      ? 'hover:border-sfere-500/70 hover:bg-white/[0.06] hover:shadow-sfere-glow'
       : 'hover:border-sfere-300 hover:shadow-sfere-soft')
 ])
 </script>

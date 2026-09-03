@@ -65,6 +65,18 @@ export const FEATURES = [
       'Code that runs on an event as it travels a pipe: reshape it, drop it, or add to it.',
     enabled: true
   },
+  // The bottom menu, in rail order: Trash sits directly above Settings. It is
+  // somewhere you go occasionally to recover something rather than somewhere you
+  // work — the same reasoning that moved Secrets and Authorizations off the main
+  // rail — and it is its own key rather than a share of `settings` so that
+  // switching one off cannot take the other with it.
+  {
+    key: 'trash',
+    label: 'Trash',
+    description:
+      'Deleted sources and destinations, and pipes left waiting for an end to reconnect.',
+    enabled: true
+  },
   {
     // The switchboard cannot switch itself off — `locked` renders its toggle
     // disabled. Without this, one click makes Feature activation unreachable and
@@ -176,6 +188,10 @@ export const FEATURES = [
     description: 'The demo store and event inspector.',
     enabled: false
   },
+  // Two keys that no longer gate a route. Secrets and Authorizations are tabs on
+  // /settings rather than screens of their own, so switching one off removes its
+  // tab instead of turning its page into ComingSoonPanel — same switch, same
+  // meaning, one surface further in.
   {
     key: 'secrets',
     label: 'Secrets',

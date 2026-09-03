@@ -358,11 +358,97 @@ the smoke test can assert on a single selector across every route.
     not need the suffix — it carries it anyway, so the class survives a later swap
     back to a Quasar control.
 
+16. **Repeated row actions collapse into one `RowActionsMenu`, not into bare
+    glyphs.** A list row used to carry its verbs as two or three bordered text
+    buttons in the last cell. That costs a 120–230px column on every screen and
+    keeps a Delete nobody clicks in permanent competition with the data beside
+    it. The kebab spends one 36px cell and shows the verbs when asked.
+
+    ```html
+    <!-- inside <template #cell-actions="{ row }"> -->
+    <RowActionsMenu
+      :label="`Actions for ${row.name}`"
+      :actions="rowActions(row)"
+      @select="onRowAction(row, $event)"
+    />
+    ```
+
+    `actions` is `[{ key, label, icon?, tone? }]` and `select` emits the key.
+    Build it in a **function** where a label depends on the row (`Pause` vs
+    `Enable`), and a module constant where it does not.
+
+    **It opens nothing and confirms nothing.** The page keeps its own
+    `ConfirmDialog`s, its own separate `toggleTarget` and `target` refs, and its
+    own per-screen copy, so an icon-only control inherits both halves of the
+    house rule below unchanged: a name a screen reader can read, and a confirm
+    that states the consequence. A menu item's label should be word-for-word the
+    confirm button it opens — "Move to trash", not "Delete", if that is what the
+    dialog says.
+
+    Five things a caller gets wrong once:
+
+    - **`label` is required and is the row's noun.** It is both the
+      `aria-label` on the trigger and the accessible name of the `role="menu"`.
+      A teleported menu is the one control where "which row is this?" cannot be
+      answered by looking.
+    - **No tooltip**, unlike `SfereIconButton`. A `SfereTooltip` bubble is
+      clipped by the same table scroller the menu teleports out of, and a native
+      `title` on top of an `aria-label` is announced as the description — the
+      same sentence twice.
+    - **An empty `actions` array is a dead control.** `openMenu()` returns early
+      on `[]`, so a page whose only action is conditional renders **no trigger**
+      (`v-if="!row.isManaged"`), never an empty menu.
+    - **Icons are per-menu, not per-app.** An item lays out as
+      `flex items-center gap-2`, so one icon-less entry beside iconed ones
+      starts its label a glyph's width to the left, and every item is on screen
+      at once. All of a menu's items carry a glyph or none do — and none is
+      right when `sfereIcons.js` has no honest mark for the verb ("Send test",
+      "Sync now", "Test connection").
+    - **No page-level `@click.stop`.** See the carve-out under the `@click.stop`
+      house rule below.
+
+    The actions column becomes 72px wide — a 36px trigger plus the cell's
+    `px-4` on each side — declared as
+    `{ key: 'actions', label: '', align: 'right', width: '72px' }`. No
+    wrapper element around the component: `align: 'right'` already puts
+    `text-right` on the `<td>` and the menu's root is `inline-grid`, so a
+    `flex items-center justify-end` wrapper would only re-open one more of
+    Quasar's unlayered wrapping `.flex` containers (rule 10).
+
+    **A kebab is not automatic.** One action with no second reading keeps its
+    labelled button — a one-item menu costs a click and shows no verb. The
+    exception is consistency across a set of sibling screens: `/destinations`
+    and `/pipes` carry one-item kebabs so the last column means the same thing
+    on all three live domains, and each file says not to simplify it back
+    without changing all three.
+
+17. **A back control is bordered and filled at rest, not a ghost.**
+    `PageHeader`'s manifest-driven back link is `variant="secondary"`. It shipped
+    as `variant="ghost"`, which is bare text on the page background that only
+    grows a surface on hover — so on all 15 sub-screens the one way back out of a
+    drill-down did not look pressable until the pointer happened to be over it,
+    and on touch there is no "happened to be over it".
+
+    Two details that look like tidying and are not:
+
+    - **No `-ml-4`.** That negative margin existed to pull _ghost padding_ off
+      the left so the link's text lined up with the `<h1>`. A bordered pill has a
+      visible edge, so the same margin hangs the border into the gutter. It is
+      `mb-2` and nothing else.
+    - **No instance class softening weight or colour.** `font-medium` against the
+      variant's own `font-semibold` is two layered utilities in one layer, so
+      which one wins is Tailwind's output ordering, not the order written in the
+      template. At 13px beside a 24px display `<h1>` there is nothing to soften.
+
+    The rule generalises: a navigation control that is the only way out of a
+    screen states itself at rest. Hover-revealed affordance is for a control the
+    reader can already see they do not need.
+
 ---
 
 ## House rules for screens
 
-Rules 1–15 are about the primitives. These are about how a screen uses them, and
+Rules 1–17 are about the primitives. These are about how a screen uses them, and
 every one of them is a bug wave 1 hit or narrowly avoided.
 
 ### A missing `:id` is empty, not an error
@@ -487,6 +573,12 @@ you navigate away instead of pausing the row.
 The modifier is harmless on a non-clickable table, so add it to every row action
 button and stop thinking about it.
 
+**`RowActionsMenu` is the one carve-out, and adding `.stop` to it is not wrong,
+just redundant.** It stops its own trigger click and its own menu root, and its
+items are teleported to `<body>`, so nothing it fires passes through the `<tr>`.
+`select` is a component emit, which does not bubble at all. Every list screen
+that swapped its buttons for the menu passes no modifier.
+
 ### Dates: pinned locale, `timeZone: 'UTC'`
 
 `toLocaleDateString()` with no arguments renders differently on the smoke
@@ -571,6 +663,11 @@ Three consequences worth keeping:
 Pass `back` only to override the manifest — an object to point somewhere else,
 `null` to suppress it on a screen that has a parent but should not offer the trip
 back mid-flow.
+
+**The link is `variant="secondary"`, bordered and filled at rest.** Rule 17 has
+the reasoning and the two things not to undo (`-ml-4` is gone with the ghost, and
+no instance class softens the weight). Appearance only — the props, the slots and
+the `back` override are unchanged.
 
 ### EmptyState.vue
 
@@ -920,6 +1017,7 @@ failure, and it must not trip the smoke gate.
 | `title`       | String                                      | `''`     |                   |
 | `message`     | String                                      | `''`     |                   |
 | `dismissible` | Boolean                                     | `false`  | adds a close ×    |
+| `collapsible` | Boolean                                     | `false`  | see below         |
 
 | Slot    | Scope | Notes                                         |
 | ------- | ----- | --------------------------------------------- |
@@ -934,6 +1032,22 @@ That is rule 11 in miniature: the `mt-0.5` it used to carry computed to zero, so
 title and message rendered on Quasar's flat 16px rhythm with another 16px of dead
 space under the last line — which is what pushed the copy to the top of the
 banner and read as "text not vertically centred".
+
+`collapsible` turns the title into a real `<button type="button">` carrying
+`aria-expanded` and `aria-controls`, and hides the default slot behind it until
+clicked. It is **default off**, which is what makes it a safe addition to a file
+every screen renders: not one existing banner changes. Three notes.
+
+It only does anything with slot content — a banner whose whole payload is `title`
+has nothing to disclose, so the branch is guarded on `$slots.default` too. Its
+chevron uses a conditional class (`:class="expanded ? 'rotate-90' : ''"`), never
+a `rotate-0` variant, because Quasar's unlayered `.rotate-90` means a layered
+utility can turn the rotation on and can never turn it off — rule 2's collision,
+and the same pattern `MainLayout` uses. And it is for a list that is a
+distraction to one reader and the point of the screen to another — the Dashboard's
+needs-attention list, which an engineer wants open and a marketer wants as a
+count. It is **not** a way to make a long banner shorter: if the detail is not
+worth a click, it is not worth the banner.
 
 Use this rather than stretching a `StatusBadge` — a badge is a pill sized for one
 or two words, and a whole sentence in one looks like a bug. `info` is brand,
@@ -1058,9 +1172,11 @@ value it judged changes.
 | `destructive`  | Boolean | `false`           | red confirm. Only for destroying data |
 | `loading`      | Boolean | `false`           | spinner on confirm; blocks the click  |
 
-Wraps `q-dialog` — the one Quasar dependency in the kit — for the focus trap,
-Escape, scroll lock, backdrop and teleport. Escape, the backdrop, Cancel and the
-× all dismiss it.
+Wraps `q-dialog` — one of the kit's two Quasar dependencies, both of them modals
+(`SecretRevealDialog` is the other) — for the focus trap, Escape, scroll lock,
+backdrop and teleport. Escape, the backdrop, Cancel and the × all dismiss it.
+The carve-out is for a modal specifically: `RowActionsMenu` is a popover and is
+hand-rolled rather than sat on `q-menu`.
 
 | Slot    | Scope                                  |
 | ------- | -------------------------------------- |
@@ -1096,8 +1212,15 @@ both on one screen makes them read as the same control.
 
 ## Buttons
 
-There is no `Button.vue` — buttons are one-liners and vary too much. Use these
-exact strings:
+**Read this section as history, not as instruction.** It predates the kit:
+`SfereButton` exists now, with `primary` / `secondary` / `ghost` / `danger`
+variants, and rule 6 says not to paste a primitive's class string into a page.
+Two of the strings below are also wrong on their own terms — `disabled:opacity-*`
+is a dead class everywhere in this repo, because Quasar ships an unlayered
+`[disabled] { opacity: .6 }` (CLAUDE.md collision #2), and `bg-rose-600` is a
+hardcoded palette value where a token belongs. Reach for `SfereButton`. What
+follows is kept because a hundred-odd pre-Sfere call sites still look like it and
+you will meet them:
 
 ```html
 <!-- primary -->
@@ -1333,15 +1456,16 @@ outcome.
 ```vue
 <template>
   <q-page class="p-6">
-    <PageHeader title="Trash" subtitle="Deleted items are kept for 30 days.">
+    <PageHeader title="Trash" subtitle="Restoring is not available yet.">
       <template #actions>
-        <button
+        <SfereButton
+          variant="danger"
+          size="sm"
           :disabled="!items.length"
-          class="rounded-lg bg-rose-600 px-3.5 py-1.5 text-sm font-medium text-white shadow-sm hover:opacity-90 disabled:opacity-50"
           @click="confirmEmpty = true"
         >
           Empty trash
-        </button>
+        </SfereButton>
       </template>
     </PageHeader>
 
@@ -1354,7 +1478,7 @@ outcome.
       :error="error"
       row-key="id"
       empty-title="Trash is empty"
-      empty-description="Nothing has been deleted in the last 30 days."
+      empty-description="Nothing has been deleted."
       @retry="load"
     >
       <template #cell-kind="{ value }">
@@ -1362,20 +1486,11 @@ outcome.
       </template>
 
       <template #cell-actions="{ row }">
-        <div class="flex items-center justify-end gap-2">
-          <button
-            class="rounded-lg border border-line2 bg-white px-3 py-1.5 text-sm font-medium text-brand hover:bg-fill"
-            @click="restore(row)"
-          >
-            Restore
-          </button>
-          <button
-            class="rounded-lg border border-line2 bg-white px-3 py-1.5 text-sm font-medium text-rose-600 hover:bg-fill"
-            @click="ask(row)"
-          >
-            Delete forever
-          </button>
-        </div>
+        <RowActionsMenu
+          :label="`Actions for ${row.name}`"
+          :actions="ROW_ACTIONS"
+          @select="onRowAction(row, $event)"
+        />
       </template>
     </DataTable>
 
@@ -1406,8 +1521,13 @@ import TabNav from '@/components/ui/TabNav.vue'
 import DataTable from '@/components/ui/DataTable.vue'
 import StatusBadge from '@/components/ui/StatusBadge.vue'
 import ConfirmDialog from '@/components/ui/ConfirmDialog.vue'
+import RowActionsMenu from '@/components/ui/RowActionsMenu.vue'
+import SfereButton from '@/components/ui/SfereButton.vue'
 import { useTrash } from '@/composables/useTrash'
 
+// `useTrash` is a stand-in so this example reads as one list. The real screen's
+// reader is `useTrashCollections()`, which serves three tabs off one fetch —
+// see src/composables/useTrashCollections.js.
 const { items, loading, error, load, restore, purge, purgeAll } = useTrash()
 
 const tab = ref('all')
@@ -1433,7 +1553,13 @@ const columns = [
   { key: 'name', label: 'Name', sortable: true },
   { key: 'kind', label: 'Type', sortable: true },
   { key: 'deletedAt', label: 'Deleted', sortable: true },
-  { key: 'actions', label: '', align: 'right', width: '220px' }
+  { key: 'actions', label: '', align: 'right', width: '72px' }
+]
+
+// A module constant, not a function: neither label depends on the row.
+const ROW_ACTIONS = [
+  { key: 'restore', label: 'Restore' },
+  { key: 'purge', label: 'Delete forever', tone: 'destructive' }
 ]
 
 const visible = computed(() =>
@@ -1449,11 +1575,29 @@ function ask(row) {
   confirmOne.value = true
 }
 
+// The menu emits a key; the page still owns the confirm. `target` is NOT nulled
+// inside `purge()` — `deleteMessage` reads it, so clearing it there blanks the
+// dialog's own sentence while the dialog is still fading out.
+function onRowAction(row, key) {
+  if (key === 'restore') restore(row)
+  else ask(row)
+}
+
 onMounted(load)
 </script>
 ```
 
 Points worth copying: an action column is `{ key: 'actions', label: '', align:
-'right', width: '220px' }` with a `cell-actions` slot; destructive confirmation
-always goes through `ConfirmDialog` with `destructive`; and the four states are
-still entirely `DataTable`'s job.
+'right', width: '72px' }` with a `cell-actions` slot holding one
+`RowActionsMenu` (rule 16); destructive confirmation always goes through
+`ConfirmDialog` with `destructive`; and the four states are still entirely
+`DataTable`'s job.
+
+**The subtitle and the empty description are deliberately shorter than they used
+to be.** Both said "kept for 30 days", and there is no retention window anywhere
+in the backend to keep them: `DELETE` on a source is a hard `204` with no soft
+delete and no restore call. A retention promise is the easiest false claim to
+leave sitting on a trash screen, so this example no longer carries one.
+`src/pages/trash/TrashPage.vue` is the shipped screen — go there for the
+three-tab shape, the `?tab=` query, and the pipes tab, which is a different list
+with different rules and no Restore at all.

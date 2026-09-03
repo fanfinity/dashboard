@@ -1,5 +1,10 @@
 <template>
-  <q-page class="p-6">
+  <!-- 1400px cap, centred: the header, the toolbar and the table have to share
+       a right edge or the screen reads as three unrelated bands, and an
+       uncapped table stretches its columns into unreadable runs on a wide
+       monitor. No important suffix needed here — Quasar ships `.q-mx-auto`,
+       not `.mx-auto`, and no `max-w-*` rule at all. -->
+  <q-page class="mx-auto w-full max-w-[1400px] p-6">
     <PageHeader
       title="Audiences"
       subtitle="Saved segments of resolved fans. Journeys enter from one, goals are measured over one, and live syncs push one to a destination."
@@ -110,30 +115,25 @@
         >
       </template>
 
+      <!-- The trash tab keeps its labelled button: one action behind a kebab
+           costs a click and shows no verb, so the glyph is all the reader
+           gets. No wrapper on the menu — SfereTable puts `text-align: right`
+           on a right-aligned cell and the trigger's root is inline-level, so
+           it lands on the right edge on its own. -->
       <template #cell-actions="{ row }">
-        <div class="flex items-center justify-end gap-2">
-          <button
-            v-if="isTrashTab"
-            class="rounded-lg border border-line2 bg-white px-3 py-1.5 text-sm font-medium text-brand hover:bg-fill"
-            @click.stop="restore(row)"
-          >
-            Restore
-          </button>
-          <template v-else>
-            <button
-              class="rounded-lg border border-line2 bg-white px-3 py-1.5 text-sm font-medium text-brand hover:bg-fill"
-              @click.stop="askToggle(row)"
-            >
-              {{ row.isEnabled ? 'Pause' : 'Enable' }}
-            </button>
-            <button
-              class="rounded-lg border border-line2 bg-white px-3 py-1.5 text-sm font-medium text-rose-600 hover:bg-fill"
-              @click.stop="ask(row)"
-            >
-              Delete
-            </button>
-          </template>
-        </div>
+        <button
+          v-if="isTrashTab"
+          class="rounded-lg border border-line2 bg-white px-3 py-1.5 text-sm font-medium text-brand hover:bg-fill"
+          @click.stop="restore(row)"
+        >
+          Restore
+        </button>
+        <RowActionsMenu
+          v-else
+          :label="`Actions for ${row.name}`"
+          :actions="rowActions(row)"
+          @select="key => onRowAction(key, row)"
+        />
       </template>
 
       <!-- Three "no rows" cases: the filters emptied the tab (offer a way
@@ -226,6 +226,7 @@ import EmptyState from '@/components/ui/EmptyState.vue'
 import NoticeBanner from '@/components/ui/NoticeBanner.vue'
 import ToolbarSearch from '@/components/ui/ToolbarSearch.vue'
 import ConfirmDialog from '@/components/ui/ConfirmDialog.vue'
+import RowActionsMenu from '@/components/ui/RowActionsMenu.vue'
 import AudienceDetailDialog from '@/components/engage/audience/AudienceDetailDialog.vue'
 import {
   audienceTypeLabel,
@@ -310,9 +311,10 @@ const LIVE_COLUMNS = [
     sortable: true,
     align: 'right'
   },
-  // 220px, not the 190px the wave-2 lists use: "Enable" is wider than "Pause",
-  // and at 190 the paused row wrapped its two buttons onto separate lines.
-  { key: 'actions', label: '', align: 'right', width: '220px' }
+  // 72px: a 36px kebab plus the cell's own px-4. The column used to be 220 to
+  // hold two text buttons side by side without wrapping; sized for the old
+  // markup it would now be ~150px of empty cell on every row.
+  { key: 'actions', label: '', align: 'right', width: '72px' }
 ]
 
 const TRASH_COLUMNS = [
@@ -521,6 +523,29 @@ function ask(row) {
   confirmDelete.value = true
 }
 
+// Icons here because BOTH items have a glyph in sfereIcons.js. That rule is
+// per-menu, not per-app: RowActionsMenu lays an item out as
+// `flex items-center gap-2`, so a single icon-less entry starts its label a
+// glyph's width left of its neighbour's. Email campaigns and Catalogs each
+// hold an action with no glyph, so those two menus go icon-less instead.
+function rowActions(row) {
+  return [
+    {
+      key: 'toggle',
+      label: row.isEnabled ? 'Pause' : 'Enable',
+      icon: row.isEnabled ? 'pause' : 'play'
+    },
+    { key: 'delete', label: 'Delete', icon: 'trash', tone: 'destructive' }
+  ]
+}
+
+// The menu reports a key and nothing else — the confirm dialogs, and the two
+// separate target refs behind them, stay on the page.
+function onRowAction(key, row) {
+  if (key === 'toggle') askToggle(row)
+  else ask(row)
+}
+
 const deleteMessage = computed(() => {
   const a = target.value
   if (!a) return ''
@@ -534,7 +559,8 @@ function remove() {
   const record = removeAudience(row.id)
   if (record) trash(record)
   toast(`${row.name} moved to trash`)
-  target.value = null
+  // `target` is deliberately NOT nulled: `deleteMessage` reads it, so clearing
+  // it here blanks the dialog's sentence out while the dialog is still fading.
 }
 
 function restore(row) {

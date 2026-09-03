@@ -1,10 +1,13 @@
 <template>
-  <q-page class="p-6">
-    <PageHeader
-      title="Authorizations"
-      subtitle="OAuth grants that let Sfere act on a third-party ad or CRM account on your behalf."
-    >
-      <template #actions>
+  <div>
+    <!-- Toolbar rather than a page header: as a Settings tab the <h1> belongs to
+         Settings, so the subtitle becomes a plain line beside the two controls. -->
+    <div class="mb-5 flex flex-wrap items-center justify-between gap-3">
+      <p class="min-w-0 flex-1 text-sm text-muted"
+        >OAuth grants that let Sfere act on a third-party ad or CRM account on
+        your behalf.</p
+      >
+      <div class="flex shrink-0 items-center gap-2">
         <ToolbarSearch v-model="query" placeholder="Search authorizations..." />
         <button
           class="flex h-9 items-center gap-1.5 rounded-lg bg-brand px-3.5 text-sm font-medium text-white shadow-sm hover:opacity-90"
@@ -12,8 +15,8 @@
         >
           Connect provider
         </button>
-      </template>
-    </PageHeader>
+      </div>
+    </div>
 
     <div
       v-if="!loading && !error && authorizations.length"
@@ -193,14 +196,13 @@
       destructive
       @confirm="revokeTarget"
     />
-  </q-page>
+  </div>
 </template>
 
 <script setup>
 import { NOT_KNOWN } from '@/lib/emptyValue'
 import { computed, onMounted, ref } from 'vue'
 import { useQuasar } from 'quasar'
-import PageHeader from '@/components/ui/PageHeader.vue'
 import TabNav from '@/components/ui/TabNav.vue'
 import DataTable from '@/components/ui/DataTable.vue'
 import StatCard from '@/components/ui/StatCard.vue'

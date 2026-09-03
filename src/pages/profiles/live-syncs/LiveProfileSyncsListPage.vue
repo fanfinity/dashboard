@@ -1,127 +1,130 @@
 <template>
   <q-page class="p-6">
-    <PageHeader
-      title="Live profile syncs"
-      subtitle="Each sync pushes the resolved profiles in one audience to one destination, continuously, as they change."
-    >
-      <template #actions>
-        <ToolbarSearch v-model="query" placeholder="Search live syncs..." />
-        <SfereIconButton
-          icon="trash"
-          label="Trash"
-          :to="{ name: 'live-profile-syncs-trash' }"
-        />
-        <SfereIconButton
-          icon="plus"
-          label="New live sync"
-          variant="primary"
-          :to="{ name: 'live-profile-syncs-new' }"
-        />
-      </template>
-    </PageHeader>
+    <!-- One content cap for the header, the toolbar and the table, so all three
+         share a left AND a right edge. Same 1400px literal as DashboardHomePage
+         — deliberately wider than `--container-sfere-page` (80rem, the
+         marketing-site measure), which left ~40% of a wide monitor empty. On
+         the page, not in MainLayout: that layout is shared with screens which
+         want the full width. -->
+    <div class="mx-auto w-full max-w-[1400px]">
+      <PageHeader
+        title="Live profile syncs"
+        subtitle="Each sync pushes the resolved profiles in one audience to one destination, continuously, as they change."
+      >
+        <template #actions>
+          <ToolbarSearch v-model="query" placeholder="Search live syncs..." />
+          <SfereIconButton
+            icon="plus"
+            label="New live sync"
+            variant="primary"
+            :to="{ name: 'live-profile-syncs-new' }"
+          />
+        </template>
+      </PageHeader>
 
-    <div
-      v-if="!loading && !error && syncs.length"
-      class="mb-5 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4"
-    >
-      <StatCard label="Live syncs" :value="formatCount(syncs.length)" />
-      <StatCard
-        label="Enabled"
-        :value="`${enabledCount} of ${syncs.length}`"
-        :hint="pausedHint"
-      />
-      <StatCard
-        label="Profiles delivered (last hour)"
-        :value="formatCount(profilesLastHour)"
-      />
-      <StatCard
-        label="Failures (last hour)"
-        :value="formatCount(failuresLastHour)"
-        :hint="failureHint"
-      />
+      <div
+        v-if="!loading && !error && syncs.length"
+        class="mb-5 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4"
+      >
+        <StatCard label="Live syncs" :value="formatCount(syncs.length)" />
+        <StatCard
+          label="Enabled"
+          :value="`${enabledCount} of ${syncs.length}`"
+          :hint="pausedHint"
+        />
+        <StatCard
+          label="Profiles delivered (last hour)"
+          :value="formatCount(profilesLastHour)"
+        />
+        <StatCard
+          label="Failures (last hour)"
+          :value="formatCount(failuresLastHour)"
+          :hint="failureHint"
+        />
+      </div>
+
+      <TabNav v-model="tab" :tabs="tabs" />
+
+      <DataTable
+        :columns="columns"
+        :rows="visible"
+        :loading="loading"
+        :error="error"
+        row-key="id"
+        @retry="load"
+      >
+        <template #cell-name="{ row }">
+          <div class="flex items-center gap-2">
+            <p class="font-medium text-ink">{{ row.name }}</p>
+            <StatusBadge tone="neutral" :label="modeLabel(row.mode)" />
+          </div>
+          <p class="text-xs text-subtle">{{ row.id }}</p>
+        </template>
+
+        <template #cell-audienceName="{ row }">
+          <p class="text-ink">{{ row.audienceName }}</p>
+          <p class="text-xs text-subtle"
+            >Keyed on {{ row.identifierTypeName }}</p
+          >
+        </template>
+
+        <template #cell-isEnabled="{ value }">
+          <StatusBadge
+            :tone="value ? 'success' : 'neutral'"
+            :label="value ? 'Live' : 'Paused'"
+          />
+        </template>
+
+        <template #cell-profileCountLastHour="{ row }">
+          <p>{{ formatCount(row.profileCountLastHour) }}</p>
+          <p v-if="row.failureCountLastHour" class="text-xs text-rose-600">
+            {{ formatCount(row.failureCountLastHour) }} failed
+          </p>
+        </template>
+
+        <template #cell-lastDeliveryAt="{ value }">
+          {{ formatDateTime(value) }}
+        </template>
+
+        <!-- No wrapper element: the column is `align: 'right'`, so SfereTable
+             puts `text-right` on the cell and the trigger is inline-level,
+             which is all the alignment it needs. A flex row here would be one
+             more of Quasar's unlayered wrapping `.flex` (collision #4) earning
+             nothing. The label names the ROW, not the action — ten identical
+             "Actions" buttons give a screen-reader user no way to tell them
+             apart. -->
+        <template #cell-actions="{ row }">
+          <RowActionsMenu
+            :label="`Actions for ${row.name}`"
+            :actions="actionsFor(row)"
+            @select="key => onRowAction(row, key)"
+          />
+        </template>
+
+        <!-- Two different "no rows" cases: nothing configured yet (offer the
+             primary CTA) and nothing matching the filters (offer a way back). -->
+        <template #empty>
+          <EmptyState :title="emptyTitle" :description="emptyDescription">
+            <template #cta>
+              <button
+                v-if="!syncs.length"
+                class="flex h-9 items-center gap-1.5 rounded-lg bg-brand px-3.5 text-sm font-medium text-white shadow-sm hover:opacity-90"
+                @click="router.push({ name: 'live-profile-syncs-new' })"
+              >
+                Create your first live sync
+              </button>
+              <button
+                v-else
+                class="rounded-lg border border-line2 bg-white px-3 py-1.5 text-sm font-medium text-brand hover:bg-fill"
+                @click="clearFilters"
+              >
+                Clear filters
+              </button>
+            </template>
+          </EmptyState>
+        </template>
+      </DataTable>
     </div>
-
-    <TabNav v-model="tab" :tabs="tabs" />
-
-    <DataTable
-      :columns="columns"
-      :rows="visible"
-      :loading="loading"
-      :error="error"
-      row-key="id"
-      @retry="load"
-    >
-      <template #cell-name="{ row }">
-        <div class="flex items-center gap-2">
-          <p class="font-medium text-ink">{{ row.name }}</p>
-          <StatusBadge tone="neutral" :label="modeLabel(row.mode)" />
-        </div>
-        <p class="text-xs text-subtle">{{ row.id }}</p>
-      </template>
-
-      <template #cell-audienceName="{ row }">
-        <p class="text-ink">{{ row.audienceName }}</p>
-        <p class="text-xs text-subtle">Keyed on {{ row.identifierTypeName }}</p>
-      </template>
-
-      <template #cell-isEnabled="{ value }">
-        <StatusBadge
-          :tone="value ? 'success' : 'neutral'"
-          :label="value ? 'Live' : 'Paused'"
-        />
-      </template>
-
-      <template #cell-profileCountLastHour="{ row }">
-        <p>{{ formatCount(row.profileCountLastHour) }}</p>
-        <p v-if="row.failureCountLastHour" class="text-xs text-rose-600">
-          {{ formatCount(row.failureCountLastHour) }} failed
-        </p>
-      </template>
-
-      <template #cell-lastDeliveryAt="{ value }">
-        {{ formatDateTime(value) }}
-      </template>
-
-      <template #cell-actions="{ row }">
-        <div class="flex items-center justify-end gap-2">
-          <button
-            class="rounded-lg border border-line2 bg-white px-3 py-1.5 text-sm font-medium text-brand hover:bg-fill"
-            @click.stop="askToggle(row)"
-          >
-            {{ row.isEnabled ? 'Pause' : 'Enable' }}
-          </button>
-          <button
-            class="rounded-lg border border-line2 bg-white px-3 py-1.5 text-sm font-medium text-rose-600 hover:bg-fill"
-            @click.stop="ask(row)"
-          >
-            Delete
-          </button>
-        </div>
-      </template>
-
-      <!-- Two different "no rows" cases: nothing configured yet (offer the
-           primary CTA) and nothing matching the filters (offer a way back). -->
-      <template #empty>
-        <EmptyState :title="emptyTitle" :description="emptyDescription">
-          <template #cta>
-            <button
-              v-if="!syncs.length"
-              class="flex h-9 items-center gap-1.5 rounded-lg bg-brand px-3.5 text-sm font-medium text-white shadow-sm hover:opacity-90"
-              @click="router.push({ name: 'live-profile-syncs-new' })"
-            >
-              Create your first live sync
-            </button>
-            <button
-              v-else
-              class="rounded-lg border border-line2 bg-white px-3 py-1.5 text-sm font-medium text-brand hover:bg-fill"
-              @click="clearFilters"
-            >
-              Clear filters
-            </button>
-          </template>
-        </EmptyState>
-      </template>
-    </DataTable>
 
     <ConfirmDialog
       v-model="confirmDelete"
@@ -152,6 +155,7 @@ import StatusBadge from '@/components/ui/StatusBadge.vue'
 import EmptyState from '@/components/ui/EmptyState.vue'
 import ToolbarSearch from '@/components/ui/ToolbarSearch.vue'
 import SfereIconButton from '@/components/ui/SfereIconButton.vue'
+import RowActionsMenu from '@/components/ui/RowActionsMenu.vue'
 import ConfirmDialog from '@/components/ui/ConfirmDialog.vue'
 import {
   formatCount,
@@ -178,11 +182,12 @@ const confirmDelete = ref(false)
 const target = ref(null)
 
 // No detail route exists for a live sync, so rows are deliberately not
-// clickable — everything a row can do is a button in the actions column.
+// clickable — everything a row can do is in the row's actions menu.
 //
-// Seven columns is the ceiling here: an eighth squeezed the actions cell until
-// its two buttons wrapped onto separate lines, so the identifier the sync is
-// keyed on rides under the audience name rather than taking a column of its own.
+// Seven columns is still the ceiling, though the reason has moved: the actions
+// cell is one 36px trigger now and cannot wrap, but an eighth column would take
+// its width off the ones carrying names. The identifier the sync is keyed on
+// still rides under the audience name rather than taking a column of its own.
 const columns = [
   { key: 'name', label: 'Live sync', sortable: true },
   { key: 'audienceName', label: 'Audience', sortable: true },
@@ -200,7 +205,7 @@ const columns = [
     sortable: true,
     align: 'right'
   },
-  { key: 'actions', label: '', align: 'right', width: '190px' }
+  { key: 'actions', label: '', align: 'right', width: '72px' }
 ]
 
 // Each tab is a predicate over a sync; 'all' has none.
@@ -292,6 +297,24 @@ function clearFilters() {
   tab.value = 'all'
 }
 
+// A function, not a constant: the toggle's label flips with `isEnabled`, so a
+// hoisted array would print "Pause" on a row that is already paused.
+//
+// The menu reports a choice and nothing else — every item still routes to the
+// handler it always had, so both actions keep their own ConfirmDialog, their
+// own target ref and their own per-screen sentence.
+function actionsFor(row) {
+  return [
+    { key: 'toggle', label: row.isEnabled ? 'Pause' : 'Enable' },
+    { key: 'delete', label: 'Delete', tone: 'destructive' }
+  ]
+}
+
+function onRowAction(row, key) {
+  if (key === 'toggle') askToggle(row)
+  else if (key === 'delete') ask(row)
+}
+
 const confirmToggle = ref(false)
 const toggleTarget = ref(null)
 
@@ -349,7 +372,10 @@ function remove() {
   if (!row) return
   removeSync(row.id)
   toast(`${row.name} moved to trash`)
-  target.value = null
+  // `target` is deliberately NOT nulled: `deleteMessage` reads it, so clearing it
+  // here blanks the dialog's sentence out while the dialog is still fading. The
+  // dialog's open state is its own ref, and `ask()` overwrites `target` before
+  // reopening, so nothing goes stale.
 }
 
 onMounted(load)

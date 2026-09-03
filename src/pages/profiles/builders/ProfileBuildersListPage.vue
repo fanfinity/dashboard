@@ -1,108 +1,110 @@
 <template>
   <q-page class="p-6">
-    <PageHeader
-      title="Profile builders"
-      subtitle="How a fan profile is assembled: which identifiers it is stitched on, in what order of trust, and on what schedule."
-    >
-      <template #actions>
-        <SfereIconButton
-          icon="plus"
-          label="New profile builder"
-          variant="primary"
-          @click="openCreate"
-        />
-      </template>
-    </PageHeader>
+    <!-- One content cap for the header, the toolbar and the table, so all three
+         share a left AND a right edge. Same 1400px literal as DashboardHomePage
+         — deliberately wider than `--container-sfere-page` (80rem, the
+         marketing-site measure), which left ~40% of a wide monitor empty. On
+         the page, not in MainLayout: that layout is shared with screens which
+         want the full width. -->
+    <div class="mx-auto w-full max-w-[1400px]">
+      <PageHeader
+        title="Profile builders"
+        subtitle="How a fan profile is assembled: which identifiers it is stitched on, in what order of trust, and on what schedule."
+      >
+        <template #actions>
+          <SfereIconButton
+            icon="plus"
+            label="New profile builder"
+            variant="primary"
+            @click="openCreate"
+          />
+        </template>
+      </PageHeader>
 
-    <!-- The distinction worth stating on the screen itself, because the two live
-         one nav row apart and only one of them works. -->
-    <NoticeBanner
-      class="mb-5"
-      tone="info"
-      title="This is the configuration, not the profiles"
-      message="Profile builders decide how profiles are assembled. Reading the profiles themselves needs GET /v1/accounts/{account}/profiles, which is in the API contract with nothing behind it yet — which is why Profile search still reports no API."
-    />
+      <!-- The distinction worth stating on the screen itself, because the two live
+           one nav row apart and only one of them works. -->
+      <NoticeBanner
+        class="mb-5"
+        tone="info"
+        title="This is the configuration, not the profiles"
+        message="Profile builders decide how profiles are assembled. Reading the profiles themselves needs GET /v1/accounts/{account}/profiles, which is in the API contract with nothing behind it yet — which is why Profile search still reports no API."
+      />
 
-    <DataTable
-      :columns="columns"
-      :rows="builders"
-      :loading="loading"
-      :error="error"
-      :api-missing="apiMissing"
-      row-key="id"
-      @retry="load"
-    >
-      <template #cell-name="{ row }">
-        <p class="font-medium text-ink">{{ row.name }}</p>
-        <p class="text-xs text-subtle">
-          <code class="font-sfere-mono">{{ row.slug }}</code>
-        </p>
-      </template>
+      <DataTable
+        :columns="columns"
+        :rows="builders"
+        :loading="loading"
+        :error="error"
+        :api-missing="apiMissing"
+        row-key="id"
+        @retry="load"
+      >
+        <template #cell-name="{ row }">
+          <p class="font-medium text-ink">{{ row.name }}</p>
+          <p class="text-xs text-subtle">
+            <code class="font-sfere-mono">{{ row.slug }}</code>
+          </p>
+        </template>
 
-      <!-- Rendered as an arrow chain rather than a list of chips, because the
-           ORDER is the configuration: it decides which identifier wins when two
-           disagree about who a profile is. -->
-      <template #cell-identifierTypes="{ row }">
-        <span class="text-muted">{{ identifierLabel(row, labelFor) }}</span>
-      </template>
+        <!-- Rendered as an arrow chain rather than a list of chips, because the
+             ORDER is the configuration: it decides which identifier wins when two
+             disagree about who a profile is. -->
+        <template #cell-identifierTypes="{ row }">
+          <span class="text-muted">{{ identifierLabel(row, labelFor) }}</span>
+        </template>
 
-      <template #cell-isEnabled="{ row }">
-        <StatusBadge
-          :tone="row.isEnabled ? 'success' : 'neutral'"
-          :label="row.isEnabled ? 'Enabled' : 'Paused'"
-        />
-      </template>
+        <template #cell-isEnabled="{ row }">
+          <StatusBadge
+            :tone="row.isEnabled ? 'success' : 'neutral'"
+            :label="row.isEnabled ? 'Enabled' : 'Paused'"
+          />
+        </template>
 
-      <template #cell-cron="{ row }">
-        <span class="text-muted">{{ scheduleLabel(row) }}</span>
-      </template>
+        <template #cell-cron="{ row }">
+          <span class="text-muted">{{ scheduleLabel(row) }}</span>
+        </template>
 
-      <template #cell-lastRunAt="{ row }">
-        <span class="whitespace-nowrap text-muted">{{
-          formatDateTime(row.lastRunAt, NEVER)
-        }}</span>
-      </template>
+        <template #cell-lastRunAt="{ row }">
+          <span class="whitespace-nowrap text-muted">{{
+            formatDateTime(row.lastRunAt, NEVER)
+          }}</span>
+        </template>
 
-      <!-- `NOT_KNOWN`, never 0. `profile_count` is nullable and nothing counts
-           it yet; a confident 0 would say the builder produced nothing. -->
-      <template #cell-profileCount="{ row }">
-        <span class="text-muted">{{ profileCountLabel(row) }}</span>
-      </template>
+        <!-- `NOT_KNOWN`, never 0. `profile_count` is nullable and nothing counts
+             it yet; a confident 0 would say the builder produced nothing. -->
+        <template #cell-profileCount="{ row }">
+          <span class="text-muted">{{ profileCountLabel(row) }}</span>
+        </template>
 
-      <template #cell-actions="{ row }">
-        <div class="flex items-center justify-end gap-2">
-          <button
-            class="rounded-lg border border-line2 bg-white px-3 py-1.5 text-sm font-medium text-ink hover:bg-fill"
-            @click.stop="askToggle(row)"
+        <!-- No wrapper element: the column is `align: 'right'`, so SfereTable
+             puts `text-right` on the cell and the trigger is inline-level,
+             which is all the alignment it needs. A flex row here would be one
+             more of Quasar's unlayered wrapping `.flex` (collision #4) earning
+             nothing. The label names the ROW, not the action — ten identical
+             "Actions" buttons give a screen-reader user no way to tell them
+             apart. -->
+        <template #cell-actions="{ row }">
+          <RowActionsMenu
+            :label="`Actions for ${row.name}`"
+            :actions="actionsFor(row)"
+            @select="key => onRowAction(row, key)"
+          />
+        </template>
+
+        <template #empty>
+          <EmptyState
+            title="No profile builders yet"
+            description="A builder decides how events are stitched into one fan profile. Without one, events land in the warehouse and are never joined into a person."
           >
-            {{ row.isEnabled ? 'Pause' : 'Enable' }}
-          </button>
-          <button
-            class="rounded-lg border border-line2 bg-white px-3 py-1.5 text-sm font-medium text-ink hover:bg-fill"
-            @click.stop="openEdit(row)"
-          >
-            Edit
-          </button>
-          <button
-            class="rounded-lg border border-line2 bg-white px-3 py-1.5 text-sm font-medium text-rose-600 hover:bg-fill"
-            @click.stop="askDelete(row)"
-          >
-            Delete
-          </button>
-        </div>
-      </template>
-
-      <template #empty>
-        <EmptyState
-          title="No profile builders yet"
-          description="A builder decides how events are stitched into one fan profile. Without one, events land in the warehouse and are never joined into a person."
-        >
-          <template #cta>
-            <SfereButton @click="openCreate">Add a profile builder</SfereButton>
-          </template>
-        </EmptyState>
-      </template>
-    </DataTable>
+            <template #cta>
+              <SfereButton @click="openCreate"
+                >Add a profile builder</SfereButton
+              >
+            </template>
+          </EmptyState>
+        </template>
+      </DataTable>
+    </div>
 
     <ProfileBuilderEditDialog
       v-model="editOpen"
@@ -148,6 +150,7 @@ import NoticeBanner from '@/components/ui/NoticeBanner.vue'
 import StatusBadge from '@/components/ui/StatusBadge.vue'
 import SfereButton from '@/components/ui/SfereButton.vue'
 import SfereIconButton from '@/components/ui/SfereIconButton.vue'
+import RowActionsMenu from '@/components/ui/RowActionsMenu.vue'
 import ConfirmDialog from '@/components/ui/ConfirmDialog.vue'
 import ProfileBuilderEditDialog from '@/components/profiles/builders/ProfileBuilderEditDialog.vue'
 import {
@@ -202,11 +205,34 @@ const columns = [
   { key: 'cron', label: 'Schedule' },
   { key: 'lastRunAt', label: 'Last run', sortable: true },
   { key: 'profileCount', label: 'Profiles', align: 'right' },
-  { key: 'actions', label: '', align: 'right', width: '230px' }
+  { key: 'actions', label: '', align: 'right', width: '72px' }
 ]
 
 function labelFor(key) {
   return identifierTypes.value.find(t => t.key === key)?.displayName ?? key
+}
+
+// A function, not a constant: the toggle's label flips with `isEnabled`, so a
+// hoisted array would print "Pause" on a row that is already paused.
+//
+// The menu reports a choice and nothing else — every item still routes to the
+// handler it always had, so Pause and Delete keep their own ConfirmDialog,
+// their own target ref and their own per-screen sentence, and Edit still opens
+// the edit dialog with no confirm in front of it (nothing has happened yet when
+// it opens). Delete stays last: the destructive item is the one nobody should
+// reach by overshooting the list.
+function actionsFor(row) {
+  return [
+    { key: 'toggle', label: row.isEnabled ? 'Pause' : 'Enable' },
+    { key: 'edit', label: 'Edit' },
+    { key: 'delete', label: 'Delete', tone: 'destructive' }
+  ]
+}
+
+function onRowAction(row, key) {
+  if (key === 'toggle') askToggle(row)
+  else if (key === 'edit') openEdit(row)
+  else if (key === 'delete') askDelete(row)
 }
 
 function openCreate() {

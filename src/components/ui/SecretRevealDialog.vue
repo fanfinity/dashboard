@@ -120,7 +120,7 @@ const open = computed({
 // unbroken string, hence the wider 620px.
 const cardClasses = [
   'flex w-[min(620px,92vw)]! max-w-[min(620px,92vw)]! flex-col overflow-hidden',
-  'rounded-sfere-xl border border-sfere-line bg-sfere-surface shadow-sfere-pop'
+  'rounded-sfere-xl! border border-sfere-line bg-sfere-surface shadow-sfere-pop'
 ]
 
 // Reset per opening, so a second token does not open showing "Copied" from the

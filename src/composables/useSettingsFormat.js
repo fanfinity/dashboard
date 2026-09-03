@@ -1,6 +1,7 @@
 /**
- * Formatting shared by the three settings screens (`/authorizations`,
- * `/secrets`, `/settings`).
+ * Formatting shared by the Settings screen and its panels — the Authorizations
+ * and Secrets tabs included, which were `/authorizations` and `/secrets` until
+ * they moved in here.
  *
  * Locale and time zone are pinned on every formatter — `toLocaleDateString()`
  * with no arguments renders different characters on a dev box, in CI and on the

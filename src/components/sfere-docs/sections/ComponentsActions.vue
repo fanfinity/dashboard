@@ -80,6 +80,37 @@
     </DocSpecimen>
 
     <DocSpecimen
+      title="RowActionsMenu"
+      usage="A table row's actions, collapsed into one kebab. Reach for it when a row carries two or more actions whose noun is the row itself — Pause and Delete on every list screen — and the alternative is printing both words on all ten visible rows. It reports which action was chosen and nothing else: the ConfirmDialog, the target ref and the mutation all stay on the page, because two dialogs reading one shared row is how a confirm acts on the wrong record."
+      code="<RowActionsMenu
+  :label=&quot;`Actions for ${row.name}`&quot;
+  :actions=&quot;[
+    { key: 'toggle', label: row.isEnabled ? 'Pause' : 'Enable',
+      icon: row.isEnabled ? 'pause' : 'play' },
+    { key: 'delete', label: 'Delete', icon: 'trash',
+      tone: 'destructive' }
+  ]&quot;
+  @select=&quot;onRowAction(row, $event)&quot;
+/>"
+    >
+      <div class="flex flex-wrap items-center gap-8">
+        <RowActionsMenu
+          label="Actions for Website events"
+          :actions="pairActions"
+          @select="lastAction = $event"
+        />
+        <RowActionsMenu
+          label="Actions for Snowflake Production"
+          :actions="tripleActions"
+          @select="lastAction = $event"
+        />
+        <p class="font-sfere-mono text-sfere-xs text-sfere-fg-muted">
+          select → {{ lastAction || 'nothing yet' }}
+        </p>
+      </div>
+    </DocSpecimen>
+
+    <DocSpecimen
       title="SfereIcon"
       usage="The glyph registry in sfereIcons.js — every icon on one 256 grid, drawn with currentColor so the same entry works on a brand fill and on white. Always aria-hidden: it is decorative beside a label, or the whole content of a control that carries its own."
       code='<SfereIcon name="trash" />'
@@ -180,8 +211,10 @@
 </template>
 
 <script setup>
+import { ref } from 'vue'
 import DocSection from '../DocSection.vue'
 import DocSpecimen from '../DocSpecimen.vue'
+import RowActionsMenu from '@/components/ui/RowActionsMenu.vue'
 import SfereAvatar from '@/components/ui/SfereAvatar.vue'
 import StatusBadge from '@/components/ui/StatusBadge.vue'
 import SfereButton from '@/components/ui/SfereButton.vue'
@@ -195,4 +228,23 @@ import SfereTooltip from '@/components/ui/SfereTooltip.vue'
 import { SFERE_ICON_NAMES } from '@/components/ui/sfereIcons.js'
 
 const iconNames = SFERE_ICON_NAMES
+
+// Two and three items, because the flip-above and the arrow-key wrap are the
+// two behaviours a reader will want to try, and both need more than one row of
+// menu to be visible at all.
+const pairActions = [
+  { key: 'toggle', label: 'Pause', icon: 'pause' },
+  { key: 'delete', label: 'Delete', icon: 'trash', tone: 'destructive' }
+]
+
+const tripleActions = [
+  { key: 'toggle', label: 'Enable', icon: 'play' },
+  { key: 'keys', label: 'Reveal write key', icon: 'eye' },
+  { key: 'delete', label: 'Delete forever', icon: 'trash', tone: 'destructive' }
+]
+
+// The specimen echoes what came back rather than firing a toast: this page is
+// the one surface where the point is that the component reports a key and
+// leaves the consequence to the caller.
+const lastAction = ref('')
 </script>

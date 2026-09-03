@@ -128,7 +128,7 @@ const emit = defineEmits(['update:modelValue', 'retry'])
 // shrinking on a narrow window. A log line is long, hence 820px.
 const cardClasses = [
   'flex max-h-[80vh] w-[min(820px,94vw)]! max-w-[min(820px,94vw)]! flex-col flex-nowrap! overflow-hidden',
-  'rounded-sfere-xl border border-sfere-line bg-sfere-surface shadow-sfere-pop'
+  'rounded-sfere-xl! border border-sfere-line bg-sfere-surface shadow-sfere-pop'
 ]
 
 const LEVEL_BORDER = {
