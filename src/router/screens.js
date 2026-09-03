@@ -435,7 +435,19 @@ export const screens = [
     title: 'Profile',
     group: 'profiles',
     parent: { name: 'profiles', label: 'Profiles' },
-    smokeParams: { id: '18473814' }
+    smokeParams: { id: '18473814' },
+    // Walked in Demo data only. `smokeParams` ids are fixture ids by contract
+    // (see the header above), and every other detail screen survives real mode
+    // because it resolves its record out of a list read it already made and
+    // renders "not found" with no request of its own. This is the one screen
+    // that reads a single record over the network — `fetchProfile()` issues
+    // GET …/profiles/{id} — so on an account with no profiles (staging has
+    // none) that read is an honest 404, which Chromium logs as a console error
+    // and this gate fails on. Skipping in real mode is deliberately preferred
+    // over an IGNORED_CONSOLE 404 entry, which would be permanent blindness to
+    // that status everywhere. Drop this flag once the walk can discover a real
+    // profile id in the environment it is walking.
+    smokeMockOnly: true
   },
   {
     path: '/sources/new',

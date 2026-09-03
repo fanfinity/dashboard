@@ -139,6 +139,18 @@ const IS_LOCAL = /^https?:\/\/localhost[:/]/.test(BASE)
 // locally (expect CORS noise), or =mock against a deployed origin.
 const DATA_SOURCE =
   process.env.SMOKE_DATA_SOURCE || (IS_LOCAL ? 'mock' : 'real')
+
+// Screens the manifest marks as walkable in Demo data only, dropped here rather
+// than half-asserted. Announced rather than filtered silently: a gate that
+// quietly narrows its own coverage reads as "all routes clean" when it is not.
+const skipped =
+  DATA_SOURCE === 'real' ? targets.filter(t => t.smokeMockOnly) : []
+const walk = targets.filter(t => !skipped.includes(t))
+if (skipped.length) {
+  for (const t of skipped) {
+    console.log(`  skip  ${t.url} (Demo-data-only screen, real mode)`)
+  }
+}
 await context.addInitScript(mode => {
   try {
     localStorage.setItem('sfere_data_source_mode', mode)
@@ -245,7 +257,7 @@ async function settle() {
 if (SHOTS) mkdirSync('.playwright', { recursive: true })
 
 const failures = []
-for (const t of targets) {
+for (const t of walk) {
   bucket = []
   await page.goto(`${BASE}/#${t.url}`, { waitUntil: 'domcontentloaded' })
   await settle()
@@ -291,7 +303,8 @@ await browser.close()
 stop()
 
 console.log(
-  `\nsmoke: ${targets.length - failures.length}/${targets.length} routes clean`
+  `\nsmoke: ${walk.length - failures.length}/${walk.length} routes clean` +
+    (skipped.length ? ` (${skipped.length} skipped)` : '')
 )
 if (failures.length) {
   console.log('\nFailures:')
