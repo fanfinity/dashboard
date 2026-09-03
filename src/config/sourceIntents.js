@@ -51,9 +51,9 @@ export const SOURCE_INTENTS = [
   {
     key: 'store',
     title: 'An online store',
-    body: 'Zid or Shopify. We listen for new orders and customers automatically, no code.',
+    body: 'Zid, Salla or Shopify. We listen for new orders and customers automatically, no code.',
     outcome: 'Store source',
-    templates: ['zid', 'shopify']
+    templates: ['zid', 'salla', 'shopify']
   },
   {
     key: 'payments',

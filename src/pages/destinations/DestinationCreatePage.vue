@@ -29,7 +29,7 @@
     />
 
     <EmptyState
-      v-else-if="!templates.length"
+      v-else-if="!catalogTemplates.length"
       title="No destination templates available"
       description="This workspace has no destination templates enabled, so there is nothing to create from yet."
     >
@@ -47,7 +47,7 @@
     <DestinationCatalogPicker
       v-else-if="!selected"
       v-model:query="query"
-      :templates="templates"
+      :templates="catalogTemplates"
       @select="pick"
     />
 
@@ -102,6 +102,30 @@
         title="This destination is a paid add-on"
         :message="`${selected.name} is billed on top of your plan. Creating it here configures the connection; the plan change is confirmed on Billing before anything is charged.`"
       />
+
+      <!-- Real-mode registry types carry a FieldDef list rather than the mock
+           paramsSchema/secrets. ClickHouse is the one exception: the backend
+           provisions the database and credentials for the account, so there is
+           nothing to ask for. -->
+      <NoticeBanner
+        v-if="selected.registryDef?.id === 'clickhouse'"
+        tone="info"
+        title="No credentials to enter"
+        message="ClickHouse is provisioned for your account automatically — a database and its credentials are created with the destination."
+      />
+
+      <FormSection
+        v-else-if="selected.registryDef"
+        title="Configuration"
+        :description="`Parameters ${selected.name} needs in order to deliver.`"
+      >
+        <DestinationConfigFields
+          v-model="form.config"
+          :fields="selected.registryDef.fields"
+          :errors="errors.config"
+          id-prefix="destination-config"
+        />
+      </FormSection>
 
       <FormSection
         v-if="paramKeys.length"
@@ -179,6 +203,7 @@ import NoticeBanner from '@/components/ui/NoticeBanner.vue'
 import StickyActionBar from '@/components/ui/StickyActionBar.vue'
 import DestinationCatalogPicker from '@/components/destinations/DestinationCatalogPicker.vue'
 import DestinationParamFields from '@/components/destinations/DestinationParamFields.vue'
+import DestinationConfigFields from '@/components/destinations/DestinationConfigFields.vue'
 import {
   useDestinationTemplates,
   useDestinationToasts
@@ -186,6 +211,7 @@ import {
 import { slugify } from '@/composables/useSources'
 import { useDestinationsAPI } from '@/composables/useDestinationsAPI'
 import { useDataSource } from '@/composables/useDataSource'
+import { destinationRegistry, formToConfig } from '@/config/destinationRegistry'
 
 const router = useRouter()
 const { templates, loading, error, load } = useDestinationTemplates()
@@ -197,8 +223,44 @@ const query = ref('')
 const selected = ref(null)
 const saving = ref(false)
 
-const form = ref({ name: '', description: '', params: {}, secrets: {} })
+const form = ref({
+  name: '',
+  description: '',
+  params: {},
+  secrets: {},
+  config: {}
+})
 const errors = ref(blankErrors())
+
+// The registry tags spell categories the way the backend does; the picker's
+// CATEGORY_ORDER spells them the way this screen's headings do.
+const CATEGORY_BY_TAG = {
+  Datawarehouse: 'Data warehouse',
+  'Product Analytics': 'Product analytics',
+  'Block Storage': 'Object storage',
+  Special: 'Special'
+}
+
+// Real mode picks from the destination-type registry — the nine types the
+// backend actually accepts — mapped into the card shape the catalog picker
+// renders. The registry tags stay off the card: each one repeats the group
+// heading the card already sits under.
+const realTemplates = destinationRegistry.map(def => ({
+  id: def.id,
+  name: def.title,
+  description: def.description,
+  tags: [],
+  category: CATEGORY_BY_TAG[def.tags[0]] ?? 'Other',
+  destinationType: def.id,
+  registryDef: def
+}))
+
+// Mock mode keeps the fictional template catalog (demo data); real mode swaps
+// it for the registry. The mock JSON is not even fetched in real mode — see
+// onMounted below.
+const catalogTemplates = computed(() =>
+  isReal.value ? realTemplates : templates.value
+)
 
 // The template's JSON Schema drives both the rendered fields and the validation
 // below, so a template that gains a parameter needs no code change here.
@@ -216,7 +278,20 @@ const requiredParams = computed(
 const templateBadgeLabel = computed(() => selected.value?.id ?? '')
 
 function blankErrors() {
-  return { name: '', params: {}, secrets: {} }
+  return { name: '', params: {}, secrets: {}, config: {} }
+}
+
+// A registry field's default opens pre-filled, the way the mock templates'
+// `defaults` do. `json` defaults are objects, so they go in stringified — the
+// textarea holds text and formToConfig parses it back out.
+function initialConfigValues(def) {
+  const values = {}
+  for (const field of def.fields) {
+    if (field.default === undefined) continue
+    values[field.key] =
+      field.kind === 'json' ? JSON.stringify(field.default) : field.default
+  }
+  return values
 }
 
 function pick(template) {
@@ -228,7 +303,10 @@ function pick(template) {
     name: template.defaults?.name ?? template.name,
     description: template.defaults?.description ?? '',
     params: {},
-    secrets: {}
+    secrets: {},
+    config: template.registryDef
+      ? initialConfigValues(template.registryDef)
+      : {}
   }
 }
 
@@ -262,11 +340,23 @@ function validate() {
     }
   }
 
+  // Registry types (real mode) validate their required config fields the same
+  // way; ClickHouse renders no config form, so it has nothing to check.
+  const def = selected.value.registryDef
+  if (def && def.id !== 'clickhouse') {
+    for (const field of def.fields) {
+      if (field.required && isBlank(form.value.config[field.key])) {
+        next.config[field.key] = 'This field is required.'
+      }
+    }
+  }
+
   errors.value = next
   return (
     !next.name &&
     !Object.keys(next.params).length &&
-    !Object.keys(next.secrets).length
+    !Object.keys(next.secrets).length &&
+    !Object.keys(next.config).length
   )
 }
 
@@ -274,16 +364,22 @@ async function submit() {
   if (!validate()) return
   saving.value = true
 
-  // Real mode: the backend provisions the ClickHouse database + credentials, so
-  // name + slug + type are enough. The template's params/secrets are a mock
-  // concept and aren't sent.
+  // Real mode: the registry type drives the payload. ClickHouse needs no
+  // config — the backend provisions the database + credentials — every other
+  // type's config form is parsed by formToConfig (which throws on invalid
+  // JSON; the catch below reports it the same way as a failed request).
   if (isReal.value) {
     try {
       const name = form.value.name.trim()
+      const def = selected.value?.registryDef
       const created = await createDestinationReal({
         name,
         slug: slugify(name),
-        destinationType: selected.value?.destinationType || 'clickhouse'
+        destinationType: selected.value?.destinationType || 'clickhouse',
+        config:
+          !def || def.id === 'clickhouse'
+            ? null
+            : formToConfig(def, form.value.config)
       })
       toast(`“${name}” created`)
       router.push({ name: 'destinations-detail', params: { id: created.id } })
@@ -304,5 +400,10 @@ async function submit() {
   router.push({ name: 'destinations' })
 }
 
-onMounted(load)
+// The mock template catalog only exists for demo mode; real mode picks from
+// the destination-type registry instead, so fetching the JSON would be a
+// wasted request.
+onMounted(() => {
+  if (!isReal.value) load()
+})
 </script>

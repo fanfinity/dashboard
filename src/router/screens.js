@@ -476,6 +476,13 @@ export const screens = [
     issue: 56
   },
   {
+    path: '/profiles',
+    name: 'profiles',
+    component: 'profiles/core/ProfilesListPage.vue',
+    title: 'Profiles',
+    group: 'profiles'
+  },
+  {
     path: '/profiles/identity-resolution',
     name: 'profiles-identity-resolution',
     component: 'profiles/core/IdentityResolutionPage.vue',
@@ -490,6 +497,15 @@ export const screens = [
     title: 'Profile search',
     group: 'profiles',
     issue: 58
+  },
+  {
+    path: '/profiles/:id',
+    name: 'profiles-detail',
+    component: 'profiles/core/ProfileDetailPage.vue',
+    title: 'Profile',
+    group: 'profiles',
+    parent: { name: 'profiles', label: 'Profiles' },
+    smokeParams: { id: '18473814' }
   },
   {
     path: '/sources/new',

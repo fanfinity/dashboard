@@ -73,6 +73,11 @@
       </div>
 
       <ZidSetupWizard v-if="showZidWizard" :source="source" @complete="load" />
+      <SallaSetupWizard
+        v-if="showSallaWizard"
+        :source="source"
+        @complete="load"
+      />
 
       <WebSdkSetupPanel
         v-if="showWebSdkSetup"
@@ -182,6 +187,7 @@ import SourcePipesPanel from '@/components/sources/SourcePipesPanel.vue'
 import SourceSettingsPanel from '@/components/sources/SourceSettingsPanel.vue'
 import SourceSyncPanel from '@/components/sources/SourceSyncPanel.vue'
 import ZidSetupWizard from '@/components/sources/ZidSetupWizard.vue'
+import SallaSetupWizard from '@/components/sources/SallaSetupWizard.vue'
 import WebSdkSetupPanel from '@/components/sources/WebSdkSetupPanel.vue'
 import { useDataSource } from '@/composables/useDataSource'
 import {
@@ -243,6 +249,14 @@ const showZidWizard = computed(
   () =>
     isReal.value &&
     source.value?.sourceType === 'zid' &&
+    !source.value?.lastSyncedAt
+)
+
+// Salla mirrors the Zid go-live steps (authorize → connect webhooks → first sync).
+const showSallaWizard = computed(
+  () =>
+    isReal.value &&
+    source.value?.sourceType === 'salla' &&
     !source.value?.lastSyncedAt
 )
 
