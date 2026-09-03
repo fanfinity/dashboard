@@ -200,7 +200,7 @@ not-allowed }`, so `disabled:opacity-45` and `disabled:cursor-not-allowed` are d
    `.sfere-flush > p` for a container that already spaces its children with `gap`. There is
    deliberately **no blanket `p { margin: 0 }`**: stacked prose still wants its rhythm, and
    the smoke gate cannot see a spacing regression, so a global reset would be an unverifiable
-   change to all 49 screens at once.
+   change to all 51 screens at once.
 6. **`auto-fit` grid tracks measure a card at min-content and keep the answer.** An
    `auto-fit` track is min-content-sized in the first pass, and the min-content height of a
    `SelectableCard` — a #4 wrapping flex — at that width is enormous, so the row keeps it:
@@ -490,12 +490,13 @@ that closes it**; do not reconstruct the template from a slug or a local cache.
 
 The product backlog (54 screens, GitHub issues #16–#69) is scaffolded: every screen already
 exists as a stub page at its final path. Implementing one means **rewriting that file in place**,
-never creating a file and registering a route. The manifest itself is **49 screens** now — the
+never creating a file and registering a route. The manifest itself is **51 screens** now — the
 backlog count is the issue count, not the route count, and the two stopped matching in both
 directions: `/team`, `/billing` and the Functions screens were added outside the issue list, and
-then two consolidations took routes back out. It went 60 → 58 when Secrets and Authorizations
-became tabs on `/settings`, and **58 → 49 when the ten per-module `/x/trash` screens became one
-`/trash`**. Every one of those old URLs still resolves, as **named** redirects in `routes.js` —
+then two consolidations took routes back out and one addition put two back. It went 60 → 58 when
+Secrets and Authorizations became tabs on `/settings`, **58 → 49 when the ten per-module
+`/x/trash` screens became one `/trash`**, and 49 → 51 when `/profiles` and `/profiles/:id` landed
+with the Salla connector. Every one of those old URLs still resolves, as **named** redirects in `routes.js` —
 `{ name: 'secrets' }`, `{ name: 'sources-trash' }` and the other ten — because a named link
 elsewhere in the app still points at them and an unresolved name logs the console warning smoke
 fails on. Ten of the redirects are new and the names are the reason they exist: the targets are
@@ -701,7 +702,7 @@ of** `<router-view>` when `route.meta.group` is inactive. Deliberately not a `be
 guard can only redirect, which throws away the URL you asked for. This way the address survives,
 the real page component never mounts (so nothing it fetches on mount runs), and
 `ComingSoonPanel` renders the screen's own title as a real `<h1>` — which is what lets
-`pnpm smoke:dist` keep walking **all 49 routes** instead of being narrowed to the active few.
+`pnpm smoke:dist` keep walking **all 51 routes** instead of being narrowed to the active few.
 Any new gating must preserve that; a redirect would silently drop the gate to ~6 routes.
 **Hiding the sidebar rows did not touch this**: `/audiences` still renders `ComingSoonPanel` with
 its own `<h1>`, it just has no row pointing at it. Hide the rows, keep the gate.
@@ -715,7 +716,7 @@ numbers"). `src/config/personas.js` is the registry — pure data, no imports, s
 
 **The question is an overlay over a fully-rendered Home, never a route.** A `/welcome` route
 would replace `MainLayout`, so `[data-smoke="nav"]` would never appear and `pnpm smoke:dist`
-would fail at sign-in for all 49 routes rather than on one screen. Three consequences that any
+would fail at sign-in for all 51 routes rather than on one screen. Three consequences that any
 change here has to preserve: the page beneath stays mounted and visible, the overlay renders
 **no `<h1>`** (smoke asserts on the first one, which belongs to the page), and it opens **only on
 `/`** — a deep link to `/errors` from Slack must not be met by a modal demanding a role.
@@ -1020,7 +1021,7 @@ need endpoints, and neither has a placeholder in the UI.
 matching. Keep exactly one of each — that is why sign-up has no confirm-password field, and why
 the password show/hide toggle is `type="button"` and the input starts as `type="password"`. A
 bare `<button>` inside a `<form>` submits by default, so an unmarked toggle would give the gate
-two matches for `button[type=submit]` and fail sign-in for all 49 routes before a single screen
+two matches for `button[type=submit]` and fail sign-in for all 51 routes before a single screen
 rendered.
 
 **Settings → General** (`SettingsPersonaPanel.vue`) is the other surface, so changing the answer
@@ -1298,7 +1299,7 @@ so Quasar's own controls match. **Never hardcode a hex in a screen** — that is
 brand changed, and the alias layer only works if nothing bypasses it.
 
 **There is one kit.** The pre-Sfere primitives were replaced in place, not deprecated alongside
-it: all 49 screens now render Sfere components.
+it: all 51 screens now render Sfere components.
 
 Rules for touching it:
 
@@ -1374,7 +1375,7 @@ Nothing in this repo is off-limits to edit. But a handful of files are load-bear
 changing one changes every screen at once, so they are worth a moment's thought and a line in the
 commit message rather than a drive-by edit mid-task:
 
-`src/router/**` (the manifest generates all 49 routes) · `src/layouts/MainLayout.vue` (the nav
+`src/router/**` (the manifest generates all 51 routes) · `src/layouts/MainLayout.vue` (the nav
 is the IA, and the feature gate lives in its `q-page-container`) · `src/components/ui/**` (the
 kit) · `src/config/features.js` + `src/composables/useFeatures.js` (which modules are switched
 on at all) · `src/config/personas.js` + `src/lib/navOrder.js` (the order of the sidebar and of
@@ -1657,7 +1658,7 @@ exists to prevent.`sendMutation()`and`fetchCollection()`resolve`path` the same w
    explains, `404` to `apiMissing`, and everything else to `error`. `hasIngestSettings(source)`
    is the matching narrowing on the other panel — `source_type === 'web'` and nothing else.
 
-   **`pnpm smoke:dist` now walks all 49 routes against whatever `VITE_API_BASE` points at**,
+   **`pnpm smoke:dist` now walks all 51 routes against whatever `VITE_API_BASE` points at**,
    because that is what the default mode does. It used to be hermetic. If you need the old
    behaviour, set `sfere_data_source_mode` to `mock` in the browser profile the run uses, or
    flip the default — do not add a smoke-only branch to `useDataSource`, which would mean the
