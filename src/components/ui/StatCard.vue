@@ -40,19 +40,42 @@ const props = defineProps({
     validator: v => ['up', 'down', 'flat'].includes(v)
   },
   hint: { type: String, default: '' },
+  // Tints the whole card, for the one stat in a row that is a problem rather
+  // than a measurement — "1 needs attention" beside three neutral counts.
+  //
+  // A TINT, NOT A DELTA. `delta` already colours a trend arrow, and pushing
+  // "needs attention" through it would earn a red down-arrow for a count that
+  // has no direction. This changes the surface and leaves the figure alone.
+  // Use it on at most one card per row: three tinted cards tint nothing.
+  tone: {
+    type: String,
+    default: 'neutral',
+    validator: v => ['neutral', 'warn', 'danger', 'brand'].includes(v)
+  },
   onDark: { type: Boolean, default: false },
   // Drops the border/padding so the stat can sit inside an existing card.
   bare: { type: Boolean, default: false }
 })
 
+const TONES = {
+  neutral: 'border-sfere-line bg-sfere-surface',
+  warn: 'border-sfere-warn/40 bg-sfere-warn-soft',
+  danger: 'border-sfere-danger/35 bg-sfere-danger-soft',
+  brand: 'border-sfere-200 bg-sfere-50'
+}
+
+const TONES_DARK = {
+  neutral: 'border-sfere-hairline bg-sfere-ink-raised',
+  warn: 'border-sfere-warn/30 bg-sfere-warn/10',
+  danger: 'border-sfere-danger/30 bg-sfere-danger/10',
+  brand: 'border-sfere-hairline-strong bg-sfere-500/10'
+}
+
 const ARROWS = { up: '↑', down: '↓', flat: '→' }
 
 const rootClasses = computed(() => [
   !props.bare && 'rounded-sfere-xl border p-5',
-  !props.bare &&
-    (props.onDark
-      ? 'border-sfere-hairline bg-sfere-ink-raised'
-      : 'border-sfere-line bg-sfere-surface')
+  !props.bare && (props.onDark ? TONES_DARK : TONES)[props.tone]
 ])
 
 const labelClasses = computed(() => [

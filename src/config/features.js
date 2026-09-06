@@ -89,9 +89,16 @@ export const FEATURES = [
     locked: true
   },
   {
+    // Active, but with no row on the rail: the warehouse surface people
+    // actually use is the destination detail screen's Tables and SQL console
+    // tabs, since the backend provisions a ClickHouse destination per source.
+    // The key stays on so the three `group: 'warehouse'` routes keep rendering
+    // their real pages rather than `ComingSoonPanel` — switching it off would
+    // claim the module is not built yet, which is a different statement.
     key: 'warehouse',
     label: 'Warehouse',
-    description: 'Warehouse connections, syncs and models.',
+    description:
+      'Warehouse connections, syncs and models. Reached from a destination, not from a sidebar row.',
     enabled: true
   },
   {

@@ -34,8 +34,10 @@ const EMPTY = {
  * `eventCountLastHour` / `deliveryCountLastHour` would put a measured-looking
  * "0 events / hr" under every live source — the same confident zero the pipes
  * work already removed once. The keys are therefore left absent, which is what
- * `PipeTopology`'s `!= null` guards and `formatCount`'s `NOT_KNOWN` fallback
- * are already written for, and `countsMeasured` says which mode you are in.
+ * every consumer's `!= null` guard is written for, and `countsMeasured` says
+ * which mode you are in. The Pipes screen now draws this through
+ * `src/components/flow/FlowTopology.vue`, which omits a count it was not given
+ * rather than printing one; the older `PipeTopology.vue` is unreferenced.
  *
  * `function_count` on an edge IS real (it counts the pipeline's attached
  * functions) and is carried through as `functionCount`.

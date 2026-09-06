@@ -2,61 +2,47 @@
   <q-page class="p-6">
     <!-- One content cap for the header AND everything under it, so the <h1> and
          the cards share both edges. It sits here rather than in MainLayout on
-         purpose: the layout is shared with 57 other screens, several of which
-         (the design system, the full-bleed tables) want the whole width.
-         1400px is deliberately wider than `--container-sfere-page` (80rem /
-         1280px) — that token is the marketing-site measure and left ~40% of a
-         wide monitor empty here. A `--container-sfere-wide` token in
-         src/css/sfere.css is where this belongs once more than one page wants
-         it; that file is owned elsewhere. -->
+         purpose: the layout is shared with every other screen, several of which
+         want the whole width. 1400px is deliberately wider than
+         `--container-sfere-page` (80rem / 1280px) — that token is the
+         marketing-site measure and left ~40% of a wide monitor empty here. -->
     <div class="mx-auto w-full max-w-[1400px]">
       <!-- On the first run the <h1> IS the headline. EmptyState draws its title
-           at 14px semibold — the same size as its own description — so a
-           welcome put there would be a label above a button while the biggest
-           text on the screen still read "Dashboard". PageHeader renders 24px in
-           the display face, it is the one <h1> the smoke gate asserts on, and
-           there is no dashboard here yet to label. `title` falls back to
-           "Dashboard" for every other state, including the window before the
-           three setup reads have settled. -->
+           at 14px semibold, so a welcome put there would be a label above a
+           button while the biggest text on the screen still read "Dashboard".
+           PageHeader renders 24px in the display face, it is the one <h1> the
+           smoke gate asserts on, and there is no dashboard here yet to label. -->
       <PageHeader :title="title" :subtitle="subtitle">
         <!-- No actions at all on the first run: the one thing that can be done
-             is the button in the zero state below, and a header CTA saying the
-             same words is the duplicate this screen was reported for. Gated on
-             `setupLoaded` as well as `!firstRun` so a fresh account never paints
-             the pair and then drops them a moment later — a button that appears
-             and vanishes reads as a bug, an absence that fills in reads as
-             loading. Refresh goes with them: the page remounts on every route
-             change, so `onMounted(refresh)` already covers the trip to
-             /sources/new and back. -->
+             is the button in the setup diagram below, and a header CTA saying
+             the same words is a duplicate. Gated on `setupLoaded` as well as
+             `!firstRun` so a fresh account never paints the pair and then drops
+             them a moment later — a button that appears and vanishes reads as a
+             bug, an absence that fills in reads as loading. -->
         <template v-if="setupLoaded && !firstRun" #actions>
-          <button
-            :disabled="loading"
-            class="flex h-9 items-center gap-1.5 rounded-lg border border-line2 bg-white px-3 text-sm text-ink shadow-sm hover:bg-fill disabled:opacity-50"
+          <SfereButton
+            variant="secondary"
+            size="sm"
+            :loading="loading"
             @click="refresh"
+            >{{ loading ? 'Refreshing…' : 'Refresh' }}</SfereButton
           >
-            <svg
-              viewBox="0 0 16 16"
-              class="size-4"
-              fill="none"
-              aria-hidden="true"
-            >
-              <path
-                d="M13 8a5 5 0 1 1-1.46-3.54M13 3v3h-3"
-                stroke="currentColor"
-                stroke-width="1.5"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-              />
-            </svg>
-            {{ loading ? 'Refreshing…' : 'Refresh' }}
-          </button>
-          <router-link
-            :to="primaryAction.to"
-            class="flex h-9 items-center gap-1.5 rounded-lg bg-brand px-3.5 text-sm font-medium text-white shadow-sm hover:opacity-90"
-            >{{ primaryAction.label }}</router-link
+          <SfereButton size="sm" :to="{ name: 'sources-new' }"
+            >Connect a source</SfereButton
           >
         </template>
       </PageHeader>
+
+      <!-- The door back into a parked arrival. Above the tracker because it is
+           the more specific of the two: the tracker answers "how far is this
+           workspace?" for everybody at 0 of 3, this answers "you left the
+           welcome flow part-way" for the one reader who did. It removes itself
+           the moment a source exists — see `resumeVisible`. -->
+      <SetupResumeBand
+        v-if="resumeVisible"
+        :intent="onboardingIntent ?? ''"
+        @resume="requestResume"
+      />
 
       <!-- The setup tracker sits above every other state, including the loading
            and error branches below: it reads three list endpoints of its own, so
@@ -75,7 +61,7 @@
       />
 
       <!-- 1. Loading -->
-      <div v-if="showSkeleton" class="flex flex-col gap-4">
+      <div v-if="showSkeleton" class="grid gap-4">
         <LoadingState variant="grid" :rows="4" />
         <LoadingState variant="table" :rows="6" />
       </div>
@@ -88,21 +74,13 @@
         @retry="refresh"
       />
 
-      <!-- 3. First run — no source, no destination, no pipe. THE SETUP
-           DIAGRAM ABOVE IS THIS SCREEN, so nothing renders here.
+      <!-- 3. First run — no source, no destination, no pipe. THE SETUP DIAGRAM
+           ABOVE IS THIS SCREEN, so nothing renders here.
 
-           This used to be a lone EmptyState ("Point your website, app or store
-           at Sfere…") with one button, and the tracker was suppressed to avoid
-           saying the same thing twice. The duplication was real; hiding the
-           tracker was the wrong half to drop. What a brand-new account needs
-           first is the SHAPE of the work — three steps, in a fixed order, each
-           one gated by the one before it — and a sentence plus a button states
-           the goal while hiding all of it. The diagram carries the explanation,
-           the progress and the single call to action at once, which is why
-           `setupVisible` no longer excludes `firstRun` and why there is one
-           surface here across all four counts instead of two that swap at 1.
-
-           Losing `data-smoke="empty"` on this branch is safe: it is not a
+           What a brand-new account needs first is the SHAPE of the work — three
+           steps, in a fixed order, each gated by the one before it — and a
+           topology of an empty workspace would be two column headings and a
+           blank. Losing `data-smoke="empty"` on this branch is safe: it is not a
            failure condition for scripts/smoke.mjs, and PageHeader still renders
            the one non-empty <h1> the gate asserts on. Nothing invents a third
            data-smoke attribute to compensate.
@@ -112,46 +90,114 @@
            workspace with nothing set up, because the setup reads are three
            different endpoints and their success is no evidence about this one. -->
       <template v-else-if="!firstRun">
-        <!-- 4. Configured, but nothing is moving. Also where an UNTRUSTWORTHY
-             setup read lands: `firstRun` requires the three counts to have
-             actually come back, because greeting a failed pipes endpoint with
-             "let's get your data flowing" would assert an emptiness nobody
-             measured. This says only what the *metrics* are waiting for. -->
+        <!-- 4. The aggregate has no endpoint. Distinct from "nothing is flowing"
+             and it has to stay distinct: a 404 and an idle workspace look
+             identical in the data and mean opposite things to the reader. -->
         <EmptyState
-          v-if="isEmpty"
+          v-if="apiMissing"
+          title="No API yet"
+          description="The dashboard overview endpoint is not available for this
+            account, so there is nothing to summarise. Sources, Destinations and
+            Pipes each still read their own endpoint."
+        />
+
+        <!-- 5. Nothing is configured at all — and note this branch is reached
+             only when `firstRun` could NOT be established, i.e. when the three
+             setup reads failed or have no endpoint. So it must not render the
+             topology or the counts: `flow.*.total` is `items.length` on an array
+             that is empty both when the workspace is empty and when the read
+             never happened, and `formatNumber(0)` prints a confident `0` for
+             both. Mutually exclusive with the populated branch on purpose — an
+             empty picture over four zeroes beside a "no data yet" notice is
+             three surfaces asserting a measurement nobody took. -->
+        <EmptyState
+          v-else-if="isEmpty"
           title="No data is flowing yet"
           :description="emptyDescription"
         />
 
-        <!-- 5. Populated -->
-        <div v-else class="flex flex-col gap-4">
-          <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-            <StatCard
-              v-for="stat in stats"
-              :key="stat.label"
-              :label="stat.label"
-              :value="stat.value"
-              :delta="stat.delta"
-              :direction="stat.deltaDirection"
-              :hint="stat.hint ?? ''"
-            />
-          </div>
+        <!-- 6. Populated.
+             `grid`, not `flex flex-col`. Quasar ships an unlayered
+             `.flex { display:flex; flex-wrap: wrap }` and the layered
+             `flex-nowrap` utility loses to it, so a column of blocks here is a
+             WRAPPING column — which stretched the topology card to the height of
+             the whole stack and left ~700px of white inside it. `grid` has no
+             Quasar counterpart, so `gap` and auto rows both apply.
+             CLAUDE.md collision #4. -->
+        <div v-else class="grid gap-4">
+          <!-- THE TOPOLOGY IS THE SCREEN. It replaced a stack of persona-ordered
+               panels — a throughput chart, two activity lists and a profiles
+               summary — for one reason worth stating: none of them answered the
+               question somebody opens a CDP dashboard to ask, which is "is my
+               data getting from where it comes from to where it goes?". A line
+               chart answers "how much", and only once you already trust the
+               path. The picture answers the path.
 
-          <!-- Enabled but not moving: the only thing on this page worth acting on
-             immediately, so it sits directly under the headline numbers and above
-             the persona-ordered blocks — its position is fixed for every reader,
-             only its openness changes. NoticeBanner's layout was lifted from this
-             block — use it, don't re-hand-roll it. -->
-          <!-- Name on its own line, consequence under it. It used to be one line
-             per row hinged on an em dash, and since a provisioned destination is
-             itself named "Testing website — ClickHouse", a row read "Testing
-             website — ClickHouse — Enabled, but no pipe delivers to it": three
-             dashes doing two different jobs in a list meant to be scanned. -->
+               `:padded="false"` and its own inner padding because the connector
+               curves are drawn in an SVG positioned against the topology's own
+               box — a card's padding would clip the ends of the wires. -->
+          <CardPanel :padded="false">
+            <div class="p-5">
+              <FlowTopology
+                :sources="topology.sources"
+                :destinations="topology.destinations"
+                :links="topology.links"
+                :sources-to="{ name: 'sources' }"
+                :destinations-to="{ name: 'destinations' }"
+              >
+                <!-- NO BUTTON IN EITHER EMPTY COLUMN, deliberately. The
+                     topology only renders in the populated branch, which is
+                     reached with `setupLoaded && !firstRun` — and that is
+                     exactly the condition the header's own actions are gated
+                     on, so a `Connect a source` here would sit a few hundred
+                     pixels below an identical one in the top right. Every add
+                     affordance on this app lives in the header; a second copy
+                     inside the content is the duplicate row this port was asked
+                     to keep out. The copy still names the next step, and the
+                     control for it is the one already on screen. -->
+                <template #sources-empty>
+                  <div
+                    class="sfere-flush grid gap-1.5 rounded-sfere-lg border border-dashed border-sfere-line bg-sfere-fill p-4"
+                  >
+                    <p class="text-sfere-sm font-semibold text-sfere-fg"
+                      >No sources connected yet</p
+                    >
+                    <p class="text-sfere-xs text-sfere-fg-muted"
+                      >Connect a website, an online store, a mobile app or your
+                      own backend, and activity starts arriving here.</p
+                    >
+                  </div>
+                </template>
+
+                <template #destinations-empty>
+                  <div
+                    class="sfere-flush grid gap-1.5 rounded-sfere-lg border border-dashed border-sfere-line bg-sfere-fill p-4"
+                  >
+                    <p class="text-sfere-sm font-semibold text-sfere-fg"
+                      >Your warehouse arrives with your first source</p
+                    >
+                    <p class="text-sfere-xs text-sfere-fg-muted"
+                      >Connect a website or an online store and Sfere provisions
+                      the storage and the pipe into it in the same step.</p
+                    >
+                  </div>
+                </template>
+              </FlowTopology>
+            </div>
+          </CardPanel>
+
+          <!-- Enabled but not moving: the only thing on this page worth acting
+               on immediately, so it sits directly under the picture that shows
+               it and above the numbers. Name on its own line, consequence under
+               it — it used to be one line per row hinged on an em dash, and
+               since a provisioned destination is itself named "Testing website —
+               ClickHouse", a row read "Testing website — ClickHouse — Enabled,
+               but no pipe delivers to it": three dashes doing two different jobs
+               in a list meant to be scanned. -->
           <NoticeBanner
             v-if="attention.length"
             tone="warn"
             :title="attentionTitle"
-            :collapsible="home.collapseAttention"
           >
             <ul class="grid gap-2">
               <li v-for="item in attention" :key="item.id" class="grid gap-0.5">
@@ -163,60 +209,22 @@
             </ul>
           </NoticeBanner>
 
-          <!-- The persona-ordered blocks. One wrapper div per row so a row of two
-             becomes a two-column grid and a row of one stays full width; the
-             v-if/v-else-if chain names each block explicitly rather than going
-             through `<component :is>` so every block keeps its own props at the
-             call site. -->
-          <template v-for="(row, rowIndex) in blockRows" :key="rowIndex">
-            <div
-              :class="
-                row.length > 1 ? 'grid grid-cols-1 gap-4 lg:grid-cols-2' : ''
-              "
-            >
-              <template v-for="id in row" :key="id">
-                <ThroughputPanel
-                  v-if="id === 'throughput'"
-                  :labels="throughput.labels"
-                  :received="throughput.received"
-                  :delivered="throughput.delivered"
-                  :routing-rate="routingRate"
-                />
-
-                <PipelineFlowPanel
-                  v-else-if="id === 'flow'"
-                  :columns="columns"
-                />
-
-                <ActivityPanel
-                  v-else-if="id === 'errors'"
-                  title="Recent errors"
-                  :items="errorItems"
-                  empty-text="No failures logged in the last hour."
-                  link-label="View all"
-                  :link-to="{ name: 'errors' }"
-                />
-
-                <ActivityPanel
-                  v-else-if="id === 'events'"
-                  title="Latest events"
-                  :items="eventItems"
-                  empty-text="No events received yet."
-                  link-label="View sources"
-                  :link-to="{ name: 'sources' }"
-                />
-
-                <ProfilesPanel
-                  v-else-if="id === 'profiles'"
-                  :tiles="profileTiles"
-                  :items="profileItems"
-                  :description="profilesDescription"
-                />
-
-                <WarehouseHandoffStrip v-else-if="id === 'warehouse-handoff'" />
-              </template>
-            </div>
-          </template>
+          <!-- The counts, under the picture rather than over it. Four, and every
+               one of them measured: `DashboardTotals` carries sources,
+               destinations, pipes/pipes_enabled and events_received; delivery
+               success is the ratio of two of those. Nothing here prints a
+               per-pipe "last activity" or a per-source "success rate" — the
+               prototype had both and the backend measures neither. -->
+          <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+            <StatCard
+              v-for="stat in summaryStats"
+              :key="stat.label"
+              :label="stat.label"
+              :value="stat.value"
+              :hint="stat.hint ?? ''"
+              :tone="stat.tone ?? 'neutral'"
+            />
+          </div>
         </div>
       </template>
     </div>
@@ -225,41 +233,53 @@
 
 <script setup>
 import { computed, onMounted, ref } from 'vue'
+import CardPanel from '@/components/ui/CardPanel.vue'
 import NoticeBanner from '@/components/ui/NoticeBanner.vue'
 import EmptyState from '@/components/ui/EmptyState.vue'
 import ErrorState from '@/components/ui/ErrorState.vue'
 import LoadingState from '@/components/ui/LoadingState.vue'
 import PageHeader from '@/components/ui/PageHeader.vue'
+import SfereButton from '@/components/ui/SfereButton.vue'
 import StatCard from '@/components/ui/StatCard.vue'
-import ActivityPanel from '@/components/shell/ActivityPanel.vue'
-import ProfilesPanel from '@/components/shell/ProfilesPanel.vue'
+import FlowTopology from '@/components/flow/FlowTopology.vue'
 import SetupProgressPanel from '@/components/shell/SetupProgressPanel.vue'
-import PipelineFlowPanel from '@/components/shell/PipelineFlowPanel.vue'
-import ThroughputPanel from '@/components/shell/ThroughputPanel.vue'
-import WarehouseHandoffStrip from '@/components/shell/WarehouseHandoffStrip.vue'
+import SetupResumeBand from '@/components/shell/SetupResumeBand.vue'
 import {
-  formatAgo,
   formatClock,
   formatNumber,
   useDashboardHome
 } from '@/composables/useDashboardHome'
 import { useSetupProgress } from '@/composables/useSetupProgress'
 import { useOnboarding } from '@/composables/useOnboarding'
-import { DEFAULT_HOME } from '@/config/personas'
+import { NOT_KNOWN } from '@/lib/emptyValue'
 
+// Home, as one picture and four numbers.
+//
+// WHAT THIS REPLACED, and why. The page used to be a stack of panels whose order
+// was chosen by the role somebody picked on their first sign-in: a throughput
+// chart, a three-column flow summary, Recent errors, Latest events, a profiles
+// panel and a warehouse signpost. Two problems, and the ordering was the smaller
+// one. The larger is that none of those answers the question a person opens a
+// CDP dashboard to ask — "is my data getting from where it comes from to where
+// it goes?" — and six panels that each answer a narrower question read as a
+// report rather than as an answer. The topology answers it directly, and the
+// four counts under it are the frame around that answer.
+//
+// The retired blocks are not deleted from the repo: `ThroughputPanel`,
+// `ActivityPanel`, `ProfilesPanel`, `PipelineFlowPanel` and
+// `WarehouseHandoffStrip` are still in src/components/shell/ and still render
+// correctly. They have no call site here any more, and the screens that want a
+// throughput chart or an error list — Monitoring, Live events — are where they
+// belong next.
 const {
   loading,
   error,
+  apiMissing,
   load,
-  stats,
-  throughput,
-  columns,
+  topology,
   attention,
-  recentEvents,
-  recentProfiles,
-  topErrors,
-  profileStats,
-  routingRate,
+  flow,
+  deliverySuccess,
   updatedAt,
   isEmpty
 } = useDashboardHome()
@@ -283,87 +303,91 @@ const {
 // merely unmeasured. `setupUnavailable` is the load-bearing half: any of the
 // three reads failing or having no endpoint makes the counts a guess, and a
 // welcome screen built on a guess would tell someone with a full pipeline that
-// they have not started. Those cases fall through to the `isEmpty` branch,
-// which claims nothing about configuration.
-//
-// Still derived, never stored — this is three list reads composed in a
-// computed, not a flag anyone writes. Delete the only source and the screen
-// goes back to saying so.
+// they have not started. Those cases fall through to the populated branch, which
+// claims nothing about configuration.
 const firstRun = computed(
   () => setupLoaded.value && !setupUnavailable.value && setupDone.value === 0
 )
 
-// ------------------------------------------------------------------- persona
+// ---------------------------------------------------------------- stat cards
 
-// WHAT THE PERSONA CHANGES HERE: the order of the blocks below the headline
-// numbers, the subtitle, which primary action the header offers, whether the
-// needs-attention list opens collapsed, and whether the setup tracker survives
-// its own completion. WHAT IT DOES NOT CHANGE: which blocks exist. Every reader
-// gets every block, in a different order — the same rule the sidebar follows,
-// and for the same reason. See src/config/personas.js.
+// Four counts, chosen so that every one of them is measured. `stats` from the
+// composable is the older set — events received, events delivered, active pipes,
+// error rate — and two of those are now said better by the picture above, so
+// this row answers "how big is my setup, and is it delivering?" instead.
 //
-// A persona with no `home`, and no persona at all — unanswered or skipped —
-// both resolve to DEFAULT_HOME, which is today's layout exactly. That fallback
-// is load-bearing for the behavioural gate: scripts/smoke.mjs signs in as
-// SMOKE_EMAIL with nothing in localStorage, so the unanswered path is the ONLY
-// one it walks. If this defaulted to anything else, the gate would keep passing
-// while covering a layout no user sees.
-const { personaMeta } = useOnboarding()
+// DELIVERY SUCCESS IS GUARDED, not defaulted. `DashboardTotals.events_delivered`
+// is explicitly nullable — "null when the analytics store is unavailable" — so a
+// bare ratio would print `0.0%` on a healthy account whose ClickHouse read
+// failed, which is a measured-sounding claim that delivery is broken. Absent
+// beats wrong: the card renders NOT_KNOWN and says why in its hint.
+const summaryStats = computed(() => {
+  const sources = flow.value.sources
+  const pipes = flow.value.pipes
+  const destinations = flow.value.destinations
+  const attentionCount = attention.value.length
 
-const home = computed(() => personaMeta.value?.home ?? DEFAULT_HOME)
-
-// Every entry normalised to a row, so the template has one shape to render: a
-// bare id is a full-width row of one, a nested array is a row rendered side by
-// side on large screens.
-const blockRows = computed(() =>
-  home.value.blocks.map(block => (Array.isArray(block) ? block : [block]))
-)
-
-const PRIMARY_ACTIONS = {
-  'connect-source': {
-    label: 'Connect a source',
-    to: { name: 'sources-new' }
-  },
-  'search-profiles': {
-    label: 'Search profiles',
-    to: { name: 'profiles-search' }
-  },
-  'live-events': { label: 'Watch live events', to: { name: 'live-events' } }
-}
-
-// Until all three setup steps exist, EVERY reader's next move is the same one,
-// whatever their role says — a marketer cannot search profiles that no source
-// has produced. `setupComplete` is also false while the three reads are in
-// flight and when they cannot be trusted, so both of those cases keep today's
-// button rather than guessing at a persona-specific one.
-const primaryAction = computed(() => {
-  if (!setupComplete.value) return PRIMARY_ACTIONS['connect-source']
-  return (
-    PRIMARY_ACTIONS[home.value.primaryAction] ??
-    PRIMARY_ACTIONS['connect-source']
-  )
+  return [
+    // `flowing`, not `enabled`. A source can be switched on and receiving
+    // nothing, which is exactly the state the attention banner is about — so a
+    // hint reading "3 sending" beside a banner naming one of them as silent
+    // contradicts the screen it is on. `flowing` counts sources whose measured
+    // `events_received` is above zero.
+    {
+      label: 'Sources',
+      value: formatNumber(sources.total),
+      hint:
+        sources.flowing === sources.total
+          ? `${sources.enabled} enabled`
+          : `${sources.flowing} of ${sources.total} sending`
+    },
+    {
+      label: 'Active pipes',
+      value: formatNumber(pipes.enabled),
+      hint: pipes.total === pipes.enabled ? '' : `of ${pipes.total} configured`
+    },
+    {
+      label: 'Destinations',
+      value: formatNumber(destinations.total),
+      hint: `${destinations.enabled} enabled`
+    },
+    attentionCount
+      ? {
+          label: 'Needs attention',
+          value: formatNumber(attentionCount),
+          hint: attentionCount === 1 ? 'One thing to check' : 'Things to check',
+          tone: 'warn'
+        }
+      : {
+          label: 'Delivery success',
+          value: deliveryLabel.value,
+          hint: deliveryHint.value
+        }
+  ]
 })
 
-// "Needs attention" for a reader who wants the list; a count for one who wants
-// the option of it. The count is in the title rather than a badge because when
-// the banner is collapsed the title is the whole banner.
+// NOT_KNOWN rather than a dash: the four words in src/lib/emptyValue.js exist so
+// a reader can tell "nothing measures this" from "this is genuinely zero", and a
+// bare em dash cannot say which it is.
+const deliveryLabel = computed(() =>
+  deliverySuccess.value == null
+    ? NOT_KNOWN
+    : `${deliverySuccess.value.toFixed(1)}%`
+)
+
+const deliveryHint = computed(() =>
+  deliverySuccess.value == null ? 'No deliveries measured yet' : 'Last hour'
+)
+
+// "Needs attention" for a reader who wants the list. The count is in the title
+// because the list under it is the detail, and a bare "Needs attention" over
+// four rows makes the reader count them.
 const attentionTitle = computed(() => {
-  if (!home.value.collapseAttention) return 'Needs attention'
   const count = attention.value.length
   return count === 1
-    ? '1 issue needs your attention'
-    : `${count} issues need your attention`
+    ? '1 thing needs your attention'
+    : `${count} things need your attention`
 })
-
-// "Built from the events above" is a forward reference to nothing when this
-// block is the first thing on the page, which is where a marketer gets it.
-// Derived from the ordering rather than configured, so it cannot disagree with
-// where the block actually landed.
-const profilesDescription = computed(() =>
-  blockRows.value[0]?.includes('profiles')
-    ? 'Every fan Sfere has resolved from the events it has received.'
-    : 'Resolved fans built from the events above.'
-)
 
 // --------------------------------------------------------------------- setup
 
@@ -374,30 +398,39 @@ const profilesDescription = computed(() =>
 const SETUP_DISMISS_KEY = 'sfere_setup_tracker_dismissed'
 const setupDismissed = ref(localStorage.getItem(SETUP_DISMISS_KEY) === '1')
 
-// `hideSetupWhenComplete` retires the panel for a reader it was never for,
-// without ever hiding it while a step is outstanding — that is the "unless
-// there is no data yet" half, and it is why the condition is on `setupComplete`
-// and not on the persona alone.
-//
-// IT IS NO LONGER GATED ON `!firstRun`, AND THAT IS THE REVERSAL. At 0 of 3
-// this panel used to be suppressed in favour of a one-sentence EmptyState, on
-// the argument that three all-"not done" cards were three ways of repeating it.
-// True of three cards, and the tracker is not three cards any more: it is the
-// pipeline diagram, so at zero it is the only thing on the screen that shows
-// the shape of the work — three steps, fixed order, each gated by the one
-// before it — as well as the progress and the one call to action. Suppressing
-// it there left a first screen that stated a goal and hid the whole structure,
-// then swapped in a different-looking surface the moment step one landed.
-// `setupVisible` is now true at every count, and branch 3 of the state chain
-// below renders nothing instead.
 const setupVisible = computed(
   () =>
     setupLoaded.value &&
     !setupUnavailable.value &&
-    !(
-      setupComplete.value &&
-      (setupDismissed.value || home.value.hideSetupWhenComplete)
-    )
+    !(setupComplete.value && setupDismissed.value)
+)
+
+// The parked arrival, if there is one.
+//
+// GATED ON `setupDone === 0`, NOT ON THE RECORD ALONE, and that is what keeps it
+// from outliving its own point. Somebody can park the arrival and then connect a
+// source from the Sources screen an hour later; the record still says "paused"
+// because nothing writes a completion, and it deliberately does not — a stored
+// `setupComplete` flag is exactly the thing `useSetupProgress` exists to avoid,
+// since it can disagree with reality the moment somebody deletes their only
+// source. Deriving the visibility from the count instead means the band is
+// correct in both directions with nothing to keep in step.
+//
+// `setupLoaded && !setupUnavailable` for the same reason `firstRun` carries it:
+// with the three list reads unanswered, `setupDone` is 0 because nothing has
+// been counted, not because nothing exists.
+const {
+  paused: onboardingPaused,
+  intent: onboardingIntent,
+  requestResume
+} = useOnboarding()
+
+const resumeVisible = computed(
+  () =>
+    onboardingPaused.value &&
+    setupLoaded.value &&
+    !setupUnavailable.value &&
+    setupDone.value === 0
 )
 
 function dismissSetup() {
@@ -422,7 +455,7 @@ async function refresh() {
 const emptyDescription = computed(() =>
   setupComplete.value
     ? 'Your source, destination and pipe are all in place. This fills in as soon as the first events arrive.'
-    : 'Finish the setup steps above and this screen fills in with live throughput, errors and profiles.'
+    : 'Finish the setup steps above and this screen fills in with live activity.'
 )
 
 const title = computed(() =>
@@ -430,54 +463,15 @@ const title = computed(() =>
 )
 
 const subtitle = computed(() => {
-  // Nothing under the headline on the first run: the one supporting sentence
-  // lives in the EmptyState next to the button it belongs with, and a persona
-  // subtitle here ("Fan data pipeline · last hour") would be a second line
-  // about a measurement nobody took. "last hour · updated 10:32" frames a
-  // measurement, and on the first run there is none to frame — printing it
-  // would be the confident-zero mistake in sentence form.
+  // Nothing under the headline on the first run: "last hour · updated 10:32"
+  // frames a measurement, and on the first run there is none to frame —
+  // printing it would be the confident-zero mistake in sentence form.
   if (firstRun.value) return ''
-  const lead = home.value.subtitle
+  const lead =
+    'See how customer activity moves through Sfere, from your sources to your destinations'
   const at = formatClock(updatedAt.value)
-  return at ? `${lead} · last hour · updated ${at}` : `${lead} · last hour`
+  return at ? `${lead} · updated ${at}` : lead
 })
-
-const errorItems = computed(() =>
-  topErrors.value.map(e => ({
-    id: e.id,
-    title: e.entityName || e.code,
-    meta: e.message,
-    right: formatAgo(e.occurredAt),
-    badge: {
-      variant: e.severity === 'error' ? 'danger' : 'warn',
-      label: e.severity === 'error' ? 'Error' : 'Warning'
-    }
-  }))
-)
-
-const eventItems = computed(() =>
-  recentEvents.value.map(e => ({
-    id: e.id,
-    title: e.eventName,
-    meta: e.sourceName,
-    right: formatAgo(e.occurredAt)
-  }))
-)
-
-const profileItems = computed(() =>
-  recentProfiles.value.map(p => ({
-    id: p.id,
-    title: p.displayName,
-    meta: p.id,
-    right: formatAgo(p.updatedAt)
-  }))
-)
-
-const profileTiles = computed(() => [
-  { label: 'Refreshed', value: formatNumber(profileStats.value.refreshed) },
-  { label: 'Routed', value: formatNumber(profileStats.value.routed) },
-  { label: 'Live syncs', value: formatNumber(profileStats.value.liveSyncs) }
-])
 
 onMounted(refresh)
 </script>

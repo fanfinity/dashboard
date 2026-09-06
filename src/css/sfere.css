@@ -238,6 +238,11 @@
   --animate-sfere-flow-y: sfere-flow-y 3.2s linear infinite;
   --animate-sfere-blink: sfere-blink 4.2s ease-in-out infinite;
   --animate-sfere-breathe: sfere-breathe 6.5s ease-in-out infinite;
+  /* The dot travelling a FlowWire. Unlike the two `sfere-flow` gradients above
+     it moves an element rather than a background, because the dot is a real
+     span the wire positions — a gradient could not be tinted per status without
+     a second copy of the keyframe per colour. */
+  --animate-sfere-travel: sfere-travel 2.4s ease-in-out infinite;
 
   @keyframes sfere-flow {
     0% {
@@ -273,6 +278,22 @@
     }
     50% {
       opacity: 1;
+    }
+  }
+  /* Left edge to right edge of the wire, fading in and out at the ends so the
+     dot does not appear to pop into existence on top of a node. */
+  @keyframes sfere-travel {
+    0% {
+      left: 0;
+      opacity: 0;
+    }
+    15%,
+    85% {
+      opacity: 1;
+    }
+    100% {
+      left: 100%;
+      opacity: 0;
     }
   }
 }
@@ -382,8 +403,17 @@
   .animate-sfere-flow,
   .animate-sfere-flow-y,
   .animate-sfere-blink,
-  .animate-sfere-breathe {
+  .animate-sfere-breathe,
+  .animate-sfere-travel {
     animation: none !important;
+  }
+
+  /* `sfere-travel` animates `left`, so stopping the animation leaves the dot
+     parked at its authored position rather than at a keyframe. Hiding it is the
+     honest still state: the wire itself already says the two ends are joined,
+     and a dot frozen mid-wire reads as a stalled delivery. */
+  .animate-sfere-travel {
+    display: none;
   }
 }
 

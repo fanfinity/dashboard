@@ -166,6 +166,10 @@ function overviewToNodes(o) {
     id: d.id,
     name: d.name,
     slug: d.slug,
+    // Carried through for the topology's glyph. `DashboardDestinationStat` has
+    // it and the flow columns never needed it, which is why it was dropped here
+    // originally — a node with no type draws the generic mark.
+    destinationType: d.destination_type,
     isEnabled: d.is_enabled,
     deliveryCountLastHour: d.events_delivered ?? 0,
     pipes: pipes.filter(p => p.destination_id === d.id)
@@ -516,6 +520,32 @@ export function useDashboardHome() {
   }))
 
   const routingRate = computed(() => Number(dashboard.value.routingRate) || 0)
+
+  /**
+   * Delivered ÷ received as a PERCENTAGE, or null when the question cannot be
+   * answered.
+   *
+   * SEPARATE FROM `routingRate` ABOVE, and both are correct for their own
+   * caller. `routingRate` is a 0..1 fraction that coerces a missing numerator to
+   * zero, which is right for the throughput chart's fan-out line — a chart with
+   * a hole in it is worse than a chart reading zero, and the series beside it
+   * already shows there was no delivery data.
+   *
+   * A STAT CARD CANNOT DO THAT. `DashboardTotals.events_delivered` is explicitly
+   * nullable — "null when the analytics store is unavailable" — so the same
+   * coercion would print a confident `0.0%` on a healthy account whose
+   * ClickHouse read failed, i.e. "your delivery is completely broken" as a
+   * measured-sounding fact. Null here means the caller prints NOT_KNOWN.
+   *
+   * Zero received also returns null rather than 100% or 0%: a success rate over
+   * no attempts is not a number.
+   */
+  const deliverySuccess = computed(() => {
+    const received = Number(dashboard.value.totalEventsLastHour) || 0
+    const delivered = dashboard.value.routedEventsLastHour
+    if (!received || delivered == null) return null
+    return (Number(delivered) / received) * 100
+  })
   const updatedAt = computed(() => dashboard.value.updatedAt ?? '')
 
   /** First run: nothing configured at all. Not the same as "nothing flowing". */
@@ -526,6 +556,64 @@ export function useDashboardHome() {
       !flow.value.destinations.total
   )
 
+  /**
+   * The three arrays the Dashboard's topology draws, in FlowTopology's prop
+   * shape.
+   *
+   * DERIVED HERE RATHER THAN IN THE PAGE so it reads the `nodes` this composable
+   * has already loaded. The alternative — a second `useDiagram()` in
+   * DashboardHomePage — would fetch the same endpoint twice on every visit to
+   * Home, and in real mode would fetch a DIFFERENT one: this composable answers
+   * `nodes` out of the dashboard aggregate in real mode and out of the diagram
+   * fixture in Demo, and a page-side `useDiagram()` would always read the
+   * diagram, so the picture and the stat cards beside it could disagree.
+   *
+   * `status` IS DERIVED FROM WHAT IS MEASURED, and only that. The dashboard
+   * aggregate carries no `Status5` field, but it does carry per-source
+   * `events_received` and per-destination `events_delivered`, which is enough
+   * for the only distinction the picture makes: switched off, receiving, or on
+   * and silent. A node whose count is genuinely absent reports `idle` — "nothing
+   * is moving" — rather than `healthy`, because claiming health from a
+   * measurement nobody took is exactly the confident-zero this repo keeps
+   * removing.
+   */
+  const topology = computed(() => {
+    const { sources, destinations, links } = nodes.value
+
+    const nodeStatus = (isEnabled, volume) => {
+      if (!isEnabled) return 'idle'
+      return Number(volume) > 0 ? 'healthy' : 'idle'
+    }
+
+    return {
+      sources: sources.map(s => ({
+        id: s.id,
+        name: s.name,
+        subtype: s.sourceType ?? '',
+        hint: `${s.pipes.length} pipe${s.pipes.length === 1 ? '' : 's'}`,
+        isEnabled: s.isEnabled !== false,
+        status: nodeStatus(s.isEnabled, s.eventCountLastHour),
+        to: { name: 'sources-detail', params: { id: s.id } }
+      })),
+      destinations: destinations.map(d => ({
+        id: d.id,
+        name: d.name,
+        subtype: d.destinationType ?? '',
+        hint: `${d.pipes.length} pipe${d.pipes.length === 1 ? '' : 's'}`,
+        isEnabled: d.isEnabled !== false,
+        status: nodeStatus(d.isEnabled, d.deliveryCountLastHour),
+        to: { name: 'destinations-detail', params: { id: d.id } }
+      })),
+      links: links.map(({ pipe, source, destination }) => ({
+        id: pipe.id,
+        sourceId: source.id,
+        destinationId: destination.id,
+        isEnabled: pipe.isEnabled !== false,
+        status: nodeStatus(pipe.isEnabled, pipe.deliveryCountLastHour)
+      }))
+    }
+  })
+
   return {
     loading,
     error,
@@ -535,6 +623,8 @@ export function useDashboardHome() {
     throughput,
     flow,
     columns,
+    topology,
+    deliverySuccess,
     attention,
     recentEvents,
     recentProfiles,

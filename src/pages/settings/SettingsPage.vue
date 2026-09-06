@@ -30,15 +30,13 @@
            way back to demo data. -->
       <TabNav v-model="tab" :tabs="tabs" />
 
-      <!-- General leads with the role. It used to be a tab of its own next to
-           this one, which put the single most personal setting on the screen one
-           click further away than the workspace's data-retention windows. The
-           tabs below General are all workspace records, so in real mode there is
-           nothing to show and they are not offered — this one always has the
-           role, so it is always here. -->
+      <!-- General used to lead with a role picker — engineer / marketer /
+           analyst — whose answer ordered the sidebar and the dashboard's blocks.
+           Both orderings are gone (see CLAUDE.md), so the control was a question
+           with no consequence, and it went with them. What is left is the
+           workspace form, which is a workspace record like every tab below and
+           is gated on one loading. -->
       <div v-if="tab === 'general'" class="flex max-w-3xl flex-col gap-4">
-        <SettingsPersonaPanel />
-
         <form
           v-if="workspace"
           class="flex flex-col gap-4"
@@ -171,6 +169,15 @@
             >
           </template>
         </CardPanel>
+
+        <!-- LAST, and outside the `workspace` gate above it on purpose. The
+             onboarding record is a per-account preference like Feature
+             activation and Data source, not workspace data, so it is the one
+             thing on this tab that has something to show in the default real
+             mode — where `settings` has no endpoint and both blocks above
+             render nothing. It goes at the bottom because restarting the
+             welcome is an occasional errand, not what the tab is about. -->
+        <SettingsOnboardingPanel />
       </div>
 
       <SettingsFeaturePanel v-else-if="tab === 'features'" />
@@ -333,7 +340,7 @@ import { useApiTokens } from '@/composables/useApiTokens'
 import { notifyMutationResult } from '@/composables/useMutationFeedback'
 import SettingsDangerZone from '@/components/settings/SettingsDangerZone.vue'
 import SettingsFeaturePanel from '@/components/settings/SettingsFeaturePanel.vue'
-import SettingsPersonaPanel from '@/components/settings/SettingsPersonaPanel.vue'
+import SettingsOnboardingPanel from '@/components/settings/SettingsOnboardingPanel.vue'
 import SettingsAuthorizationsPanel from '@/components/settings/SettingsAuthorizationsPanel.vue'
 import SettingsSecretsPanel from '@/components/settings/SettingsSecretsPanel.vue'
 import SettingsDataSourcePanel from '@/components/settings/SettingsDataSourcePanel.vue'

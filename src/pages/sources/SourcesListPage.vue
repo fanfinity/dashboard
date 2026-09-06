@@ -41,6 +41,45 @@
         :unavailable="setupUnavailable"
       />
 
+      <!-- What a source IS, for somebody who has not met the word before. Above
+           the tabs rather than inside the streams tab: it defines the noun in
+           the `<h1>`, which is true of the connector catalog and the store
+           connection lists too.
+
+           DISMISSIBLE, and that is the whole reason it can exist. This sentence
+           is worth a lot on the first visit and nothing on the hundredth, and a
+           permanent band would tax every later visit to pay for the first one.
+           `IntroBand` remembers the dismissal per browser. -->
+      <IntroBand
+        class="mb-4"
+        storage-key="sources-intro"
+        eyebrow="Start with where activity happens"
+        title="A source connects customer activity to Sfere."
+        body="Your website, online store, mobile app or your own backend can each
+          be a source. You can connect more than one of the same kind — two
+          websites, several stores — and each connection is its own source with
+          its own pipes."
+      >
+        <!-- The aside answers the question the body provokes: "and then what?".
+             It is the same promise the first-run overlay makes, said again where
+             somebody who skipped that overlay will meet it. -->
+        <template #aside>
+          <div
+            class="sfere-flush grid max-w-[26rem] gap-1.5 rounded-sfere-lg border border-sfere-line bg-sfere-fill p-4"
+          >
+            <p class="text-sfere-sm font-semibold text-sfere-fg"
+              >What happens after you add one?</p
+            >
+            <p class="text-sfere-xs text-sfere-fg-muted"
+              >Sfere starts receiving the activity and, for a website or an
+              online store, provisions your included warehouse and the pipe into
+              it in the same step. You can add more destinations and pipes
+              later.</p
+            >
+          </div>
+        </template>
+      </IntroBand>
+
       <TabNav v-model="view" :tabs="viewTabs" />
 
       <ConnectorCatalog v-if="view === 'connectors'" />
@@ -173,6 +212,7 @@ import SfereIconButton from '@/components/ui/SfereIconButton.vue'
 import ConfirmDialog from '@/components/ui/ConfirmDialog.vue'
 import RowActionsMenu from '@/components/ui/RowActionsMenu.vue'
 import SetupReminderStrip from '@/components/shell/SetupReminderStrip.vue'
+import IntroBand from '@/components/ui/IntroBand.vue'
 import { useSetupProgress } from '@/composables/useSetupProgress'
 import ConnectorCatalog from '@/components/sources/ConnectorCatalog.vue'
 import ZidConnectionsPanel from '@/components/sources/ZidConnectionsPanel.vue'

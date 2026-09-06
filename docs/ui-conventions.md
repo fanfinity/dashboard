@@ -180,7 +180,8 @@ the smoke test can assert on a single selector across every route.
     `flex-nowrap!` on the container, which restores `0 / 0 / 0`. Every
     viewport-capped dialog and overlay card carries it:
     `SettingsNotificationChannelDialog`, `ProfileBuilderEditDialog`,
-    `SourceSyncRunLogsDialog` and `PersonaQuestion`. A new one needs it too.
+    `SourceSyncRunLogsDialog`. A new one needs it too. (`FirstRunOverlay` was on this list
+    until it became a `maximized` dialog, where Quasar imposes no height cap to overflow.)
 
 11. **`mt-*` on a `<p>` does nothing, so space cards with `gap`, not margins.**
     Quasar's unlayered paragraph rule wins twice over: every `<p>` in this repo
@@ -866,15 +867,16 @@ purple.
 
 ### StatCard.vue
 
-| Prop        | Type                       | Default      | Notes                                         |
-| ----------- | -------------------------- | ------------ | --------------------------------------------- |
-| `label`     | String                     | — (required) |                                               |
-| `value`     | String \| Number           | `''`         | pre-formatted — the card does no formatting   |
-| `delta`     | String                     | `''`         | e.g. `'4%'`; hidden when empty                |
-| `direction` | `'up' \| 'down' \| 'flat'` | `'up'`       | **not `deltaDirection`**                      |
-| `hint`      | String                     | `''`         | muted caption line under the value            |
-| `bare`      | Boolean                    | `false`      | drops the border and padding to sit in a card |
-| `onDark`    | Boolean                    | `false`      |                                               |
+| Prop        | Type                                         | Default      | Notes                                         |
+| ----------- | -------------------------------------------- | ------------ | --------------------------------------------- |
+| `label`     | String                                       | — (required) |                                               |
+| `value`     | String \| Number                             | `''`         | pre-formatted — the card does no formatting   |
+| `delta`     | String                                       | `''`         | e.g. `'4%'`; hidden when empty                |
+| `direction` | `'up' \| 'down' \| 'flat'`                   | `'up'`       | **not `deltaDirection`**                      |
+| `hint`      | String                                       | `''`         | muted caption line under the value            |
+| `tone`      | `'neutral' \| 'warn' \| 'danger' \| 'brand'` | `'neutral'`  | tints the whole card                          |
+| `bare`      | Boolean                                      | `false`      | drops the border and padding to sit in a card |
+| `onDark`    | Boolean                                      | `false`      |                                               |
 
 | Slot    | Scope | Notes                                          |
 | ------- | ----- | ---------------------------------------------- |
@@ -891,9 +893,20 @@ an arrow in a trend colour. Anything that is not a trend goes in `hint`.
 `'1.65× fan-out'` and `'37 errors'` are captions, and pushing them through
 `delta` gets them a red down-arrow they did not earn.
 
+`tone` is the other half of that rule. It tints the SURFACE and leaves the
+figure alone, for the one card in a row that is a problem rather than a
+measurement — "1 needs attention" beside three neutral counts. Use it on at most
+one card per row: three tinted cards tint nothing.
+
 ```html
 <StatCard label="Events delivered (last hour)" value="1.2M" delta="4%" />
 <StatCard label="Error rate (last hour)" value="0.31%" hint="37 errors" />
+<StatCard
+  label="Needs attention"
+  value="1"
+  hint="One thing to check"
+  tone="warn"
+/>
 ```
 
 ### DefinitionList.vue
@@ -1060,6 +1073,43 @@ not `NoticeBanner tone="danger"`.
   tone="warn"
   title="Some of these cannot be restored on their own"
   :message="`${cascadeCount} reference a source or destination that was deleted too.`"
+/>
+```
+
+### IntroBand.vue
+
+| Prop         | Type                 | Default   | Notes                                          |
+| ------------ | -------------------- | --------- | ---------------------------------------------- |
+| `title`      | String               | — (req.)  |                                                |
+| `storageKey` | String               | `''`      | stable id for the dismissal; omit ⇒ no dismiss |
+| `eyebrow`    | String               | `''`      | mono uppercase label above the title           |
+| `body`       | String               | `''`      | one sentence; capped at 62ch                   |
+| `points`     | Array&lt;String&gt;  | `[]`      | short ticked assurances on one wrapping row    |
+| `tone`       | `'plain' \| 'brand'` | `'plain'` | `brand` for a value claim, not a definition    |
+
+| Slot    | Notes                                              |
+| ------- | -------------------------------------------------- |
+| default | extra content under the copy                       |
+| `aside` | a figure beside the copy — a card, a small diagram |
+
+No events. Dismissal is written by the component through `useDismissed()`.
+
+The teaching band at the top of a list screen: what this noun is, and why the
+screen exists. **It is not a `NoticeBanner`, and the two must not be merged.** A
+`NoticeBanner` reports a state of your account right now and goes away when the
+state does, so it must NOT be dismissible. This is editorial — it says the same
+thing on every visit and is true of every account — so it MUST be dismissible,
+or it taxes the hundredth visit to pay for the first.
+
+`storageKey` is what makes it dismissible, and omitting it is a real choice
+rather than an oversight.
+
+```html
+<IntroBand
+  storage-key="sources-intro"
+  eyebrow="Start with where activity happens"
+  title="A source connects customer activity to Sfere."
+  body="Your website, online store, mobile app or your own backend can each be a source."
 />
 ```
 

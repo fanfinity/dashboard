@@ -7,7 +7,7 @@
 // backend" is one card that leads to one.
 //
 // PURE DATA ON PURPOSE, same idiom as src/config/features.js and
-// src/config/personas.js: no imports, no Vue, no `@/` aliases. An intent is a
+// src/config/firstRun.js: no imports, no Vue, no `@/` aliases. An intent is a
 // content decision, and content decisions should not require reading a
 // component.
 //

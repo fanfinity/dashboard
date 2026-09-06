@@ -1,355 +1,278 @@
 <template>
   <q-page class="p-6">
-    <!-- Header -->
-    <div class="mb-6 flex flex-wrap items-start justify-between gap-4">
-      <div>
-        <h1 class="text-2xl! font-semibold! tracking-[-0.5px]! text-ink"
-          >Live Events</h1
-        >
-        <p class="mt-2 text-sm text-muted">
-          Incoming events received by your sites, in real time.
-        </p>
-      </div>
-    </div>
+    <div class="mx-auto w-full max-w-[1400px]">
+      <PageHeader
+        title="Live Events"
+        subtitle="Incoming events from your connected sources, updated in real time."
+      />
 
-    <!-- Toolbar -->
-    <div class="mb-4 flex flex-wrap items-end gap-3">
-      <div class="flex flex-col gap-1">
-        <span class="text-xs font-medium text-subtle">Site</span>
-        <q-select
-          v-model="streamId"
-          dense
-          outlined
-          emit-value
-          map-options
-          options-dense
-          :options="siteOptions"
-          style="min-width: 240px"
-          class="bg-white"
-        />
-      </div>
-
-      <div class="flex flex-col gap-1">
-        <span class="text-xs font-medium text-subtle">Status</span>
-        <q-select
-          v-model="level"
-          dense
-          outlined
-          emit-value
-          map-options
-          options-dense
-          :options="levelOptions"
-          style="min-width: 110px"
-          class="bg-white"
-        />
-      </div>
-
-      <div class="flex flex-col gap-1">
-        <span class="text-xs font-medium text-subtle">From (UTC)</span>
-        <input
-          v-model="startInput"
-          type="datetime-local"
-          class="h-9 rounded-lg border border-line2 bg-white px-2.5 text-sm text-ink outline-none"
-        />
-      </div>
-
-      <div class="flex flex-col gap-1">
-        <span class="text-xs font-medium text-subtle">To (UTC)</span>
-        <input
-          v-model="endInput"
-          type="datetime-local"
-          class="h-9 rounded-lg border border-line2 bg-white px-2.5 text-sm text-ink outline-none"
-        />
-      </div>
-
-      <div class="flex flex-col gap-1">
-        <span class="text-xs font-medium text-subtle">Search</span>
-        <input
-          v-model="searchInput"
-          type="text"
-          placeholder="Search events..."
-          class="h-9 w-[200px] rounded-lg border border-line2 bg-white px-2.5 text-sm text-ink outline-none placeholder:text-subtle"
-        />
-      </div>
-
-      <button
-        class="ml-auto flex h-9 items-center gap-2 rounded-lg border border-line2 bg-white px-3 text-sm font-medium text-brand shadow-sm hover:bg-fill"
-        :disabled="loading"
-        @click="refresh"
-      >
-        <q-icon
-          name="refresh"
-          size="18px"
-          :class="loading ? 'animate-spin' : ''"
-        />
-        Refresh
-      </button>
-    </div>
-
-    <!-- Nothing to read. Distinct from an error: nothing broke, the account's
-         live-events endpoint simply has nothing to answer with on the backend
-         the Data source switch points at — most often because /v1/me has not
-         settled an account yet, or the account has no provisioned source. -->
-    <NoticeBanner
-      v-if="apiMissing"
-      class="mb-4"
-      tone="info"
-      title="No API yet"
-      message="No live events to read on this backend. This account has no source with a provisioned stream yet. Switch Settings → Data source to Demo data to see the feed."
-    />
-
-    <!-- Error -->
-    <div
-      v-else-if="error"
-      class="mb-4 flex flex-col items-start gap-2 rounded-xl border border-line2 bg-white p-4"
-    >
-      <p class="text-sm text-ink">Couldn't load events.</p>
-      <p class="text-xs text-muted">{{ error }}</p>
-      <button
-        class="rounded-lg border border-line2 bg-white px-3 py-1.5 text-sm font-medium text-brand hover:bg-fill"
-        @click="refresh"
-      >
-        Retry
-      </button>
-    </div>
-
-    <!-- Table -->
-    <div
-      class="overflow-hidden rounded-xl border border-line2 bg-white shadow-sm"
-    >
-      <table class="w-full border-collapse text-sm">
-        <thead>
-          <tr
-            class="border-b border-line text-left text-xs uppercase tracking-[0.4px] text-subtle"
-          >
-            <th class="w-8 px-3 py-2.5"></th>
-            <th class="px-3 py-2.5 font-semibold">Date (UTC)</th>
-            <th class="px-3 py-2.5 font-semibold">Type</th>
-            <th class="px-3 py-2.5 font-semibold">Page Path</th>
-            <th class="px-3 py-2.5 font-semibold">Summary</th>
-          </tr>
-        </thead>
-        <tbody>
-          <!-- Loading skeletons -->
-          <template v-if="loading && !events.length">
-            <tr v-for="n in 8" :key="`sk-${n}`" class="border-b border-line">
-              <td colspan="5" class="px-3 py-2.5">
-                <q-skeleton height="20px" />
-              </td>
-            </tr>
-          </template>
-
-          <!-- Empty -->
-          <tr v-else-if="!events.length">
-            <td colspan="5" class="px-3 py-10 text-center text-sm text-muted">
-              {{
-                apiMissing
-                  ? 'No API yet. Nothing to read on this backend.'
-                  : 'No events found for this site and filters.'
-              }}
-            </td>
-          </tr>
-
-          <!-- Rows -->
-          <tr
-            v-for="ev in events"
-            v-else
-            :key="ev.id"
-            class="cursor-pointer border-b border-line last:border-0 hover:bg-sidebar"
-            @click="openDrawer(ev)"
-          >
-            <td class="px-3 py-2.5">
-              <span
-                class="inline-block size-2.5 rounded-full"
-                :class="statusDotClass(ev.status)"
-                :title="ev.status"
-              ></span>
-            </td>
-            <td class="whitespace-nowrap px-3 py-2.5 text-muted">{{
-              formatUTC(ev.date)
-            }}</td>
-            <td class="px-3 py-2.5">
-              <span
-                class="inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-xs font-medium"
-                :class="
-                  ev.ingestType === 'browser'
-                    ? 'bg-blue-50 text-blue-700'
-                    : 'bg-purple-50 text-purple-700'
-                "
-              >
-                <q-icon
-                  :name="ev.ingestType === 'browser' ? 'public' : 'dns'"
-                  size="13px"
-                />
-                {{ typeLabel(ev) }}
-              </span>
-            </td>
-            <td class="max-w-[260px] truncate px-3 py-2.5 text-muted">
-              <a
-                v-if="ev.pageURL"
-                :href="ev.pageURL"
-                target="_blank"
-                rel="noreferrer noopener"
-                class="text-brand hover:underline"
-                @click.stop
-                >↗</a
-              >
-              {{ ev.pagePath }}
-            </td>
-            <td class="px-3 py-2.5">
-              <div v-if="ev.status === 'SKIPPED' || ev.status === 'FAILED'">
-                <span
-                  class="inline-flex items-center gap-1 rounded-md bg-red-50 px-2 py-0.5 text-xs font-medium text-red-700"
-                >
-                  <q-icon name="warning" size="13px" /> {{ ev.error }}
-                </span>
-              </div>
-              <div v-else class="flex flex-wrap items-center gap-1.5">
-                <span
-                  v-if="geoLabel(ev)"
-                  class="rounded-md bg-fill px-2 py-0.5 text-xs text-muted"
-                >
-                  {{ geoLabel(ev) }}
-                </span>
-                <span
-                  v-if="ev.host"
-                  class="rounded-md bg-blue-50 px-2 py-0.5 text-xs text-blue-700"
-                >
-                  {{ ev.host }}
-                </span>
-                <span
-                  v-if="ev.email"
-                  class="rounded-md bg-green-50 px-2 py-0.5 text-xs text-green-700"
-                >
-                  {{ ev.email }}
-                </span>
-                <span
-                  v-else-if="ev.userId"
-                  class="rounded-md bg-green-50 px-2 py-0.5 text-xs text-green-700"
-                >
-                  {{ ev.userId }}
-                </span>
-                <span
-                  v-if="ev.referringDomain && ev.referringDomain !== ev.host"
-                  class="rounded-md bg-purple-50 px-2 py-0.5 text-xs text-purple-700"
-                >
-                  {{ ev.referringDomain }}
-                </span>
-                <span
-                  v-if="!ev.userId && ev.anonymousId"
-                  class="rounded-md bg-fill px-2 py-0.5 text-xs text-muted"
-                >
-                  {{ ev.anonymousId }}
-                </span>
-              </div>
-            </td>
-          </tr>
-        </tbody>
-      </table>
-
-      <!-- Load previous -->
+      <!-- COUNTS OF WHAT IS LOADED, NOT OF A WINDOW. There is no aggregate
+           endpoint behind this screen, so these are derived from the exact
+           array the table below renders — which is what keeps them and the
+           table's "Showing 1-N of N" footer from ever disagreeing. They are
+           hidden entirely until rows exist rather than printed as `0`: a
+           confident zero beside "No API yet" would be a measurement nobody
+           took. There is deliberately no success percentage; a rate is a claim
+           about a population, and this is one page of results. -->
       <div
         v-if="events.length"
-        class="flex justify-center border-t border-line p-3"
+        class="mb-6 grid gap-4"
+        :class="level === 'error' ? 'sm:grid-cols-2' : 'sm:grid-cols-3'"
       >
-        <button
-          class="rounded-lg border border-line2 bg-white px-4 py-1.5 text-sm font-medium text-muted hover:bg-fill disabled:opacity-50"
-          :disabled="loading"
+        <StatCard
+          label="Events loaded"
+          :value="formatCount(events.length)"
+          hint="Counted from the rows below, not an hourly total"
+        />
+        <!-- Dropped on the Errors tab, where it is structurally always zero:
+             a truthful zero is still noise beside a tab named Errors. -->
+        <StatCard
+          v-if="level !== 'error'"
+          label="Succeeded"
+          :value="formatCount(succeededCount)"
+          hint="Status SUCCESS"
+        />
+        <StatCard
+          label="Failed or skipped"
+          :value="formatCount(failedCount)"
+          :tone="failedCount ? 'danger' : 'neutral'"
+          hint="Status FAILED or SKIPPED"
+        />
+      </div>
+
+      <!-- The tab and the Status select are two affordances over ONE piece of
+           state: `level`, which goes out as the endpoint's own parameter. Do
+           not give the select a "Success" option — `load()` takes `all` or
+           `error` and nothing else, so anything more would be a local
+           narrowing of one page of results sitting next to a server-side
+           filter and looking like its peer. -->
+      <TabNav v-model="level" :tabs="TABS" />
+
+      <!-- Container queries, not breakpoints: the sidebar collapses without
+           changing the viewport, so one 1024px window has two content widths
+           (see CLAUDE.md collision #6). The `@container` element and the one
+           reading the query have to be two different elements.
+
+           EVERY TIER IS SIZED OFF THE DATE FIELDS, and the widest tier is an
+           unequal template rather than `grid-cols-6`. A native
+           `datetime-local` has a min-content width of ~222px at Inter 14px
+           (measured; en-GB's `dd/mm/yyyy, --:-- --` is the widest common
+           format), and a grid item's default `min-width: auto` means it cannot
+           be squeezed under that — so six equal 1fr tracks under ~1500px of
+           container did not shrink the two date fields, it pushed them over
+           the neighbours to their right: the picker icon landed inside the
+           next field. `min-w-0` on all six cells is what stops the overlap;
+           the 16rem date tracks are what stop it from becoming a clipped
+           picker icon instead, which is the same bug one step quieter. The two
+           halves only work together — do not drop either.
+
+           The unequal `fr` weights are the other half of that: six equal
+           tracks wide enough for a date field would need ~1600px of container,
+           so the row only reached one line on a monitor almost nobody has.
+           Pinning the two dates and letting Source, Status and Search share
+           what is left fits all six from 72rem up, which is the width the
+           sidebar leaves on a 1500px window. -->
+      <div class="@container mb-4">
+        <div
+          class="grid items-end gap-3 @min-[34rem]:grid-cols-2 @min-[52rem]:grid-cols-3 @min-[72rem]:grid-cols-[minmax(0,1.4fr)_minmax(0,0.9fr)_16rem_16rem_minmax(0,1.2fr)_auto]"
+        >
+          <FormField label="Source" for-id="le-source" class="min-w-0">
+            <SfereSelect
+              id="le-source"
+              v-model="streamId"
+              :options="sourceOptions"
+              :disabled="!sourceOptions.length"
+              :placeholder="sourceOptions.length ? '' : 'No sources yet'"
+            />
+          </FormField>
+
+          <FormField label="Status" for-id="le-status" class="min-w-0">
+            <SfereSelect
+              id="le-status"
+              v-model="level"
+              :options="LEVEL_OPTIONS"
+            />
+          </FormField>
+
+          <FormField label="From (UTC)" for-id="le-from" class="min-w-0">
+            <SfereInput
+              id="le-from"
+              v-model="startInput"
+              type="datetime-local"
+            />
+          </FormField>
+
+          <FormField label="To (UTC)" for-id="le-to" class="min-w-0">
+            <SfereInput id="le-to" v-model="endInput" type="datetime-local" />
+          </FormField>
+
+          <FormField label="Search" for-id="le-search" class="min-w-0">
+            <ToolbarSearch
+              id="le-search"
+              v-model="searchInput"
+              block
+              placeholder="Event, path or ID"
+            />
+          </FormField>
+
+          <div class="flex min-w-0">
+            <SfereButton
+              variant="secondary"
+              :loading="loading"
+              @click="refresh"
+            >
+              Refresh
+            </SfereButton>
+          </div>
+        </div>
+      </div>
+
+      <!-- `loading` only while the table has nothing to show: "Load previous
+           events" appends, and swapping the rows for a skeleton mid-append
+           would throw away what the reader was looking at. -->
+      <DataTable
+        :columns="COLUMNS"
+        :rows="events"
+        :loading="loading && !events.length"
+        :error="error"
+        :api-missing="apiMissing"
+        :per-page="2000"
+        clickable-rows
+        :empty-title="emptyTitle"
+        :empty-description="emptyDescription"
+        @row-click="openDrawer"
+        @retry="refresh"
+      >
+        <template #cell-status="{ row }">
+          <span
+            class="inline-block size-2.5 rounded-full"
+            :class="statusDotClass(row.status)"
+          />
+          <span class="sr-only">{{ row.status || NOT_KNOWN }}</span>
+        </template>
+
+        <template #cell-date="{ row }">
+          <span class="font-sfere-mono text-sfere-xs whitespace-nowrap">{{
+            formatUTC(row.date)
+          }}</span>
+        </template>
+
+        <template #cell-type="{ row }">
+          <StatusBadge
+            :tone="row.ingestType === 'browser' ? 'brand' : 'neutral'"
+            dot
+            >{{ typeLabel(row) }}</StatusBadge
+          >
+        </template>
+
+        <template #cell-pagePath="{ row }">
+          <span
+            class="block max-w-[260px] truncate text-sfere-fg-muted"
+            :title="row.pagePath || undefined"
+            >{{ row.pagePath || NOT_KNOWN }}</span
+          >
+        </template>
+
+        <!-- Where the event came from and who it is about, in that order. A
+             failed or skipped event says why instead: its origin is the least
+             interesting thing about it. -->
+        <template #cell-summary="{ row }">
+          <span
+            v-if="row.error"
+            class="text-sfere-xs font-medium text-sfere-danger"
+            >{{ row.error }}</span
+          >
+          <span v-else class="flex flex-wrap items-center gap-1.5">
+            <StatusBadge v-if="geoLabel(row)" tone="neutral">{{
+              geoLabel(row)
+            }}</StatusBadge>
+            <StatusBadge v-if="row.host" tone="neutral">{{
+              row.host
+            }}</StatusBadge>
+            <StatusBadge v-if="identityOf(row)" :tone="identityOf(row).tone">{{
+              identityOf(row).label
+            }}</StatusBadge>
+          </span>
+        </template>
+
+        <!-- A plain button rather than SfereIconButton, for the reason
+             RowActionsMenu carries no tooltip: SfereTable wraps the whole table
+             in `overflow-x-auto`, which clips a SfereTooltip bubble. The
+             `aria-label` names the row, since the glyph alone cannot. The whole
+             row opens the same drawer, so this is a signpost to that rather
+             than the only way in. -->
+        <template #cell-actions="{ row }">
+          <span class="flex justify-end">
+            <button
+              type="button"
+              :aria-label="`View event ${typeLabel(row)}`"
+              class="grid size-8 place-items-center rounded-sfere text-sfere-fg-muted transition-colors duration-150 hover:bg-sfere-fill hover:text-sfere-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sfere-500/60"
+              @click.stop="openDrawer(row)"
+            >
+              <SfereIcon name="eye" />
+            </button>
+          </span>
+        </template>
+      </DataTable>
+
+      <!-- The screen's only pagination. DataTable's own pager is deliberately
+           set past any loaded set (`per-page` above: each fetch takes 100, so
+           2000 is twenty clicks of this), because two pagination models on one
+           table means a click here appends rows onto a page the reader is not
+           looking at. The feed reads top to bottom; this reaches further back.
+           DataTable's footer still answers "is this everything?". -->
+      <div v-if="events.length" class="mt-4 grid place-items-center">
+        <SfereButton
+          variant="secondary"
+          size="sm"
+          :loading="loading"
           @click="loadPrevious"
         >
-          {{ loading ? 'Loading…' : 'Load previous events' }}
-        </button>
+          Load previous events
+        </SfereButton>
       </div>
+
+      <LiveEventDrawer
+        v-model="drawerOpen"
+        :event="selected"
+        :source-name="selectedSourceName"
+      />
     </div>
-
-    <!-- Detail drawer -->
-    <q-dialog v-model="drawerOpen" position="right">
-      <q-card
-        style="width: 560px; max-width: 90vw; height: 100vh"
-        class="flex flex-col"
-      >
-        <div
-          class="flex shrink-0 items-center justify-between border-b border-line px-4 py-3"
-        >
-          <span class="text-sm font-semibold text-ink">Event details</span>
-          <q-btn
-            flat
-            round
-            dense
-            icon="close"
-            size="sm"
-            @click="drawerOpen = false"
-          />
-        </div>
-        <q-card-section v-if="selected" class="min-h-0 flex-1 overflow-y-auto">
-          <table class="w-full text-sm">
-            <tbody>
-              <tr
-                v-for="row in drawerRows"
-                :key="row.name"
-                class="border-b border-line align-top"
-              >
-                <td class="w-[140px] py-2 pr-3 font-medium text-subtle">{{
-                  row.name
-                }}</td>
-                <td class="break-words py-2 text-ink">
-                  <span v-if="row.type === 'status'">
-                    <span
-                      class="rounded-md px-2 py-0.5 text-xs font-medium"
-                      :class="statusTagClass(row.value)"
-                      >{{ row.value }}</span
-                    >
-                  </span>
-                  <a
-                    v-else-if="row.type === 'link' && row.value"
-                    :href="row.value"
-                    target="_blank"
-                    rel="noreferrer noopener"
-                    class="text-brand hover:underline"
-                    >{{ row.value }}</a
-                  >
-                  <span v-else>{{ row.value }}</span>
-                </td>
-              </tr>
-            </tbody>
-          </table>
-
-          <div class="mt-4">
-            <span
-              class="text-xs font-semibold uppercase tracking-[0.4px] text-subtle"
-              >HTTP Headers</span
-            >
-            <pre
-              class="mt-1 overflow-x-auto whitespace-pre rounded-lg bg-sidebar p-3 text-xs text-muted"
-              >{{ headersText }}</pre
-            >
-          </div>
-
-          <div class="mt-4">
-            <span
-              class="text-xs font-semibold uppercase tracking-[0.4px] text-subtle"
-              >Event Payload</span
-            >
-            <pre
-              class="mt-1 overflow-x-auto whitespace-pre rounded-lg bg-sidebar p-3 text-xs text-ink"
-              >{{ payloadText }}</pre
-            >
-          </div>
-        </q-card-section>
-      </q-card>
-    </q-dialog>
   </q-page>
 </template>
 
 <script setup>
-import { NONE, NOT_KNOWN } from '@/lib/emptyValue'
+import { NOT_KNOWN } from '@/lib/emptyValue'
 import { computed, nextTick, onMounted, ref, watch } from 'vue'
-import NoticeBanner from '@/components/ui/NoticeBanner.vue'
+import DataTable from '@/components/ui/DataTable.vue'
+import FormField from '@/components/ui/FormField.vue'
+import PageHeader from '@/components/ui/PageHeader.vue'
+import SfereButton from '@/components/ui/SfereButton.vue'
+import SfereIcon from '@/components/ui/SfereIcon.vue'
+import SfereInput from '@/components/ui/SfereInput.vue'
+import SfereSelect from '@/components/ui/SfereSelect.vue'
+import StatCard from '@/components/ui/StatCard.vue'
+import StatusBadge from '@/components/ui/StatusBadge.vue'
+import TabNav from '@/components/ui/TabNav.vue'
+import ToolbarSearch from '@/components/ui/ToolbarSearch.vue'
+import LiveEventDrawer from '@/components/live-events/LiveEventDrawer.vue'
+import {
+  formatUTC,
+  geoLabel,
+  identityOf,
+  statusDotClass,
+  typeLabel
+} from '@/components/live-events/liveEventFormat.js'
 import { useLiveEvents } from '@/composables/useLiveEvents'
 
 // Reads GET /v1/accounts/{account}/events/live through the Sfere backend and
 // nothing else. There is no vendor id, no ingest key and no proxy in this page
 // any more — see the header comment in useLiveEvents.js.
+//
+// This route is in `legacyScreens`, so `pnpm smoke:dist` does not walk it: a
+// console error here reaches a user before it reaches a gate. Hence every field
+// read below is optional-chained or guarded, and the four states are DataTable's
+// rather than hand-rolled.
 const { events, streams, loading, error, apiMissing, load, loadStreams } =
   useLiveEvents()
 
@@ -359,26 +282,84 @@ const startInput = ref('')
 const endInput = ref('')
 const searchInput = ref('')
 
-const levelOptions = [
+// Both the tab bar and the Status select are bound to `level`. Same keys, same
+// ref, so the two can never disagree.
+const TABS = [
+  { key: 'all', label: 'Events' },
+  { key: 'error', label: 'Errors' }
+]
+
+const LEVEL_OPTIONS = [
   { label: 'All', value: 'all' },
   { label: 'Errors', value: 'error' }
 ]
 
-const siteOptions = computed(() => {
+const COLUMNS = [
+  { key: 'status', label: 'Status', width: '84px' },
+  { key: 'date', label: 'Date (UTC)', sortable: true, width: '190px' },
+  { key: 'type', label: 'Type' },
+  { key: 'pagePath', label: 'Page path' },
+  { key: 'summary', label: 'Summary' },
+  { key: 'actions', label: '', align: 'right', width: '72px' }
+]
+
+const sourceOptions = computed(() => {
   const opts = streams.value.map(s => ({ label: s.name || s.id, value: s.id }))
   // Keep whatever is selected addressable even before the stream list lands,
-  // otherwise the q-select renders a blank while the two requests race.
+  // otherwise the select renders a blank while the two requests race.
   if (streamId.value && !opts.some(o => o.value === streamId.value)) {
     opts.unshift({ label: streamId.value, value: streamId.value })
   }
   return opts
 })
 
+const selectedSourceName = computed(() => {
+  const id = selected.value?.streamId
+  if (!id) return ''
+  return streams.value.find(s => s.id === id)?.name || ''
+})
+
+const succeededCount = computed(
+  () => events.value.filter(ev => ev.status === 'SUCCESS').length
+)
+
+const failedCount = computed(
+  () =>
+    events.value.filter(ev => ev.status === 'FAILED' || ev.status === 'SKIPPED')
+      .length
+)
+
+const anyFilter = computed(() =>
+  Boolean(
+    level.value !== 'all' ||
+    startInput.value ||
+    endInput.value ||
+    searchInput.value.trim()
+  )
+)
+
+// Two empty states, because they need different answers: a filter that matched
+// nothing is undone by widening it, an empty stream is not.
+const emptyTitle = computed(() =>
+  anyFilter.value ? 'No events match these filters' : 'No events yet'
+)
+
+const emptyDescription = computed(() =>
+  anyFilter.value
+    ? 'Widen the time range, clear the search, or switch back to the Events tab.'
+    : 'Nothing has been received on this source yet. Events appear here within seconds of arriving.'
+)
+
+/** Counted rows, so a plain formatted integer. Never a stand-in for a gap. */
+function formatCount(n) {
+  return n.toLocaleString('en-GB')
+}
+
 // Treats the datetime-local input (which is timezone-naive) as UTC.
 function parseUTCInput(value) {
   if (!value) return undefined
   const d = new Date(`${value}:00Z`)
-  return isNaN(d.getTime()) ? undefined : d
+  return Number.isNaN(d.getTime()) ? undefined : d
 }
 
 function currentFilters(extra = {}) {
@@ -401,6 +382,7 @@ function loadPrevious() {
   const last = events.value[events.value.length - 1]
   if (!last) return
   const before = new Date(last.date)
+  if (Number.isNaN(before.getTime())) return
   load(currentFilters({ end: before, append: true }))
 }
 
@@ -420,106 +402,17 @@ const drawerOpen = ref(false)
 const selected = ref(null)
 
 function openDrawer(ev) {
+  if (!ev) return
   selected.value = ev
   drawerOpen.value = true
 }
 
-const drawerRows = computed(() => {
-  const ev = selected.value
-  if (!ev) return []
-  const rows = [
-    { name: 'Date (UTC)', value: formatUTC(ev.date) },
-    { name: 'Source', value: ev.ingestType },
-    { name: 'Message ID', value: ev.messageId },
-    { name: 'Type', value: ev.type },
-    { name: 'Status', value: ev.status, type: 'status' }
-  ]
-  if (ev.error) rows.push({ name: 'Error', value: ev.error })
-  rows.push(
-    { name: 'User ID', value: ev.userId },
-    { name: 'Email', value: ev.email },
-    { name: 'Anonymous ID', value: ev.anonymousId },
-    { name: 'Page Title', value: ev.pageTitle },
-    { name: 'Page URL', value: ev.pageURL, type: 'link' },
-    { name: 'Destinations', value: (ev.destinations || []).join(', ') },
-    { name: 'Origin Domain', value: ev.originDomain },
-    { name: 'Write Key', value: ev.writeKey }
-  )
-  return rows.filter(
-    r => r.value !== undefined && r.value !== null && r.value !== ''
-  )
-})
-
-// The backend redacts credential headers and masks write keys before they
-// leave the API (see the LiveEvent schema in openapi/fanfinity-api.json), so
-// this renders what it is given. The page used to scrub the upstream vendor's
-// name out of every string it displayed; there is no upstream vendor in this
-// page's world any more, so there is nothing to scrub.
-const headersText = computed(() => {
-  const h = selected.value?.httpHeaders
-  if (!h) return NONE
-  return JSON.stringify(h, null, 2)
-})
-
-const payloadText = computed(() =>
-  selected.value?.payload
-    ? JSON.stringify(selected.value.payload, null, 2)
-    : NONE
-)
-
-// --- Render helpers ---
-function formatUTC(date) {
-  const d = new Date(date)
-  if (isNaN(d.getTime())) return String(date)
-  const p = n => String(n).padStart(2, '0')
-  return (
-    `${d.getUTCFullYear()}-${p(d.getUTCMonth() + 1)}-${p(d.getUTCDate())} ` +
-    `${p(d.getUTCHours())}:${p(d.getUTCMinutes())}:${p(d.getUTCSeconds())}`
-  )
-}
-
-function typeLabel(ev) {
-  const name = ev.type === 'track' ? ev.payload?.event || ev.type : ev.type
-  return name || NOT_KNOWN
-}
-
-function geoLabel(ev) {
-  const geo = ev.context?.geo
-  const code = geo?.country?.code
-  if (!code) return ''
-  return [code, geo?.city?.name].filter(Boolean).join(' · ')
-}
-
-function statusDotClass(status) {
-  switch (status) {
-    case 'SUCCESS':
-      return 'bg-success'
-    case 'FAILED':
-      return 'bg-red-500'
-    case 'SKIPPED':
-      return 'bg-amber-500'
-    default:
-      return 'bg-gray-300'
-  }
-}
-
-function statusTagClass(status) {
-  switch (status) {
-    case 'SUCCESS':
-      return 'bg-green-50 text-green-700'
-    case 'FAILED':
-      return 'bg-red-50 text-red-700'
-    case 'SKIPPED':
-      return 'bg-amber-50 text-amber-700'
-    default:
-      return 'bg-fill text-muted'
-  }
-}
-
 onMounted(async () => {
   // The stream list has to land first: `streamId` is a required query
-  // parameter, so there is no sensible default to fire a request with. This is
-  // what the hardcoded vendor cuid used to stand in for.
+  // parameter, so there is no sensible default to fire a request with. Sources
+  // with no provisioned site are already left out of that list — they have no
+  // event log, so offering one would select a stream that can only ever come
+  // back empty.
   await loadStreams()
   if (!streamId.value) streamId.value = streams.value[0]?.id || ''
   await nextTick()

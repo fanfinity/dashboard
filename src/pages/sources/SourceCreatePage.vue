@@ -456,7 +456,7 @@
 
 <script setup>
 import { computed, onMounted, reactive, ref, watch } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { useQuasar } from 'quasar'
 import PageHeader from '@/components/ui/PageHeader.vue'
 import FormSection from '@/components/ui/FormSection.vue'
@@ -494,6 +494,7 @@ import { useConfetti } from '@/composables/useConfetti'
 import { useGuidedTour } from '@/composables/useGuidedTour'
 
 const router = useRouter()
+const route = useRoute()
 const $q = useQuasar()
 const { templates, loading, error, load, findById } = useSourceTemplates()
 const { isReal } = useDataSource()
@@ -1114,8 +1115,75 @@ function onVerified() {
   })
 }
 
+// The category the first-run overlay picked, handed over in the URL.
+//
+// A QUERY PARAM RATHER THAN SHARED STATE, and that is what makes the hand-off
+// survive things shared state would not: a reload on this screen, a link pasted
+// to a colleague, and the back button. It also keeps this page readable on its
+// own — it accepts a pre-selection from anywhere and does not need to know that
+// an arrival overlay exists.
+//
+// GUARDED THE SAME THREE WAYS THE DRAFT IS, because the param is user-editable
+// and everything downstream assumes a real intent: the key has to resolve in the
+// registry, it must not be coming-soon (a source built from one of those can
+// never receive an event), and an intent that navigates elsewhere — `connector`
+// — is followed rather than selected, since there is no template behind it to
+// configure. Anything else leaves the picker on step 1 with nothing chosen,
+// which is exactly what someone who typed a bad URL should see.
+//
+// LOSES TO A RESTORED DRAFT, deliberately. A half-filled form somebody walked
+// away from is work; a category clicked two seconds ago on the arrival is an
+// opening move. Overwriting the first with the second would be an unannounced
+// undo of the thing useSourceDraft exists to protect.
+function applyIntentParam() {
+  if (restoredFromDraft.value) return
+  const key = route.query.intent
+  if (typeof key !== 'string' || !key) return
+  const chosen = intentByKey(key)
+  if (!chosen || isIntentComingSoon(chosen)) return
+  // `replace`, not the `push` continueFromIntent would do: this runs on mount,
+  // so pushing would leave a history entry whose only behaviour is to redirect
+  // again — the back button would appear to do nothing.
+  if (chosen.to) {
+    router.replace(chosen.to)
+    return
+  }
+  intent.value = key
+  continueFromIntent(key)
+  applyTemplateParam(chosen)
+}
+
+// The platform the arrival's third beat picked, as a template id.
+//
+// A SECOND PARAM RATHER THAN A COMPOUND ONE, because the two answers are
+// independent: `?intent=store` alone is a valid hand-off (it is what the create
+// flow's own step 1 produces), and `?template=` alone is meaningless without the
+// intent that says which picker it belongs to. Splitting them also means the
+// existing `?intent=` links keep working untouched.
+//
+// GUARDED FOUR WAYS, one more than the intent is. It has to be a string, it has
+// to be one of THIS intent's templates (or `?intent=website&template=zid` would
+// pre-select a template the picker on screen does not offer), it has to exist in
+// the loaded catalog, and it must not be coming-soon — the same rule that greys
+// the card, applied to the URL that would have bypassed it. Anything else leaves
+// `continueFromIntent`'s own answer in place, which is either the single
+// template the intent settles or an empty picker.
+function applyTemplateParam(chosen) {
+  const id = route.query.template
+  if (typeof id !== 'string' || !id) return
+  if (!chosen.templates.includes(id)) return
+  if (isTemplateComingSoon(id)) return
+  if (!templates.value.some(t => t.id === id)) return
+  form.templateId = id
+}
+
 onMounted(async () => {
   await load()
   restoreDraft()
+  // After the draft restore for the precedence reason above, and after `load()`
+  // for the same reason the restore is: `chooseIntent` reads the template
+  // registry to decide whether a single-template intent settles itself, and
+  // against an empty array it would leave the flow on step 2 with no template.
+  applyIntentParam()
 })
 </script>

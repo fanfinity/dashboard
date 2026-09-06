@@ -1,215 +1,178 @@
 <template>
   <q-page class="p-6">
-    <PageHeader
-      title="New pipe"
-      subtitle="Pick the source to read from and the destination to write to. A pipe carries one to the other."
-    />
+    <div class="mx-auto w-full max-w-[1400px]">
+      <PageHeader
+        title="New pipe"
+        subtitle="Connect a source to a destination. A pipe carries one to the other, and functions can run in between."
+      />
 
-    <LoadingState v-if="loading" variant="form" :rows="5" />
+      <LoadingState v-if="loading" variant="form" :rows="5" />
 
-    <ErrorState
-      v-else-if="error"
-      title="Couldn't load sources and destinations."
-      :message="error"
-      @retry="load"
-    />
+      <ErrorState
+        v-else-if="error"
+        title="Couldn't load sources and destinations."
+        :message="error"
+        @retry="load"
+      />
 
-    <EmptyState
-      v-else-if="!canBuild"
-      :title="emptyTitle"
-      :description="emptyDescription"
-    >
-      <template #cta>
-        <button
-          class="flex h-9 items-center gap-1.5 rounded-lg bg-brand px-3.5 text-sm font-medium text-white shadow-sm hover:opacity-90"
-          @click="
-            router.push({ name: sources.length ? 'destinations' : 'sources' })
-          "
-        >
-          {{ sources.length ? 'Go to destinations' : 'Go to sources' }}
-        </button>
-      </template>
-    </EmptyState>
-
-    <!-- Created: there is no backend, so the new pipe cannot be opened on the
-         detail screen. Confirming it here is honest and keeps the user moving. -->
-    <div v-else-if="created" class="flex max-w-3xl flex-col gap-4">
-      <CardPanel>
-        <template #header>
-          <span class="text-sm font-medium text-ink">{{ created.name }}</span>
-          <StatusBadge
-            :tone="created.isEnabled ? 'success' : 'neutral'"
-            :label="created.isEnabled ? 'Enabled' : 'Paused'"
-          />
+      <EmptyState
+        v-else-if="!canBuild"
+        :title="emptyTitle"
+        :description="emptyDescription"
+      >
+        <template #cta>
+          <SfereButton
+            :to="{ name: sources.length ? 'destinations' : 'sources' }"
+            >{{
+              sources.length ? 'Go to destinations' : 'Go to sources'
+            }}</SfereButton
+          >
         </template>
+      </EmptyState>
 
-        <PipeFlow
-          :source-label="created.sourceName"
-          :source-hint="created.sourceSlug"
-          :destination-label="created.eventDestinationName"
-          :destination-hint="created.eventDestinationSlug"
-          :transform="created.hasFunctionCode"
-        />
+      <!-- Demo data mode: nothing was written, so the screen says so instead of
+           sending the reader to a detail page for a record that does not
+           exist. -->
+      <div v-else-if="created" class="grid max-w-3xl gap-4">
+        <CardPanel>
+          <template #header>
+            <span class="text-sm font-medium text-ink">{{ created.name }}</span>
+            <StatusBadge
+              :tone="created.isEnabled ? 'success' : 'neutral'"
+              :label="created.isEnabled ? 'Enabled' : 'Paused'"
+            />
+          </template>
 
-        <p class="mt-4 text-sm text-muted"
-          >Created in this session only. There is no backend behind this screen,
-          so the pipe is not stored and will not appear in the list.</p
-        >
-      </CardPanel>
+          <FlowChain
+            :source="previewSource"
+            :destination="previewDestination"
+            :is-enabled="created.isEnabled"
+          />
 
-      <div class="flex items-center gap-2">
-        <button
-          class="flex h-9 items-center gap-1.5 rounded-lg bg-brand px-3.5 text-sm font-medium text-white shadow-sm hover:opacity-90"
-          @click="createAnother"
-        >
-          Create another
-        </button>
-        <button
-          class="flex h-9 items-center gap-1.5 rounded-lg border border-line2 bg-white px-3 text-sm text-ink shadow-sm hover:bg-fill"
-          @click="router.push({ name: 'pipes' })"
-        >
-          Back to pipes
-        </button>
+          <p class="mt-4! text-sm text-muted"
+            >Created in this session only. Demo data mode has no backend behind
+            it, so the pipe is not stored and will not appear in the list.</p
+          >
+        </CardPanel>
+
+        <div class="flex flex-wrap items-center gap-3">
+          <SfereButton @click="createAnother">Create another</SfereButton>
+          <SfereButton variant="secondary" :to="{ name: 'pipes' }"
+            >Back to pipes</SfereButton
+          >
+        </div>
       </div>
-    </div>
 
-    <form v-else class="grid max-w-3xl gap-4" @submit.prevent="submit">
-      <FormSection
-        title="Basics"
-        description="How this pipe appears in the list and in monitoring."
-      >
-        <FormField
-          label="Name"
-          required
-          for-id="pipe-name"
-          :error="errors.name"
-          hint="Something a teammate can recognise, e.g. “Web SDK to Snowflake”."
+      <!-- A grid, not `flex flex-col`: Quasar's unlayered `.flex` forces
+           `flex-wrap: wrap`, which stretches block children. `max-w-3xl` inside
+           the page's 1400px cap on purpose — a wide page is not a licence for
+           1300px-wide text inputs. -->
+      <form v-else class="grid max-w-3xl gap-4" @submit.prevent="submit">
+        <FormSection
+          title="Basics"
+          description="Give this pipe a recognisable name and decide whether it should start straight away."
         >
-          <input
-            id="pipe-name"
-            v-model="form.name"
-            type="text"
-            placeholder="e.g. Ticketing to BigQuery"
-            class="h-9 rounded-lg border border-line2 bg-white px-2.5 text-sm text-ink outline-none placeholder:text-subtle"
-          />
-        </FormField>
+          <FormField
+            label="Name"
+            required
+            for-id="pipe-name"
+            :error="errors.name"
+            hint="This is how the pipe appears in the list and in monitoring."
+          >
+            <SfereInput
+              id="pipe-name"
+              v-model="form.name"
+              placeholder="e.g. Marketing website to Sfere Data Warehouse"
+              :invalid="Boolean(errors.name)"
+              described-by="pipe-name-error"
+            />
+          </FormField>
 
-        <FormField hint="A paused pipe is created but delivers nothing.">
-          <label class="flex items-center gap-2 text-sm text-ink">
-            <input
+          <FormField
+            hint="A paused pipe is created but delivers nothing until you enable it."
+          >
+            <SfereCheckbox
               v-model="form.isEnabled"
-              type="checkbox"
-              class="size-4 accent-brand"
+              label="Enable this pipe straight away"
             />
-            Enable this pipe straight away
-          </label>
-        </FormField>
-      </FormSection>
+          </FormField>
+        </FormSection>
 
-      <FormSection
-        title="Route"
-        description="One source in, one destination out. A source and destination pair can only be joined once."
-      >
-        <FormField
-          label="Source"
-          required
-          :error="errors.sourceId"
-          :hint="sourceHint"
+        <FormSection
+          title="Route"
+          description="One source in, one destination out. A source and destination pair can only be joined once."
         >
-          <q-select
-            v-model="form.sourceId"
-            dense
-            outlined
-            emit-value
-            map-options
-            options-dense
-            :options="sourceOptions"
-            class="bg-white"
-          />
-        </FormField>
-
-        <FormField
-          label="Destination"
-          required
-          :error="errors.eventDestinationId"
-          :hint="destinationHint"
-        >
-          <q-select
-            v-model="form.eventDestinationId"
-            dense
-            outlined
-            emit-value
-            map-options
-            options-dense
-            :options="destinationOptions"
-            class="bg-white"
-          />
-        </FormField>
-      </FormSection>
-
-      <FormSection
-        title="Transformation"
-        description="Optional. Filter, enrich or reshape events between the two ends."
-      >
-        <FormField
-          hint="The function itself is edited on the pipe once it exists."
-        >
-          <label class="flex items-center gap-2 text-sm text-ink">
-            <input
-              v-model="form.hasFunctionCode"
-              type="checkbox"
-              class="size-4 accent-brand"
+          <FormField
+            label="Source"
+            required
+            for-id="pipe-source"
+            :error="errors.sourceId"
+            :hint="sourceHint"
+          >
+            <SfereSelect
+              id="pipe-source"
+              v-model="form.sourceId"
+              :options="sourceOptions"
+              placeholder="Choose a source"
             />
-            Run a custom function on every event
-          </label>
-        </FormField>
+          </FormField>
 
-        <FormField
-          label="Destination parameters"
-          for-id="pipe-params"
-          :error="errors.destinationParams"
-          hint='A JSON object handed to the destination, e.g. {"table": "raw_web_events"}. Leave blank to use its defaults.'
-        >
-          <textarea
-            id="pipe-params"
-            v-model="form.destinationParams"
-            rows="4"
-            placeholder='{ "table": "raw_web_events" }'
-            class="min-h-[96px] rounded-lg border border-line2 bg-white px-2.5 py-2 font-mono text-sm text-ink outline-none placeholder:text-subtle"
-          ></textarea>
-        </FormField>
-      </FormSection>
+          <FormField
+            label="Destination"
+            required
+            for-id="pipe-destination"
+            :error="errors.eventDestinationId"
+            :hint="destinationHint"
+          >
+            <SfereSelect
+              id="pipe-destination"
+              v-model="form.eventDestinationId"
+              :options="destinationOptions"
+              placeholder="Choose a destination"
+            />
+          </FormField>
 
-      <CardPanel>
-        <template #header>
-          <span class="text-sm font-medium text-ink">Preview</span>
-        </template>
-        <PipeFlow
-          :source-label="selectedSource?.name || ''"
-          :source-hint="selectedSource?.slug || ''"
-          :destination-label="selectedDestination?.name || ''"
-          :destination-hint="selectedDestination?.slug || ''"
-          :transform="form.hasFunctionCode"
-        />
-      </CardPanel>
+          <!-- The route as it will be, redrawn on every change. Same component
+               the pipe's own screen uses, so the preview and the record look
+               like the same thing. -->
+          <div
+            class="rounded-sfere-xl border border-sfere-line bg-sfere-fill p-4"
+          >
+            <FlowChain
+              :source="previewSource"
+              :destination="previewDestination"
+              :is-enabled="form.isEnabled"
+            />
+          </div>
+        </FormSection>
 
-      <StickyActionBar>
-        <button
-          type="submit"
-          :disabled="saving"
-          class="flex h-9 items-center gap-1.5 rounded-lg bg-brand px-3.5 text-sm font-medium text-white shadow-sm hover:opacity-90 disabled:opacity-50"
+        <!-- No function picker here, and that is the backend's shape rather
+             than a shortcut: `PipelineCreate` is name, source and destination
+             and nothing else, and functions are attached through a separate
+             endpoint that needs the pipe to exist first. Saying so beats a
+             picker whose choices are silently dropped on submit. -->
+        <FormSection
+          title="Functions"
+          description="Optional, and added after the pipe exists."
         >
-          {{ saving ? 'Creating…' : 'Create pipe' }}
-        </button>
-        <button
-          type="button"
-          class="flex h-9 items-center gap-1.5 rounded-lg border border-line2 bg-white px-3 text-sm text-ink shadow-sm hover:bg-fill"
-          @click="router.push({ name: 'pipes' })"
-        >
-          Cancel
-        </button>
-      </StickyActionBar>
-    </form>
+          <p class="text-sm text-muted">
+            Functions filter, enrich or reshape events on the way through. They
+            are attached on the pipe's own screen, under its Functions tab, once
+            it has been created — a pipe has to exist before anything can run on
+            it.
+          </p>
+        </FormSection>
+
+        <StickyActionBar>
+          <SfereButton type="submit" :loading="saving">{{
+            saving ? 'Creating…' : 'Create pipe'
+          }}</SfereButton>
+          <SfereButton variant="secondary" :to="{ name: 'pipes' }"
+            >Cancel</SfereButton
+          >
+        </StickyActionBar>
+      </form>
+    </div>
   </q-page>
 </template>
 
@@ -224,9 +187,13 @@ import ErrorState from '@/components/ui/ErrorState.vue'
 import FormField from '@/components/ui/FormField.vue'
 import FormSection from '@/components/ui/FormSection.vue'
 import LoadingState from '@/components/ui/LoadingState.vue'
+import SfereButton from '@/components/ui/SfereButton.vue'
+import SfereCheckbox from '@/components/ui/SfereCheckbox.vue'
+import SfereInput from '@/components/ui/SfereInput.vue'
+import SfereSelect from '@/components/ui/SfereSelect.vue'
 import StatusBadge from '@/components/ui/StatusBadge.vue'
 import StickyActionBar from '@/components/ui/StickyActionBar.vue'
-import PipeFlow from '@/components/pipes/PipeFlow.vue'
+import FlowChain from '@/components/flow/FlowChain.vue'
 import { makePipeId, usePipes } from '@/composables/usePipes'
 import { useSources } from '@/composables/useSources'
 import { useDestinations } from '@/composables/useDestinations'
@@ -255,14 +222,16 @@ const {
 const { isReal } = useDataSource()
 const { create: createPipelineReal } = usePipelinesAPI()
 
-// Loaded for one reason only: to refuse a duplicate route before the user
-// submits one.
+// Loaded to refuse a duplicate route before the user submits one — and, on the
+// "create it paused" path, to make the new pipe present locally before
+// `setEnabled` patches it.
 const {
   loading: pipesLoading,
   error: pipesError,
   load: loadPipes,
   findRoute,
-  addPipe
+  addPipe,
+  setEnabled
 } = usePipes()
 
 const loading = computed(
@@ -280,18 +249,11 @@ const blank = () => ({
   name: '',
   sourceId: '',
   eventDestinationId: '',
-  hasFunctionCode: false,
-  isEnabled: true,
-  destinationParams: ''
+  isEnabled: true
 })
 
 const form = reactive(blank())
-const errors = reactive({
-  name: '',
-  sourceId: '',
-  eventDestinationId: '',
-  destinationParams: ''
-})
+const errors = reactive({ name: '', sourceId: '', eventDestinationId: '' })
 const saving = ref(false)
 const created = ref(null)
 
@@ -332,6 +294,27 @@ const selectedDestination = computed(
   () => destinations.value.find(d => d.id === form.eventDestinationId) ?? null
 )
 
+// The preview draws whichever ends are chosen so far, and says so where one is
+// still missing rather than rendering an unnamed box. No status on either node:
+// the picker's records carry an enabled flag, not a health reading.
+const previewSource = computed(() => ({
+  name: selectedSource.value?.name || 'Choose a source',
+  hint: selectedSource.value?.slug || '',
+  subtype: selectedSource.value?.sourceType ?? '',
+  isEnabled: selectedSource.value
+    ? selectedSource.value.isEnabled !== false
+    : true
+}))
+
+const previewDestination = computed(() => ({
+  name: selectedDestination.value?.name || 'Choose a destination',
+  hint: selectedDestination.value?.slug || '',
+  subtype: selectedDestination.value?.destinationType ?? '',
+  isEnabled: selectedDestination.value
+    ? selectedDestination.value.isEnabled !== false
+    : true
+}))
+
 // A paused endpoint is a legal choice — it just will not move anything yet, and
 // saying so up front is cheaper than a support ticket about a silent pipe.
 const sourceHint = computed(() =>
@@ -346,21 +329,10 @@ const destinationHint = computed(() =>
     : 'Where the events are delivered.'
 )
 
-function parseParams() {
-  const raw = form.destinationParams.trim()
-  if (!raw) return {}
-  const parsed = JSON.parse(raw)
-  if (parsed === null || typeof parsed !== 'object' || Array.isArray(parsed)) {
-    throw new Error('object')
-  }
-  return parsed
-}
-
 function validate() {
   errors.name = ''
   errors.sourceId = ''
   errors.eventDestinationId = ''
-  errors.destinationParams = ''
 
   if (!form.name.trim()) {
     errors.name = 'Give the pipe a name.'
@@ -379,13 +351,6 @@ function validate() {
       'A pipe already joins this source to this destination.'
   }
 
-  try {
-    parseParams()
-  } catch {
-    errors.destinationParams =
-      'Enter a valid JSON object, or leave the field blank.'
-  }
-
   return !Object.values(errors).some(Boolean)
 }
 
@@ -395,22 +360,35 @@ async function submit() {
 
   const source = selectedSource.value
   const destination = selectedDestination.value
+  const name = form.name.trim()
 
   // Real mode: create the pipeline (the Jitsu link) on the backend and open it.
   if (isReal.value) {
     try {
-      const created = await createPipelineReal({
-        name: form.name.trim(),
+      const record = await createPipelineReal({
+        name,
         sourceId: source.id,
         destinationId: destination.id
       })
+
+      // `PipelineCreate` carries no `is_enabled`, so a pipe asked for paused is
+      // created enabled and then patched. `PipelineUpdate` accepts that one
+      // field and nothing else. The reload is what puts the new row in this
+      // composable's list, which `setEnabled` looks the record up in.
+      if (!form.isEnabled) {
+        await loadPipes()
+        await setEnabled(record.id, false)
+      }
+
       $q.notify({
-        message: `“${form.name.trim()}” created`,
+        message: form.isEnabled
+          ? `“${name}” created`
+          : `“${name}” created, paused`,
         color: 'positive',
         position: 'bottom',
         timeout: 2500
       })
-      router.push({ name: 'pipes-detail', params: { id: created.id } })
+      router.push({ name: 'pipes-detail', params: { id: record.id } })
     } catch (e) {
       $q.notify({
         message: `Couldn't create pipe: ${e.message || 'request failed'}`,
@@ -427,8 +405,8 @@ async function submit() {
   const now = new Date().toISOString()
 
   const pipe = {
-    id: makePipeId(form.name),
-    name: form.name.trim(),
+    id: makePipeId(name),
+    name,
     sourceId: source.id,
     sourceName: source.name,
     sourceSlug: source.slug,
@@ -437,12 +415,8 @@ async function submit() {
     eventDestinationName: destination.name,
     eventDestinationSlug: destination.slug,
     isEnabled: form.isEnabled,
-    version: 1,
-    hasFunctionCode: form.hasFunctionCode,
-    destinationParams: parseParams(),
     createdAt: now,
-    updatedAt: now,
-    deliveryCountLastHour: 0
+    updatedAt: now
   }
 
   addPipe(pipe)
@@ -450,7 +424,7 @@ async function submit() {
   saving.value = false
 
   $q.notify({
-    message: `“${pipe.name}” created. Nothing was saved, because this preview has no backend.`,
+    message: `“${pipe.name}” created. Nothing was saved, because Demo data mode has no backend.`,
     color: 'dark',
     position: 'bottom',
     timeout: 2500

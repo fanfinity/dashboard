@@ -151,8 +151,16 @@
            the script" checker; that is a cross-origin fetch the CSP blocks
            outright and it would only ever prove the tag is on the page, not that
            an event reached us. Asking the backend what it actually received is
-           strictly stronger, so there is one panel rather than two. -->
-      <CardPanel>
+           strictly stronger, so there is one panel rather than two.
+
+           `verify` TURNS IT OFF, AND EXACTLY ONE CALLER DOES SO. The first-run
+           arrival makes confirmation a beat of its own — the prototype's
+           "Confirm it's working" screen — so rendering this panel there would put
+           two identical checks on consecutive screens, and this one fires
+           confetti and ends the guided tour on first success, one beat before the
+           screen whose whole job is that check. It defaults to ON so neither
+           existing call site changes. -->
+      <CardPanel v-if="verify">
         <template #header>
           <span class="text-sm font-semibold text-ink"
             >Confirm it is working</span
@@ -236,7 +244,12 @@ const props = defineProps({
   // and for a source whose pipe nobody looked up. Empty string means "not
   // established", not "there is none", which is why the caller passes a name
   // rather than this deriving one from the source type.
-  deliversTo: { type: String, default: '' }
+  deliversTo: { type: String, default: '' },
+  // Whether to render the "Confirm it is working" panel. DEFAULT ON, so both
+  // existing call sites — `/sources/new` step 3 and the source detail page's
+  // Setup instructions tab — are unchanged. The first-run arrival passes `false`
+  // because it makes confirmation a beat of its own; see the template.
+  verify: { type: Boolean, default: true }
 })
 
 const emit = defineEmits(['copy', 'verified'])

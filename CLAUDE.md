@@ -160,7 +160,7 @@ not-allowed }`, so `disabled:opacity-45` and `disabled:cursor-not-allowed` are d
    ships `.q-dialog__inner--minimized > div { max-width: 560px }` and margins on unclassed block
    elements, both unlayered. A three-column picker in a dialog silently renders as
    two-and-a-bit columns, and auto margins are ignored, until the suffix goes on:
-   `w-[820px]!`, `mt-auto!`. `PersonaQuestion.vue` needs both. **`w-[Npx]!` alone is not
+   `w-[820px]!`, `mt-auto!`. **`w-[Npx]!` alone is not
    enough** — the Quasar rule is a `max-width`, so the override has to be one too:
    `w-[min(720px,92vw)]! max-w-[min(720px,92vw)]!`, as on `/team` and `/billing`. A flat pixel
    max-width would stop the dialog shrinking on a narrow window, hence the `min()`.
@@ -179,8 +179,8 @@ not-allowed }`, so `disabled:opacity-45` and `disabled:cursor-not-allowed` are d
    spanning it. Here the child-side fix does not apply (the body already had `min-h-0 flex-1`),
    so use the **important suffix**: `flex-nowrap!` beats the unlayered rule, because layered
    `!important` outranks unlayered non-important. It is on every viewport-capped dialog and
-   overlay card — `SettingsNotificationChannelDialog`, `ProfileBuilderEditDialog`,
-   `SourceSyncRunLogsDialog` and `PersonaQuestion` — and a new one needs it too. Height-capped
+   overlay card — `SettingsNotificationChannelDialog`, `ProfileBuilderEditDialog` and
+   `SourceSyncRunLogsDialog` — and a new one needs it too. Height-capped
    columns whose children are auto-sized (`SelectableCard`, `MainLayout`'s rail,
    `LoginPage`'s panel) deliberately do not carry it: nothing there overflows into a
    second column.
@@ -210,6 +210,18 @@ not-allowed }`, so `disabled:opacity-45` and `disabled:cursor-not-allowed` are d
    the wrong question — the sidebar collapses without changing it, so one 1024px window has two
    content widths — put a container query in front of those tracks (`@container` +
    `@min-[52rem]:grid-cols-3`). `docs/ui-conventions.md` rule 12.
+
+   **`minmax(0,1fr)` sizes the track, not the item, and a native date input is the case where
+   that shows.** A grid item still has `min-width: auto`, so it cannot be squeezed below its own
+   min-content — and Chrome's `input[type=datetime-local]` measures **~222px** at Inter 14px
+   (`dd/mm/yyyy, --:-- --`; measured, not guessed). Six equal tracks under ~1600px of container
+   therefore did not shrink the two date fields on `/live-events`, they pushed each one over the
+   control to its right until the picker icon sat inside the next field. Both halves are needed:
+   `min-w-0` on the cells stops the overlap, and a track pinned at the control's real width
+   (`16rem` there) stops that from becoming a clipped picker icon instead — which is the same bug,
+   quieter. Any row mixing a native date, time or number input with `1fr` peers needs the same
+   treatment.
+
 7. **Anything inside `q-header` inherits white text, and that is how the responsive nav
    disappeared.** Quasar ships unlayered `.q-header { color: #fff }` and unlayered
    `.q-btn { color: inherit }`, so a layered `text-ink` on the header loses and the button
@@ -232,8 +244,8 @@ not-allowed }`, so `disabled:opacity-45` and `disabled:cursor-not-allowed` are d
    corners are visibly squarer than the `SelectableCard`s nested inside it. `rounded-sfere-xl!`
    (important **suffix**) is what beats it, for the reason `flex-nowrap!` does in #4. It is on
    `ConfirmDialog`, `SecretRevealDialog`, `SettingsNotificationChannelDialog`,
-   `SettingsApiTokenCreateDialog`, `ProfileBuilderEditDialog`, `SourceSyncRunLogsDialog` and
-   `PersonaQuestion`, and a new dialog needs it too.
+   `SettingsApiTokenCreateDialog`, `ProfileBuilderEditDialog` and `SourceSyncRunLogsDialog`, and
+   a new dialog needs it too.
    **Radius has no alias layer, unlike colour**: `src/css/tailwind.css` aliases `--color-*` onto
    the `sfere-*` values but says nothing about `--radius-*`, so `rounded-lg` and `rounded-xl`
    resolve to Tailwind's own 8px and 12px rather than to `--radius-sfere-*`. Reach for
@@ -243,23 +255,27 @@ not-allowed }`, so `disabled:opacity-45` and `disabled:cursor-not-allowed` are d
 
 The house dialog surface is one string — `rounded-sfere-xl! border border-sfere-line
 bg-sfere-surface shadow-sfere-pop` — and a new dialog copies it rather than improvising.
-`PersonaQuestion` once had `rounded-xl border-line2 bg-white shadow-lg`, of which two were visibly
+The overlay once had `rounded-xl border-line2 bg-white shadow-lg`, of which two were visibly
 wrong (the 12px radius above, and a tight neutral `shadow-lg` where every other dialog sits on the
 wide plum-tinted `shadow-sfere-pop`) and two resolved to the right values by luck.
 
-**`PersonaQuestion` is now the one deliberate exception, and it is dark.** It carries
-`rounded-sfere-xl! border border-sfere-hairline bg-sfere-ink shadow-sfere-ink-deep` — the same
-four slots, each swapped for its on-ink counterpart rather than left alone, since
-`shadow-sfere-pop` is plum-on-light and is invisible beneath a dark card. What earns the exception
-is that it is not a dialog in the sense the rule is about: every other one interrupts a task
-somebody chose to start, so it should be the quietest surface over the work it covers, whereas
-this is the first thing a new account sees and the only screen whose job is to feel like an
-arrival. Dark is how the brand does arrivals — sfere.io's hero, deployment band and footer are all
-`--color-sfere-ink`, and the token layer calls dark "a section treatment, not a theme" for exactly
-this. **The boundary is one screen**: a second dark dialog is a change worth arguing about, not a
-precedent already set, and every ordinary new dialog still copies the light string.
-`bg-sfere-ink` needs **no** important suffix — `.q-dialog__inner > div` sets radius, overflow and
-max-width and no background, checked against `quasar.css` rather than assumed.
+**`FirstRunOverlay` used to be the one dark exception, and it no longer is.** It shipped for a
+while as an 860px card on `bg-sfere-ink` with an on-ink swap of all four slots, defended here as
+the single screen whose job was to feel like an arrival. It is now a **full-viewport light
+surface** on `bg-sfere-bg`, which is what the prototype does and is the better reading for the
+same reason the exception was argued for: a dark card floating over a dimmed Dashboard says "a
+modal is interrupting your work", and on a first sign-in there is no work behind it to interrupt.
+Taking the whole viewport makes it a place rather than an interruption. **There is no dark dialog
+anywhere in the app now**; a first one is a change worth arguing about rather than a precedent
+already set.
+
+**It is `maximized`, and that is what takes it out of three of the collisions above.** Quasar's
+unlayered `.q-dialog__inner--maximized > div` sets width, height and both maxima to 100% and
+zeroes the radius, so the 560px cap in #3, the `flex-nowrap!` case in #4 and the 4px radius in #8
+all have nothing to fight over — which is why the file appears in none of those three lists any
+more. Checked against `quasar.css` rather than assumed. What the `q-dialog` still buys, and the
+reason this is not a hand-rolled `fixed inset-0`, is the focus trap, the scroll lock and the
+teleport to `<body>`.
 
 ## Screen manifest — routes are generated, not hand-written
 
@@ -654,13 +670,24 @@ setup.
 
 `enabled: true` in `features.js` today covers **Dashboard, Live events, Sources, Destinations,
 Pipes, Functions, Settings, Warehouse, Monitoring, Profiles, Secrets, Authorizations, Team,
-Billing** and **Trash** — fifteen top-level keys, not six. Two of those are partly on: Warehouse and Profiles each gate their own
-children by a separate key (`dwh-syncs`, `warehouse-models`, `identity-resolution`, `attributes`,
-`profile-builders`, `profile-api`, `live-profile-syncs`, `profile-dwh-syncs`), so switching the
-parent on only exposes the child screens whose own key is _also_ `true` — right now that's
-Warehouse connections, Profile search and Profile builders, and every other child is **absent from
-the rail**. Audiences, Campaigns, Engage,
+Billing** and **Trash** — fifteen top-level keys, not six. Profiles is partly on: it gates its own
+children by a separate key (`identity-resolution`, `attributes`, `profile-builders`,
+`profile-api`, `live-profile-syncs`, `profile-dwh-syncs`), so switching the parent on only exposes
+the child screens whose own key is _also_ `true` — right now that's Profile search and Profile
+builders, and every other child is **absent from the rail**. Audiences, Campaigns, Engage,
 Reporting and Demo lab remain fully dark and get switched on one at a time as they become real.
+
+**Warehouse is active and has no sidebar row at all, which is a third state worth naming.** Its
+three screens still render their real pages and its own two children (`dwh-syncs`,
+`warehouse-models`) are still switched off — but the rail row that pointed at them is gone from
+`MainLayout`, because the warehouse **is** a destination: the backend provisions a ClickHouse
+destination per `web`/`zid` source, and browsing its tables or running SQL against it are tabs on
+`/destinations/:id`. A Warehouse row sitting beside Destinations said the warehouse lived
+somewhere else. This is the Connectors and Secrets move — a row comes off the rail, the key stays
+`enabled: true` and stays in `CORE_KEYS` — minus the redirect: there is no tab to redirect to,
+since an external Snowflake connection is not the provisioned ClickHouse destination. **Do not
+tidy this up by switching the key off.** That would assert the module is not built yet and would
+put `ComingSoonPanel` on three working screens.
 
 `src/config/features.js` is the registry — pure data, one entry per module, `enabled` being the
 shipped default. `src/composables/useFeatures.js` layers per-browser overrides from
@@ -693,7 +720,7 @@ Two details the hiding pass has to keep getting right, because both were bugs th
 a **caption is a field on the first group of its section**, so filtering the flat `navGroups`
 array strands one — drop `audiences` and `ACTIVATE` goes with it and Campaigns is absorbed into
 `ACCOUNT`; `MainLayout`'s `activeGroups` sections first, filters inside each section, then
-flattens through `navOrder.js`'s `toFlat`, which re-attaches each caption to whichever group now
+flattens through `navSections.js`'s `toFlat`, which re-attaches each caption to whichever group now
 leads. And a **group whose children are all switched off is dropped too**, or the rail grows a
 chevron that expands into nothing.
 
@@ -707,205 +734,398 @@ Any new gating must preserve that; a redirect would silently drop the gate to ~6
 **Hiding the sidebar rows did not touch this**: `/audiences` still renders `ComingSoonPanel` with
 its own `<h1>`, it just has no row pointing at it. Hide the rows, keep the gate.
 
-## Onboarding — one question, then one path
+## Onboarding — seven beats, end to end
 
-First sign-in asks **"Before we start — what do you do?"** and offers three personas:
-engineer ("I build the pipes"), marketer ("I run the campaigns"), analyst ("I answer for the
-numbers"). `src/config/personas.js` is the registry — pure data, no imports, same idiom as
-`features.js` and `screens.js`.
+**REGISTRATION** opens a **full-page, light** arrival whose first three beats are: **"Bring your customer data
+into one place without building the plumbing yourself."**, then **"Where does your customer
+activity happen?"** with Website / Online store / Mobile app / Something else, then — for the two
+categories that cover several platforms — **"Which online store do you use?"** or **"Which mobile
+platform are you using?"**. The answers then drive four more beats inside the same surface — the store grant where one is
+needed, the install, the confirmation and the summary — so the arrival ends on a working source
+rather than on another screen.
 
-**The question is an overlay over a fully-rendered Home, never a route.** A `/welcome` route
-would replace `MainLayout`, so `[data-smoke="nav"]` would never appear and `pnpm smoke:dist`
-would fail at sign-in for all 51 routes rather than on one screen. Three consequences that any
-change here has to preserve: the page beneath stays mounted and visible, the overlay renders
-**no `<h1>`** (smoke asserts on the first one, which belongs to the page), and it opens **only on
-`/`** — a deep link to `/errors` from Slack must not be met by a modal demanding a role.
-`MainLayout` binds it to `route.path`, not to a one-shot flag, which is also what closes it on
-navigation.
+**IT IS THE PROTOTYPE'S WHOLE FLOW NOW, AND THAT REVERSES WHAT THIS SECTION USED TO SAY.** It used
+to stop after three beats and hand off to `/sources/new`, arguing that steps 4-8 already existed
+there and that rebuilding them would mean a second install guide and a second event checker to keep
+in agreement with the first. That argument was right about the components and wrong about the
+conclusion: the hand-off dropped a reader who had answered two questions onto a create form with a
+stepper of its own and a details form nobody had prepared them for, so the arrival stopped
+mid-sentence.
+
+**The beats moved and the components did not.** The flow is welcome → category → platform →
+(authorize) → connect → verify → setup → ready, and there is still exactly one install guide and
+one event check in the repo: `FirstRunConnect` renders `SourceInstallGuide` itself,
+`FirstRunVerify` calls the same `listSourceEvents` with the same `total > 0` test, and
+`FirstRunSetup` reads the real `useSourceProvisioning`. `src/composables/useFirstRunSetup.js` is
+the glue — it creates the source, runs the checks and holds the result — and it is a module
+singleton for the reason `useOnboarding` is.
+
+**The prototype's eighth beat is deliberately not ported.** "Waiting for your first event" is a
+whole screen doing the job of one clause: the verify beat is where an event is actually checked
+for, so a screen afterwards waiting for one either waits for something that has happened or
+repeats a question already answered. The ready beat states it in a sentence instead, and only
+claims arrival when an event was really seen.
+
+**`SourceInstallGuide` gained a `verify` prop, default `true`.** The arrival passes `false`,
+because confirmation is its own beat; without it the install beat would carry a second identical
+check — including the guide's own confetti and success banner — one beat before the screen whose
+entire job is that check. Neither existing call site changes.
+
+**THE GATE IS "YOU HAVE TO LOOK", NOT "AN EVENT MUST HAVE ARRIVED", and that distinction is
+load-bearing.** The prototype's checker reports success unconditionally after 1100ms, so its gate
+never has to answer this; ours asks the backend, and the honest answer on a brand-new account is
+usually "nothing yet" — the snippet has been copied but not deployed, or deployed to a site with
+no traffic this second, or (the case the install beat's own dev-note names) the reader cannot
+deploy it at all. Requiring a real event would strand every one of those readers one beat away
+from the warehouse and pipe the create call **had already built**. So one completed check unlocks
+the rest whatever it found, the banner keeps saying what was actually found, and `verified`
+travels to the last beat so nothing downstream claims traffic nobody saw.
+
+**A `400` from the events endpoint is an ordinary state, not a failure.** It is what an
+`event_stream` source answers until its SDK has initialised, so it reads as "no events to read
+yet" rather than a red "couldn't run the check" — the same line `useSourceWriteKeys()` already
+draws between a `400` ("no Jitsu site yet") and a `404` ("no endpoint").
+
+**WHAT IS CREATED, AND WHEN.** The source is created on the way into the connect beat, because the
+beat needs a real write key to put in a snippet. `ensureSource()` is **idempotent** — a reader
+walking Back and forward again must not create a second source, which on a `web` template would
+orphan a ClickHouse destination too (the backend's `DELETE` does not clean those up). Name and slug
+are **derived, never asked**: the prototype asks for neither and the backend requires both, so
+`SOURCE_NAMING` in `src/config/firstRun.js` maps the template to a name and a create that collides
+retries with a numeric suffix. The `source_type` posted is the backend's, not the fixture's —
+`web-sdk` goes out as `web`, `zid`/`salla` as themselves — the same three overrides
+`SourceCreatePage` makes, for the same reason.
+
+**Only `web` and `zid` provision anything, so the setup beat has two shapes.** The prototype ticks
+"Preparing your included storage" off two `setTimeout`s; on an iOS source that would be a green
+tick over a warehouse that was never built. `state === 'none'` renders an honest "no destination
+yet" row and the ready beat's summary says `Not set up yet` rather than naming ClickHouse, and
+`state === 'unavailable'` is kept distinct from it with a Retry — one is a fact about the account,
+the other about the request.
+
+**"Send a test event" is not built, and that is the one control the prototype has that we refuse.**
+The dashboard cannot send an event: writing to a collector is the backend's job and the CSP names
+no collector host (see "Data architecture" — a hard rule). A button reporting a test it never sent
+is the worst possible thing on the one screen whose job is trust. A **store** source gets the
+honest version instead, `POST …/sources/{id}/test` ("can the backend reach your store?"), which
+appears only where it does something and never sets `verified` — "we can reach your store" and "an
+event arrived" are different claims.
+
+**"Something else" still leaves the arrival**, because there is nothing here for it to do: it
+resolves to the connector catalog rather than a template, so there is no source to create and the
+four beats after the question would each have nothing to say. It records the category, **settles**
+the record and navigates — parking it would reopen the arrival over the catalog the reader is now
+reading.
+
+**NOTHING ARMS THE SPOTLIGHT WALKTHROUGH ANY MORE**, and that is a consequence rather than an
+oversight. `startTour('source-setup')` fired on the hand-off, so its coachmarks explained a create
+form the reader no longer sees. `SpotlightTour`, `useGuidedTour` and `src/config/tours.js` are all
+still wired and `SourceCreatePage` still calls `show()` on its own steps, so arming it again is one
+line the day something hands off to that page.
+
+**IT IS SIGN-UP-ONLY, AND THAT WAS A BUG BEFORE IT WAS A RULE.** `useOnboarding` used to treat an
+absent `localStorage` record as "has not been asked", which made the arrival a property of the
+BROWSER rather than of the account: an existing user signing in on a second machine, in a private
+window, or after clearing storage was met by a full-page welcome covering the workspace they had
+been using for months. `LoginPage`'s sign-up branch now calls `beginFirstRun()` — the writer of
+`awaitingFirstRun`, which `needsFirstRun` reads — so a sign-in cannot reach it by any path. It is
+armed after `signUp()` resolves, which is after `loadMe()`, so the record gets a real uid to be
+scoped to.
+
+**The invariant is "nothing re-arms it implicitly", not "only registration ever does", and there
+is now a second, explicit writer.** `askAgain()` — `Restart onboarding` on **Settings → General** —
+calls the same `beginFirstRun()`, and it is the only other caller. It re-arms rather than resumes:
+the recorded category and platform go and the replay starts at the welcome, which is what separates
+it from the Dashboard's `SetupResumeBand` (keyed on `paused`, resumes the parked beat, absent for
+everybody else). Two halves are needed and a change here has to keep both. Re-arming on `/settings`
+opens nothing, because `MainLayout` binds the surface to `route.path` — so
+`SettingsOnboardingPanel` navigates to `/`. And `arrivalFinished` is **session state that nothing
+flips back**: the route watcher sets it the moment you leave `/`, so the restart worked on a cold
+load into `/settings` and silently did nothing when the reader had clicked through from Home. Same
+code, two behaviours. `MainLayout` therefore watches `needsFirstRun` for the flip **to** true and
+clears `arrivalFinished`, `arrivalStep` and `arrivalIntent`. Not routed through `resumeStep`:
+`ARRIVAL_STEPS` (v5's rename of `RESUMABLE_STEPS`) excludes `'welcome'` on purpose, and a restart
+replays from it.
+
+**The skip control is on every beat, including the welcome, and that is the one place this departs
+from the prototype.** The prototype offers it from the category beat onward, which is right there
+and wrong here for a structural reason: its welcome has no application behind it, and ours covers a
+working Dashboard. The surface is `persistent` (no Esc, no backdrop dismiss) and Back from the
+category beat lands on the welcome — so under the prototype's rule the welcome held exactly one
+control and it pointed forwards. That is a trap, and it was reported as one.
+
+**NO BEAT MAY RENDER NOTHING, and that is an invariant rather than a nicety.** The platform beat
+shipped briefly with a `v-else` in the overlay and an empty-object fallback in the component, so a
+'platform' step with a category that has no `PLATFORM_CHOICES` entry rendered an empty headline, an
+empty lede and no cards — a blank full-screen surface carrying only the wordmark and Skip, which is
+indistinguishable from the app having crashed, and there is no Back on it because the footer lives
+inside the same panel. Two guards now: the overlay mounts the platform beat only on
+`step === 'platform' && needsPlatformStep(intent)` and falls back to the **category question**, and
+the component itself warns and emits `back` if it is mounted without a group. A beat that cannot
+answer its own question falls back to the question that produces the answer, never to nothing.
+
+**A category with one template skips the third beat.** "A website" resolves to `web-sdk` alone and
+"Something else" is not a template at all, so both go straight to the create flow; only `store` and
+`app` have an entry in `PLATFORM_CHOICES`. A beat asking a question with one answer is a click that
+teaches the reader their answers do not matter.
+
+**THIS REPLACED THE PERSONA QUESTION, and the persona system is gone with it.** First sign-in used
+to ask "what do you do?" — engineer, marketer, analyst — and the answer ordered the sidebar and
+the Dashboard's blocks. That is deleted: `src/config/personas.js`, `src/lib/navOrder.js`'s
+`orderNavGroups()`, `PersonaQuestion.vue`, `PersonaIcon.vue` and `SettingsPersonaPanel.vue` are
+all removed, and `DashboardHomePage.vue` and `MainLayout.vue` no longer read a role. **The rail is
+the authored order for everybody**, and the only two things that change it are the entitlement
+gate and feature activation. The reasoning: a role picked in the first ten seconds moved rows
+around on a rail where every row stayed anyway, so nobody could see what the answer had bought,
+support could not say "it's the fourth row down" to anyone, and the ordering had to be re-derived
+every time the nav changed. What a new account can actually tell us in ten seconds is not a role,
+it is where their customer activity lives — which is the first field of the create form.
+
+**`src/lib/navSections.js` is what survived `navOrder.js`.** `toSections`/`toFlat` are still
+needed, because a section caption ('COLLECT', 'FANS', 'ACCOUNT') is a **field on the first group of
+its section** rather than a wrapper, so any pass that removes rows can strand one — drop
+`audiences` and 'ACTIVATE' goes with it, leaving Campaigns absorbed into the section above.
+`orderFront()` survived too, unused, with its "front-load, never filter" rule intact: if an
+ordering ever comes back it belongs on top of that function rather than beside it.
+
+**`pnpm smoke:dist` cannot cover this flow, and that is structural rather than an oversight.** The
+gate signs in as an EXISTING account and walks 51 routes — which is exactly the path that must
+never see the arrival, so a green run says nothing about whether the beats work. Verifying a
+change here means registering a NEW account and driving all seven beats, plus a sign-in and a
+wiped-storage sign-in to confirm neither reopens it. **A reload mid-flow is now part of that
+check**: it must resume, not restart, or the run creates a second source. Note that walking the
+flow for real **creates real records** on whatever `VITE_API_BASE` points at — a source, and for a
+`web` or `zid` template a ClickHouse destination and a pipeline — so use a throwaway account on a
+domain that is not a real workspace's. Staging accepts `POST /v1/register` from `localhost:9000` and does not
+gate sign-in on email verification, so a throwaway account is a working way to check it.
+
+**The arrival is over a fully-rendered Home, never a route — full-page or not.** A `/welcome`
+route would replace `MainLayout`, so `[data-smoke="nav"]` would never appear and
+`pnpm smoke:dist` would fail at sign-in for all 51 routes rather than on one screen. Three
+consequences any change here has to preserve: the page beneath stays mounted, the arrival renders
+**no `<h1>`** (smoke asserts on the first one, which belongs to the page — the beats' headlines
+are `<h2>` carrying `text-sfere-h1!`/`text-sfere-h2!`, because the size is the point and the size
+is a token), and it opens **only on `/`** — a deep link to `/errors` from Slack must not be met by
+it. `MainLayout` binds it to `route.path`, which is also what closes it on navigation.
+
+It is a `maximized persistent q-dialog` rather than a hand-rolled `fixed inset-0`, for the focus
+trap, the scroll lock and the teleport; see the dialog-collisions section above for why
+`maximized` takes it out of collisions #3, #4 and #8.
 
 State is `src/composables/useOnboarding.js` — module singleton, `localStorage` key
-`sfere_onboarding`, the shape `{ v, uid, persona, askedAt, skipped, completedAt, chapters, runs }`:
+`sfere_onboarding`, shape
+`{ v, uid, seenAt, awaitingFirstRun, skipped, paused, step, intent, platform, sourceId,
+completedAt, tour, chapters, runs }`:
 
+- **`STATE_VERSION` is 5, and every bump was load-bearing.** v5 is the seven-beat arrival:
+  `pausedStep` became **`step`** and is written on **every advance** rather than only when the
+  reader parks, `sourceId` is new, and `hasOnboarded` is keyed on **`completedAt`** rather than on
+  `intent`. All three follow from the same fact — the arrival now creates a real source part-way
+  through, so a reload has to put somebody back where they were instead of restarting a flow that
+  would create a **second** source, and recording the category can no longer be allowed to settle
+  the arrival and close the surface under a reader who is still working through it. A v4 record
+  cannot answer any of that, so it is discarded. v1 carried `persona`; v2's `skipped`
+  meant "dismissed for good", which under the resumable rule below would read as "parked and
+  unresumable" and strand every existing record on a path it can never leave. Discarding is the
+  right outcome in both cases, not merely the cheap one — the whole record is one question and
+  some progress, so re-asking costs two seconds where a migration path costs more than that
+  forever. v4 added `awaitingFirstRun`, and a v3 record cannot say whether a registration opened
+  it, so it is discarded too: the failure mode of discarding is that one genuinely new account
+  misses the welcome, and the failure mode of keeping is every returning user being shown it.
 - **`uid` is what makes it "first login" rather than "once per browser".** A record whose uid is
-  not the signed-in user's reads as unanswered, so a shared machine asks the second person instead
-  of handing them the first person's answer. Nothing is persisted while signed out.
-- A `persona` that is not a key in `personas.js` reads as unanswered too — a renamed key or a
-  hand-edited store must not resolve to a truthy persona nothing can render.
-- Skipping is a real answer (`skipped: true`), not a deferral. The way back is Settings.
-- `chapters` and `runs` are written empty on purpose. The tour itself — stepper, progress strip,
-  completion card — is a later phase (`todos/site-overhaul-plan.md` §5.3–5.8), and it should find
-  a record it can extend rather than inventing a second key.
+  not the signed-in user's reads as un-onboarded, so a shared machine asks the second person
+  instead of handing them the first person's answer. Nothing is persisted while signed out.
+- **`intent` is validated against `SOURCE_INTENTS` and `platform` against `PLATFORM_CHOICES`**, so
+  a renamed key or a hand-edited store reads as "nothing chosen" rather than as a truthy value
+  nothing resolves.
+- **`intent` is now written when the card is clicked, and that is the v5 reversal.** It used to be
+  written only on the way out, because `setIntent` settled the arrival and `arrivalOpen` read that
+  — recording on the click closed the whole surface underneath the reader. Settling is
+  `completedAt`'s job now, so progress is recorded as it happens: the category on its click, the
+  platform on its click, the beat on every advance and the source id the moment it exists. Only
+  `complete()` and `pause()` settle anything.
+- **`sourceId` is recorded; the write key is deliberately NOT.** The backend issues that key
+  exactly once and every later read is masked, so persisting it would put a live credential in
+  `localStorage` to save a click. What that costs is one thing: a reader who parked on the
+  **install** beat and comes back after a reload resumes on **verify** (which needs only the id)
+  rather than on an install guide that would render its `provisioning…` placeholder over a key
+  that had in fact been issued. Within one session the source is still in memory, so they land
+  exactly where they left. The snippet is always reachable from the source's own Setup
+  instructions tab — the same component, which is the point of it being the same component.
+- `chapters` and `runs` are written empty on purpose, for the scripted tour that is a later phase.
 
-**The persona picks emphasis, never contents.** It chooses which onboarding script runs, the
-**order of the sidebar**, which nav group starts expanded, and the **order and emphasis of the
-Dashboard's blocks**. It must never remove a sidebar row: support and handover docs have to be
-able to say "click Pipes" and be right. Removal is entitlements' job, and that mechanism stays
-separate — as does feature activation, which answers "is it built yet?".
+**There is ONE category taxonomy, not two.** The overlay's four cards are keys into
+`SOURCE_INTENTS` in `src/config/sourceIntents.js` — the same six intents `/sources/new` step 1
+renders — and `src/config/firstRun.js` holds only the copy plus `PICKER_INTENTS`, the subset shown.
+Two lists would drift the first time a connector shipped, and the overlay would offer a category
+the create flow could not receive. It shows **four of the six**: "Payments" and "My own backend" are
+the long tail, and six equal cards on an arrival screen asserts something untrue about the product.
+Both stay one click away behind "Something else". A coming-soon intent is dropped from the picker
+entirely, for the same reason the create flow greys it out.
 
-**Both orderings are data on the persona, not conditionals in the consumers.** `personas.js`
-carries a `nav` (`lead` group keys pinned above the first caption, `sections` caption order,
-`first` per-section group order, `expand`) and a `home` (`blocks` render order, `subtitle`,
-`primaryAction`, `collapseAttention`, `hideSetupWhenComplete`) per persona.
-`src/lib/navOrder.js` applies `nav`; `DashboardHomePage.vue` applies `home`.
+**THE `?intent=`/`?template=` HAND-OFF IS NO LONGER HOW THE ARRIVAL ENDS**, since the arrival now
+owns the create. `applyIntentParam()` and `applyTemplateParam()` on `SourceCreatePage` are
+**unchanged and still live** — the params are still a valid way to deep-link that page, and every
+existing link still works — they are simply not written by the arrival any more. The paragraphs
+below describe that page's own contract, which is worth keeping accurate:
 
-Three things about that shape are load-bearing:
+**Both answers travel in the URL: `/sources/new?intent=<key>&template=<id>`.** Query params rather
+than shared state, so the hand-off survives a reload, a link pasted to a colleague and the back
+button — and so the create page stays readable on its own without knowing an arrival exists.
+`applyIntentParam()` in `SourceCreatePage.vue` guards the intent the same three ways the draft
+restore is guarded (resolves in the registry, not coming-soon, `to`-style intents are followed with
+`replace` rather than selected) and **loses to a restored draft**: a half-filled form somebody
+walked away from is work, a category clicked two seconds ago is an opening move, and overwriting
+the first with the second is an unannounced undo of the thing `useSourceDraft` exists to protect.
 
-- **Every list is a front-loading order, never a whitelist.** `orderNavGroups()` and the page's
-  block loop hoist the keys they recognise and append everything else in its authored position,
-  so a typo, a renamed key or a group added later degrades to "in the wrong place" and never to
-  "missing". Do not change either consumer to `filter` on these lists — that turns a data typo
-  into "Pipes has disappeared from my sidebar".
-- **A caption is a field on the first group of its section**, so permuting the flat `navGroups`
-  array moves captions onto the wrong rows: hoist Profiles for a marketer and `FANS` travels up
-  with it while Team & roles is left captionless. `navOrder.js` parses the list into sections,
-  reorders sections, and flattens again with each caption re-attached — via shallow copies, since
-  `navGroups` is a module constant shared across renders.
-- **`persona === null` — unanswered or skipped — must render exactly the authored nav and
-  `DEFAULT_HOME`.** `pnpm smoke:dist` signs in with an empty `localStorage`, so the unanswered
-  path is the **only** one the gate walks. `engineer` is `nav: null, home: null` for the same
-  reason: it is the identity ordering, so the gate covers it too. The marketer and analyst paths
-  are **not** covered — seed `sfere_onboarding` by hand (and switch to Demo data, since a fresh
-  account has no blocks to order) to check them.
+**`?template=` is a SECOND param rather than a compound one**, because the two answers are
+independent: `?intent=store` alone is a valid hand-off — it is what the create flow's own step 1
+produces — and a template alone is meaningless without the intent that says which picker it belongs
+to. Splitting them also left every existing `?intent=` link working untouched.
+`applyTemplateParam()` guards it **four** ways: a string, one of THIS intent's templates (or
+`?intent=website&template=zid` would pre-select a card the picker on screen does not offer),
+present in the loaded catalog, and not coming-soon — the same rule that greys the card, applied to
+the URL that would otherwise bypass it.
 
-**A dark section is never hoisted.** Marketer's natural sections are ACTIVATE and ENGAGE and both
-are switched off in `features.js`, so leading with them would put a wall of `Soon` pills above
-every live row — the exact failure the ACCOUNT placement guards against. The orderings are built
-out of the fourteen live keys that appear in `navGroups` — **`trash` is the fifteenth live key and
-is not one of them**, because it is a `bottomMenu` row and `orderNavGroups()` only ever sees
-`navGroups`. A persona cannot hoist Trash and does not need to; the two numbers differ on purpose.
+**The click IS the consent, which is the one departure from the surface this replaced.** The
+persona overlay recorded a role and then offered a separate button onto the first setup step,
+because being thrown onto a form by a click you thought only recorded a preference reads as a
+misfire. Here the click is the choice of what to connect — "Website" is not a preference, it is the
+first field of the create form — so a second consent step would ask the same question twice.
 
-**The Home blocks are extracted components, not CSS `order-*`.** `ThroughputPanel`,
-`ActivityPanel`, `ProfilesPanel` and `WarehouseHandoffStrip` came out of
-`DashboardHomePage.vue`'s template so the page can render an ordered list. An `order` utility
-moves the box and leaves the DOM alone, so a screen reader and the tab key would still walk the
-engineer's sequence on a marketer's screen.
+**The spotlight walkthrough used to be armed here and no longer is** — see the note above. The
+arrival now walks the reader through the intent, the create and the event check with a full screen
+each, so a coachmark pointing at a create form nobody was sent to would be a tour with nothing to
+show.
 
-**Two blocks are fixed for every reader**: the four `StatCard`s and the needs-attention banner
-directly under them. Only the banner's _openness_ changes — an engineer gets the list open, a
-marketer gets `1 issue needs your attention` and a chevron (`NoticeBanner`'s `collapsible`).
-`WarehouseHandoffStrip` is the analyst's one addition, and it carries **no numbers**: Home's
-aggregate returns nothing about warehouse connections, so it is a signpost rather than a card
-with a measurement nobody took.
+**SKIPPING IS NOW A PAUSE, AND THAT REVERSES WHAT THIS FILE USED TO SAY.** `Skip setup · Go to
+dashboard` writes `paused: true` plus the beat it was pressed on, and the Dashboard grows a
+`SetupResumeBand` that reopens the arrival on that beat. **Any of the seven beats can be parked
+on now**, not just the two questions — the install beat is the single most likely place in the
+whole flow to walk away from, since its own copy invites it ("come back here anytime to confirm
+the connection"). The old rule — "nothing brings the overlay
+back, because a modal that returns after being dismissed is the thing people learn to click past
+without reading" — is true of a modal that **returns by itself**, and nothing here does: the band
+is inert until it is pressed, and pressing it is the only thing in the app that sets the in-memory
+`resumeStep`. What the old rule actually cost was the person who pressed Skip to look around first
+and then had no route back to the three screens that would have connected their data.
 
-**The persona never owns the setup story on its own.** `hideSetupWhenComplete` and the header's
-primary action are both gated on `setupComplete` first, so a marketer whose workspace has no
-source still gets the tracker and `Connect a source`. A role does not make setup somebody else's
-problem until setup is actually done.
+**The band is keyed on the record, not on the count — and gated on both.** `resumeVisible` is
+`paused && setupLoaded && !setupUnavailable && setupDone === 0`, so somebody who parked the arrival
+and then connected a source from the Sources screen an hour later does not keep the band. There is
+deliberately **no stored completion flag**: that is the thing `useSetupProgress` exists to avoid,
+since it can disagree with reality the moment the only source is deleted. Two states, from the
+record alone: a category was chosen (amber, "Finish connecting your online store") or it was not
+(purple, "Your workspace is ready"). It is neither a `NoticeBanner` (that reports account state and
+must not be dismissible) nor an `IntroBand` (that is editorial and true of everybody).
 
-**The question card sits on the brand's dark canvas** — `bg-sfere-ink` with `sfere-dot-grid`
-over it and a purple bloom above that, the wordmark in its `on-dark` cut, and the question at
-`text-sfere-h3!` rising to `text-sfere-h2!` from `sm`. Three notes for anyone touching it. The
-bloom is a **child element**, not a second utility, because `sfere-dot-grid` and `sfere-glow-top`
-both set `background-image` and the second one declared simply replaces the first. Every kit
-component in there takes `on-dark` on **both** halves of the pair — the card and its icon chip —
-since a light-surface variant inside a dark section is black text on a near-black card; and
-`SelectableCard`'s on-dark hover was extended to a purple border plus `shadow-sfere-glow`, in the
-**component** rather than on the instance, because an instance `hover:border-*` and the
-component's own are two layered utilities on one property in one layer and the winner would be
-Tailwind's emission order. Colours come from `text-sfere-dark-fg` / `text-sfere-dark-fg-muted`,
-never `text-muted` or `text-subtle` — both of those alias to the same `#737373` and are
-light-surface tokens. `SfereLogo` is sized by an `h-6` class and not by its `height` prop: that
-prop is **inert app-wide**, because Tailwind preflight ships `img, video { height: auto }` in
-`@layer base` and the component only sets a `height` attribute, which is a presentational hint any
-author rule beats — `/design-system` demonstrates it by rendering `:height="32"` and
-`:height="22"` as two identical logos. Worth fixing in the component; it resizes `LoginPage`,
-`AccountSetupOverlay` and the docs page too, so it has not been.
+**The skip control is pinned to the top-right corner and is absent on the welcome beat.** That is
+the prototype's rule and the right one: nothing has been asked on the welcome, so the only thing a
+skip could mean there is "close the page I have read one sentence of". Pinning rather than footering
+it is what stops it reading as a different control on each beat.
 
-**The card is otherwise two centred lines and nothing else.** The third line describing the
-onboarding run, the `~10 min · 5 steps` estimate, the 1/2/3 number chips, the footer divider and
-the per-card `Start →` have all come off: the estimate measured a script that does not exist yet,
-the digits read as a ranking of three equal roles, and the rule separated a role from a footer that
-no longer has two ends. The keyboard shortcut went with the chips deliberately — they were printed
-_so that_ the shortcut was an affordance, and a hidden hotkey that can answer the question for
-someone typing into the header search behind the overlay is worse than none.
+**Parking is acknowledged**, for the same reason choosing is: it used to make the overlay simply
+vanish, which is indistinguishable from having dismissed it by accident, and it is the one branch
+where nothing else on the screen changes to confirm the click landed. The toast now names the band
+rather than the Sources screen, because the band is what it is actually promising.
 
-`Start →` went last, and for a different reason: **the card is the control**, so the word was a
-second, smaller call to action inside the thing you already click, printed three times — which
-reads as three CTAs rather than as one question with three answers. No other `SelectableCard` in
-the app labels itself, so matching the picker vocabulary on `/sources/new` is worth more here than
-a per-card verb; the affordance is the hover border and lift, the focus outline, and
-`active:translate-y-px` acknowledging the press.
+**Ten files, and the shell still owns nothing but appearance.** `FirstRunOverlay.vue` is the
+surface (the wordmark, the pinned skip, the beat swap and focus); the beats are
+`FirstRunWelcome.vue`, `FirstRunCategory.vue`, `FirstRunPlatform.vue`, `FirstRunAuthorize.vue`,
+`FirstRunConnect.vue`, `FirstRunVerify.vue`, `FirstRunSetup.vue` and `FirstRunReady.vue`, with
+`FirstRunBeatHeader.vue` holding the eyebrow/headline/lede every one of them opens with — and the
+two `aria` ids the dialog's `aria-labelledby`/`aria-describedby` point at, so a new beat cannot
+forget them. `OnboardingFlowDiagram.vue` (plus `OnboardingFlowWire.vue`) is the picture on the
+welcome.
 
-**Skip is a quiet text control, and that is the hierarchy rather than the styling.** It used to be
-a bordered, shadowed, white button — the only element on the overlay that looked like a button at
-all, since the three answers are outlined cards. So the most button-shaped thing on a screen
-asking someone to choose a role was the one that declines to. It carries `py-2.5` rather than the
-`py-1` a text control looks right with: measured at 420px the button was 28px tall, under any
-touch minimum, and padding is invisible on a borderless control.
+**Every DECISION is still an emit**, and `MainLayout` owns all of them: which beat follows which
+(one `onAdvance`, so the order lives in one file), what a category means, when the source gets
+created, and what settles the record. What the overlay reads directly is `useFirstRunSetup` for
+what the later beats **display** — a dozen values that would otherwise be threaded
+`MainLayout` → overlay → beat as props, where a renamed field fails silently in the middle file.
 
-**One sentence about the stakes, not two in two places.** The subtitle said "It sets what you see
-first" and a rule below the cards said "Nothing is locked by this answer. Every screen stays in
-the sidebar whichever you pick." — two reassurances about the same answer, 400px apart, the first
-of them vague about what actually changes. They are merged into the subtitle, next to the question
-they qualify, and made specific: the role sets the **order** of the sidebar and what the dashboard
-leads with, and nothing is hidden. `aria-describedby` points at that line so the promise is read
-out with the question, and the three cards sit in a `role="group"` labelled by the heading — not a
-`radiogroup`, which would promise arrow-key roving and a separate submit that a commit-on-click
-picker does not have.
+**The skip is on every beat except `ready`.** It is on the **welcome**, where the prototype hides
+it, because ours covers a working Dashboard and the surface is `persistent` — under the
+prototype's rule the welcome held exactly one control and it pointed forwards, which was reported
+as the trap it is. It is **not** on `ready`, where the prototype also hides it, for the
+prototype's own reason: the source exists by then and the beat's own control already says "Go to
+dashboard".
 
-**Answering does not close the card — it swaps its contents for the path.** All three roles get
-the same second beat: the three setup steps as numbered nodes, one sentence in that role's own
-vocabulary, and one button onto the first step. That is the whole of the "guide them to their
-first source" hand-off, and there are four things about its shape worth not undoing.
+**EVERY BEAT IS WRAPPED IN A PLAIN `<div>` INSIDE THE `<transition>`, AND THAT IS LOAD-BEARING.**
+A `<Transition>` child has to be a single ELEMENT vnode for the leave to run, and an SFC whose
+template opens with a comment does not render one: in dev the compiler keeps comments, so the
+component's root is a fragment (comment + div), and unmounting a fragment root removes its nodes
+directly without ever running the element's leave hooks. Under `mode="out-in"` that is fatal rather
+than merely unanimated — `afterLeave` is what clears `isLeaving` and re-renders — so the surface
+rendered its empty placeholder and **nothing else**. It shipped that way: pressing
+`Start connecting my data →` gave a blank full-page surface carrying only the wordmark and Skip,
+which are outside the transition. It is **dev-only**, which is why `pnpm build` and
+`pnpm smoke:dist` are both blind to it: a production build strips comments and each beat compiles
+to the single root it appears to have. The wrapper is in `FirstRunOverlay` rather than fixed by
+moving the three comments inside the three roots, because every SFC in this repo opens its template
+with a comment — the next beat added, or anyone tidying one back to the house style, would
+reinstate a blank screen with no error and no warning. Comments **between** the `v-if` branches are
+safe and stay; `v-else`/`v-else-if` resolution removes comment siblings.
 
-It is **one card, two beats, not two dialogs.** The dark canvas is the app's single deliberate
-exception (see the dialog rules above), and a second dark dialog is a change worth arguing about
-rather than a precedent already set — so `PersonaQuestion.vue` swaps its own contents in place,
-keeping the canvas, the bloom and the wordmark continuous. `MainLayout` owns which beat is
-showing, because everything between them is the layout's: recording the answer, starting the
-setup read, deciding whether the path is worth showing at all.
+**The rule is not specific to these three beats.** Any `<Transition>` in this repo whose child is a
+**component** inherits it, because every SFC here opens its template with a comment. Give the
+transition an element of its own to hold. `SourceProvisionedOverlay` is safe for two reasons rather
+than one — its child is a plain `<div v-if>`, and it has no `out-in` mode, so a skipped leave would
+cost an animation rather than the whole render.
 
-It is **a beat, not a redirect.** Picking a role could push straight to `/sources/new`, and being
-thrown onto a form by a click you thought only recorded a preference reads as a misfire. The
-button is the consent; `I'll look around first` is the quiet way past, in the same weight as Skip
-on beat one and for the same reason.
+**Focus moves on the transition's `@enter`, not on a tick count**, and that is the same bug's other
+half. `mode="out-in"` holds the incoming beat back until the outgoing one has finished leaving —
+140ms and many ticks — so the two `nextTick`s the overlay used to await ran while `beatRef` was
+still null, the optional chain swallowed it, and focus sat on `<body>` inside a modal: exactly the
+failure the hand-rolled focus exists to prevent, failing silently. The watcher survives for the
+FIRST beat only, because the dialog is not `appear`, so opening it mounts the welcome with no enter
+transition and no hook to fire.
 
-**Taking the button hands over to the spotlight walkthrough**, so the guidance does not stop at
-the card: `/sources/new` dims itself and rings the intent picker, then the Create row, then the
-event check, and the walkthrough ends when the first real event arrives. That is `SpotlightTour`
-and `useGuidedTour` — see "UI primitives" for how a page joins in, and note that the tour is armed
-by the CTA's click rather than by the role being recorded, so skipping the question arms nothing.
+**The diagram is deliberately NOT a `FlowTopology`**, and that is not an oversight of the "one
+diagram implementation" rule under `src/components/flow/**`. That family exists so the Dashboard,
+the Pipes visual view and the route previews draw the same thing: real records, wires measured off
+real bounding boxes, a per-node status out of `flowStatus.js`. Every one of those inputs is absent
+here — this runs before the account has a single source, so there are no records to measure, no ids
+to link to, and a status would be a claim about nothing. What it shares it shares through the same
+tokens, the same `animate-sfere-travel` keyframe and the same `FlowNodeIcon`, which is where the
+duplication would actually have cost something.
 
-**The button follows the workspace, not an assumption about it.** `MainLayout` calls
-`useSetupProgress()` — lazily: the factory only makes refs, and `load()` runs when someone
-actually answers, once ever. Someone invited into an account that already has a source is not a
-new workspace, and `Connect your first source` would be the product's first sentence to them and
-wrong; the CTA is the first _undone_ step's, or `Take me to my dashboard` at three of three. Until
-the reads land the marks are absent rather than green — `stepsKnown` gates them, because a tick is
-a claim a record exists and only a successful read can make it.
+`FlowNodeIcon`'s `MARKS` map gained **identity entries** for the mark names themselves (`store`,
+`app`, `api`, `warehouse`, `analytics`, joining the `web` and `webhook` that already doubled as
+both), so a caller with no record to key off can ask for a glyph by name. The first-run screens are
+exactly that case: their touchpoints and numbered steps illustrate categories rather than rendering
+a source that exists.
 
-**The per-role difference is copy, and that is a constraint rather than a lack of ambition.** Each
-persona carries an `onboarding: { headline, lede, payoff }` in `personas.js` — data on the
-persona, never a conditional in the consumer, the same invariant `nav` and `home` are held to. It
-has **no default**, unlike those two, because the beat only ever opens for a role that was just
-chosen: skipping goes straight back to Home, so there is no reader a `DEFAULT_ONBOARDING` would
-speak for and engineer is authored in full rather than left `null`. The three chapter scripts in
-`todos/site-overhaul-plan.md` §6 route the marketer and analyst through `/audiences`, `/journeys`
-and `/reporting`, every one of which is dark in `features.js`; three roles pointed at the one path
-that works today beats three roles pointed at two dead ends.
+Four layout details on these screens are collision fixes rather than taste, and a change here has
+to keep all four:
 
-**Both answers are acknowledged.** Choosing toasts the role; skipping toasts `No role set` with
-the pointer to Settings. Skip used to make the overlay simply vanish, which is indistinguishable
-from having dismissed it by accident, and it is the one branch where nothing else on the screen
-changes to confirm the click landed.
+- **`grid gap-*` for every vertical rhythm, never `flex flex-col` and never `mt-*` on a `<p>`.**
+  Collisions #4 and #5. `sfere-flush` goes on the element whose **direct** children are the
+  paragraphs — putting it on the `<ol>` rather than the `<li>` does nothing, which is how the
+  numbered cards first shipped reading loose.
+- **A row that must not wrap needs `flex-nowrap!` OR `min-w-0 flex-1` on the child that gives
+  way** — `min-w-0` alone is not enough, and the warehouse band wrapped its icon onto its own line
+  until it got both.
+- **Container queries (`@min-[46rem]`, `@min-[38rem]`), never `sm:`/`lg:`**, and never `auto-fit`
+  tracks. Collision #6.
+- **`@max-[46rem]:hidden`, never `hidden @min-[46rem]:block`.** Collision #2: a bare `hidden` can
+  never be turned back on.
 
-Centring it takes **two** collision workarounds, both the important suffix. `SelectableCard` is
-`items-start … text-left` for every other picker in the app, and Quasar ships unlayered
-`.items-start` and `.text-left`, so the instance needs `items-center!` and `text-center!` — a bare
-`items-center` loses to the component's own class. The two `<p>` lines are then wrapped and spaced
-with `gap`, not `mt-*`: Quasar's `p { margin: 0 0 16px }` is the shorthand, so it zeroes
-`margin-top` on every paragraph in the app, and the wrapper's `items-center` trips `sfere.css`'s
-`[class~='items-center'] > p` rule to kill the trailing 16px that would otherwise sit under the
-last line of a card whose neighbours have none. The third workaround, `mt-auto!`, went with the
-`Start` row it pinned: with nothing to pin to the bottom the cards agree on height on their own.
+**`SfereLogo` is sized by an `h-*` class and never by its `height` prop**, app-wide: that prop is
+inert because Tailwind preflight ships `img, video { height: auto }` in `@layer base` and the
+component only sets a `height` attribute, which any author rule beats. It stays for the intrinsic
+ratio.
 
-Left-aligning them was tried on screen rather than argued: the documented reason for centring was
-that left alignment left the divider and the `Start` row "looking like the remains of something",
-and both are now gone. It still loses — two short lines hugging the left edge of a 223px card read
-as a settings list rather than as a moment of choice, and dropping the wrapper's `items-center`
-re-arms Quasar's 16px paragraph margin (collision #5) between the role and its sentence.
+**Focus has to be moved by hand when the beat swaps**, and it is a correctness fix rather than
+polish: the surface is `role="dialog" aria-modal="true"`, and Quasar focus-manages a `q-dialog` when
+it OPENS, not when its contents change — so the control someone just activated unmounts under their
+cursor and focus falls back to `<body>`. Two details: each beat names its own first control through
+a `focusFirst` expose (the welcome wants its CTA, the two question beats deliberately want **Back**,
+so an Enter held down from the previous beat cannot answer the next one), and every call passes
+`{ preventScroll: true }` — without it, focusing the welcome's CTA scrolled the surface past its own
+headline on arrival.
 
-### Two other first-run surfaces
+### Three other first-run surfaces
 
 **The setup tracker** (`useSetupProgress.js` + `components/shell/SetupProgressPanel.vue`) answers
 "source → destination → pipe, how far am I?" It is **derived, never stored**: three list reads,
@@ -959,12 +1179,19 @@ unlayered `[disabled]` rule makes a dead class everywhere in this repo.
 `SetupReminderStrip` still renders on Sources, Destinations and Pipes at zero of three: there it is
 the only thing saying "connect a source comes first, but you can set this up now".
 
+**The resume band** (`components/shell/SetupResumeBand.vue`) is the door back into a parked
+arrival, and it is documented in full under Onboarding above. The one thing to know here is why it
+is not a third setup tracker: `SetupProgressPanel` answers "how far is this workspace?" for
+everybody at 0 of 3 out of three live list reads, while this answers "you left the arrival
+part-way" for the one reader who did — so it is keyed on the onboarding record and is absent for
+everybody else. It sits **above** the panel, because it is the more specific of the two.
+
 **The post-registration interstitial** (`components/onboarding/AccountSetupOverlay.vue`) covers
 the gap between a created account and the dashboard, when the session settles, `/v1/me` is read
 and the acting account resolves. It runs for a fixed **2.5s** (`TOTAL_MS`), long enough that its
 four step labels can be read rather than flashed — it used to be a random 1.1–2s, which made the
 same sign-in feel different each time. Still a courtesy transition, not a fake loading screen, so
-the number is a deliberate ceiling and not somewhere to hide slow work. Like the persona question
+the number is a deliberate ceiling and not somewhere to hide slow work. Like the arrival overlay
 it is an overlay, not a route — a `/setting-up` route would need a guard exception and would be a
 second place the auth redirect has to agree with. It mounts only _after_ auth succeeds, so it can
 never stand between a bad password and its error message.
@@ -1024,11 +1251,257 @@ bare `<button>` inside a `<form>` submits by default, so an unmarked toggle woul
 two matches for `button[type=submit]` and fail sign-in for all 51 routes before a single screen
 rendered.
 
-**Settings → General** (`SettingsPersonaPanel.vue`) is the other surface, so changing the answer
-never means re-running a tour, and `Ask me again` clears it. Both surfaces render the same three
-cards and the same marks from `PersonaIcon.vue` — drawn there rather than reused from
-`src/assets/dashboard/`, because those are `<img>` with brand purple baked into a `stroke`
-attribute and cannot take the colour of the chip they sit in.
+**Settings → General used to carry a role picker** — the second surface for the persona
+question, so changing the answer never meant re-running a tour. It went with the role: with no
+sidebar ordering and no dashboard ordering behind it, the control was a question with no
+consequence. `SettingsPersonaPanel.vue` and `PersonaIcon.vue` are deleted; the workspace form and
+the Error alerts card that replaced it are both gated on a workspace loading, like every tab below.
+
+**`SettingsOnboardingPanel.vue` is the one thing on that tab that is not**, and that is why it is
+there rather than under Feature activation: the onboarding record is a per-account preference, so
+in the default real mode — where `settings` has no endpoint and both gated blocks render nothing —
+it is the tab's only content. It sits **last**, because restarting the welcome is an occasional
+errand rather than what the tab is about, and it confirms first through its **own**
+non-destructive `ConfirmDialog` rather than `SettingsPage`'s shared one, which is hardcoded
+`destructive` and nothing here is deleted. The confirm copy names **both** consequences, and the
+second is the load-bearing one: this leaves Settings and opens a full-page `persistent` surface
+whose welcome beat carries no skip control, so a reader expecting a preference toggle would land
+somewhere they cannot dismiss. There is deliberately **no success toast** — the overlay appearing
+on another route is the acknowledgement, unlike the pause branch, where nothing else on screen
+changes.
+
+## The Dashboard is one picture and four numbers
+
+Home is a **topology** — sources on the left, the Sfere mark in the middle, destinations on the
+right, a curve per pipe — then the needs-attention banner, then four counts. That is the whole
+screen.
+
+**It replaced a stack of six panels**, and the persona ordering was the smaller half of the reason.
+The larger half: a throughput chart, a three-column flow summary, Recent errors, Latest events, a
+profiles panel and a warehouse signpost each answer a narrower question, and none of them answers
+the one somebody opens a CDP dashboard to ask — _is my data getting from where it comes from to
+where it goes?_ Six panels answering around it read as a report rather than as an answer.
+
+**The retired blocks are not deleted.** `ThroughputPanel`, `ActivityPanel`, `ProfilesPanel`,
+`PipelineFlowPanel` and `WarehouseHandoffStrip` are still in `src/components/shell/` and still
+render correctly; they have no call site on Home any more. Monitoring and Live events are where a
+throughput chart and an error list belong next, and that is a move, not a rebuild.
+
+**Every one of the four counts is measured.** `DashboardTotals` carries sources, destinations,
+pipes/`pipes_enabled` and `events_received`; delivery success is a ratio of two of those. The
+fourth card **swaps** to a `tone="warn"` "Needs attention" count when there is something to act on,
+because a delivery percentage and an outstanding problem are not both worth the same slot.
+
+**`deliverySuccess` is a separate computed from `routingRate`, and both are right for their own
+caller.** `routingRate` is a 0..1 fraction that coerces a missing numerator to zero, which is
+correct for a chart — a line with a hole in it is worse than one reading zero, and the series
+beside it already shows there was no delivery data. A stat card cannot do that:
+`DashboardTotals.events_delivered` is explicitly nullable ("null when the analytics store is
+unavailable"), so the same coercion prints a confident `0.0%` on a healthy account whose ClickHouse
+read failed — "your delivery is completely broken", as a measured-sounding fact. `deliverySuccess`
+returns null there and the card prints `NOT_KNOWN`. Zero received also returns null: a success rate
+over no attempts is not a number.
+
+**`useDashboardHome().topology` exists so the page does not fetch the diagram twice.** In real mode
+this composable answers `nodes` out of the dashboard aggregate and in Demo mode out of the diagram
+fixture; a page-side `useDiagram()` would always read the diagram, so the picture and the stat cards
+beside it could disagree about the same account. Node `status` is derived from what is actually
+measured — `events_received` per source, `events_delivered` per destination — and a node whose
+count is absent reports `idle` ("nothing is moving"), never `healthy`.
+
+**At zero of three the setup diagram is still the screen** and the topology does not render: a
+topology of an empty workspace is two column headings and a blank. `SetupProgressPanel` is
+unchanged and still sits above every other state, including loading and error, because it reads
+three list endpoints of its own and can be useful precisely when the aggregate is not.
+
+**Neither empty column carries a button, and that is a rule rather than an oversight.** The
+topology renders only in the populated branch, reached on `setupLoaded && !firstRun` — which is
+the same condition `PageHeader`'s `#actions` are gated on, so a `Connect a source` inside the
+empty sources column would sit a few hundred pixels under an identical one in the top right. Every
+add affordance in this app is a header action; a second copy in the content is the duplicate row
+that was explicitly designed out. The empty column still names the next step in words. An
+`EmptyState` `#cta` on a list screen is a **different** case and stays: it renders only when the
+table has no rows at all, which is the one moment the header button is not the obvious thing on
+screen, and it is the convention on all 51 screens.
+
+**The page stacks with `grid gap-4`, not `flex flex-col gap-4`, and that is a bug fix rather than a
+preference.** Quasar's unlayered `.flex { display:flex; flex-wrap: wrap }` makes every flex
+container in this repo a wrapping one, and a wrapping column stretched the topology card to the
+height of the whole stack — roughly 700px of white inside a card whose content was 528px tall.
+`grid` has no Quasar counterpart, so `gap` and auto rows both apply. Collision #4, in a form the
+existing note did not cover: it is not only height-capped columns that break, it is any column
+whose child is a plain block. **Prefer `grid gap-*` for a vertical stack anywhere in this repo.**
+
+### `src/components/flow/**` — one diagram, five call sites
+
+There were already three hand-rolled flow pictures in the app (`SetupProgressPanel`'s node rail,
+`ProvisionedPipePanel`'s three-node chain, `PipeTopology`'s grouped cards) and this port would have
+added two more. It adds one component family instead:
+
+- **`FlowTopology.vue`** — the two columns and the hub, with the connectors drawn in SVG. Used by
+  the Dashboard and by the Pipes screen's Visual view.
+- **`FlowChain.vue`** — one pipe as a row: source → Sfere → destination. Used by pipe detail and
+  route previews. A separate component rather than a one-link `FlowTopology`, because the topology
+  solves geometry it does not have: a chain is three items in a row at one height, where the
+  connector is a rule with a travelling dot.
+- **`FlowNode.vue`**, **`FlowHub.vue`**, **`FlowWire.vue`**, **`FlowNodeIcon.vue`**, and
+  **`flowStatus.js`** (the `healthy | degraded | failing | idle` vocabulary, which is the backend's
+  own `Status5`, mapped to a `StatusBadge` tone and a `flowing` flag).
+
+Five things about it are load-bearing:
+
+- **The wires are measured, not laid out.** Each node registers its element and the curves are
+  computed from real bounding boxes on mount, on resize and on data change. Fixed offsets per row
+  index break the moment a name wraps to two lines — which is a copy edit, not a code change.
+- **Position is not CSS-transitioned.** A transition on `d` on top of per-frame re-measurement is
+  the wobbling-line bug every diagram library eventually files. The only motion is one particle per
+  connector.
+- **Only a `healthy` connector animates.** A degraded pipe is delivering some events and a failing
+  one is delivering none, so motion on either is a claim the data does not support.
+  `prefers-reduced-motion` stops it dead — and `sfere-travel` animates `left`, so the reduced-motion
+  block _hides_ the dot rather than parking it mid-wire, which would read as a stalled delivery.
+- **The breakpoint is a container query (`@min-[52rem]`), never `lg:`.** The sidebar collapses
+  without changing the viewport, so one 1024px window has two content widths. Note that the
+  `@container` element and the element reading the query must be **two different nodes** — a
+  container query is answered by a container's descendants, never by the container itself.
+- **`isEnabled: false` beats whatever `status` says.** A paused pipe reports `idle`, which is true
+  and also indistinguishable from "switched on and receiving nothing" — the one state somebody
+  needs to act on. Naming the pause is what separates the two.
+
+### What the ported screens do and do not claim
+
+Four screens were rebuilt against the prototype in the same pass. Each dropped
+something the prototype printed, and the reason is the same every time: **the
+backend does not measure it, and a confident number is worse than a gap.**
+
+**Pipes.** List gets the intro band, three stat cards (Total / Active /
+Destinations in use), a **Visual | List** toggle — Visual is the default and is
+`FlowTopology` over `useDiagram()` — and function chips on each row.
+`PipeFunctionChips.vue` names them from **one account-level read**:
+`FunctionDefinition.attached_pipeline_ids` is a real field, so `useFunctions()` is
+inverted into pipe → names rather than firing `…/pipelines/{id}/functions` per
+row, and it loads outside the page's `loading`/`error` so a failed library read
+cannot take the table down.
+
+- **There is no Edit pipe screen, and there should not be one.** `PipelineUpdate`
+  accepts `is_enabled` and nothing else — no rename, no re-route — so the detail
+  screen's Settings tab is the entirety of editing a pipe and says so. The
+  prototype's destination-parameter JSON, environment-variable rows and
+  two-column drag-to-reorder function picker are **not built**: none of the three
+  exists in `PipelineCreate` or `PipelineUpdate`.
+- **"Default destination" became "Destinations in use".** Every `web`/`zid`
+  source create provisions its own `"{name} — ClickHouse"`, so no row is _the_
+  default and a `.find()` would label an arbitrary one.
+- **"Needs attention" renders only when a diagram edge actually carries a
+  `Status5` string**, so Demo mode gets no "0 need attention".
+- **The Errors tab has no content and says so**, pointing at Health. There is no
+  `/errors` path in `openapi/fanfinity-api.json` — checked, not assumed.
+- **The Activity tab is honest but second-best**: it lists events arriving at the
+  pipe's _source_, because there is no per-pipeline event endpoint, and it names
+  the source so two pipes off one source are not mistaken for one another.
+- `PipeFlow.vue`, `PipeTopology.vue` and `PipeParams.vue` are now unreferenced.
+  Left in place rather than deleted, the same way the ten `*TrashPage.vue` files
+  were.
+
+**Destinations.** The included-warehouse hero is an `IntroBand tone="brand"` with
+the ClickHouse card in its `#aside`; the detail screen gains a hero band, four
+stat cards and **Overview / Pipes / Configuration / Tables / SQL console**.
+
+- **The hero is present tense and carries no number**, deliberately: the
+  prototype's "Your Sfere Data Warehouse is **already set up** for you" is false
+  twice over. It is singular, and the backend provisions one ClickHouse
+  destination _per source_ — three web sources give three rows. And it is past
+  tense, so on a brand-new account it sits above an empty table claiming a
+  warehouse that does not exist yet. "Sfere sets up your data warehouse for you"
+  is true at zero destinations and at five.
+- **The Pipes column is deleted from the list, not rewired.** `pipeCount` is a
+  fixture invention; wiring `usePipes()` for a count column would pay for
+  `joinEnds()`'s two `size=100` reads and discard the join. The real inbound-pipe
+  count lives on the detail screen, where the join is used. This resolves the
+  Sources/Destinations inconsistency this file used to record as open.
+- **"Delivered (1h)" is gone** from the list and the pipes table —
+  `deliveryCountLastHour` is on neither `Destination` nor `Pipeline`, and it went
+  through `formatCount`, which prints a confident `0` for `undefined`.
+- **The fourth stat card is "Provisioning", not the prototype's "Availability /
+  Included".** "Included" is a billing claim and nothing on the record measures
+  billing; `clickhouse_database` measures who _built_ the warehouse, which is the
+  honest half of the same sentence. The cost promise stays in the band's
+  editorial copy, where it is a statement about the product rather than a reading
+  of a row.
+- **The Template column became Type.** `DestinationTemplateBadge`'s fallback
+  asserts "Custom — hand-configured, not created from a template", which is false
+  for every ClickHouse destination the backend provisions itself.
+- **Delete copy no longer promises a trash.** `DELETE …/destinations/{id}` is a
+  hard `204`.
+
+**Functions.** One test surface, `FunctionWorkbench.vue`, on both create and
+detail; `FunctionTestPanel.vue` is deleted rather than left unimported. Almost
+everything here is genuinely backed — `POST …/functions/{id}/test` returns
+`{ok, result, dropped, error, logs, duration_ms}`, and `code` on the request is
+what lets the workbench run **unsaved** edits.
+
+- **"Get live event" is not built.** No endpoint hands the editor a recent real
+  event. There is `Sample event` and nothing else.
+- **The env-vars tab is kept, with copy and no input.** `FunctionTestRequest` is
+  `{event, code}`, so a box there would silently discard what was typed into it.
+- **The create page cannot run a test**, because `POST …/functions/{id}/test`
+  needs an id. The controls are _removed_ rather than dimmed —
+  `disabled:opacity-*` is a dead class in this repo — with one sentence saying
+  where the run happens instead.
+- **Delete confirms name the attached pipes only when every id resolved.** A
+  partial list would send someone to detach two of three and hit the same 409.
+- The list's actions column is `RowActionsMenu` now; it was one of the few
+  screens that never got the kebab.
+
+**Live events.** Rebuilt on the kit — it was the last screen with a raw `<h1>`, a
+raw toolbar, a raw `<table>` and a raw drawer. `apiMissing`, `error` and both
+empty states now come from `DataTable`, so `data-smoke` comes from the kit rather
+than from hand-rolled markup.
+
+- **The three stat cards count the rows actually loaded, and say so** ("Counted
+  from the rows below, not an hourly total"). The prototype's "1,284 events
+  received · 99.4% processed" describes a window nobody computes; a rate over one
+  page of results stays a lie however it is labelled, so there is no percentage.
+  The block is hidden entirely until there are rows, so nothing prints `0` beside
+  "No API yet".
+- **The tab and the Status select are one piece of state**, both bound to the
+  endpoint's own `level` parameter. A "Success" option could only ever be a local
+  narrowing of one page sitting beside a server-side filter and looking like its
+  peer.
+- **The drawer keeps `q-dialog`**, claimed under the same _modal_ carve-out
+  `ConfirmDialog` and `SecretRevealDialog` sit under — focus trap, Escape, scroll
+  lock, backdrop, teleport. It lives outside `src/components/ui/`, so the kit
+  itself gains no dependency. Its corner radius is deliberately unset: the
+  unlayered `.q-dialog__inner > div` rule pins 4px and `position="right"` zeroes
+  the right corners anyway, so a radius utility there would be a dead class.
+- **The HTTP-headers block is gone.** `useLiveEvents.js` says the backend
+  `LiveEvent` carries no headers, so it rendered `None` on every real event.
+
+**One kit gap is open and deliberately not closed here.** `DataTable`'s
+`apiMissing` branch prints "This screen doesn't have a live backend endpoint yet",
+which is wrong for `/live-events`: `…/events/live` ships, and the real cause is
+almost always "no source with a provisioned stream". The branch sits above the
+`empty` slot, so a page cannot override it. **`DataTable` needs an
+`api-missing-description` prop or an `api-missing` slot** — a change to a file
+every list screen renders, which is worth its own pass rather than a drive-by.
+
+### Teaching bands are dismissible, and that is what lets them exist
+
+`IntroBand.vue` is the explanatory band at the top of Sources, Destinations, Pipes and Functions:
+eyebrow, title, a sentence about what the noun is, optional ticked `points`, and an `#aside` slot
+for a figure. `useDismissed.js` backs it — **one** `localStorage` key (`sfere_dismissed`) holding a
+flat map, rather than one key per band, so there is one thing to reset and one place to look.
+
+**It is not a `NoticeBanner` and the two must not be merged.** A `NoticeBanner` is "this worked, but
+you should know" — a state the app is reporting about your account right now, which goes away when
+the state does, and which must NOT be dismissible. This is editorial: it says the same thing on
+every visit and is true of every account, so it must be dismissible or it taxes the hundredth visit
+to pay for the first.
+
+`storageKey` is what makes it dismissible; **omitting it is a real choice** — a band with no key
+renders with no close control and stays. `useDismissed` is deliberately not uid-scoped, unlike
+`useOnboarding`: that record answers a question about a person, this one records that a browser has
+already been shown a paragraph.
 
 ## Empty values have four words, and none of them is `0`
 
@@ -1070,21 +1543,21 @@ page) is the deliberate exception: it is long-form editorial prose, not product 
 
 ## UI primitives
 
-`src/components/ui/` is **the** component kit — 46 components, all built on the Sfere token
+`src/components/ui/` is **the** component kit — 47 components, all built on the Sfere token
 layer. **Use them; do not re-implement their markup and do not copy their class strings into a
 page.** Read `docs/ui-conventions.md` before writing any new screen.
 
 Two naming schemes live in the folder, for a reason worth knowing:
 
-- **19 screen primitives carry plain, unprefixed names** — `PageHeader`,
+- **20 screen primitives carry plain, unprefixed names** — `PageHeader`,
   `DataTable`, `EmptyState`, `ErrorState`, `LoadingState`, `StatusBadge`, `CardPanel`,
   `NoticeBanner`, `StatCard`, `TabNav`, `FormField`, `FormSection`, `ConfirmDialog`,
   `DefinitionList`, `SelectableCard`, `ToolbarSearch`, `StickyActionBar`,
-  `SecretRevealDialog` and `RowActionsMenu`. Sixteen of them
+  `SecretRevealDialog`, `RowActionsMenu` and `IntroBand`. Sixteen of them
   keep the names the screens already imported, which is what let the Sfere implementations
-  replace the originals across 104 files without rewriting 571 imports; the other three —
-  `StickyActionBar`, `SecretRevealDialog` and `RowActionsMenu` — are newer than that swap and
-  simply describe what they do. A few of the older names are now worse than what
+  replace the originals across 104 files without rewriting 571 imports; the other four —
+  `StickyActionBar`, `SecretRevealDialog`, `RowActionsMenu` and `IntroBand` — are newer than that
+  swap and simply describe what they do. A few of the older names are now worse than what
   they hold (`CardPanel` is a card, `NoticeBanner` is an alert); that was the price of the swap.
 - **27 keep their `Sfere*` names** — `SfereButton`, `SfereInput`, `SfereTable`, `SfereSection`,
   `SfereFeatureCard`, `SfereConfetti` and friends. These have no pre-Sfere counterpart, and the
@@ -1166,7 +1639,7 @@ box-shadow whose own box is the hole, rings the control someone should use next,
 callout beside it. A page joins in two ways and no others: it calls
 `useGuidedTour().show(stepId)` when its own state changes, and it carries a `data-tour="…"`
 attribute on the thing to point at. `src/config/tours.js` holds the steps as pure data, the same
-idiom as `features.js` and `personas.js`.
+idiom as `features.js` and `sourceIntents.js`.
 
 **`show()` from the page, never inference from the route, and that is what keeps a coachmark from
 outliving what it points at.** `SourceCreatePage` watches its own three-step flow and names the
@@ -1288,7 +1761,7 @@ sidebar collapses without changing the viewport, so one 1024px window has two co
 ## The Sfere design system
 
 `src/css/sfere.css` holds the token layer, measured off the live marketing site
-(<https://sfere.io>) rather than eyeballed, and `src/components/ui/` holds the 46-component kit
+(<https://sfere.io>) rather than eyeballed, and `src/components/ui/` holds the 47-component kit
 built on it. Browse the whole thing at **`#/design-system`** (hash mode — not `/design-system`);
 no sign-in required.
 
@@ -1378,8 +1851,10 @@ commit message rather than a drive-by edit mid-task:
 `src/router/**` (the manifest generates all 51 routes) · `src/layouts/MainLayout.vue` (the nav
 is the IA, and the feature gate lives in its `q-page-container`) · `src/components/ui/**` (the
 kit) · `src/config/features.js` + `src/composables/useFeatures.js` (which modules are switched
-on at all) · `src/config/personas.js` + `src/lib/navOrder.js` (the order of the sidebar and of
-Home's blocks, per persona) · `src/composables/{useMockResource,useEntitlements,useDiagram,useTemplates}.js` (the
+on at all) · `src/config/sourceIntents.js` + `src/config/firstRun.js` (the one category
+taxonomy, shared by the arrival overlay and `/sources/new`) · `src/components/flow/**` (the one
+flow-diagram implementation, rendered by the Dashboard, Pipes and every route
+preview) · `src/composables/{useMockResource,useEntitlements,useDiagram,useTemplates}.js` (the
 `{ data, loading, error, apiMissing, load() }` contract every page is written against —
 `apiMissing` is real-mode-only, see Data architecture below) · `quasar.config.js`
 and `index.html` (build config and the CSP).
@@ -1522,13 +1997,12 @@ exists to prevent.`sendMutation()`and`fetchCollection()`resolve`path` the same w
    drop the control; do not let `formatCount` decide.
 
    **`pipeCount` is the second field to lose a column to this**, after "Upgrade available"
-   below. The Sources list carried a sortable **Pipes** column reading it, and the backend's
-   `Source` has no such field, so on a real account the cell was blank on every row — a header
-   promising a count nobody took. It is gone from `SourcesListPage`. What is not gone is the
-   same column on **`DestinationsListPage`**, off the same invented field, plus the `Pipes`
-   `StatCard` on both detail screens; as with the upgrade badge, the app is consistent per
-   screen and not across itself until somebody decides whether the count is worth a real
-   endpoint.
+   below. Both list screens carried a sortable **Pipes** column reading it, and neither
+   `Source` nor `Destination` has such a field, so on a real account the cell was blank on every
+   row — a header promising a count nobody took. It is gone from **both**
+   `SourcesListPage` and `DestinationsListPage`. The real inbound-pipe count survives only on
+   the destination DETAIL screen, where `usePipes()`'s join is already being paid for, and it
+   prints `NOT_KNOWN` rather than `0` whenever that read has not succeeded (`pipesCounted`).
 
    Grep the merged `openapi/fanfinity-api.json` before adding an `api` path — `/v1/dashboard`
    and `/v1/errors` were drafted flat and shipped account-scoped and merged, which is exactly
@@ -1541,9 +2015,11 @@ exists to prevent.`sendMutation()`and`fetchCollection()`resolve`path` the same w
    control whose count was permanently `0`. Both are gone from `SourcesListPage`, along with its
    `useTemplates` import. The rest of the surface is **not** gone, and that is a product call
    somebody has to make rather than a leftover to tidy: `hasUpgrade`/`upgradeLabel` are still read
-   by `DestinationDetailPage.vue`, by `DestinationTemplateBadge.vue` — which the **Destinations
-   list** still renders in its Template column — and the same fixture-only field still backs them
-   there. So the phrase is inconsistent across the app today, not retired. `useTemplates.js` still
+   by `DestinationDetailPage.vue` and by `DestinationTemplateBadge.vue`, and the same fixture-only
+   field still backs them there. The badge's **only remaining caller is
+   `DestinationsTrashPage.vue`** — the Destinations list dropped its Template column for Type, so
+   the badge's "Custom — hand-configured, not created from a template" fallback no longer lies on
+   every backend-provisioned ClickHouse row of a live screen. So the phrase is inconsistent across the app today, not retired. `useTemplates.js` still
    exports all three helpers and was not touched.
 
    **`useFunctions.js`'s `hasTemplateUpgrade()` is a different feature that shares the word**, and
