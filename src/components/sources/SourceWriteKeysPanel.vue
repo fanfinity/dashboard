@@ -115,11 +115,13 @@
         >To rotate a key: create a new one, paste it into your snippet and
         redeploy, then revoke the old one. Revoking takes effect immediately
         with no grace period, so leaving both live until the deploy has landed
-        is what avoids dropping events. A key's last-used time reads “{{
-          NOT_KNOWN
-        }}” for anything minted here: the backend has the field and never fills
-        it in, and guessing “Never” about a key that may be serving production
-        traffic is the one wrong thing this list could say.</p
+        is what avoids dropping events. A new browser key goes into the Setup
+        instructions tab's snippets as soon as it is created, for this browser
+        tab — its value is shown once and is never written to disk, so copy it
+        before you reload. A key's last-used time reads “{{ NOT_KNOWN }}” for
+        anything minted here: the backend has the field and never fills it in,
+        and guessing “Never” about a key that may be serving production traffic
+        is the one wrong thing this list could say.</p
       >
     </template>
 
@@ -253,6 +255,7 @@ const createOpen = ref(false)
 const revokeOpen = ref(false)
 const revokeTarget = ref(null)
 const newKeyName = ref('')
+const newKeyKind = ref('public')
 
 const draft = reactive({ kind: 'public', name: '' })
 
@@ -296,9 +299,14 @@ const revokeMessage = computed(() => {
   } The key cannot be restored; create a replacement instead.`
 })
 
-const revealSubtitle = computed(
-  () =>
-    `“${newKeyName.value || 'New key'}” is live. Paste it into whatever is sending events, then revoke the key it replaces.`
+// A browser key is the one the install snippets carry, and creating it has
+// already rewritten them — saying so is what closes the loop on a rotation that
+// used to change nothing the reader could see. A server-to-server key appears in
+// no snippet, so it gets the plain sentence.
+const revealSubtitle = computed(() =>
+  newKeyKind.value === 'public'
+    ? `“${newKeyName.value || 'New key'}” is live, and the Setup instructions tab is already showing it. Paste it wherever this source's key is deployed, then revoke the key it replaces.`
+    : `“${newKeyName.value || 'New key'}” is live. Paste it into whatever is sending events, then revoke the key it replaces.`
 )
 
 function submitCreate() {
@@ -306,6 +314,7 @@ function submitCreate() {
   // state lives on the page above rather than here.
   const name = draft.name.trim()
   newKeyName.value = name || 'New key'
+  newKeyKind.value = draft.kind
   emit('create', { kind: draft.kind, name })
 }
 

@@ -1,7 +1,7 @@
 <template>
   <q-page class="p-6">
-    <!-- One content cap for the header, the band, the tabs and the table, so
-         all four share a left AND a right edge. Same measure and the same
+    <!-- One content cap for the header, the band and the rows, so all three
+         share a left AND a right edge. Same measure and the same
          reasoning as DashboardHomePage.vue: 1400px is deliberately wider than
          `--container-sfere-page` (80rem), which is the marketing-site measure
          and left ~40% of a wide monitor empty here, and it sits on the page
@@ -12,10 +12,9 @@
     <div class="mx-auto w-full max-w-[1400px]">
       <PageHeader
         title="Destinations"
-        subtitle="Where routed events are delivered: warehouses, ad platforms and webhooks."
+        subtitle="Where your data is stored or delivered after it leaves a source."
       >
         <template #actions>
-          <ToolbarSearch v-model="query" placeholder="Search destinations..." />
           <SfereIconButton
             icon="plus"
             label="New destination"
@@ -66,102 +65,73 @@
         </template>
       </IntroBand>
 
-      <TabNav v-model="tab" :tabs="tabs" />
+      <!-- `grid gap-1`, never `mt-*` on the `<p>`: every paragraph in this
+           repo carries Quasar's unlayered `margin: 0 0 16px`, so a layered
+           `mt-1` computes to zero and the pair renders on a flat 16px rhythm
+           (collision #5). `sfere-flush` zeroes the bottom margin the same rule
+           would otherwise leave under the last line. -->
+      <div class="sfere-flush mb-3 grid gap-1">
+        <h2 class="font-sfere-display text-sfere-h4! font-bold text-sfere-fg"
+          >Your destinations</h2
+        >
+        <p class="text-sfere-xs text-sfere-fg-muted"
+          >Destinations currently available to your pipes.</p
+        >
+      </div>
 
-      <DataTable
-        :columns="columns"
-        :rows="filtered"
-        :loading="loading"
-        :error="error"
-        :api-missing="apiMissing"
-        row-key="id"
-        clickable-rows
-        @retry="load"
-        @row-click="open"
+      <!-- The four states DataTable used to own. Hand-composed here because the
+           rows are cards rather than a table, but out of the SAME kit
+           components — `ErrorState` and `EmptyState` carry the only two
+           `data-smoke` attributes in the repo, and scripts/smoke.mjs has
+           nothing to assert on if a screen hand-rolls its own. -->
+      <LoadingState v-if="loading" variant="table" :rows="4" />
+
+      <ErrorState v-else-if="error" :message="error" @retry="load" />
+
+      <EmptyState
+        v-else-if="apiMissing"
+        title="No API yet"
+        description="This screen doesn't have a live backend endpoint yet. Switch back to demo data in Settings, or check back once it ships."
+      />
+
+      <!-- There is deliberately no "add a destination" row under the list: the
+           header already carries that action, and a second one at the bottom
+           competes with the data. An EmptyState `#cta` is the exception, and
+           only because it renders when there is no data to compete with. -->
+      <EmptyState
+        v-else-if="!destinations.length"
+        title="No destinations yet"
+        description="Connect a website or store source and Sfere provisions one for you, or add a warehouse of your own."
       >
-        <template #cell-name="{ row }">
-          <div class="sfere-flush grid gap-0.5">
-            <p class="font-medium text-sfere-fg">{{ row.name }}</p>
-            <p class="text-sfere-xs text-sfere-fg-muted">{{
-              row.description || `/${row.slug}`
-            }}</p>
-          </div>
-        </template>
-
-        <!-- `grid grid-flow-col`, not `flex`: Quasar ships an unlayered
-             `.flex { flex-wrap: wrap }` and has no `.grid` of its own, so the
-             mark and its label cannot be split across two lines by a long
-             type name. CLAUDE.md collision #4. -->
-        <template #cell-destinationType="{ value }">
-          <span class="grid grid-flow-col items-center justify-start gap-2">
-            <SfereIconChip size="sm">
-              <FlowNodeIcon kind="destination" :subtype="value" :size="18" />
-            </SfereIconChip>
-            <span class="text-sfere-sm text-sfere-fg">{{
-              typeLabel(value) || NOT_KNOWN
-            }}</span>
-          </span>
-        </template>
-
-        <template #cell-isEnabled="{ value }">
-          <StatusBadge
-            :tone="value ? 'success' : 'neutral'"
-            :label="value ? 'Enabled' : 'Paused'"
-          />
-        </template>
-
-        <template #cell-createdAt="{ value }">{{ formatDate(value) }}</template>
-
-        <!-- A one-item menu, on purpose. This screen has only ever offered
-             the pause toggle (there is no row-level delete here), but Sources,
-             Destinations and Pipes are read as one set, and a bare text button
-             on two of the three makes the same column mean something different
-             per screen. Do not "simplify" it back to a button without changing
-             all three. No wrapper element: the column is `align: 'right'`, so
-             SfereTable's `text-right` already pushes RowActionsMenu's
-             inline-grid root to the cell's right edge. -->
-        <template #cell-actions="{ row }">
-          <RowActionsMenu
-            :label="`Actions for ${row.name}`"
-            :actions="rowActions(row)"
-            @select="onRowAction(row, $event)"
-          />
-        </template>
-
-        <!-- Two different "no rows" situations: nothing exists yet (offer the
-             primary action) versus a filter that matched nothing (offer a way
-             back). Both go through EmptyState, so the smoke run still reads
-             data-smoke="empty" rather than mistaking either for a failure.
-
-             There is deliberately no "add a destination" row under the table:
-             the header already carries that action, and a second one at the
-             bottom of a list is a control that competes with the data. -->
-        <template #empty>
-          <EmptyState
-            v-if="destinations.length"
-            title="No destinations match your filters"
-            :description="`None of the ${destinations.length} destinations match this search or tab.`"
+        <template #cta>
+          <SfereButton
+            variant="primary"
+            size="sm"
+            :to="{ name: 'destinations-new' }"
+            >New destination</SfereButton
           >
-            <template #cta>
-              <SfereButton variant="secondary" size="sm" @click="clearFilters"
-                >Clear filters</SfereButton
-              >
-            </template>
-          </EmptyState>
-
-          <EmptyState
-            v-else
-            title="No destinations yet"
-            description="Connect a website or store source and Sfere provisions one for you, or add a warehouse of your own."
-          >
-            <template #cta>
-              <SfereButton size="sm" :to="{ name: 'destinations-new' }"
-                >New destination</SfereButton
-              >
-            </template>
-          </EmptyState>
         </template>
-      </DataTable>
+      </EmptyState>
+
+      <!-- `@container` here and the queries on the ROW, because a container
+           query is answered by a container's descendants and never by the
+           container itself. Viewport breakpoints would be the wrong question:
+           the sidebar collapses without changing the viewport, so one 1024px
+           window has two content widths (collision #6).
+
+           `grid gap-2.5` and not `flex flex-col`: Quasar's unlayered `.flex` is
+           a WRAPPING flex, so a column of cards would wrap into a second column
+           rather than growing (collision #4). -->
+      <div v-else class="@container grid gap-2.5">
+        <DestinationInstanceRow
+          v-for="destination in destinations"
+          :key="destination.id"
+          :destination="destination"
+          :activity="activityByDestinationId.get(destination.id) ?? null"
+          :actions="rowActions(destination)"
+          @action="onRowAction(destination, $event)"
+        />
+      </div>
 
       <ConfirmDialog
         v-model="confirmToggle"
@@ -175,28 +145,22 @@
 </template>
 
 <script setup>
-import { NOT_KNOWN } from '@/lib/emptyValue'
 import { computed, onMounted, ref } from 'vue'
-import { useRouter } from 'vue-router'
 import { useQuasar } from 'quasar'
 import PageHeader from '@/components/ui/PageHeader.vue'
 import SetupReminderStrip from '@/components/shell/SetupReminderStrip.vue'
 import { useSetupProgress } from '@/composables/useSetupProgress'
 import IntroBand from '@/components/ui/IntroBand.vue'
-import TabNav from '@/components/ui/TabNav.vue'
 import ConfirmDialog from '@/components/ui/ConfirmDialog.vue'
-import RowActionsMenu from '@/components/ui/RowActionsMenu.vue'
-import DataTable from '@/components/ui/DataTable.vue'
+import LoadingState from '@/components/ui/LoadingState.vue'
+import ErrorState from '@/components/ui/ErrorState.vue'
 import EmptyState from '@/components/ui/EmptyState.vue'
-import StatusBadge from '@/components/ui/StatusBadge.vue'
-import ToolbarSearch from '@/components/ui/ToolbarSearch.vue'
 import SfereButton from '@/components/ui/SfereButton.vue'
 import SfereIconButton from '@/components/ui/SfereIconButton.vue'
-import SfereIconChip from '@/components/ui/SfereIconChip.vue'
-import FlowNodeIcon from '@/components/flow/FlowNodeIcon.vue'
 import DestinationMarkCard from '@/components/destinations/DestinationMarkCard.vue'
-import { destinationTypeLabel as typeLabel } from '@/components/destinations/destinationTypeLabels'
-import { formatDate, useDestinations } from '@/composables/useDestinations'
+import DestinationInstanceRow from '@/components/destinations/DestinationInstanceRow.vue'
+import { useDestinations } from '@/composables/useDestinations'
+import { useFlowActivity } from '@/composables/useFlowActivity'
 import { notifyMutationResult } from '@/composables/useMutationFeedback'
 
 // The reminder strip needs the same three counts the Dashboard tracker
@@ -210,13 +174,17 @@ const {
   load: loadSetupProgress
 } = useSetupProgress()
 
-const router = useRouter()
 const $q = useQuasar()
 const { destinations, loading, error, apiMissing, load, setEnabled } =
   useDestinations()
 
-const query = ref('')
-const tab = ref('all')
+// Pipes and delivery counts for the two cells the `Destination` record itself
+// cannot fill. Its failures are deliberately NOT wired into `loading` or
+// `error` above: this is the secondary layer on a screen whose subject is the
+// destination list, so a missing aggregate degrades a couple of cells to
+// "Not known" rather than taking the list down.
+const { byDestinationId: activityByDestinationId, load: loadActivity } =
+  useFlowActivity()
 
 const INTRO_BODY =
   'Sfere provides the warehouse your customer activity lands in, powered by ClickHouse and covered by your Sfere account, so there is nothing to buy or provision before you start collecting. Connecting a website or store source creates one automatically and it appears in the list below.'
@@ -228,78 +196,31 @@ const INTRO_POINTS = [
   'Ready for your pipes'
 ]
 
-// EVERY COLUMN HERE IS A FIELD OF THE BACKEND'S `Destination`, which is what
-// took this table from six columns to four.
+// FOUR THINGS CAME OFF THIS SCREEN, and they are the same four the Sources list
+// lost in the same pass, for the same reason: the prototype has none of them,
+// and each was chrome standing between the reader and the list.
 //
-//   Pipes            `pipeCount` is a `destinations.json` invention. The same
-//                    column was already deleted from the Sources list for
-//                    exactly this reason; keeping it here made the app
-//                    inconsistent with itself as well as wrong. The real count
-//                    is on the detail screen, derived from usePipes().
-//   Delivered (1h)   `deliveryCountLastHour`, same story, and worse: it went
-//                    through formatCount, which prints a confident `0` for
-//                    `undefined` — an assertion that nothing was delivered.
-//   Template         `templateId` is fixture-only too, and the badge's fallback
-//                    reads "Custom / hand-configured, not created from a
-//                    template", which is false for every ClickHouse destination
-//                    the backend provisions itself. `destination_type` is the
-//                    real field and answers the same question better.
-const columns = [
-  { key: 'name', label: 'Destination', sortable: true },
-  { key: 'destinationType', label: 'Type', sortable: true },
-  { key: 'isEnabled', label: 'Status', sortable: true },
-  { key: 'createdAt', label: 'Created', sortable: true, align: 'right' },
-  // 72px: SfereTable pads a cell `px-4` either side of a 36px kebab. The
-  // 120px this held was measured for a text button, and keeping it would spend
-  // the width this page just reclaimed on an empty gutter.
-  { key: 'actions', label: '', align: 'right', width: '72px' }
-]
-
-const tabs = computed(() => [
-  { key: 'all', label: 'All', count: destinations.value.length },
-  {
-    key: 'enabled',
-    label: 'Enabled',
-    count: destinations.value.filter(d => d.isEnabled).length
-  },
-  {
-    key: 'paused',
-    label: 'Paused',
-    count: destinations.value.filter(d => !d.isEnabled).length
-  }
-])
-
-const TAB_PREDICATES = {
-  enabled: d => d.isEnabled,
-  paused: d => !d.isEnabled
-}
-
-// Every field the user can read off the row, so searching "clickhouse" matches
-// the type as well as the name.
-const SEARCH_FIELDS = ['name', 'slug', 'description', 'destinationType']
-
-const filtered = computed(() => {
-  const q = query.value.trim().toLowerCase()
-  const predicate = TAB_PREDICATES[tab.value]
-  return destinations.value.filter(d => {
-    if (predicate && !predicate(d)) return false
-    if (!q) return true
-    return SEARCH_FIELDS.some(f =>
-      String(d[f] ?? '')
-        .toLowerCase()
-        .includes(q)
-    )
-  })
-})
-
-function clearFilters() {
-  query.value = ''
-  tab.value = 'all'
-}
-
-function open(row) {
-  router.push({ name: 'destinations-detail', params: { id: row.id } })
-}
+// - The All / Enabled / Paused filter tabs. A destination's state is on its own
+//   card now, in a chip; a control above the list to hide two of three states is
+//   for a list long enough to need one.
+// - The search box. Same reason, and the same thing to revisit first if an
+//   account ever carries enough destinations to scroll.
+// - The four sortable columns. What survived of them is on the card: Type is the
+//   line under the name, Status is the chip, and Created is dropped outright —
+//   the prototype's third cell is who provisioned the warehouse, which answers a
+//   question somebody actually has, and a creation date on a record you did not
+//   create yourself answers none.
+// - `DataTable` itself. The prototype's cell is a two-line pair, so a table
+//   would need eight columns to say what four pairs say.
+//
+// THE PIPE COUNT IS BACK, and it is a different field rather than a reprieve for
+// the one this table dropped. `destinations.json`'s `pipeCount` is still a
+// fixture invention with nothing behind it on the backend's `Destination`;
+// `DashboardDestinationStat.pipe_count` is real, and `useFlowActivity()` reads
+// it out of the same aggregate call the Sources list uses. `deliveryCountLastHour`
+// stays gone for its own reason: `events_delivered` is explicitly null when the
+// analytics store is unavailable, so it can only appear where null and zero are
+// told apart — which is the row's amber state, not a printed number.
 
 // Built per row rather than hoisted to a module constant: the label depends on
 // `row.isEnabled`. It reads "deliveries", not "destination", because that is
@@ -366,8 +287,9 @@ async function toggle() {
 
 onMounted(() => {
   load()
-  // Deliberately not awaited alongside `load()`: the strip is secondary, and a
-  // slow setup read must not hold the table's first paint.
+  // Neither of these is awaited alongside `load()`: both are secondary, and a
+  // slow read on either must not hold the list's first paint.
   loadSetupProgress()
+  loadActivity()
 })
 </script>

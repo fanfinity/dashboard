@@ -493,8 +493,9 @@ const navGroups = [
   },
   // Sources leads COLLECT, so the caption lives here. It is one click, not a
   // drawer: its three former children were not siblings — Event streams IS
-  // Sources, and Connectors is the catalog you browse to add one (now a tab on
-  // that page).
+  // Sources, and Connectors is the catalog you browse to ADD one, so it is a
+  // sub-screen of this row (`/connectors`, `parent: sources`) rather than a
+  // sibling in the rail.
   {
     key: 'sources',
     caption: 'COLLECT',
@@ -645,11 +646,13 @@ const navGroups = [
 // every other switch with it.  Logout has no key, so it is never gated.
 //
 // Authorizations and Secrets used to sit here as two permanent rows above
-// Settings. They are tabs on /settings now, for the reason the connector catalog
-// became a tab on /sources: each is workspace configuration you set up once and
-// then leave alone, so a row that is always in the rail costs more attention than
-// it returns. /secrets and /authorizations redirect into the tabs — see
-// src/router/routes.js.
+// Settings. They are tabs on /settings now: each is workspace configuration you
+// set up once and then leave alone, so a row that is always in the rail costs
+// more attention than it returns. /secrets and /authorizations redirect into the
+// tabs — see src/router/routes.js. (This used to cite the connector catalog's
+// move onto a /sources tab as the same reasoning; that half reversed — the
+// catalog is a screen again — but the rail argument here is untouched, because
+// /connectors is a sub-screen with no row of its own.)
 //
 // TRASH SITS DIRECTLY ABOVE SETTINGS for the same reason those two left the main
 // rail: it is somewhere you go occasionally to recover something, not somewhere
@@ -726,7 +729,8 @@ const {
   complete: completeFirstRun,
   pause: pauseFirstRun,
   resumeStep,
-  clearResume
+  clearResume,
+  markArrivalClosed
 } = useOnboarding()
 
 // The backend half of the arrival: it creates the source the answers describe,
@@ -941,6 +945,17 @@ async function resolveResumeStep(step) {
   return 'category'
 }
 
+// THE ONE FUNNEL EVERY EXIT GOES THROUGH — finished, parked, handed off to the
+// connector catalog, or navigated away from — which is why the "the surface
+// closed" signal is bumped here rather than in each of the four callers.
+//
+// The Dashboard is what needs it. It is mounted the whole time the arrival is
+// open (the surface is a dialog over a fully-rendered Home, never a route), so
+// its setup reads all ran before the first beat did — and by the last beat the
+// account owns a source, and on a `web` or `zid` template a destination and a
+// pipeline as well. Without this the reader who had just watched the arrival
+// build all three landed on "0 / 3 done", describing an account that stopped
+// existing several beats earlier.
 function finishArrival() {
   arrivalFinished.value = true
   arrivalStep.value = 'welcome'
@@ -949,6 +964,7 @@ function finishArrival() {
   arrivalPlatformKey.value = ''
   arrivalStoreId.value = ''
   clearResume()
+  markArrivalClosed()
 }
 
 // Back walks the beats in reverse rather than always returning to the welcome:
@@ -1039,7 +1055,7 @@ function onChooseIntent(key) {
     completeFirstRun()
     finishArrival()
     firstRunSetup.reset()
-    router.push({ name: 'sources', query: { tab: 'connectors' } })
+    router.push({ name: 'connectors' })
     return
   }
 

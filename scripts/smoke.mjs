@@ -214,10 +214,14 @@ try {
   } else if (/\b401\b/.test(noise)) {
     diagnosis =
       '       The backend rejected these credentials (401). SMOKE_EMAIL must be a\n' +
-      '       real account on VITE_API_BASE — the backend authenticates at the\n' +
-      '       Identity Platform *project* level, so an account that only ever\n' +
-      '       existed in the old tenant will not resolve. Register it with\n' +
-      '       POST /v1/register against that same host.'
+      '       real account on VITE_API_BASE, and identity is now ONE IDENTITY\n' +
+      '       PLATFORM TENANT PER ACCOUNT: login resolves the account whose tenant\n' +
+      '       holds the email, so a user that only ever existed at the project\n' +
+      '       level is in no tenant and no password will work. Register a fresh\n' +
+      '       one with POST /v1/register against that same host — and if THAT\n' +
+      '       answers 502 "failed to create tenant", the staging pod is missing its\n' +
+      '       identity-provisioner Workload Identity binding and this is a backend\n' +
+      '       outage, not a credentials problem. See CLAUDE.md under Authentication.'
   }
   console.error(
     'smoke: sign-in did not reach the app shell.\n' +

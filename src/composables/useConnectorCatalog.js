@@ -4,7 +4,7 @@ import { useMockResource, fetchCollection } from '@/composables/useMockResource'
 
 /**
  * The browsable catalog of connector *types* — what could be connected — behind
- * `/sources?tab=connectors`.
+ * `/connectors`, a sub-screen of Sources.
  *
  * NOT the sources at `/sources` (that is `useSources`, the streams already
  * configured for this account) and not `useSourceTemplates()` either, which

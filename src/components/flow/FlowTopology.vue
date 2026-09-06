@@ -1,12 +1,36 @@
 <template>
   <div ref="root" class="@container relative">
     <svg
-      v-if="wires.length"
-      class="pointer-events-none absolute inset-0 h-full w-full max-@min-[52rem]:hidden"
+      v-if="wires.length || guides.length"
+      class="pointer-events-none absolute inset-0 h-full w-full @max-[52rem]:hidden"
       :viewBox="`0 0 ${box.w} ${box.h}`"
       preserveAspectRatio="none"
       aria-hidden="true"
     >
+      <!-- THE PLACEHOLDER RAILS ARE MEASURED WIRES, not a rule at the hub's
+           height, and that is the whole of the alignment fix. They used to be
+           one absolutely-positioned CSS line drawn through the middle of the
+           hub's own cell, which put them at the centre of the WHOLE box —
+           column headings included — while the cards they were supposed to
+           join sat lower and at two different heights. Three separate
+           mid-lines, none of them touching anything. Drawn from the real
+           bounding boxes they land on the cards by construction, whatever the
+           copy does to either one's height.
+
+           Dashed, hairline and particle-free, because nothing is connected:
+           the rail says "a connection would run here", which is a different
+           claim from the solid `wires` below it. -->
+      <path
+        v-for="guide in guides"
+        :key="guide.key"
+        :d="guide.d"
+        fill="none"
+        class="stroke-sfere-line"
+        stroke-width="1.5"
+        stroke-dasharray="4 5"
+        stroke-linecap="round"
+      />
+
       <path
         v-for="wire in wires"
         :key="wire.key"
@@ -37,9 +61,36 @@
     </svg>
 
     <div :class="gridClasses">
-      <!-- SOURCES -->
-      <section class="min-w-0">
-        <header class="mb-3 flex flex-nowrap items-end justify-between gap-3">
+      <!-- SOURCES.
+
+           `@min-[52rem]:contents!` DISSOLVES THE SECTION INTO THE GRID, which is
+           what puts the two headings in one row and the two card stacks plus the
+           hub in another. It has to be a real second row rather than a centred
+           circle floating over one: the hub is 128px and a column holding a
+           single 79px card is not, so with everything in one row the circle can
+           only be centred by taking it out of flow — which is exactly what the
+           `translateY` this replaced did, and why the halo hung out of the
+           bottom of the card that was supposed to contain it. In a row of its
+           own it contributes its own height, so the card grows to fit it.
+
+           Narrow layout keeps the section as an ordinary block, so the stack is
+           still heading → cards → hub → heading → cards in DOM order.
+
+           THE IMPORTANT SUFFIX IS LOAD-BEARING, and it is cascade collision #2
+           in a form that list did not cover. Quasar ships the HTML5 normalize
+           line — `article, aside, details, figcaption, figure, footer, header,
+           main, menu, nav, section, summary { display: block }` — UNLAYERED, and
+           unlayered beats layered whatever the specificity, so a layered
+           `contents` on a `<section>` computes to `block` and the two sections
+           stay grid items. It fails silently and it fails as a LAYOUT: the
+           headings and cards land in whatever columns auto-placement gives them,
+           which is a diagram with its destinations column squeezed into the
+           hub's 10.5rem track. Any display utility on one of those eleven tags
+           owes the same suffix. -->
+      <section class="@min-[52rem]:contents!">
+        <header
+          class="mb-3 flex min-w-0 flex-nowrap items-end justify-between gap-3 @min-[52rem]:col-start-1 @min-[52rem]:row-start-1 @min-[52rem]:mb-0"
+        >
           <div class="min-w-0">
             <h3 :class="columnTitleClasses">{{ sourcesTitle }}</h3>
             <p :class="columnSubClasses">{{ sourcesSubtitle }}</p>
@@ -52,7 +103,14 @@
           />
         </header>
 
-        <div class="grid gap-3">
+        <!-- `self-center` on all three row-two cells is the whole alignment
+             rule: the hub and both card stacks share one row and are centred in
+             it, so their midpoints are equal by construction rather than by a
+             measurement that has to be kept true. -->
+        <div
+          ref="sourcesBody"
+          class="grid min-w-0 gap-3 @min-[52rem]:col-start-1 @min-[52rem]:row-start-2 @min-[52rem]:self-center"
+        >
           <div
             v-for="node in sources"
             :key="node.id"
@@ -66,26 +124,50 @@
               :status="node.status"
               :is-enabled="node.isEnabled !== false"
               :status-label="node.statusLabel"
+              :status-tone="node.statusTone"
               :attention="node.attention"
               :to="node.to"
               :on-dark="onDark"
             />
           </div>
 
-          <slot v-if="!sources.length" name="sources-empty" />
+          <!-- The placeholder is an anchor like any node, so the rail into the
+               hub leaves its edge rather than a guessed height. -->
+          <div v-if="!sources.length" :ref="el => setAnchor('s', EMPTY, el)">
+            <slot name="sources-empty" />
+          </div>
         </div>
       </section>
 
-      <!-- HUB -->
+      <!-- HUB.
+
+           `py-4` IS THE HALO'S OWN SIZE, and it is here so the glow is inside
+           the layout rather than hanging off it. FlowHub draws the halo as
+           absolutely-positioned siblings at `-inset-4`, i.e. 16px past the
+           circle, which contributes no height — so on a diagram where the hub is
+           the tallest thing in its row (any short one: a single card each side)
+           the row ended flush with the circle and the glow spent the card's
+           whole bottom padding, leaving about 5px to the border where the
+           headings above had 20. Reserving it here means the card's own uniform
+           padding reads as uniform. Keep the two numbers in step. -->
       <div
-        class="grid place-items-center max-@min-[52rem]:py-2 @min-[52rem]:self-center"
+        class="relative grid place-items-center py-4 @min-[52rem]:col-start-2 @min-[52rem]:row-start-2 @min-[52rem]:self-center"
       >
-        <FlowHub :label="hubLabel" :on-dark="onDark" />
+        <div ref="hubEl">
+          <FlowHub
+            size="lg"
+            variant="lockup"
+            :label="hubLabel"
+            :on-dark="onDark"
+          />
+        </div>
       </div>
 
-      <!-- DESTINATIONS -->
-      <section class="min-w-0">
-        <header class="mb-3 flex flex-nowrap items-end justify-between gap-3">
+      <!-- DESTINATIONS. See the sources section for why this is `contents`. -->
+      <section class="@min-[52rem]:contents!">
+        <header
+          class="mb-3 flex min-w-0 flex-nowrap items-end justify-between gap-3 @min-[52rem]:col-start-3 @min-[52rem]:row-start-1 @min-[52rem]:mb-0"
+        >
           <div class="min-w-0">
             <h3 :class="columnTitleClasses">{{ destinationsTitle }}</h3>
             <p :class="columnSubClasses">{{ destinationsSubtitle }}</p>
@@ -98,7 +180,10 @@
           />
         </header>
 
-        <div class="grid gap-3">
+        <div
+          ref="destinationsBody"
+          class="grid min-w-0 gap-3 @min-[52rem]:col-start-3 @min-[52rem]:row-start-2 @min-[52rem]:self-center"
+        >
           <div
             v-for="node in destinations"
             :key="node.id"
@@ -113,12 +198,18 @@
               :status="node.status"
               :is-enabled="node.isEnabled !== false"
               :status-label="node.statusLabel"
+              :status-tone="node.statusTone"
               :to="node.to"
               :on-dark="onDark"
             />
           </div>
 
-          <slot v-if="!destinations.length" name="destinations-empty" />
+          <div
+            v-if="!destinations.length"
+            :ref="el => setAnchor('d', EMPTY, el)"
+          >
+            <slot name="destinations-empty" />
+          </div>
         </div>
       </section>
     </div>
@@ -154,6 +245,15 @@ import { flowStatus } from './flowStatus'
 // changing the viewport, so one 1024px window has two content widths — a
 // viewport breakpoint answers the wrong question and would stack the columns on
 // a wide window with the rail collapsed. CLAUDE.md collision #6.
+//
+// AND THE NARROW HALF IS `@max-[52rem]:`, NEVER `max-@min-[52rem]:`. The second
+// spelling looks like the composition of `max-*` and `@min-*` and Tailwind
+// silently emits NOTHING for it — no `@container not (width>=52rem)` block is
+// generated, so every utility written that way is a dead class. This file,
+// FlowChain and FlowWire all carried it, which is why a stacked chain's
+// connector stayed horizontal and this diagram drew its wires diagonally across
+// the stack instead of hiding them. Checked against the built CSS, not assumed:
+// the `@max-[46rem]:` form the onboarding screens use does emit its block.
 const props = defineProps({
   // [{ id, name, hint, subtype, status, isEnabled, statusLabel, attention, to }]
   sources: { type: Array, default: () => [] },
@@ -174,9 +274,16 @@ const props = defineProps({
   onDark: { type: Boolean, default: false }
 })
 
+// The anchor id a column's empty placeholder registers under. A string rather
+// than a symbol because it goes into the same `side:id` key space as the nodes.
+const EMPTY = '__empty'
+
 const root = ref(null)
+const hubEl = ref(null)
+const sourcesBody = ref(null)
+const destinationsBody = ref(null)
 const box = ref({ w: 0, h: 0 })
-const hub = ref({ x: 0, y: 0 })
+const hub = ref({ x: 0, y: 0, r: 64 })
 const anchors = ref({})
 
 // Vue calls a function ref with `null` on unmount, which is how a node that has
@@ -193,10 +300,25 @@ function measure() {
   if (!el) return
   const base = el.getBoundingClientRect()
   box.value = { w: base.width, h: base.height }
-  // The hub is centred in the middle column, which is the container's own
-  // centre — measuring the circle would mean another ref for a value the grid
-  // already guarantees.
-  hub.value = { x: base.width / 2, y: base.height / 2 }
+
+  // THE HUB IS MEASURED, ALL THREE NUMBERS. Its centre is wherever the grid put
+  // the circle and its radius is whatever FlowHub rendered, so changing either
+  // the column widths or the hub's size cannot leave the wires drawn under the
+  // mark — a hardcoded radius did exactly that.
+  //
+  // An earlier pass DERIVED the y instead, because the circle's own transform
+  // was computed from the same number and measuring it back would have been a
+  // measure → move → measure loop. There is no transform now: the hub shares a
+  // grid row with the two card stacks and all three are `self-center`, so the
+  // browser does the alignment and this only reads the result.
+  const h = hubEl.value?.getBoundingClientRect()
+  hub.value = h
+    ? {
+        x: h.left - base.left + h.width / 2,
+        y: h.top - base.top + h.height / 2,
+        r: h.width / 2
+      }
+    : { x: base.width / 2, y: base.height / 2, r: 64 }
 
   const next = {}
   for (const [key, node] of elements) {
@@ -220,8 +342,6 @@ function curve(from, to) {
   return `M ${from.x} ${from.y} C ${midX} ${from.y}, ${midX} ${to.y}, ${to.x} ${to.y}`
 }
 
-const HUB_R = 48
-
 const wires = computed(() => {
   if (!box.value.w) return []
   const out = []
@@ -236,10 +356,10 @@ const wires = computed(() => {
     const meta = flowStatus(link.status, link.isEnabled)
     const left = curve(
       { x: from.x + 8, y: from.y },
-      { x: hub.value.x - HUB_R, y: hub.value.y }
+      { x: hub.value.x - hub.value.r, y: hub.value.y }
     )
     const right = curve(
-      { x: hub.value.x + HUB_R, y: hub.value.y },
+      { x: hub.value.x + hub.value.r, y: hub.value.y },
       { x: to.x - 8, y: to.y }
     )
     out.push({
@@ -265,6 +385,51 @@ const WIRE_TONES = {
 }
 
 const flowingWires = computed(() => wires.value.filter(w => w.flowing))
+
+/**
+ * The dashed rails, for a diagram with a side that has nothing on it.
+ *
+ * ONLY WHEN A COLUMN IS EMPTY, which is narrower than "there are no pipes" and
+ * deliberately so. A workspace with three sources, two destinations and no pipe
+ * between them would need six rails to say the same thing, and six dashed lines
+ * crossing a card is not a clearer picture than none — the needs-attention
+ * banner is where that account is told what is wrong. An empty column has
+ * exactly one placeholder, so this is one rail per node on the other side, or a
+ * single rail when both sides are empty.
+ */
+const guides = computed(() => {
+  if (!box.value.w) return []
+  const sourcesEmpty = !props.sources.length
+  const destinationsEmpty = !props.destinations.length
+  if (!sourcesEmpty && !destinationsEmpty) return []
+
+  const froms = sourcesEmpty
+    ? [`s:${EMPTY}`]
+    : props.sources.map(n => `s:${n.id}`)
+  const tos = destinationsEmpty
+    ? [`d:${EMPTY}`]
+    : props.destinations.map(n => `d:${n.id}`)
+
+  const out = []
+  for (const fromKey of froms) {
+    const from = anchors.value[fromKey]
+    if (!from) continue
+    for (const toKey of tos) {
+      const to = anchors.value[toKey]
+      if (!to) continue
+      const left = curve(
+        { x: from.x + 8, y: from.y },
+        { x: hub.value.x - hub.value.r, y: hub.value.y }
+      )
+      const right = curve(
+        { x: hub.value.x + hub.value.r, y: hub.value.y },
+        { x: to.x - 8, y: to.y }
+      )
+      out.push({ key: `${fromKey}->${toKey}`, d: `${left} ${right}` })
+    }
+  }
+  return out
+})
 
 // Read once and then watched: someone who turns motion off mid-session gets a
 // still diagram without a reload, and the query is the same one the scoped
@@ -313,10 +478,16 @@ watch(
 // down and the two headings no longer shared a baseline, which reads as a
 // misalignment rather than as a deliberate centring. The hub is the only thing
 // that should sit in the middle, so it asks for that itself with `self-center`.
+// Two rows on the wide layout: headings, then cards and hub. `gap-y-4` is the
+// spacing between the stacked blocks on a narrow one; `gap-y-3` is the 12px the
+// headers used to carry as `mb-3`, which they drop in the same breakpoint so the
+// two do not add up.
 const gridClasses = computed(() => [
   'relative grid gap-x-6 gap-y-4',
-  '@min-[52rem]:grid-cols-[minmax(0,1fr)_9rem_minmax(0,1fr)]',
-  '@min-[52rem]:items-start'
+  '@min-[52rem]:grid-cols-[minmax(0,1fr)_10.5rem_minmax(0,1fr)]',
+  '@min-[52rem]:grid-rows-[auto_auto]',
+  '@min-[52rem]:items-start',
+  '@min-[52rem]:gap-y-3'
 ])
 
 const columnTitleClasses = computed(() => [

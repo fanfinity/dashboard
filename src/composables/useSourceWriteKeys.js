@@ -20,6 +20,13 @@ import { useDataSource } from '@/composables/useDataSource'
  * The panel's copy says that sequence rather than the impossible "update your
  * snippet first, then rotate" it used to.
  *
+ * The half that made rotation LOOK broken is below, under "the key the snippet
+ * has to show": nothing on the backend moves `Source.write_key` onto the new
+ * key, and `plaintext` on the create response is the bare secret rather than the
+ * `keyId:secret` pair ingest wants. So a rotation used to change nothing the
+ * reader could see, and the value they copied would have been rejected if they
+ * had pasted it.
+ *
  * ## Three sharp edges, all of them load-bearing
  *
  * 1. **A source with no Jitsu site answers `400`, not `404`.** Both the list and
@@ -86,6 +93,113 @@ export function adaptWriteKey(raw) {
     lastUsedAt: k.lastUsedAt ?? null,
     expiresAt: k.expiresAt ?? null
   }
+}
+
+// -------------------------------------------- the key the snippet has to show
+//
+// ROTATION DOES NOT MOVE `Source.write_key`, AND NOTHING ON THE BACKEND WILL.
+// `POST …/write-keys` mints a key on the Jitsu stream and records its
+// kind/name/hint locally; `DELETE …/write-keys/{id}` takes it back off. Neither
+// touches `sources.write_key`, which is written once, at create, to the key
+// issued with the site (`_mappers.py`: `write_key=source.write_key or
+// source.jitsu_site_id`). So the field every install snippet in this app reads
+// is a snapshot of the FIRST key, and re-reading the source after a rotation
+// returns exactly what it returned before — which is why rotating a browser key
+// left the "Setup instructions" snippet showing the old key, and, once the old
+// one was revoked, showing a dead one.
+//
+// The dashboard therefore keeps the key it just minted, for this session, and
+// prefers it over the record's. Session-only and deliberately NOT persisted: the
+// value exists exactly once, in the create response, so writing it to
+// `localStorage` would park a live credential on disk to save a click — the same
+// call `useOnboarding` already makes when it records `sourceId` and refuses the
+// key beside it. A reload falls back to the record, and the banner below says
+// which key is on screen.
+const mintedKeys = ref({})
+
+/**
+ * A usable write key is the `keyId:secret` pair. `POST …/write-keys` answers
+ * with the BARE SECRET (`plaintext=key.secret` in the backend's create route,
+ * with a comment saying the dashboard is the one that composes the pair), while
+ * `Source.write_key` is stored already composed (`f"{id}:{secret}"`). Composing
+ * it here is what makes a freshly minted key interchangeable with the record's
+ * — and what stops a rotated key being pasted into a snippet in a form ingest
+ * rejects.
+ *
+ * @param {string} keyId
+ * @param {string} secret
+ * @returns {string} `keyId:secret`, or '' when there is no secret
+ */
+export function composeWriteKey(keyId, secret) {
+  if (!secret) return ''
+  if (!keyId || secret.startsWith(`${keyId}:`)) return secret
+  return `${keyId}:${secret}`
+}
+
+/**
+ * The id half of a `keyId:secret` pair — what a `WriteKey.id` from the list
+ * endpoint can be matched against. Empty for a key with no id half, which is
+ * what `Source.write_key` falls back to when the source has no key at all (the
+ * mapper substitutes the bare `jitsu_site_id`), so callers can tell "this is a
+ * real pair" from "this is the fallback".
+ *
+ * @param {string} writeKey
+ * @returns {string}
+ */
+export function writeKeyIdOf(writeKey) {
+  const value = String(writeKey || '')
+  if (!value.includes(':')) return ''
+  return value.slice(0, value.indexOf(':'))
+}
+
+/**
+ * Record a key minted in this session so the install snippets can show it.
+ *
+ * @param {string} sourceId
+ * @param {{ id: string, value: string }} key
+ */
+export function rememberMintedWriteKey(sourceId, key) {
+  if (!sourceId || !key?.value) return
+  mintedKeys.value = { ...mintedKeys.value, [sourceId]: { ...key } }
+}
+
+/**
+ * Drop a remembered key — called when that same key is revoked, so revoking the
+ * replacement puts the snippet back on the record's key rather than leaving it
+ * showing something that no longer works.
+ *
+ * @param {string} sourceId
+ * @param {string} keyId
+ */
+export function forgetMintedWriteKey(sourceId, keyId) {
+  const held = mintedKeys.value[sourceId]
+  if (!held || (keyId && held.id !== keyId)) return
+  const next = { ...mintedKeys.value }
+  delete next[sourceId]
+  mintedKeys.value = next
+}
+
+/**
+ * The browser key minted for this source in this session, or null.
+ *
+ * @param {string} sourceId
+ * @returns {{ id: string, value: string } | null}
+ */
+export function mintedWriteKeyFor(sourceId) {
+  return mintedKeys.value[sourceId] ?? null
+}
+
+/**
+ * The key an install snippet should carry: whatever was minted this session,
+ * falling back to the one on the source record. The single reader for every
+ * snippet surface, so the Setup instructions tab, the Web SDK panel and the
+ * create flow's step 3 cannot disagree about which key is live.
+ *
+ * @param {object} source a source row carrying `id` and `writeKey`
+ * @returns {string}
+ */
+export function snippetWriteKey(source) {
+  return mintedWriteKeyFor(source?.id)?.value || source?.writeKey || ''
 }
 
 export function useSourceWriteKeys() {
@@ -175,8 +289,23 @@ export function useSourceWriteKeys() {
       })
       const created = camelizeKeys(data) ?? {}
       const key = adaptWriteKey(created.key ?? {})
+      // `plaintext` is the bare secret; `writeKey` is what a snippet takes. Both
+      // are returned because they are two different claims — the panel reveals
+      // the pair, and a caller that only wants to know a secret came back can
+      // still ask that question.
+      const writeKey = composeWriteKey(key.id, created.plaintext ?? '')
       keys.value = [...keys.value, key]
-      return { ok: true, data: { key, plaintext: created.plaintext ?? '' } }
+      // A browser key is the one an install snippet carries, so remembering it
+      // here is what makes the rotation visible on the Setup instructions tab.
+      // A server-to-server key is never in a snippet and is deliberately not
+      // held: it must not outlive the dialog that shows it.
+      if (key.kind === 'public') {
+        rememberMintedWriteKey(sourceId, { id: key.id, value: writeKey })
+      }
+      return {
+        ok: true,
+        data: { key, plaintext: created.plaintext ?? '', writeKey }
+      }
     } catch (e) {
       if (e instanceof ApiError && e.status === 400) {
         return { ok: false, noSite: true }
@@ -203,6 +332,10 @@ export function useSourceWriteKeys() {
     try {
       await customFetch(`${path}/${writeKeyId}`, { method: 'DELETE' })
       keys.value = keys.value.filter(k => k.id !== writeKeyId)
+      // Revoking the key we are showing in the snippets puts them back on the
+      // source record's key. Leaving it held would keep a dead key on screen,
+      // which is the failure this whole session store exists to end.
+      forgetMintedWriteKey(sourceId, writeKeyId)
       return { ok: true }
     } catch (e) {
       if (e instanceof ApiError && e.status !== 404) {

@@ -120,7 +120,7 @@ export const SOURCE_INTENTS = [
     ],
     outcome: 'Go to Connectors',
     templates: [],
-    to: { name: 'sources', query: { tab: 'connectors' } }
+    to: { name: 'connectors' }
   }
 ]
 

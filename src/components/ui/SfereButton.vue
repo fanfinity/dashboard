@@ -69,14 +69,44 @@ const linkAttrs = computed(() => {
   return {}
 })
 
+// The house control height, and the numbers are measured rather than reasoned
+// from the padding. `/design-system`'s own Density specimen states the contract
+// — "one control height across the kit, so an input, a select and a medium
+// button line up on a row without per-form adjustment" — and SfereInput,
+// SfereSelect and SfereIconButton all keep it at `h-10`/`size-10`. A medium
+// SfereButton did not: padding-sized against `text-sfere-sm`'s 21px line height
+// it rendered 43px, so every header row pairing a worded action with an
+// icon-only one or a search input drew the labelled one 3px taller than its
+// neighbours. So each size pins the same ramp SfereIconButton uses — 36 / 40 /
+// 44 — and the padding underneath it is what lands on that number with one line
+// of text.
+//
+// `min-h-*`, not `h-*`, deliberately: a fixed height on an inline-flex pill
+// clips a label that wraps, and a long label in a `block` button on a narrow
+// column is the case where that happens. A minimum lines the control up on the
+// row and still lets it grow rather than crop.
+//
+// EVERY TYPE UTILITY HERE CARRIES THE IMPORTANT SUFFIX, and that is the whole
+// reason one SfereButton could look nothing like the one beside it. Quasar
+// ships unlayered `button, input, optgroup, select, textarea { font: inherit }`
+// — the `font` SHORTHAND, which resets font-size, line-height AND font-weight —
+// and unlayered CSS beats layered utilities, so `text-sfere-sm`, `leading-none`
+// and `font-semibold` were all dead classes on any instance that rendered as a
+// <button>. They kept working on the ones that render as `router-link`, because
+// an <a> is not in that selector list. Measured on `/design-system`: the same
+// class string drew 600 weight / 13px / 13px line-height as an <a> and
+// 400 weight / 14px / 21px as a <button>. That is what put a light-weight,
+// 2px-taller `Refresh` next to a semibold `Connect a source` in the Dashboard
+// header — same component, same props, two controls. The suffix is what a
+// layered utility needs to outrank an unlayered rule (CLAUDE.md collision #9).
 const SIZES = {
-  sm: 'gap-1.5 px-4 py-2 text-[0.8125rem]',
-  md: 'gap-2 px-5 py-2.5 text-sfere-sm',
-  lg: 'gap-2 px-6 py-3 text-sfere-body'
+  sm: 'gap-1.5 min-h-9 px-4 py-2 text-[0.8125rem]!',
+  md: 'gap-2 min-h-10 px-5 py-2 text-sfere-sm!',
+  lg: 'gap-2 min-h-11 px-6 py-2.5 text-sfere-body!'
 }
 
 const classes = computed(() => [
-  'inline-flex items-center justify-center rounded-full font-semibold leading-none',
+  'inline-flex items-center justify-center rounded-full font-semibold! leading-none!',
   'transition duration-200 ease-sfere-ui select-none',
   'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2',
   'disabled:cursor-not-allowed disabled:opacity-50',

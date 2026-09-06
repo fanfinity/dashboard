@@ -17,10 +17,15 @@ const INGEST_HOST = 'https://ingest.sfere.io'
 
 /**
  * @param {object} source a source row: `{ name, slug, writeKey }`
+ * @param {string} [writeKey] the key to inline, overriding `source.writeKey`.
+ *   The record's key is a snapshot of the FIRST key the source was issued and
+ *   the backend never moves it onto a rotated one, so a caller that knows a
+ *   newer key — or knows the record's has been revoked, and passes '' — has the
+ *   truer answer. See `snippetWriteKey()` in `useSourceWriteKeys.js`.
  * @returns {object[]} methods, in the order the tabs should show them
  */
-export function browserMethods(source) {
-  const key = source?.writeKey || 'your-write-key'
+export function browserMethods(source, writeKey) {
+  const key = writeKey || source?.writeKey || 'your-write-key'
   const slug = source?.slug || 'your-source'
 
   return [
@@ -201,9 +206,12 @@ const ALL_METHOD_KEYS = ['html', 'react', 'npm', 'http', 'native']
  * returns one, so the template is write-only as far as a re-read is concerned.
  * Closing that gap is a one-field backend change, not something to reconstruct
  * here — see the `event_stream` note above.
+ *
+ * @param {object} source
+ * @param {string} [writeKey] overrides `source.writeKey` — see `browserMethods`.
  */
-export function methodsForSource(source) {
-  const all = browserMethods(source)
+export function methodsForSource(source, writeKey) {
+  const all = browserMethods(source, writeKey)
   const keys =
     METHODS_BY_TEMPLATE[source?.templateId] ??
     METHODS_BY_SOURCE_TYPE[source?.sourceType] ??

@@ -342,6 +342,11 @@ import DestinationQueryPanel from '@/components/destinations/DestinationQueryPan
 import DestinationPipesTable from '@/components/destinations/DestinationPipesTable.vue'
 import DestinationMarkCard from '@/components/destinations/DestinationMarkCard.vue'
 import { destinationTypeLabel as typeLabel } from '@/components/destinations/destinationTypeLabels'
+import {
+  destinationProvisioning,
+  PROVISIONING_LABELS,
+  PROVISIONING_HINTS
+} from '@/components/destinations/destinationProvisioning'
 import { useDestinationBrowser } from '@/composables/useDestinationBrowser'
 import DefinitionList from '@/components/ui/DefinitionList.vue'
 import StatCard from '@/components/ui/StatCard.vue'
@@ -520,38 +525,15 @@ watch(
 
 // ------------------------------------------------------------- who built this
 
-// `clickhouse_database` is the backend's own answer to "did we provision this?"
-// — its schema description is "auto-provisioned ClickHouse database name, null
-// while provisioning is pending". So a name present means Sfere built it; a
-// ClickHouse destination without one is mid-provisioning; anything else is a
-// warehouse or endpoint somebody connected themselves.
-//
-// Type alone is NOT the discriminator, deliberately: `DestinationConfig.database`
-// says the backend provisions a fresh database only "when this is omitted", so a
-// customer's own ClickHouse cluster is also `destination_type: clickhouse`.
-const provisioning = computed(() => {
-  const d = destination.value
-  if (!d) return 'unknown'
-  if (d.clickhouseDatabase) return 'sfere'
-  if (d.destinationType === 'clickhouse') return 'pending'
-  return 'self'
-})
+// Derived in `destinationProvisioning.js` rather than here, because the
+// Destinations LIST row prints the same answer in its third cell — and a record
+// described one way on the list and another on its own screen is the drift that
+// module exists to prevent. The reasoning (why `clickhouse_database` and not
+// `destination_type`, and why the word "Included" is not among the labels) is in
+// its header comment.
+const provisioning = computed(() => destinationProvisioning(destination.value))
 
 const managed = computed(() => provisioning.value === 'sfere')
-
-const PROVISIONING_LABELS = {
-  sfere: 'Sfere managed',
-  pending: 'In progress',
-  self: 'Your own',
-  unknown: NOT_KNOWN
-}
-
-const PROVISIONING_HINTS = {
-  sfere: 'Sfere created the ClickHouse database',
-  pending: 'Sfere is still creating the database',
-  self: 'Not provisioned by Sfere',
-  unknown: ''
-}
 
 const provisioningLabel = computed(
   () => PROVISIONING_LABELS[provisioning.value]

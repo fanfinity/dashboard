@@ -1,12 +1,13 @@
 <template>
-  <!-- The deliberately thin counterpart to SetupProgressPanel. One line, on the
-       three screens the steps point at, saying where you are and where the real
-       tracker lives.
+  <!-- One line, on the three screens the steps point at, saying where the
+       workspace is in the sequence.
 
-       WHY NOT THE FULL BREAKDOWN HERE: four copies of the same three steps is
-       four things to keep in agreement, and the Dashboard is the one that is
-       always on screen first. This page only needs to answer "am I on track?",
-       not re-teach the sequence. -->
+       IT IS THE ONLY SETUP TRACKER LEFT. The Dashboard used to carry the full
+       three-step diagram and this was its thin counterpart, pointing back at
+       it; the diagram is gone, so there is nothing to link to and the link came
+       off with it. This still only answers "am I on track?" rather than
+       re-teaching the sequence — three screens carrying the full breakdown
+       would be three things to keep in agreement. -->
   <div
     v-if="visible"
     class="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-sfere-lg border border-sfere-200 bg-sfere-50 px-4 py-3"
@@ -21,15 +22,11 @@
       >
       {{ line }}
     </p>
-    <SfereLinkArrow :to="{ name: 'dashboard-home' }"
-      >See full setup progress</SfereLinkArrow
-    >
   </div>
 </template>
 
 <script setup>
 import { computed } from 'vue'
-import SfereLinkArrow from '@/components/ui/SfereLinkArrow.vue'
 
 const props = defineProps({
   // Which step this screen is. 'source' | 'destination' | 'pipe'.

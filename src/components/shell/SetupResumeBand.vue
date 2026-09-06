@@ -10,13 +10,13 @@
        person who pressed Skip to have a look around first and then had no route
        back to the three screens that would have connected their data.
 
-       WHY IT IS NOT A SECOND SETUP TRACKER. `SetupProgressPanel` below answers
-       "how far is this workspace?" out of three live list reads, at 0, 1, 2 and
-       3 of 3. This answers a different and narrower question — "you left the
-       arrival part-way, here is the door back in" — and it is keyed on the
-       onboarding record rather than on the count, so it is absent for everybody
-       who never parked anything. The two are never the only thing on screen
-       together for the same reason.
+       WHY IT IS NOT A SETUP TRACKER. It answers a narrow question — "you left
+       the arrival part-way, here is the door back in" — and is keyed on the
+       onboarding record rather than on a count, so it is absent for everybody
+       who never parked anything. The Dashboard's three-step diagram, which
+       answered "how far is this workspace?" for everyone, is gone; the one-line
+       `SetupReminderStrip` on Sources, Destinations and Pipes is what is left
+       of it.
 
        IT IS NOT A `NoticeBanner`, DELIBERATELY. That primitive is for a state
        the app is reporting about your account right now, and it must not be
