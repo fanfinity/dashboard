@@ -93,5 +93,8 @@ jobs:
         run: node scripts/smoke.mjs
         env:
           SMOKE_BASE: https://app-staging.sfere.io
+          # Backend base, so smoke.mjs can self-provision the smoke account after a
+          # greenfield reset (ensureSmokeAccount) — same value the build compiles in.
+          VITE_API_BASE: ${{ vars.VITE_API_BASE }}
           SMOKE_EMAIL: ${{ secrets.SMOKE_EMAIL }}
           SMOKE_PASSWORD: ${{ secrets.SMOKE_PASSWORD }}

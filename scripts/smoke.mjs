@@ -51,6 +51,9 @@ const BASE = SERVE
 
 const EMAIL = process.env.SMOKE_EMAIL
 const PASSWORD = process.env.SMOKE_PASSWORD
+// Backend API base — the host the built bundle talks to (VITE_API_BASE). Used to
+// self-provision the smoke account after a greenfield reset; see ensureSmokeAccount().
+const API_BASE = process.env.VITE_API_BASE || ''
 
 if (!EMAIL || !PASSWORD) {
   console.error(
@@ -190,6 +193,46 @@ page.on('console', m => {
   bucket.push(`console.error: ${text.slice(0, 200)}`)
 })
 
+// The backend now provisions one Identity Platform tenant per account, and a
+// greenfield reset leaves no accounts — so SMOKE_EMAIL may simply not exist yet.
+// Ensure it does before driving the UI login: probe the API, and register ONLY on
+// a 401. `POST /v1/register` is NOT idempotent — each call mints a fresh tenant
+// (plus a ClickHouse DB and Jitsu workspace) — so it must never be called blindly;
+// registering solely on a 401 means one account is created after a reset and then
+// reused on every subsequent run. Needs the backend base (VITE_API_BASE); when it
+// is unset we skip the probe and let the UI login surface the failure as before.
+async function ensureSmokeAccount() {
+  if (!API_BASE) return
+  const login = await fetch(`${API_BASE}/v1/auth/token`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/x-www-form-urlencoded' },
+    body: new URLSearchParams({
+      grant_type: 'password',
+      username: EMAIL,
+      password: PASSWORD
+    })
+  }).catch(() => null)
+  if (!login || login.ok) return // exists (200), or unreachable — let UI login speak
+  if (login.status !== 401) return // some other error; don't provision over it
+  console.log(`smoke: ${EMAIL} not found (401) — registering it once`)
+  const reg = await fetch(`${API_BASE}/v1/register`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({
+      email: EMAIL,
+      password: PASSWORD,
+      display_name: 'smoke'
+    })
+  }).catch(() => null)
+  if (!reg || !reg.ok) {
+    console.error(
+      `smoke: could not provision ${EMAIL} ` +
+        `(register ${reg ? reg.status : 'network error'}) — UI login will fail next.`
+    )
+  }
+}
+await ensureSmokeAccount()
+
 // Sign in for real through the backend login form (POST /v1/auth/token) — the
 // session token lives in localStorage, but exercising the real login is the
 // point of the smoke test, so we drive the form rather than inject a token.
@@ -213,15 +256,16 @@ try {
       `       CORS_ALLOW_ORIGINS — see the SMOKE_PORT note at the top of this file.`
   } else if (/\b401\b/.test(noise)) {
     diagnosis =
-      '       The backend rejected these credentials (401). SMOKE_EMAIL must be a\n' +
-      '       real account on VITE_API_BASE, and identity is now ONE IDENTITY\n' +
-      '       PLATFORM TENANT PER ACCOUNT: login resolves the account whose tenant\n' +
-      '       holds the email, so a user that only ever existed at the project\n' +
-      '       level is in no tenant and no password will work. Register a fresh\n' +
-      '       one with POST /v1/register against that same host — and if THAT\n' +
-      '       answers 502 "failed to create tenant", the staging pod is missing its\n' +
-      '       identity-provisioner Workload Identity binding and this is a backend\n' +
-      '       outage, not a credentials problem. See CLAUDE.md under Authentication.'
+      '       The backend rejected these credentials (401). The backend now\n' +
+      '       provisions one Identity Platform tenant per account, so SMOKE_EMAIL\n' +
+      '       must be a real account on VITE_API_BASE (an account from the old\n' +
+      '       project-level flow will not resolve). ensureSmokeAccount() self-heals\n' +
+      '       this by registering on a 401 — reaching here means VITE_API_BASE was\n' +
+      '       unset for this step, or that registration itself failed above. If it\n' +
+      '       failed with a 502 "failed to create tenant", the staging pod is\n' +
+      '       missing its identity-provisioner Workload Identity binding: that is a\n' +
+      '       backend outage, not a credentials problem. See CLAUDE.md under\n' +
+      '       Authentication.'
   }
   console.error(
     'smoke: sign-in did not reach the app shell.\n' +
