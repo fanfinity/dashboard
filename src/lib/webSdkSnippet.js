@@ -8,7 +8,7 @@
 // cannot contain a literal closing script tag: the parser ends the block at the
 // first one, string or comment included.
 
-export const JITSU_SNIPPET_HOST = 'https://console.sfere.io'
+export const JITSU_SNIPPET_HOST = 'https://console.fanfinity.io'
 
 const CLOSE_SCRIPT = `</${'script'}>`
 
