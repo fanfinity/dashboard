@@ -1,298 +1,302 @@
 <template>
   <q-page class="p-6">
-    <PageHeader :title="destination?.name || 'Destination'">
-      <template #subtitle>
-        <span v-if="destination">{{
-          destination.description ||
-          `Delivers routed events to /${destination.slug}.`
-        }}</span>
-        <span v-else>Destination {{ id }}</span>
-      </template>
-
-      <!-- The noun is the <h1> beside them, so both state actions are drawn
-           rather than spelled; SfereIconButton carries the phrase to the
-           tooltip and to assistive tech. Each one asks before it acts. -->
-      <template #actions>
-        <template v-if="destination">
-          <SfereIconButton
-            :icon="destination.isEnabled ? 'pause' : 'play'"
-            :label="
-              destination.isEnabled ? 'Pause deliveries' : 'Enable deliveries'
-            "
-            @click="confirmToggle = true"
-          />
-          <SfereIconButton
-            icon="trash"
-            label="Delete this destination"
-            variant="danger"
-            @click="confirmDelete = true"
-          />
-        </template>
-      </template>
-    </PageHeader>
-
-    <LoadingState v-if="loading" variant="form" :rows="5" />
-
-    <ErrorState
-      v-else-if="error"
-      title="Couldn't load this destination."
-      :message="error"
-      @retry="load"
-    />
-
-    <EmptyState
-      v-else-if="!destination"
-      title="Destination not found"
-      :description="`Nothing in this workspace has the id “${id}”. It may have been deleted.`"
-    >
-      <template #cta>
-        <div class="flex items-center gap-2">
-          <button
-            class="flex h-9 items-center gap-1.5 rounded-lg bg-brand px-3.5 text-sm font-medium text-white shadow-sm hover:opacity-90"
-            @click="router.push({ name: 'destinations' })"
-          >
-            Back to destinations
-          </button>
-          <button
-            class="rounded-lg border border-line2 bg-white px-3 py-1.5 text-sm font-medium text-brand hover:bg-fill"
-            @click="router.push({ name: 'destinations-trash' })"
-          >
-            Check the trash
-          </button>
-        </div>
-      </template>
-    </EmptyState>
-
-    <div v-else class="flex flex-col gap-5">
-      <!-- Template upgrade notice: only when the record is behind. -->
-      <CardPanel v-if="hasUpgrade(destination)">
-        <div class="flex flex-wrap items-center justify-between gap-3">
-          <div>
-            <p class="text-sm font-medium text-ink">{{
-              upgradeLabel(destination)
-            }}</p>
-            <p class="mt-1 text-xs text-muted"
-              >This destination runs template version
-              {{ destination.templateVersion }}. Upgrading replays the
-              template's current configuration schema.</p
-            >
-          </div>
-          <button
-            class="rounded-lg border border-line2 bg-white px-3 py-1.5 text-sm font-medium text-brand hover:bg-fill"
-            @click="upgrade"
-          >
-            Upgrade template
-          </button>
-        </div>
-      </CardPanel>
-
-      <!-- Every card here is measured, which is what took the row from four to
-           three. `pipeCount`, `deliveryCountLastHour` and `version` are fields
-           of `destinations.json` and of nothing else — the backend's
-           `Destination` is nine keys and carries none of them — so on a real
-           destination "Delivered (last hour)" reported a confident 0 and
-           "Config version" printed the literal `vundefined`. The fourth,
-           "Warehouse connections", counted a `warehouses` computed that the
-           managed-warehouse rework had already deleted, so the whole screen
-           threw at render; that story is told properly by the Managed warehouse
-           panel below. Inbound pipes is now the same joined list the table
-           beneath it shows, so the count and the rows can never disagree. -->
-      <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
-        <StatCard
-          label="Status"
-          :value="destination.isEnabled ? 'Enabled' : 'Paused'"
-          :hint="destinationTypeLabel"
-        />
-        <StatCard
-          label="Inbound pipes"
-          :value="pipeCountLabel"
-          :hint="pipesHint"
-        />
-        <StatCard
-          label="Created"
-          :value="formatDate(destination.createdAt)"
-          :hint="updatedHint"
-        />
-      </div>
-
-      <TabNav v-model="tab" :tabs="tabs" />
-
-      <!-- Connection test sits above the tabs' content rather than inside one:
-           "does this destination still answer" is the question you have on
-           arrival, whichever tab you then open. A FAILED test renders here as a
-           red panel with the backend's own message — never as ErrorState, which
-           the smoke gate reads as a broken screen. -->
-      <CardPanel v-if="!isMock">
-        <template #header>
-          <div class="min-w-0 flex-1">
-            <span class="text-sm font-semibold text-ink">Connection</span>
-            <p class="mt-0.5! text-xs text-muted"
-              >Checks the stored configuration against the warehouse. Reads
-              nothing and writes nothing.</p
-            >
-          </div>
-          <SfereButton
-            class="shrink-0"
-            size="sm"
-            variant="secondary"
-            :loading="testing"
-            @click="onTest"
-            >Test connection</SfereButton
-          >
+    <!-- One content cap for the header, the band, the stats, the tabs and every
+         panel the tabs swap in — or the right edge visibly steps in and out as
+         the tab changes. Literal rather than a token: Tailwind v4 extracts class
+         names from source text. See DestinationsListPage.vue. -->
+    <div class="mx-auto w-full max-w-[1400px]">
+      <PageHeader :title="destination?.name || 'Destination'">
+        <template #subtitle>
+          <span v-if="destination">{{ subtitle }}</span>
+          <span v-else>Destination {{ id }}</span>
         </template>
 
-        <p v-if="!testResult" class="text-sm text-muted"
-          >Not tested in this session.</p
+        <!-- The noun is the <h1> beside them, so both state actions are drawn
+             rather than spelled; SfereIconButton carries the phrase to the
+             tooltip and to assistive tech. Each one asks before it acts. -->
+        <template #actions>
+          <template v-if="destination">
+            <SfereIconButton
+              :icon="destination.isEnabled ? 'pause' : 'play'"
+              :label="
+                destination.isEnabled ? 'Pause deliveries' : 'Enable deliveries'
+              "
+              @click="confirmToggle = true"
+            />
+            <SfereIconButton
+              icon="trash"
+              label="Delete this destination"
+              variant="danger"
+              @click="confirmDelete = true"
+            />
+          </template>
+        </template>
+      </PageHeader>
+
+      <LoadingState v-if="loading" variant="form" :rows="5" />
+
+      <ErrorState
+        v-else-if="error"
+        title="Couldn't load this destination."
+        :message="error"
+        @retry="load"
+      />
+
+      <EmptyState
+        v-else-if="!destination"
+        title="Destination not found"
+        :description="`Nothing in this workspace has the id “${id}”. Deleting a destination is permanent, so a deleted one does not come back.`"
+      >
+        <template #cta>
+          <SfereButton size="sm" :to="{ name: 'destinations' }"
+            >Back to destinations</SfereButton
+          >
+        </template>
+      </EmptyState>
+
+      <!-- `grid gap-5`, never `flex flex-col gap-5`: Quasar's unlayered
+           `.flex { flex-wrap: wrap }` beats the layered `flex-nowrap`, and a
+           wrapping column stretches its block children into a second column
+           instead of stacking them. CLAUDE.md collision #4. -->
+      <div v-else class="grid gap-5">
+        <!-- The record's own hero. Not dismissible — IntroBand renders no close
+             control without a `storageKey` — because this is a sentence about
+             THIS destination rather than a lesson about the noun, and the two
+             branches say different things. -->
+        <IntroBand
+          tone="brand"
+          eyebrow="Destination"
+          :title="heroTitle"
+          :body="heroBody"
         >
-        <NoticeBanner
-          v-else-if="testResult.ok"
-          tone="success"
-          title="The connection works"
-          :message="testMessage"
-        />
-        <NoticeBanner
-          v-else
-          tone="danger"
-          title="The connection failed"
-          :message="
-            testResult.error ||
-            'The warehouse refused the stored configuration and gave no reason.'
-          "
-        />
-      </CardPanel>
+          <template #aside>
+            <DestinationMarkCard
+              :subtype="destination.destinationType"
+              :title="typeLabel(destination.destinationType) || 'Destination'"
+              :subtitle="heroAsideSubtitle"
+              :badge="heroAsideBadge"
+              :badge-tone="managed ? 'brand' : 'neutral'"
+            />
+          </template>
+        </IntroBand>
 
-      <DestinationTablesPanel
-        v-if="tab === 'tables'"
-        :tables="tables"
-        :tables-loading="tablesLoading"
-        :tables-error="tablesError"
-        :tables-api-missing="tablesApiMissing"
-        :selected-table="selectedTable"
-        :rows-page="rowsPage"
-        :rows-loading="rowsLoading"
-        :rows-error="rowsError"
-        :rows-api-missing="rowsApiMissing"
-        @reload-tables="loadTables(destination.id)"
-        @select-table="onSelectTable"
-        @close-table="selectedTable = ''"
-        @reload-rows="reloadRows"
-        @page="onRowsPage"
-      />
+        <!-- Four cards, and every one of them reads a field the backend
+             actually sends. `pipeCount`, `deliveryCountLastHour` and `version`
+             are fields of `destinations.json` and of nothing else — the
+             backend's `Destination` is nine keys and carries none of them — so
+             "Delivered (last hour)" reported a confident 0 and "Config version"
+             printed the literal `vundefined`. Inbound pipes is the count of the
+             same joined list the table below shows, so the number and the rows
+             can never disagree.
 
-      <DestinationQueryPanel
-        v-else-if="tab === 'query'"
-        :result="queryResult"
-        :querying="querying"
-        :error="queryError"
-        :api-missing="queryApiMissing"
-        :tables="tables"
-        @run="onRunQuery"
-      />
+             The fourth card is "Provisioning", not the prototype's
+             "Availability / Included". "Included" is a billing claim and
+             nothing on the record measures billing; `clickhouse_database`
+             ("auto-provisioned ClickHouse database name") measures exactly who
+             built this warehouse, which is the honest half of the same
+             sentence. The cost promise stays in the band's editorial copy on
+             the list screen, where it is a statement about the product rather
+             than a reading of a row. -->
+        <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+          <StatCard
+            label="Status"
+            :value="destination.isEnabled ? 'Enabled' : 'Paused'"
+            :hint="
+              destination.isEnabled
+                ? 'Ready to receive routed events'
+                : 'Pipes are not delivering here'
+            "
+            :tone="destination.isEnabled ? 'neutral' : 'warn'"
+          />
 
-      <div v-else class="grid grid-cols-1 gap-5 xl:grid-cols-3">
-        <!-- Inbound pipes: everything routing events into this destination. -->
-        <section class="flex flex-col gap-3 xl:col-span-2">
-          <h2 class="text-sm! font-semibold! tracking-[-0.35px]! text-ink"
-            >Inbound pipes</h2
+          <StatCard
+            label="Inbound pipes"
+            :value="pipeCountLabel"
+            :hint="pipesHint"
+          />
+
+          <StatCard label="Type" :hint="`/${destination.slug}`">
+            <!-- A word, not a figure: StatCard sets 3xl on the value and a
+                 label like "Google Ads Offline Conversions" is a paragraph at
+                 that size. The span carries its own size, so the two utilities
+                 sit on different elements and there is no cascade race. -->
+            <span class="text-xl">{{
+              typeLabel(destination.destinationType) || NOT_KNOWN
+            }}</span>
+          </StatCard>
+
+          <StatCard label="Provisioning" :hint="provisioningHint">
+            <span class="text-xl">{{ provisioningLabel }}</span>
+          </StatCard>
+        </div>
+
+        <TabNav v-model="tab" :tabs="tabs" />
+
+        <!-- ---------------------------------------------------------- overview -->
+        <div v-if="tab === 'overview'" class="grid gap-5">
+          <!-- One column in Demo mode, where there is no connection to test and
+               a half-width About card would sit beside a gap. -->
+          <div :class="['grid gap-5', !isMock && 'xl:grid-cols-2']">
+            <!-- "Does this destination still answer?" is the question you
+                 arrive with, so it leads the overview. A FAILED test renders
+                 here as a red NoticeBanner carrying the backend's own message —
+                 never as ErrorState, which the smoke gate reads as a broken
+                 screen. Hidden in Demo mode, where there is nothing to test. -->
+            <CardPanel v-if="!isMock">
+              <template #header>
+                <div class="min-w-0 flex-1">
+                  <span class="text-sfere-sm font-semibold text-sfere-fg"
+                    >Connection</span
+                  >
+                  <p class="text-sfere-xs text-sfere-fg-muted"
+                    >Checks the stored configuration against the warehouse.
+                    Reads nothing and writes nothing.</p
+                  >
+                </div>
+                <SfereButton
+                  class="shrink-0"
+                  size="sm"
+                  variant="secondary"
+                  :loading="testing"
+                  @click="onTest"
+                  >Test connection</SfereButton
+                >
+              </template>
+
+              <p v-if="!testResult" class="text-sfere-sm text-sfere-fg-muted"
+                >Not tested in this session.</p
+              >
+              <NoticeBanner
+                v-else-if="testResult.ok"
+                tone="success"
+                title="The connection works"
+                :message="testMessage"
+              />
+              <NoticeBanner
+                v-else
+                tone="danger"
+                title="The connection failed"
+                :message="
+                  testResult.error ||
+                  'The warehouse refused the stored configuration and gave no reason.'
+                "
+              />
+            </CardPanel>
+
+            <CardPanel>
+              <template #header>
+                <span class="text-sfere-sm font-semibold text-sfere-fg"
+                  >About this destination</span
+                >
+              </template>
+              <DefinitionList :items="about" :columns="1" />
+            </CardPanel>
+          </div>
+
+          <section class="grid gap-3">
+            <div class="flex flex-wrap items-center justify-between gap-2">
+              <h2 class="text-sm! font-semibold! tracking-[-0.35px]! text-ink"
+                >Inbound pipes</h2
+              >
+              <SfereButton
+                v-if="inboundPipes.length > PREVIEW_ROWS"
+                size="sm"
+                variant="secondary"
+                @click="tab = 'pipes'"
+                >See all {{ inboundPipes.length }}</SfereButton
+              >
+            </div>
+
+            <DestinationPipesTable
+              :rows="pipesPreview"
+              :loading="pipesLoading"
+              :error="pipesError"
+              :api-missing="pipesApiMissing"
+              @retry="loadPipes"
+              @row-click="openPipe"
+            />
+          </section>
+        </div>
+
+        <!-- ------------------------------------------------------------- pipes -->
+        <section v-else-if="tab === 'pipes'" class="grid gap-3">
+          <p class="text-sfere-sm text-sfere-fg-muted"
+            >Every pipe delivering into this destination. Open one to inspect
+            its route, its functions and its errors.</p
           >
-          <DataTable
-            :columns="pipeColumns"
+          <DestinationPipesTable
             :rows="inboundPipes"
             :loading="pipesLoading"
             :error="pipesError"
             :api-missing="pipesApiMissing"
-            row-key="id"
-            clickable-rows
-            empty-title="No pipes deliver here yet"
-            empty-description="A pipe connects a source to this destination and decides which events reach it."
-            empty-cta-label="New pipe"
-            :empty-cta-to="{ name: 'pipes-new' }"
             @retry="loadPipes"
             @row-click="openPipe"
-          >
-            <template #cell-name="{ row }">
-              <p class="font-medium text-ink">{{ row.name }}</p>
-              <p class="text-xs text-subtle">{{ row.sourceName }}</p>
-            </template>
-
-            <template #cell-isEnabled="{ value }">
-              <StatusBadge
-                :tone="value ? 'success' : 'neutral'"
-                :label="value ? 'Running' : 'Paused'"
-              />
-            </template>
-
-            <template #cell-deliveryCountLastHour="{ value }">{{
-              formatCount(value)
-            }}</template>
-
-            <template #cell-updatedAt="{ value }">{{
-              formatDate(value)
-            }}</template>
-          </DataTable>
+          />
         </section>
 
-        <!-- Configuration summary. -->
-        <section class="flex flex-col gap-3">
-          <h2 class="text-sm! font-semibold! tracking-[-0.35px]! text-ink"
-            >Configuration</h2
-          >
-
+        <!-- ----------------------------------------------------- configuration -->
+        <div v-else-if="tab === 'configuration'" class="grid gap-5">
           <CardPanel>
-            <DefinitionList :items="details" :columns="1">
-              <template #value-status>
-                <StatusBadge
-                  :tone="destination.isEnabled ? 'success' : 'neutral'"
-                  :label="destination.isEnabled ? 'Enabled' : 'Paused'"
-                />
-              </template>
-
-              <template #value-template>
-                <DestinationTemplateBadge
-                  :record="destination"
-                  class="justify-end"
-                />
-              </template>
-            </DefinitionList>
+            <template #header>
+              <div class="min-w-0 flex-1">
+                <span class="text-sfere-sm font-semibold text-sfere-fg"
+                  >Configuration</span
+                >
+                <p class="text-sfere-xs text-sfere-fg-muted">{{
+                  configurationIntro
+                }}</p>
+              </div>
+            </template>
+            <DefinitionList :items="configurationItems" :columns="2" />
           </CardPanel>
 
-          <!-- The Sfere-managed warehouse, which is infrastructure we provision
-               rather than a credentialled link the customer set up — those live
-               on /dwh-connections and are a different noun. -->
-          <CardPanel>
-            <div class="flex items-center justify-between gap-2">
-              <p class="text-xs font-medium text-subtle">Managed warehouse</p>
-              <StatusBadge
-                v-if="warehouse?.state === 'ready'"
-                tone="success"
-                label="Provisioned"
-              />
-              <StatusBadge
-                v-else-if="warehouse?.state === 'pending'"
-                tone="neutral"
-                label="Provisioning"
-              />
-            </div>
+          <!-- Two different truths, so two different sentences. Neither
+               promises an edit this screen cannot make: `DestinationUpdate`
+               does accept `name` and `config`, but no form here sends one, and
+               a control that opens an apology is worse than an absence. -->
+          <NoticeBanner
+            v-if="managed"
+            tone="info"
+            title="Sfere manages this warehouse"
+            message="Credentials and infrastructure settings belong to the warehouse Sfere provisions for you, so there is nothing here to configure or maintain."
+          />
+          <NoticeBanner
+            v-else
+            tone="info"
+            title="Read-only for now"
+            message="This is the configuration stored on the destination, with every credential field masked by the API. Editing a destination's name or connection details is not available on this screen yet."
+          />
+        </div>
 
-            <DefinitionList
-              v-if="warehouse?.state === 'ready'"
-              :items="warehouseDetails"
-              :columns="1"
-              class="mt-2"
-            />
+        <!-- ------------------------------------------------------------ tables -->
+        <DestinationTablesPanel
+          v-else-if="tab === 'tables'"
+          :tables="tables"
+          :tables-loading="tablesLoading"
+          :tables-error="tablesError"
+          :tables-api-missing="tablesApiMissing"
+          :selected-table="selectedTable"
+          :rows-page="rowsPage"
+          :rows-loading="rowsLoading"
+          :rows-error="rowsError"
+          :rows-api-missing="rowsApiMissing"
+          @reload-tables="loadTables(destination.id)"
+          @select-table="onSelectTable"
+          @close-table="selectedTable = ''"
+          @reload-rows="reloadRows"
+          @page="onRowsPage"
+        />
 
-            <p
-              v-else-if="warehouse?.state === 'pending'"
-              class="mt-2 text-sm text-muted"
-              >Sfere is still creating the ClickHouse database for this
-              destination. It appears here once provisioning finishes.</p
-            >
-
-            <p v-else class="mt-2 text-sm text-muted"
-              >Not known. This destination reports no managed warehouse.</p
-            >
-          </CardPanel>
-        </section>
+        <!-- ------------------------------------------------------- SQL console -->
+        <DestinationQueryPanel
+          v-else-if="tab === 'query'"
+          :result="queryResult"
+          :querying="querying"
+          :error="queryError"
+          :api-missing="queryApiMissing"
+          :tables="tables"
+          @run="onRunQuery"
+        />
       </div>
     </div>
 
@@ -329,29 +333,27 @@ import { useRoute, useRouter } from 'vue-router'
 import { useQuasar } from 'quasar'
 import PageHeader from '@/components/ui/PageHeader.vue'
 import CardPanel from '@/components/ui/CardPanel.vue'
-import DataTable from '@/components/ui/DataTable.vue'
+import IntroBand from '@/components/ui/IntroBand.vue'
 import TabNav from '@/components/ui/TabNav.vue'
 import NoticeBanner from '@/components/ui/NoticeBanner.vue'
 import SfereButton from '@/components/ui/SfereButton.vue'
 import DestinationTablesPanel from '@/components/destinations/DestinationTablesPanel.vue'
 import DestinationQueryPanel from '@/components/destinations/DestinationQueryPanel.vue'
+import DestinationPipesTable from '@/components/destinations/DestinationPipesTable.vue'
+import DestinationMarkCard from '@/components/destinations/DestinationMarkCard.vue'
+import { destinationTypeLabel as typeLabel } from '@/components/destinations/destinationTypeLabels'
 import { useDestinationBrowser } from '@/composables/useDestinationBrowser'
 import DefinitionList from '@/components/ui/DefinitionList.vue'
 import StatCard from '@/components/ui/StatCard.vue'
-import StatusBadge from '@/components/ui/StatusBadge.vue'
 import LoadingState from '@/components/ui/LoadingState.vue'
 import ErrorState from '@/components/ui/ErrorState.vue'
 import EmptyState from '@/components/ui/EmptyState.vue'
 import ConfirmDialog from '@/components/ui/ConfirmDialog.vue'
 import SfereIconButton from '@/components/ui/SfereIconButton.vue'
-import DestinationTemplateBadge from '@/components/destinations/DestinationTemplateBadge.vue'
-import { useTemplates } from '@/composables/useTemplates'
 import {
   formatCount,
-  formatDate,
   formatDateTime,
-  useDestinations,
-  useDestinationToasts
+  useDestinations
 } from '@/composables/useDestinations'
 import { usePipes } from '@/composables/usePipes'
 import { notifyMutationResult } from '@/composables/useMutationFeedback'
@@ -360,8 +362,6 @@ import { useDataSource } from '@/composables/useDataSource'
 const route = useRoute()
 const router = useRouter()
 const $q = useQuasar()
-const { hasUpgrade, upgradeLabel } = useTemplates()
-const { toast } = useDestinationToasts()
 
 const {
   destinations,
@@ -430,11 +430,13 @@ const {
 const tab = ref('overview')
 const selectedTable = ref('')
 
-// The SQL console reads the table list as its schema tree, so both tabs need it
-// and neither should fetch it twice. `listDestinationTables` returns columns as
-// well as names, which is what makes one call enough.
+// Overview / Pipes / Configuration are the prototype's three; Tables and SQL
+// console are folded into the same bar rather than left as a second row of
+// controls, because all five swap the same region of the screen.
 const tabs = computed(() => [
   { key: 'overview', label: 'Overview' },
+  { key: 'pipes', label: 'Pipes', count: pipeTabCount.value },
+  { key: 'configuration', label: 'Configuration' },
   {
     key: 'tables',
     label: 'Tables',
@@ -496,7 +498,8 @@ async function onRunQuery({ sql, limit }) {
 
 // The table list backs two tabs, so it is read once the destination resolves
 // rather than on entering a tab — otherwise the SQL console's schema tree is
-// empty until someone has visited Tables first.
+// empty until someone has visited Tables first, and the Tables tab's count is
+// unknowable until it has been opened.
 // Key this on the *resolved* destination, not the raw route id. The table list
 // is a per-id read (`GET …/destinations/{id}/tables`), so firing it for an id
 // that isn't in the account 404s — and `smoke.mjs` walks this route with a mock
@@ -505,6 +508,7 @@ async function onRunQuery({ sql, limit }) {
 // against the *next* route in the walk (`/pipes/pipe_web_to_snowflake`), where
 // it read as an unrelated failure. A real record carries an id that exists; a
 // missing one is "empty" (see `destination` above), not a request to make.
+// DO NOT make this lazy on the tab — that is the same bug wearing a new hat.
 watch(
   () => destination.value?.id,
   value => {
@@ -514,133 +518,175 @@ watch(
   { immediate: true }
 )
 
-// The backend spells the type in snake_case (`event_destination`,
-// `clickhouse`), which is a key, not something a stat card's hint should print.
-// The labels match the registry titles in src/config/destinationRegistry.js;
-// anything else — including a type nobody here anticipated — comes out as
-// sentence-cased words rather than as a raw identifier.
-const DESTINATION_TYPE_LABELS = {
-  clickhouse: 'ClickHouse',
-  postgres: 'PostgreSQL',
-  bigquery: 'Google BigQuery',
-  snowflake: 'Snowflake',
-  'meta-conversions-api': 'Meta Conversions API',
-  'tiktok-events-api': 'TikTok Events API',
-  'google-ads': 'Google Ads Offline Conversions',
-  webhook: 'Webhook',
-  s3: 'Amazon S3'
+// ------------------------------------------------------------- who built this
+
+// `clickhouse_database` is the backend's own answer to "did we provision this?"
+// — its schema description is "auto-provisioned ClickHouse database name, null
+// while provisioning is pending". So a name present means Sfere built it; a
+// ClickHouse destination without one is mid-provisioning; anything else is a
+// warehouse or endpoint somebody connected themselves.
+//
+// Type alone is NOT the discriminator, deliberately: `DestinationConfig.database`
+// says the backend provisions a fresh database only "when this is omitted", so a
+// customer's own ClickHouse cluster is also `destination_type: clickhouse`.
+const provisioning = computed(() => {
+  const d = destination.value
+  if (!d) return 'unknown'
+  if (d.clickhouseDatabase) return 'sfere'
+  if (d.destinationType === 'clickhouse') return 'pending'
+  return 'self'
+})
+
+const managed = computed(() => provisioning.value === 'sfere')
+
+const PROVISIONING_LABELS = {
+  sfere: 'Sfere managed',
+  pending: 'In progress',
+  self: 'Your own',
+  unknown: NOT_KNOWN
 }
 
-const destinationTypeLabel = computed(() => {
-  const type = destination.value?.destinationType
-  if (!type) return ''
-  return (
-    DESTINATION_TYPE_LABELS[type] ??
-    type.replace(/_/g, ' ').replace(/^./, c => c.toUpperCase())
-  )
+const PROVISIONING_HINTS = {
+  sfere: 'Sfere created the ClickHouse database',
+  pending: 'Sfere is still creating the database',
+  self: 'Not provisioned by Sfere',
+  unknown: ''
+}
+
+const provisioningLabel = computed(
+  () => PROVISIONING_LABELS[provisioning.value]
+)
+const provisioningHint = computed(() => PROVISIONING_HINTS[provisioning.value])
+
+const subtitle = computed(() => {
+  const d = destination.value
+  if (!d) return ''
+  const type = typeLabel(d.destinationType)
+  return type ? `${type} · /${d.slug}` : `/${d.slug}`
 })
+
+const heroTitle = computed(() =>
+  managed.value
+    ? 'Sfere provisioned this warehouse for you.'
+    : 'A destination you connected.'
+)
+
+const heroBody = computed(() => {
+  if (managed.value) {
+    return 'Sfere created the ClickHouse database behind this destination and manages its credentials and infrastructure, so your pipes can deliver into it without anything for you to set up or maintain.'
+  }
+  if (provisioning.value === 'pending') {
+    return 'Sfere is still creating the ClickHouse database behind this destination. It appears under Configuration once provisioning finishes.'
+  }
+  return 'Pipes deliver routed events here using the connection details stored on this destination. Credential fields are held by the backend and never returned, so they are masked wherever they appear.'
+})
+
+const heroAsideSubtitle = computed(() =>
+  managed.value ? 'Provisioned by Sfere' : 'Connected by your team'
+)
+
+const heroAsideBadge = computed(() =>
+  managed.value ? 'Managed by Sfere' : 'Self-managed'
+)
+
+// ---------------------------------------------------------------- inbound pipes
+
+const PREVIEW_ROWS = 5
 
 const inboundPipes = computed(() =>
   pipes.value.filter(p => p.eventDestinationId === id.value)
 )
 
-// An em dash while the pipes read is in flight, failed, or has no endpoint —
-// `formatCount(0)` on an unread list is a measured-looking zero, which is the
-// failure this row was rebuilt to stop.
+const pipesPreview = computed(() => inboundPipes.value.slice(0, PREVIEW_ROWS))
+
+// The pipes read has to have SUCCEEDED before a count means anything: while it
+// is in flight, failed, or has no endpoint, `formatCount(0)` on an unread list
+// is a measured-looking zero — the failure this row was rebuilt to stop.
+const pipesCounted = computed(
+  () => !pipesLoading.value && !pipesError.value && !pipesApiMissing.value
+)
+
 const pipeCountLabel = computed(() =>
-  pipesLoading.value || pipesError.value || pipesApiMissing.value
-    ? NOT_KNOWN
-    : formatCount(inboundPipes.value.length)
+  pipesCounted.value ? formatCount(inboundPipes.value.length) : NOT_KNOWN
+)
+
+// `undefined` rather than 0 for the same reason: TabNav hides a count it is not
+// given, and a "Pipes 0" tab on an unread list is an assertion.
+const pipeTabCount = computed(() =>
+  pipesCounted.value ? inboundPipes.value.length : undefined
 )
 
 const pipesHint = computed(() => {
-  if (pipesLoading.value || pipesError.value || pipesApiMissing.value) return ''
+  if (!pipesCounted.value) return ''
   const running = inboundPipes.value.filter(p => p.isEnabled).length
   return running ? `${formatCount(running)} running` : 'None running'
 })
 
-const updatedHint = computed(() =>
-  destination.value?.updatedAt
-    ? `Updated ${formatDate(destination.value.updatedAt)}`
-    : ''
-)
+// ------------------------------------------------------------------ read-outs
 
-// The ClickHouse database the backend auto-provisions for this destination.
-//
-// This used to read `destination.warehouseConnections`, which is a field of the
-// mock fixture and of nothing else — the real `Destination` schema has no such
-// key. In the default real mode it was therefore always `[]`, and the panel
-// below rendered "None. This destination delivers over the network rather than
-// into a warehouse", which is the opposite of the truth for a ClickHouse
-// destination. The real facts are `clickhouse_database` (camelized by
-// `pageItems`) plus the `config` blob, which `camelizeKeys` leaves nested and
-// unmangled, so `hosts` / `protocol` are read as the backend spells them.
-//
-// A null `clickhouseDatabase` means "provisioning is pending" per the schema's
-// own description, which is not the same as "there is no warehouse" — hence
-// three states rather than a present/absent pair.
-const warehouse = computed(() => {
-  const d = destination.value
-  if (!d) return null
-
-  const config = d.config ?? {}
-  const hosts = Array.isArray(config.hosts) ? config.hosts : []
-
-  if (d.clickhouseDatabase) {
-    return {
-      state: 'ready',
-      database: d.clickhouseDatabase,
-      hosts,
-      protocol: config.protocol ?? null
-    }
-  }
-
-  // Only a ClickHouse destination is one we provision, so only that type can be
-  // mid-provisioning. Anything else (including every mock fixture record, which
-  // carries `event_destination`) is a warehouse we know nothing about, and the
-  // panel says so rather than guessing either way.
-  return { state: d.destinationType === 'clickhouse' ? 'pending' : 'unknown' }
-})
-
-// `config.password` is always "***" in API responses and the username is not
-// something a reader can act on, so neither is rendered — the database name and
-// the host are what someone querying this warehouse actually needs.
-const warehouseDetails = computed(() => {
-  const w = warehouse.value
-  if (w?.state !== 'ready') return []
-  return [
-    { label: 'Database', value: w.database },
-    { label: 'Host', value: w.hosts.length ? w.hosts.join(', ') : 'Not known' },
-    { label: 'Protocol', value: w.protocol ?? 'Not known' }
-  ]
-})
-
-const pipeColumns = [
-  { key: 'name', label: 'Pipe', sortable: true },
-  { key: 'isEnabled', label: 'Status', sortable: true },
-  {
-    key: 'deliveryCountLastHour',
-    label: 'Delivered (1h)',
-    sortable: true,
-    align: 'right'
-  },
-  { key: 'updatedAt', label: 'Updated', sortable: true, align: 'right' }
-]
-
-// `Status` and `Template` are rendered as badges through DefinitionList's
-// `#value-status` / `#value-template` slots; the rest fall through to `value`.
-const details = computed(() => {
+// Only fields the backend's `Destination` actually carries. `templateId` and
+// `latestTemplateVersion` used to appear here through DestinationTemplateBadge;
+// both are `destinations.json` inventions, and the badge's fallback reads
+// "Custom — hand-configured, not created from a template", which is false for
+// every destination the backend provisions itself.
+const about = computed(() => {
   const d = destination.value
   if (!d) return []
   return [
-    { label: 'Status', value: d.isEnabled ? 'Enabled' : 'Paused' },
-    { label: 'Template', value: d.templateId ?? 'Custom' },
+    { label: 'Name', value: d.name },
+    { label: 'Provider', value: typeLabel(d.destinationType) },
+    { label: 'Provisioning', value: provisioningLabel.value },
     { label: 'Slug', value: `/${d.slug}` },
     { label: 'Destination ID', value: d.id },
-    { label: 'Type', value: 'Event destination' },
     { label: 'Created', value: formatDateTime(d.createdAt) },
     { label: 'Last updated', value: formatDateTime(d.updatedAt) }
   ]
+})
+
+const configurationIntro = computed(() =>
+  managed.value
+    ? 'Sfere manages this configuration for you.'
+    : 'The connection details stored on this destination.'
+)
+
+// Built by presence rather than by a fixed shape: `config` is a union typed by
+// `destination_type` (a webhook has a `url` and no `database`; S3 has a bucket
+// and no `protocol`), so a fixed row list would print "Not known" for fields
+// that do not exist on this kind of destination at all. Secrets are never
+// included — the API masks them to "***", and a row reading "***" teaches
+// nothing.
+const configurationItems = computed(() => {
+  const d = destination.value
+  if (!d) return []
+
+  const config = d.config ?? {}
+  const items = [
+    { label: 'Provider', value: typeLabel(d.destinationType) },
+    { label: 'Management', value: provisioningLabel.value }
+  ]
+
+  const database = d.clickhouseDatabase || config.database
+  if (database) items.push({ label: 'Database', value: database })
+  if (config.protocol) items.push({ label: 'Protocol', value: config.protocol })
+  if (Array.isArray(config.hosts) && config.hosts.length) {
+    items.push({ label: 'Hosts', value: config.hosts.join(', ') })
+  }
+  if (config.cluster) items.push({ label: 'Cluster', value: config.cluster })
+  if (config.url) items.push({ label: 'Endpoint', value: config.url })
+  if (config.bucket) items.push({ label: 'Bucket', value: config.bucket })
+  if (config.region) items.push({ label: 'Region', value: config.region })
+
+  const parameters = config.parameters
+  if (parameters && Object.keys(parameters).length) {
+    items.push({
+      label: 'Parameters',
+      value: Object.entries(parameters)
+        .map(([key, value]) => `${key}=${value}`)
+        .join(', ')
+    })
+  }
+
+  return items
 })
 
 const toggleMessage = computed(() => {
@@ -651,12 +697,25 @@ const toggleMessage = computed(() => {
     : `Pipes start routing events into “${d.name}” again straight away.`
 })
 
+// THIS USED TO PROMISE A TRASH THAT CANNOT HOLD THE RECORD. `DELETE
+// /v1/accounts/{account}/destinations/{id}` is a hard 204: no soft delete, no
+// listing, no restore call — so "moves to the trash, restorable for 30 days"
+// sent people to a screen that could not have their destination. It also piped
+// the fixture-only `pipeCount` through `formatCount`, which prints a confident
+// "0 pipes" for `undefined`. The count is the real joined one now, and only
+// stated when the pipes read succeeded.
 const deleteMessage = computed(() => {
   const d = destination.value
   if (!d) return ''
-  const pipeLabel =
-    d.pipeCount === 1 ? '1 pipe' : `${formatCount(d.pipeCount)} pipes`
-  return `“${d.name}” moves to the trash and its ${pipeLabel} stop delivering. You can restore it for 30 days.`
+  const n = inboundPipes.value.length
+  const pipeLine = !pipesCounted.value
+    ? 'Any pipe delivering into it stops.'
+    : n === 0
+      ? 'No pipe delivers into it.'
+      : n === 1
+        ? '1 pipe delivers into it and stops.'
+        : `${formatCount(n)} pipes deliver into it and stop.`
+  return `“${d.name}” is deleted permanently. ${pipeLine} Restoring a destination is not available yet, so this cannot be undone.`
 })
 
 // Both resources back one screen, so Retry has to re-run both.
@@ -673,14 +732,6 @@ async function toggle() {
     success: `“${d.name}” ${next ? 'enabled' : 'paused'}`,
     apiMissing: `Can't ${next ? 'enable' : 'pause'} “${d.name}” yet.`
   })
-}
-
-function upgrade() {
-  const d = destination.value
-  d.templateVersion = d.latestTemplateVersion
-  toast(
-    `“${d.name}” moved to template ${d.templateVersion}. Demo data, nothing was saved.`
-  )
 }
 
 async function remove() {

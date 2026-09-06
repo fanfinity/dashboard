@@ -308,6 +308,7 @@ import {
   signUpPasswordProblem
 } from '@/lib/authValidation'
 import AccountSetupOverlay from '@/components/onboarding/AccountSetupOverlay.vue'
+import { useOnboarding } from '@/composables/useOnboarding'
 import FormField from '@/components/ui/FormField.vue'
 import SfereButton from '@/components/ui/SfereButton.vue'
 import SfereIcon from '@/components/ui/SfereIcon.vue'
@@ -317,6 +318,7 @@ import SfereLogo from '@/components/ui/SfereLogo.vue'
 const router = useRouter()
 const route = useRoute()
 const { loading, signIn, signUp, logOut } = useAuth()
+const { beginFirstRun } = useOnboarding()
 
 const email = ref('')
 const password = ref('')
@@ -448,6 +450,14 @@ async function submit(event) {
   // so a success here already means a real account exists.
   if (isSignUp.value) {
     if (await signUp(email.value.trim(), password.value)) {
+      // THE ONE PLACE THE FIRST-RUN ARRIVAL IS ARMED. `useOnboarding` used to
+      // treat an absent record as "ask", which made the welcome a property of
+      // the browser rather than of the account — an existing user signing in on
+      // a new machine, in a private window, or after clearing storage was met by
+      // a full-page welcome over a workspace they had been using for months.
+      // Arming it here means a sign-in can never reach it. `signUp` has already
+      // awaited `loadMe()`, so the record gets a real uid to be scoped to.
+      beginFirstRun()
       destination.value = route.query.redirect || '/'
       settingUp.value = true
     }

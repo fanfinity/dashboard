@@ -35,6 +35,23 @@ export const SFERE_ICONS = {
   'arrow-left': {
     path: 'M224 128a8 8 0 0 1-8 8H59.31l58.35 58.34a8 8 0 0 1-11.32 11.32l-72-72a8 8 0 0 1 0-11.32l72-72a8 8 0 0 1 11.32 11.32L59.31 120H216a8 8 0 0 1 8 8'
   },
+  'arrow-right': {
+    path: 'M221.66 133.66l-72 72a8 8 0 0 1-11.32-11.32L196.69 136H40a8 8 0 0 1 0-16h156.69l-58.35-58.34a8 8 0 0 1 11.32-11.32l72 72a8 8 0 0 1 0 11.32'
+  },
+  // The dismiss control on IntroBand, and the one every overlay owes.
+  // SecretRevealDialog hand-inlines its own X for the sole reason that this
+  // entry did not exist; a second surface needing the same glyph is what makes
+  // it registry work rather than one more inline copy.
+  close: {
+    path: 'M205.66 194.34a8 8 0 0 1-11.32 11.32L128 139.31l-66.34 66.35a8 8 0 0 1-11.32-11.32L116.69 128L50.34 61.66a8 8 0 0 1 11.32-11.32L128 116.69l66.34-66.35a8 8 0 0 1 11.32 11.32L139.31 128Z'
+  },
+  // The Functions noun, and the chip on a pipe row that carries one. A drawn
+  // italic f rather than the literal character: the mono face renders `ƒ` at a
+  // different optical weight from every other glyph in this set, and a text
+  // node cannot take `SfereIcon`'s sizing.
+  'function-f': {
+    path: 'M168 48a8 8 0 0 1-8 8h-16a24 24 0 0 0-24 24v24h32a8 8 0 0 1 0 16h-32v88a8 8 0 0 1-16 0v-88H72a8 8 0 0 1 0-16h32V80a40 40 0 0 1 40-40h16a8 8 0 0 1 8 8'
+  },
   // The app-bar nav toggle. Drawn here rather than left as Quasar's
   // `icon="menu"`: that renders a Material Icons ligature inside a `.q-btn`,
   // whose unlayered `color: inherit` picks up `.q-header`'s unlayered

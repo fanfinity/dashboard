@@ -319,28 +319,33 @@
          a q-footer rather than a hand-rolled fixed bar. -->
     <DemoModeBanner v-if="!isRealData" />
 
-    <!-- The onboarding fork. An overlay over a fully-rendered Home, opened only
-         on `/`: a deep link from Slack must not be met by a modal demanding a
-         role, and the smoke gate needs the nav and every <h1> to stay in the
-         DOM. Binding it to the route rather than to a one-shot flag is what
-         makes it close itself the moment you navigate away.
+    <!-- The arrival. A full-page surface over a fully-rendered Home, opened
+         only on `/`: a deep link from Slack must not be met by it, and the smoke
+         gate needs the nav and every <h1> to stay in the DOM. Binding it to the
+         route rather than to a one-shot flag is what makes it close itself the
+         moment you navigate away.
 
-         TWO BEATS, ONE CARD: the question, then the path onto the first setup
-         step. The layout drives the swap because everything between the beats is
-         the layout's — recording the answer, starting the setup read, and
-         deciding whether a workspace that is already wired up should see the
-         path at all. -->
-    <PersonaQuestion
+         SEVEN BEATS, ONE SURFACE: what Sfere does, where this account's activity
+         happens, which platform, the store grant where one is needed, the
+         install, the confirmation that an event arrived, the provisioning read
+         and the summary. The layout drives every swap because everything between
+         the beats is a decision — recording the answers, creating the source,
+         starting the lookup and settling the record. -->
+    <FirstRunOverlay
       :open="arrivalOpen"
       :step="arrivalStep"
-      :persona="personaMeta"
-      :steps="setupSteps"
-      :steps-known="setupKnown"
-      :cta-label="arrivalCta.label"
-      @choose="onChoosePersona"
-      @skip="onSkipPersona"
-      @start="onStartPath"
-      @dismiss="onDismissPath"
+      :intent="arrivalIntent"
+      :template-id="arrivalTemplate"
+      :store-id="arrivalStoreId"
+      @advance="onAdvance"
+      @back="onArrivalBack"
+      @choose="onChooseIntent"
+      @choose-platform="onChoosePlatform"
+      @update:store-id="value => (arrivalStoreId = value)"
+      @retry-create="enterConnect"
+      @connected="onStoreConnected"
+      @finish="onFinishArrival"
+      @skip="onPauseFirstRun"
     />
 
     <!-- The guided walkthrough's spotlight, mounted once for the same reason the
@@ -360,7 +365,7 @@
 </template>
 
 <script setup>
-import { computed, ref, watch } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useQuasar } from 'quasar'
 import { useAuth } from '@/composables/useAuth'
@@ -368,12 +373,12 @@ import { useMe } from '@/composables/useMe'
 import { useEntitlements } from '@/composables/useEntitlements'
 import { useFeatures } from '@/composables/useFeatures'
 import { useOnboarding } from '@/composables/useOnboarding'
-import { useSetupProgress } from '@/composables/useSetupProgress'
-import { useGuidedTour } from '@/composables/useGuidedTour'
+import { needsPlatformStep } from '@/config/firstRun'
+import { templateFor, useFirstRunSetup } from '@/composables/useFirstRunSetup'
 import { useDataSource } from '@/composables/useDataSource'
-import { orderNavGroups, toFlat, toSections } from '@/lib/navOrder'
+import { toFlat, toSections } from '@/lib/navSections'
 import ComingSoonPanel from '@/components/ComingSoonPanel.vue'
-import PersonaQuestion from '@/components/onboarding/PersonaQuestion.vue'
+import FirstRunOverlay from '@/components/onboarding/FirstRunOverlay.vue'
 import DemoModeBanner from '@/components/DemoModeBanner.vue'
 import SfereConfetti from '@/components/ui/SfereConfetti.vue'
 import SpotlightTour from '@/components/ui/SpotlightTour.vue'
@@ -514,20 +519,13 @@ const navGroups = [
     icon: icIntegrations,
     to: '/functions'
   },
-  {
-    key: 'warehouse',
-    label: 'Warehouse',
-    icon: icSetup,
-    children: [
-      { label: 'Warehouse connections', to: '/dwh-connections' },
-      { label: 'DWH syncs', to: '/dwh-syncs', key: 'dwh-syncs' },
-      {
-        label: 'Warehouse models',
-        to: '/warehouse-models',
-        key: 'warehouse-models'
-      }
-    ]
-  },
+  // There is deliberately no Warehouse row. The warehouse IS a destination —
+  // every `web`/`zid` source create provisions its own ClickHouse destination,
+  // and browsing its tables or running SQL against it are tabs on
+  // `/destinations/:id`. A second rail row pointing at `/dwh-connections` said
+  // the warehouse was somewhere else. The `warehouse` feature key stays
+  // `enabled: true` in features.js, so those three routes still render their
+  // real pages; only the row is gone.
   {
     key: 'monitoring',
     label: 'Monitoring',
@@ -707,28 +705,44 @@ const lockedFeature = computed(() => {
 // entitlement silently falls back to its optimistic default.
 loadEntitlements()
 
-// Which persona this person picked, and whether they have been asked at all.
-// Read here because the answer now sets the ORDER of the sidebar — never its
-// contents. A marketer signing in finds Profiles next to Dashboard instead of
-// three sections down; an analyst finds Warehouse and Monitoring at the top of
-// COLLECT. Every row a persona does not care about is still in the rail, in its
-// authored position, so support can say "click Pipes" to anyone. Removal stays
-// entitlements' job, below.
+// Whether this person has been through the arrival yet, and how to record the
+// answer. THE SIDEBAR NO LONGER READS ANY OF THIS: ordering the rail by role was
+// removed along with the role question — a role picked in the first ten seconds
+// moved rows around on a rail where every row stayed anyway, so nobody could see
+// what the answer had bought, and support could not say "it's the fourth row
+// down" to anyone. The rail is now the authored order for everybody, and the
+// only two things that change it are the entitlement gate and feature
+// activation, both below.
 const {
-  personaMeta,
-  needsPersona,
-  setPersona,
-  skip: skipPersonaQuestion
+  needsFirstRun,
+  intent: onboardingIntent,
+  platform: onboardingPlatform,
+  sourceId: onboardingSourceId,
+  step: onboardingStep,
+  setIntent,
+  setPlatform,
+  setStep,
+  setSource,
+  complete: completeFirstRun,
+  pause: pauseFirstRun,
+  resumeStep,
+  clearResume
 } = useOnboarding()
 
-// Three passes, and the order between them matters.
+// The backend half of the arrival: it creates the source the answers describe,
+// runs the real event check and reads back what was provisioned. Held here
+// because every branch below is a decision and decisions are the layout's; the
+// overlay reads the same singleton for what its beats DISPLAY.
+const firstRunSetup = useFirstRunSetup()
+
+// Two passes, and the order between them matters.
 //
 // FIRST, entitlement-gated groups disappear. An entitlement you do not hold is
 // not yours to see; Engage is subject to both gates and this one runs first.
 //
 // THEN switched-off modules disappear too — see isInactive() above for why that
-// is now a removal rather than a Soon pill. Two details this pass has to get
-// right, and both were bugs the first time round:
+// is a removal rather than a Soon pill. Two details this pass has to get right,
+// and both were bugs the first time round:
 //
 //   * A CAPTION IS A FIELD ON THE FIRST GROUP OF ITS SECTION, so filtering the
 //     flat array can strand one. Drop `audiences` and 'ACTIVATE' goes with it,
@@ -738,12 +752,12 @@ const {
 //   * A GROUP WHOSE CHILDREN ARE ALL SWITCHED OFF must go too, or the rail
 //     grows a chevron that expands into nothing.
 //
-// THEN the persona reorders what is left. That way a persona ordering can never
-// resurrect a row either gate removed, and orderNavGroups only ever sees rows
-// this account is allowed to see. See src/lib/navOrder.js for why it cannot drop
-// one; a persona with no `nav` — engineer, a skipped question, an unanswered one,
-// which is the path scripts/smoke.mjs walks — gets the authored array back
-// untouched.
+// THERE USED TO BE A THIRD PASS, and its removal is the point of this change:
+// `orderNavGroups(activeGroups, persona.nav)` front-loaded the rows a role cared
+// about. It is gone with the role question. The sectioning helpers survive it
+// because the caption problem above is theirs, not the ordering's — they moved
+// from src/lib/navOrder.js to src/lib/navSections.js so the file name stops
+// promising an ordering nothing does any more.
 const activeGroups = computed(() => {
   const entitled = navGroups.filter(
     g => !g.entitlement || isEnabled(g.entitlement)
@@ -764,9 +778,11 @@ const activeGroups = computed(() => {
   return toFlat(sections)
 })
 
-const visibleGroups = computed(() =>
-  orderNavGroups(activeGroups.value, personaMeta.value?.nav)
-)
+// The authored order, for everybody. Kept as its own computed rather than
+// collapsing the two: `activeGroups` answers "which rows may this account see?"
+// and this answers "in what order?", and the template reading one name means the
+// day an ordering comes back it has one place to go.
+const visibleGroups = computed(() => activeGroups.value)
 
 // Settings is `locked: true` in features.js and Logout carries no key, so today
 // nothing here can be switched off. The filter is here anyway because the rule is
@@ -775,71 +791,211 @@ const visibleBottomMenu = computed(() =>
   bottomMenu.filter(item => !isInactive(item))
 )
 
-// The arrival is two beats on one card: the question, then the path from an
-// empty account to a working pipeline. `arrivalStep` is which one is showing.
+// The arrival is seven beats on one surface: what Sfere does, where this
+// account's activity happens, which platform, the store grant where one is
+// needed, the install, the confirmation, the provisioning read and the summary.
+// `arrivalStep` is which one is showing.
 //
-// SEPARATE FROM `needsPersona`, and it has to be: the moment a role is recorded
-// `needsPersona` goes false, so a single computed keyed on it would close the
-// card in the same tick the answer arrives — which is precisely the beat this
-// adds. Beat one is gated on the question being unanswered; beat two on not
-// having been finished with.
-const arrivalStep = ref('question')
+// SEPARATE FROM THE RECORD, and it has to be: the beats render in the same tick a
+// card is clicked, while every writer in `useOnboarding` goes through a commit
+// that validates and persists. The record is the durable copy — read on a cold
+// load and on a resume — and these refs are the live one.
+const arrivalStep = ref('welcome')
+
+// The category the later beats are about.
+const arrivalIntent = ref('')
+
+// The platform beat's answer. `arrivalTemplate` is the source-template id that
+// decides what gets created and which install methods the guide offers;
+// `arrivalPlatformKey` is the card's own key, which only naming needs — "Both"
+// resolves to the iOS template and must not be called "iOS app".
+const arrivalTemplate = ref('')
+const arrivalPlatformKey = ref('')
+
+// The granted store's id, read off the backend by the authorize beat and
+// required by the create for a Zid or Salla source.
+const arrivalStoreId = ref('')
+
 const arrivalFinished = ref(false)
 
-// The three setup reads, and the only reason this load-bearing layout knows
-// about them. LAZY ON PURPOSE: the factory call here just makes refs, and
-// `load()` runs only when someone actually answers the question — once ever,
-// per account, rather than on every render of every route. DashboardHomePage
-// runs its own copy for the tracker; sharing one would mean a module singleton
-// whose `load()` two unrelated surfaces have to agree about, and this reads
-// three list endpoints that are cheap and already cached by the browser.
-const {
-  steps: setupSteps,
-  currentStep: setupCurrentStep,
-  complete: setupComplete,
-  loaded: setupLoaded,
-  unavailable: setupUnavailable,
-  load: loadSetup
-} = useSetupProgress()
+// NOTHING HERE ARMS THE SPOTLIGHT WALKTHROUGH ANY MORE, and that is a
+// consequence of the arrival owning its own install and verify beats rather than
+// an oversight. `startTour('source-setup')` used to fire on the hand-off to
+// `/sources/new`, so the coachmarks explained the create form the reader had just
+// been dropped onto — a form they no longer see, because the arrival now walks
+// them through the same three things with a full screen each. Pointing a
+// spotlight at a screen nobody was sent to would be a tour with nothing to show,
+// which is the exact failure the old comment on the connector branch warned
+// about. `SpotlightTour`, `useGuidedTour` and `src/config/tours.js` are all still
+// wired and `SourceCreatePage` still calls `show()` on its own steps, so the day
+// something hands off to that page again, arming it is one line.
 
-// Whether the marks on the path mean anything yet. False while the reads are in
-// flight and false if any of them failed or has no endpoint — in which case the
-// nodes still render the path, just without ticks. A tick is a claim that a
-// record exists, and only a successful read can make it.
-const setupKnown = computed(() => setupLoaded.value && !setupUnavailable.value)
-
-// Only to arm it. Which step is showing is named by the page that owns the
-// state, and the spotlight above renders whatever it was last told.
-const { startTour } = useGuidedTour()
-
+// OPEN FOR TWO REASONS, and they are not the same reason. `needsFirstRun` is
+// "this account has never answered"; `resumeStep` is "somebody just pressed
+// Resume setup on the Dashboard". The second is in-memory only and is set by
+// exactly one control, which is what keeps a parked arrival from reopening
+// itself on every load — the failure mode the old skip-is-final rule existed to
+// prevent.
 const arrivalOpen = computed(() => {
   if (route.path !== '/') return false
-  if (arrivalStep.value === 'question') return needsPersona.value
-  return !arrivalFinished.value
+  if (arrivalFinished.value) return false
+  return needsFirstRun.value || Boolean(resumeStep.value)
 })
 
-// What the one button on beat two offers. It follows the workspace rather than
-// assuming an empty one: someone invited into an account that already has a
-// source is not a new workspace, and telling them to connect their first one
-// would be the screen's first sentence to them and wrong. Until the reads land
-// it offers the first step, which is right for every genuinely new account and
-// is a suggestion rather than a claim either way.
-const arrivalCta = computed(() => {
-  if (!setupKnown.value) {
-    return { label: 'Connect your first source →', to: { name: 'sources-new' } }
-  }
-  if (setupComplete.value) {
-    return { label: 'Take me to my dashboard', to: null }
-  }
-  const step = setupCurrentStep.value
-  return step
-    ? { label: `${step.cta} →`, to: step.to }
-    : { label: 'Connect your first source →', to: { name: 'sources-new' } }
+// THE ARRIVAL RE-ARMED FROM SETTINGS. `arrivalFinished` is session state, not a
+// record: it is flipped by the route watcher below the moment you leave `/`, and
+// nothing flips it back. So `Restart onboarding` on Settings → General worked or
+// silently did nothing depending on how the reader got to Settings — a cold load
+// straight to `/settings` never fired that watcher, a click through from Home
+// did. Same code, two behaviours, which is exactly the sort of bug that goes
+// unreported because the control simply appears to do nothing.
+//
+// Watched on `needsFirstRun` rather than routed through `resumeStep`, which is
+// the parked-arrival path and cannot carry this: `RESUMABLE_STEPS` deliberately
+// excludes 'welcome', and a restart replays from the welcome. Only the flip TO
+// true is acted on, so settling the arrival cannot re-open it.
+watch(needsFirstRun, (now, before) => {
+  if (!now || before) return
+  arrivalFinished.value = false
+  arrivalStep.value = 'welcome'
+  arrivalIntent.value = ''
+  arrivalTemplate.value = ''
+  arrivalPlatformKey.value = ''
+  arrivalStoreId.value = ''
+  // A RESTART MUST NOT INHERIT THE LAST RUN'S SOURCE. `ensureSource` is
+  // idempotent on purpose — a reader walking Back and forward again must not
+  // create a second source — so without this a restarted arrival would walk to
+  // its install beat and show the source it created ten minutes ago.
+  firstRunSetup.reset()
 })
+
+// A COLD LOAD INTO AN UNFINISHED ARRIVAL, which v4 could not have and v5 has to
+// answer. The arrival now creates a real source at its fifth beat, so a reload
+// that restarted from the welcome would walk the reader back through the
+// questions and create a SECOND source — orphaning the first, and on a `web`
+// template orphaning a ClickHouse destination with it (the backend's DELETE does
+// not clean those up).
+//
+// Gated on there being progress to resume: with no category and no source
+// recorded, the reader never got past the welcome and the welcome is where they
+// belong.
+onMounted(async () => {
+  if (!needsFirstRun.value) return
+  if (!onboardingIntent.value && !onboardingSourceId.value) return
+  arrivalIntent.value = onboardingIntent.value ?? ''
+  arrivalTemplate.value = onboardingPlatform.value ?? ''
+  arrivalStep.value = await resolveResumeStep(onboardingStep.value)
+})
+
+// A resume asked for on the Dashboard. It re-arms the surface and puts it
+// straight on the beat that was parked, skipping the welcome — somebody
+// returning has already read it, and replaying it would make Resume feel like
+// Start over.
+watch(resumeStep, async step => {
+  if (!step) return
+  arrivalFinished.value = false
+  arrivalIntent.value = onboardingIntent.value ?? ''
+  arrivalTemplate.value = onboardingPlatform.value ?? ''
+  arrivalStep.value = await resolveResumeStep(step)
+})
+
+/**
+ * Which beat a reader can actually be put back on, which is not always the one
+ * they left. Four of the seven need a live source and one of those needs a write
+ * key that no longer exists.
+ *
+ * THE INSTALL BEAT CANNOT BE RESTORED ACROSS A RELOAD, and that is the backend's
+ * doing rather than a shortcut: the write key is issued once, in the create
+ * response, and every later read of it is masked — which is why
+ * `SecretRevealDialog` exists at all. A restored install beat would therefore
+ * render the guide's `provisioning…` placeholder over a key that HAD been issued,
+ * which is worse than not offering the beat. Persisting the key to avoid that
+ * would put a live credential in localStorage to save a click. So a reader who
+ * parked on the install beat and came back after a reload lands on VERIFY, which
+ * needs only the id, and reaches the snippet from the source's own Setup
+ * instructions tab — the same component, which is the point of it being the same
+ * component.
+ *
+ * Within one session none of that applies: the source is still in memory with
+ * its key, so the beat they left is the beat they get.
+ */
+async function resolveResumeStep(step) {
+  const needsSource = ['connect', 'verify', 'setup', 'ready'].includes(step)
+
+  if (needsSource) {
+    if (firstRunSetup.source.value?.id) return step
+    const saved = onboardingSourceId.value
+    if (saved && (await firstRunSetup.restore(saved))) return 'verify'
+    // The source cannot be read back, so every beat that describes it would be
+    // describing nothing. The questions are still answerable.
+    return 'category'
+  }
+
+  // The platform and authorize beats cannot render without knowing what they are
+  // narrowing, and after a reload the record is the only copy of that answer.
+  if (step === 'authorize') {
+    if (arrivalTemplate.value) return 'authorize'
+    return arrivalIntent.value ? 'platform' : 'category'
+  }
+  if (step === 'platform') return arrivalIntent.value ? 'platform' : 'category'
+  return 'category'
+}
 
 function finishArrival() {
   arrivalFinished.value = true
-  arrivalStep.value = 'question'
+  arrivalStep.value = 'welcome'
+  arrivalIntent.value = ''
+  arrivalTemplate.value = ''
+  arrivalPlatformKey.value = ''
+  arrivalStoreId.value = ''
+  clearResume()
+}
+
+// Back walks the beats in reverse rather than always returning to the welcome:
+// from the platform beat the thing behind you is the category question you just
+// answered, not the paragraph before it.
+function onArrivalBack() {
+  const from = arrivalStep.value
+
+  // From the confirmation beat the thing behind you is the install, and the
+  // source is untouched by the trip.
+  if (from === 'verify') {
+    goToStep('connect')
+    return
+  }
+
+  // From the install beat, back is the question that chose the platform — or the
+  // grant, where there was one. THE SOURCE ALREADY EXISTS BY THIS POINT, and
+  // `ensureSource` is idempotent, so coming forward again on the SAME answers
+  // reuses it. Coming forward on a DIFFERENT answer creates a second source and
+  // leaves the first in the account, which is exactly what `/sources/new` does
+  // if you create twice: true, visible on the Sources screen, and better than
+  // silently reusing a source built for a platform the reader has just changed
+  // their mind about.
+  if (from === 'connect') {
+    if (needsAuthorizeStep(arrivalTemplate.value)) {
+      goToStep('authorize')
+      return
+    }
+    goToStep(needsPlatformStep(arrivalIntent.value) ? 'platform' : 'category')
+    return
+  }
+
+  if (from === 'authorize') {
+    goToStep(needsPlatformStep(arrivalIntent.value) ? 'platform' : 'category')
+    return
+  }
+
+  // GOING BACK TO OR PAST THE CATEGORY QUESTION CLEARS THE CATEGORY, and that is
+  // what keeps the record honest rather than merely tidy: both destinations sit
+  // BEFORE the beat that captured it. Without this, parking after walking back
+  // left a record saying `intent: 'app'` beside `step: 'category'` — so the
+  // Dashboard band promised "Finish connecting your mobile app" and the resume
+  // opened on "Where does your customer activity happen?".
+  arrivalIntent.value = ''
+  arrivalTemplate.value = ''
+  arrivalPlatformKey.value = ''
+  arrivalStep.value = from === 'platform' ? 'category' : 'welcome'
 }
 
 // Leaving `/` ends the beat rather than parking it. Without this, walking off to
@@ -848,60 +1004,213 @@ function finishArrival() {
 watch(
   () => route.path,
   path => {
-    if (path !== '/' && arrivalStep.value === 'path') finishArrival()
+    if (path !== '/') finishArrival()
   }
 )
 
-function onChoosePersona(key) {
-  setPersona(key)
+// The answer, and the only place in the app that decides what a category means.
+//
+// IT NAVIGATES, and that is the one departure from the surface this replaced.
+// The old overlay recorded a role and then offered a separate button onto the
+// first setup step, because being thrown onto a form by a click you thought only
+// recorded a preference reads as a misfire. Here the click IS the choice of what
+// to connect — "Website" is not a preference, it is the first field of the create
+// form — so a second consent step would be asking the same question twice.
+//
+// THE CATEGORY TRAVELS IN THE URL, not in a shared ref. `/sources/new` reads
+// `?intent=` and pre-selects step 1, which means the hand-off survives a reload
+// and a link somebody pastes to a colleague, and the create page keeps being
+// readable on its own without knowing this overlay exists.
+//
+// TAKING IT STARTS THE WALKTHROUGH. That is the one journey with a script behind
+// it (src/config/tours.js), and arming it here rather than on the record being
+// written is what keeps a skipped arrival — the path scripts/smoke.mjs walks —
+// from arming a spotlight with no step to show.
+function onChooseIntent(key) {
+  // "SOMETHING ELSE" LEAVES THE ARRIVAL, because there is nothing here for it to
+  // do. It resolves to the connector catalog rather than to a template, so there
+  // is no source to create, no snippet to install and no event to wait for — the
+  // four beats after the question would each have nothing to say. The category is
+  // recorded and the arrival is SETTLED rather than parked: the reader answered
+  // and was taken where they asked to go, so it must not reopen over the catalog
+  // they are now reading.
+  if (key === 'connector') {
+    setIntent(key)
+    completeFirstRun()
+    finishArrival()
+    firstRunSetup.reset()
+    router.push({ name: 'sources', query: { tab: 'connectors' } })
+    return
+  }
+
+  setIntent(key)
+  arrivalIntent.value = key
+
+  // A CATEGORY COVERING SEVERAL PLATFORMS ASKS ONE MORE QUESTION. "A website" has
+  // only `web-sdk` behind it, so a platform beat for it would be a screen with
+  // one answer — a click that teaches the reader their answers do not matter.
+  if (needsPlatformStep(key)) {
+    goToStep('platform')
+    return
+  }
+
+  arrivalTemplate.value = templateFor(key, '')
+  arrivalPlatformKey.value = ''
+  enterConnect()
+}
+
+// The platform beat's answer. `templateId` may be empty — that is the "Both"
+// card, which carries no template of its own; `templateFor` resolves it, and
+// `arrivalPlatformKey` is what stops the resulting source being called "iOS app".
+function onChoosePlatform(option) {
+  setPlatform(option.templateId)
+  arrivalTemplate.value = templateFor(arrivalIntent.value, option.templateId)
+  arrivalPlatformKey.value = option.key ?? ''
+
+  // A STORE STARTS WITH A GRANT, and it is a beat rather than a field for a
+  // reason the create form's own comment gives in reverse: there the template is
+  // settled halfway down a form, so growing a step would be a wizard changing
+  // shape under the reader. Here the platform was settled by the click that just
+  // happened. It also cannot be skipped — the backend refuses a Zid or Salla
+  // source without a `store_id`, so there is nothing to create until it is done.
+  if (needsAuthorizeStep(arrivalTemplate.value)) {
+    goToStep('authorize')
+    return
+  }
+
+  enterConnect()
+}
+
+/** Which templates cannot be created until a store has granted access. */
+function needsAuthorizeStep(templateId) {
+  return templateId === 'zid' || templateId === 'salla'
+}
+
+/** Move to a beat and record it, so a reload can find its way back. */
+function goToStep(step) {
+  arrivalStep.value = step
+  setStep(step)
+}
+
+/**
+ * Enter the install beat, creating the source on the way in.
+ *
+ * THE CREATE IS AWAITED BUT THE BEAT IS NOT WAITED FOR: the step changes first,
+ * so the reader sees "Preparing your source…" on the beat that is about to hold
+ * the snippet rather than a frozen platform picker. `FirstRunConnect` renders the
+ * spinner, the failure and the retry from the same three refs.
+ */
+async function enterConnect() {
+  goToStep('connect')
+  const created = await firstRunSetup.ensureSource({
+    intentKey: arrivalIntent.value,
+    templateId: arrivalTemplate.value,
+    platformKey: arrivalPlatformKey.value,
+    storeId: arrivalStoreId.value
+  })
+  // Recorded as soon as it exists, so a reload one second later can put the
+  // reader back on a beat that describes a source rather than starting a flow
+  // that would create another one.
+  if (created?.id && created.id !== 'preview') setSource(created.id)
+}
+
+/**
+ * The forward control, for every beat.
+ *
+ * ONE HANDLER RATHER THAN SEVEN, and the beat order lives here and nowhere else.
+ * The overlay emits `advance` and knows nothing about what follows what, so
+ * inserting a beat is one edit rather than an edit and a matching one in a
+ * component that would otherwise disagree with it.
+ */
+function onAdvance() {
+  const from = arrivalStep.value
+
+  if (from === 'welcome') {
+    // NOT RECORDED. The welcome is deliberately not a resumable beat — see
+    // ARRIVAL_STEPS in useOnboarding — so moving off it records nothing until
+    // there is an answer to record.
+    arrivalStep.value = 'category'
+    return
+  }
+
+  if (from === 'authorize') {
+    enterConnect()
+    return
+  }
+
+  if (from === 'connect') {
+    goToStep('verify')
+    return
+  }
+
+  if (from === 'verify') {
+    goToStep('setup')
+    // THE LOOKUP STARTS ON ARRIVAL AT THE BEAT THAT SHOWS IT, un-awaited, so the
+    // checklist can render its rows as running rather than the beat appearing
+    // already finished. `discover` retries twice on its own.
+    firstRunSetup.discoverProvisioning()
+    return
+  }
+
+  if (from === 'setup') {
+    goToStep('ready')
+  }
+}
+
+/**
+ * The store wizard finished its first sync.
+ *
+ * IT DOES NOT ADVANCE THE BEAT. The wizard's own last step reports what the sync
+ * pulled, and moving the reader off that report the instant it appears would
+ * throw away the only confirmation the store path gets before the event check.
+ * The forward control is theirs to press; this only says the click landed, which
+ * is the same courtesy the pause branch gets and for the same reason — nothing
+ * else on screen changes at that moment.
+ */
+function onStoreConnected() {
   $q.notify({
-    message: `Set to “${personaMeta.value?.label ?? key}”`,
-    caption: 'Change it any time in Settings → General.',
+    message: 'First sync started',
+    caption: 'Check for events on the next step once it has run.',
     color: 'dark',
     timeout: 2500
   })
-  // Deliberately not awaited: the path beat is worth showing immediately, and
-  // the marks and the button label sharpen when the reads land a moment later.
-  // Errors are already folded into `unavailable`, which is why there is nothing
-  // to catch here.
-  loadSetup()
-  arrivalStep.value = 'path'
 }
 
-// The button on beat two. `to: null` is the one case where there is nowhere to
-// go — a workspace already wired end to end — and closing onto the dashboard
-// behind the card is the honest answer to it.
+/**
+ * The last beat's control: the arrival is done.
+ *
+ * `completeFirstRun()` is what settles the record — `hasOnboarded` reads
+ * `completedAt` — so nothing before this point can close the surface under a
+ * reader who is still working through it. There is no navigation: the arrival
+ * opens over a fully-rendered Home and closing it IS arriving at the dashboard.
+ */
+function onFinishArrival() {
+  completeFirstRun()
+  finishArrival()
+  firstRunSetup.reset()
+}
+
+// Parking is acknowledged, for the same reason choosing is. It used to simply
+// vanish, which is indistinguishable from having dismissed it by accident — and
+// it is the one branch where nothing else on the screen changes to confirm the
+// click landed.
 //
-// TAKING IT STARTS THE WALKTHROUGH, and only when it leads to `/sources/new`.
-// That is the one journey with a script behind it (see src/config/tours.js);
-// starting a tour before "Add a destination" or "Take me to my dashboard" would
-// arm a spotlight with no step to show, which renders as nothing and reads as
-// broken. Started from the CLICK rather than from the persona being recorded, so
-// somebody who skips the question — the path `scripts/smoke.mjs` walks — never
-// arms it at all.
-function onStartPath() {
-  const target = arrivalCta.value.to
+// THE TOAST PROMISES SOMETHING THAT IS TRUE. It used to say "Connect a source any
+// time from the Sources screen", which pointed at a create form rather than at
+// the beats the reader was half way through. The Dashboard carries a resume band,
+// so that is what it names.
+//
+// IT DOES NOT RESET `firstRunSetup`, deliberately. A reader who parks on the
+// install beat and presses Resume five minutes later is still in the same
+// session, so the source — and the write key that exists nowhere else — is still
+// in memory and they land back on the beat they left. Only a finished or
+// restarted arrival clears it.
+function onPauseFirstRun() {
+  pauseFirstRun(arrivalStep.value, arrivalIntent.value)
   finishArrival()
-  if (!target) return
-  if (target.name === 'sources-new') startTour('source-setup')
-  router.push(target)
-}
-
-function onDismissPath() {
-  finishArrival()
-}
-
-// Skipping is acknowledged, for the same reason choosing is. The overlay used to
-// simply vanish on Skip, which is indistinguishable from having dismissed it by
-// accident — and it is the one branch where nothing else on the screen changes to
-// confirm the click landed. The toast also carries the only pointer back: someone
-// who skips has not read the sentence about Settings that the answer's toast
-// repeats.
-function onSkipPersona() {
-  skipPersonaQuestion()
   $q.notify({
-    message: 'No role set',
-    caption: 'Pick one any time in Settings → General.',
+    message: 'Setup paused',
+    caption: 'Pick it up again from the band on your dashboard.',
     color: 'dark',
     timeout: 2500
   })
@@ -911,26 +1220,12 @@ function onSkipPersona() {
 // always shown open regardless, so navigation never hides where you are.
 const openGroups = ref(new Set())
 
-// Pre-expanded for this persona, so a marketer lands with the profile screens
-// listed rather than behind a chevron.
-//
-// ADDITIVE, AND DELIBERATELY NOT A COMPUTED. A computed set derived from the
-// persona would fight the person using it: collapse Profiles and it would spring
-// back open on the next render, with no way to say otherwise. Writing into the
-// same ref the chevron writes into means the persona chooses the starting state
-// and the user has the last word from then on. It also runs on change rather than
-// only at init, so picking a role in the overlay expands the rail in the same
-// tick instead of on the next reload.
-watch(
-  () => personaMeta.value?.nav?.expand,
-  keys => {
-    if (!keys?.length) return
-    const next = new Set(openGroups.value)
-    for (const key of keys) next.add(key)
-    openGroups.value = next
-  },
-  { immediate: true }
-)
+// NOTHING PRE-EXPANDS A GROUP ANY MORE. A watcher here used to open whichever
+// groups the chosen role named, so a marketer landed with the profile screens
+// listed rather than behind a chevron. It went with the role question: with no
+// role there is nobody to pre-expand for, and guessing would be the rail moving
+// under a reader for a reason they cannot see. `groupHasActiveChild` below still
+// opens the group you are actually in, which is the case that mattered.
 
 function groupHasActiveChild(group) {
   return (group.children || []).some(c => isActive(c))

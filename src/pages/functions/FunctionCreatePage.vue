@@ -1,127 +1,152 @@
 <template>
   <q-page class="p-6">
-    <PageHeader
-      title="Write a function"
-      subtitle="A function receives one event and returns it, changes it, or returns nothing to drop it."
-    />
+    <div class="mx-auto w-full max-w-[1400px]">
+      <PageHeader
+        title="Create a function"
+        subtitle="Define what the function does, then write the code. A function receives one event and returns it, changes it, or returns nothing to drop it."
+      />
 
-    <NoticeBanner
-      v-if="!isReal"
-      class="mb-5"
-      tone="warn"
-      title="Demo data mode saves nothing"
-      message="Creating a function needs the backend. Switch Settings → Data source to Real API before filling this in."
-    />
+      <NoticeBanner
+        v-if="!isReal"
+        class="mb-5"
+        tone="warn"
+        title="Demo data mode saves nothing"
+        message="Creating a function needs the backend. Switch Settings → Data source to Real API before filling this in."
+      />
 
-    <div class="flex flex-col gap-5">
-      <FormSection
-        title="Identity"
-        description="What this function is called, and what it does to an event."
-      >
-        <FormField
-          label="Name"
-          required
-          for-id="function-name"
-          hint="What it does, in a few words. This is the label on every pipe it runs on."
-          :error="errors.name"
+      <!-- `grid`, not `flex flex-col`: Quasar's unlayered `.flex` forces
+           `flex-wrap: wrap`, which stretches block children into a second
+           column under a height cap. Grid `gap` has no Quasar counterpart. -->
+      <div class="grid gap-5">
+        <FormSection
+          title="Function details"
+          description="Give it a clear name so teammates understand why it exists."
         >
-          <SfereInput
-            id="function-name"
-            v-model="form.name"
-            placeholder="e.g. Drop internal test traffic"
-            autocomplete="off"
-          />
-        </FormField>
+          <FormField
+            label="Name"
+            required
+            for-id="function-name"
+            hint="This name appears on the Functions page and on every pipe it runs on."
+            :error="errors.name"
+          >
+            <SfereInput
+              id="function-name"
+              v-model="form.name"
+              placeholder="e.g. Remove internal test traffic"
+              autocomplete="off"
+              :invalid="Boolean(errors.name)"
+            />
+          </FormField>
 
-        <!-- Derived and overridable rather than asked for twice: `FunctionCreate`
-             requires both `name` and `slug`, and nobody wants to type the same
-             thing in two boxes. -->
-        <FormField
-          label="Slug"
-          required
-          for-id="function-slug"
-          hint="The machine name. Derived from the name; change it if you need a specific one."
-          :error="errors.slug"
-        >
-          <SfereInput
-            id="function-slug"
-            v-model="slugField"
-            placeholder="drop-internal-test-traffic"
-            autocomplete="off"
-          />
-        </FormField>
+          <!-- Derived and overridable rather than asked for twice:
+               `FunctionCreate` requires both `name` and `slug`, and nobody
+               wants to type the same thing into two boxes. -->
+          <FormField
+            label="Slug"
+            required
+            for-id="function-slug"
+            hint="The machine name Sfere uses. Derived from the name; change it if you need a specific one."
+            :error="errors.slug"
+          >
+            <SfereInput
+              id="function-slug"
+              v-model="slugField"
+              placeholder="remove-internal-test-traffic"
+              autocomplete="off"
+              :invalid="Boolean(errors.slug)"
+            />
+          </FormField>
 
-        <FormField
-          label="Description"
-          optional
-          for-id="function-description"
-          hint="Why it exists. Worth a sentence — the next person to see this is deciding whether it is safe to remove."
-        >
-          <SfereTextarea
-            id="function-description"
-            v-model="form.description"
-            :rows="2"
-          />
-        </FormField>
+          <FormField
+            label="Description"
+            optional
+            for-id="function-description"
+            hint="Describe what this function changes and why. The next person to see it is deciding whether it is safe to remove."
+          >
+            <SfereTextarea
+              id="function-description"
+              v-model="form.description"
+              :rows="2"
+            />
+          </FormField>
 
-        <FormField label="Kind" required for-id="function-kind">
-          <div id="function-kind" class="flex flex-col gap-2">
-            <label
-              v-for="kind in FUNCTION_KINDS"
-              :key="kind.value"
-              class="flex cursor-pointer items-start gap-2.5 rounded-sfere border border-sfere-line bg-white px-3 py-2.5 hover:bg-sfere-fill"
+          <!-- The kind is set HERE and nowhere else: `PUT …/functions/{id}`
+               persists code only, so the detail page cannot offer to change it
+               and does not pretend to. -->
+          <FormField
+            label="Type"
+            required
+            hint="This cannot be changed later — an update saves the code only."
+          >
+            <div
+              role="group"
+              aria-label="Function type"
+              class="grid gap-3 sm:grid-cols-3"
             >
-              <input
-                v-model="form.kind"
-                type="radio"
-                :value="kind.value"
-                class="mt-0.5 size-4 shrink-0 accent-sfere-500"
-              />
-              <span class="min-w-0 flex-1">
-                <span class="block text-sm font-medium text-sfere-fg">{{
-                  kind.label
-                }}</span>
-                <span class="block text-xs text-sfere-fg-muted">{{
-                  kind.description
-                }}</span>
-              </span>
-            </label>
-          </div>
-        </FormField>
-      </FormSection>
+              <SelectableCard
+                v-for="kind in FUNCTION_KINDS"
+                :key="kind.value"
+                :selected="form.kind === kind.value"
+                @select="form.kind = kind.value"
+              >
+                <span class="grid gap-1.5">
+                  <span class="flex items-center gap-2">
+                    <SfereIcon name="function-f" size="md" />
+                    <span class="text-sm font-semibold text-sfere-fg">{{
+                      kind.label
+                    }}</span>
+                  </span>
+                  <span class="text-xs text-sfere-fg-muted">{{
+                    kind.description
+                  }}</span>
+                </span>
+              </SelectableCard>
+            </div>
+          </FormField>
+        </FormSection>
 
-      <FormSection
-        title="Code"
-        description="Plain JavaScript. It receives the event and returns what should continue down the pipe."
-      >
-        <FormField
-          label="Function body"
-          for-id="function-code"
-          optional
-          hint="Leave blank to start from the backend's default for this kind. You can edit and test it on the detail page afterwards."
+        <FormSection
+          title="Code"
+          description="JavaScript that receives an event and returns what continues down the pipe."
         >
-          <SfereTextarea
-            id="function-code"
-            v-model="form.code"
-            :rows="12"
-            class="font-sfere-mono!"
-            :placeholder="placeholder"
-          />
-        </FormField>
-      </FormSection>
-    </div>
+          <FormField
+            label="Function body"
+            for-id="function-code"
+            optional
+            hint="Leave it blank to start from the backend's default for this type. The code is the one thing you can change afterwards."
+          >
+            <SfereTextarea
+              id="function-code"
+              v-model="form.code"
+              :rows="14"
+              class="font-sfere-mono!"
+              :placeholder="placeholder"
+            />
+          </FormField>
+        </FormSection>
 
-    <StickyActionBar>
-      <SfereButton :loading="submitting" @click="submit"
-        >Create function</SfereButton
-      >
-      <SfereButton variant="secondary" :to="{ name: 'functions' }"
-        >Back to functions</SfereButton
-      >
-      <p v-if="errors.form" class="min-w-0 flex-1 text-xs text-rose-600">{{
-        errors.form
-      }}</p>
-    </StickyActionBar>
+        <!-- The same workbench the detail page renders, with its Run control
+             absent: `POST …/functions/{id}/test` is keyed on a function id, and
+             this function has none until it is created. -->
+        <FunctionWorkbench
+          :kind="form.kind"
+          :can-run="false"
+          cannot-run-reason="A test runs against a saved function, so it cannot run from here. Create the function and its own page runs this code against an event — nothing is ingested and nothing is delivered."
+        />
+      </div>
+
+      <StickyActionBar>
+        <SfereButton :loading="submitting" @click="submit"
+          >Create function</SfereButton
+        >
+        <SfereButton variant="secondary" :to="{ name: 'functions' }"
+          >Cancel</SfereButton
+        >
+        <p v-if="errors.form" class="min-w-0 flex-1 text-xs text-rose-600">{{
+          errors.form
+        }}</p>
+      </StickyActionBar>
+    </div>
   </q-page>
 </template>
 
@@ -133,10 +158,13 @@ import PageHeader from '@/components/ui/PageHeader.vue'
 import FormField from '@/components/ui/FormField.vue'
 import FormSection from '@/components/ui/FormSection.vue'
 import NoticeBanner from '@/components/ui/NoticeBanner.vue'
+import SelectableCard from '@/components/ui/SelectableCard.vue'
 import SfereButton from '@/components/ui/SfereButton.vue'
+import SfereIcon from '@/components/ui/SfereIcon.vue'
 import SfereInput from '@/components/ui/SfereInput.vue'
 import SfereTextarea from '@/components/ui/SfereTextarea.vue'
 import StickyActionBar from '@/components/ui/StickyActionBar.vue'
+import FunctionWorkbench from '@/components/functions/FunctionWorkbench.vue'
 import { useDataSource } from '@/composables/useDataSource'
 import {
   FUNCTION_KINDS,
@@ -163,6 +191,7 @@ const submitting = ref(false)
 // The slug follows the name until someone edits it, then stops — a slug that
 // keeps rewriting itself under an explicit choice is the more annoying failure.
 const slugEdited = ref(false)
+const slugManual = ref('')
 const slugField = computed({
   get: () => (slugEdited.value ? slugManual.value : slugify(form.name)),
   set: value => {
@@ -170,7 +199,6 @@ const slugField = computed({
     slugManual.value = value
   }
 })
-const slugManual = ref('')
 
 watch(
   () => form.name,
@@ -181,8 +209,8 @@ watch(
 
 const placeholder = computed(() =>
   form.kind === 'filter'
-    ? 'export default function (event) {\n  // Return the event to keep it, or nothing to drop it.\n  if (event.context?.traits?.internal) return\n  return event\n}'
-    : 'export default function (event) {\n  return { ...event, tenant: "acme" }\n}'
+    ? 'export default async function (event, { log }) {\n  // Return the event to keep it, or nothing to drop it.\n  if (event.context?.traits?.internal) return\n  return event\n}'
+    : 'export default async function (event, { log }) {\n  return { ...event, tenant: "acme" }\n}'
 )
 
 function validate() {

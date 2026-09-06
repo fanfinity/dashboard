@@ -41,7 +41,7 @@ are newer than the swap and simply describe what they do: 16 + 27 + 3 = 46.
 | Path                         | What                                                           |
 | ---------------------------- | -------------------------------------------------------------- |
 | `src/css/sfere.css`          | The token layer: `@theme` tokens + seven `@utility` treatments |
-| `src/components/ui/`         | 46 components. The kit every screen is built from              |
+| `src/components/ui/`         | 47 components. The kit every screen is built from              |
 | `src/components/sfere-docs/` | Doc-page scaffolding. **Not** part of the kit                  |
 | `src/pages/design-system/`   | The showcase page itself                                       |
 | `public/brand/`              | Logo lockups and the mark, as real SVG files                   |
