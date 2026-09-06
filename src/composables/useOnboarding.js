@@ -223,6 +223,28 @@ const record = ref(readRecord())
 // Holds the beat to open at, or null.
 const resumeStep = ref(null)
 
+// How many times the arrival surface has closed in THIS session. IN MEMORY,
+// NEVER PERSISTED, and it is a counter rather than a flag or a timestamp: a
+// reader can park the arrival, resume it from the band and finish it in one
+// session, and each of those closes is a separate event that a boolean would
+// collapse and a same-millisecond timestamp could miss.
+//
+// WHY IT EXISTS. The arrival is a surface over a FULLY-RENDERED Home, not a
+// route, so the Dashboard beneath it is mounted the whole time and its reads
+// ran before a single beat did — and by the last beat the account owns a
+// source, and on a `web` or `zid` template a destination and a pipeline too. So
+// a reader who had just watched the arrival build all three landed on
+// "Let's get your activity data flowing · 0 / 3 done", which is the setup
+// tracker reporting an account that stopped existing several beats ago. Nothing
+// remounts the page to correct it: closing the arrival IS arriving at the
+// dashboard.
+//
+// It lives here rather than in MainLayout because the two sides are a layout
+// and a page inside its `<router-view>` — the same reason the record itself is
+// a module singleton. `MainLayout` bumps it from `finishArrival()`, which is the
+// one funnel every exit goes through; the Dashboard watches it and refetches.
+const arrivalClosedCount = ref(0)
+
 function commit(next) {
   record.value = next
   // Not persisted while signed out: a record with no uid answers for nobody, and
@@ -235,6 +257,17 @@ function commit(next) {
     // Same reasoning as readRecord: a refused write costs the answer on the next
     // page load, nothing more.
   }
+}
+
+/**
+ * The arrival surface has closed — finished, parked, or handed off. Called by
+ * `MainLayout.finishArrival()` and by nothing else.
+ *
+ * It says only that the surface went away; what the account now holds is for the
+ * screen underneath to re-read, which is deliberately not this file's business.
+ */
+function markArrivalClosed() {
+  arrivalClosedCount.value += 1
 }
 
 export function useOnboarding() {
@@ -536,6 +569,8 @@ export function useOnboarding() {
     step,
     sourceId,
     resumeStep,
+    arrivalClosedCount,
+    markArrivalClosed,
     hasOnboarded,
     needsFirstRun,
     beginFirstRun,

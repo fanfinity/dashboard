@@ -35,6 +35,20 @@ the smoke test can assert on a single selector across every route.
    The suffix is needed on `text-*`, `font-*` and `leading-*`. It is **not**
    needed on colour, margin or padding — Quasar does not set those on headings.
 
+   **A `<button>` is the same problem in a place nobody looks**, and the whole
+   of rule 2 applies to it: Quasar ships unlayered
+   `button, input, optgroup, select, textarea { font: inherit }`, and because
+   that is the `font` **shorthand** it resets size, line height _and_ weight in
+   one declaration. So a `<button class="text-sfere-sm font-semibold">` renders
+   at whatever its container inherits. What makes it expensive is that the same
+   component can disagree with itself: `SfereButton` renders an `<a>` when it
+   carries `to` and a `<button>` when it does not, and an `<a>` is not in that
+   selector list — measured, one class string drew 600 weight / 13px as the
+   link and 400 / 14px as the button, which is a `Refresh` and a
+   `Connect a source` in one header row looking like two different controls.
+   Use the suffix on any `<button>` that states its own type: `text-sfere-sm!`,
+   `font-semibold!`, `leading-none!`. `SfereButton` and `TabNav` carry it.
+
    ```html
    <!-- WRONG: Quasar wins; this renders at heading scale -->
    <h3 class="text-[11px] font-semibold uppercase leading-4 text-subtle">
@@ -636,9 +650,19 @@ Page title block. Sits at the top of every `q-page`.
 | ---------- | ----- | ---------------------------------------------- |
 | `title`    | —     | overrides the `title` prop for rich content    |
 | `subtitle` | —     | overrides the `subtitle` prop for rich content |
+| `eyebrow`  | —     | replaces the `eyebrow` prop's `SfereEyebrow`   |
 | `actions`  | —     | right-hand buttons / search box                |
 
 No events.
+
+**Reach for the `#eyebrow` slot only when the line is not a section label.** The
+prop is the normal way in and renders `SfereEyebrow`, which is mono, uppercase
+and 0.18em-tracked by design and deliberately exposes no way to soften that — the
+wide tracking is the whole effect. One line in the app is not that: the
+Dashboard's `Hello Anas 👋`, which through the prop would be shouted in the voice
+reserved for `COLLECT` and `ACT`. Whatever goes in the slot stays a `<p>`, above
+the `<h1>`, for the reason the back link does: `scripts/smoke.mjs` asserts on the
+first heading and that belongs to the page.
 
 **The back link is not something a page passes.** `PageHeader` reads
 `route.meta.parent` — the `parent: { name, label }` field on the screen's entry

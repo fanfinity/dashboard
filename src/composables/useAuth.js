@@ -52,6 +52,27 @@ async function registerViaBackend(email, password, displayName) {
   const body = await res.json().catch(() => null)
   if (!res.ok) {
     // RFC 9457 problem+json ({ detail, title, ... }).
+    //
+    // A 5xx IS NOT PASSED THROUGH, and that is a deliberate exception to
+    // "surface the backend's sentence". Registration provisions a whole account
+    // now — an Identity Platform tenant, the owner user, a ClickHouse database,
+    // a Jitsu workspace — and when a step of that fails the endpoint answers 502
+    // with the upstream error verbatim: staging currently returns a
+    // 400-character Python repr of a Google metadata-service 404 naming an
+    // internal service account. That is not something the reader typed, can fix,
+    // or should be shown, so 5xx gets one written sentence and the raw detail
+    // goes to the console for whoever is actually debugging it. Everything
+    // 4xx — the address is taken, the password is too short — is the reader's to
+    // act on and still says exactly what the backend said.
+    if (res.status >= 500) {
+      console.error(
+        'Registration failed:',
+        body?.detail || body?.title || res.status
+      )
+      throw new Error(
+        "We couldn't finish setting up your account. This is a problem on our side, not with what you entered — try again in a few minutes, and tell us if it keeps happening."
+      )
+    }
     throw new Error(
       body?.detail || body?.title || `Registration failed (${res.status})`
     )

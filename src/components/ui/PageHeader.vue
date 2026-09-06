@@ -42,12 +42,17 @@
         {{ backTarget.label }}
       </SfereButton>
 
-      <SfereEyebrow
-        v-if="eyebrow"
-        :label="eyebrow"
-        :on-dark="onDark"
-        class="mb-2.5"
-      />
+      <!-- The eyebrow slot exists for the one line that is not a section label:
+           the Dashboard's greeting. `SfereEyebrow` is mono, uppercase and
+           0.18em-tracked by design and deliberately exposes no way to soften
+           that, so "Hello Anas 👋" through the prop would be shouted in the
+           voice reserved for 'COLLECT' and 'ACT'. The prop is still the normal
+           way in and still renders the same component. -->
+      <div v-if="$slots.eyebrow || eyebrow" class="mb-2.5">
+        <slot name="eyebrow">
+          <SfereEyebrow :label="eyebrow" :on-dark="onDark" />
+        </slot>
+      </div>
 
       <h1 :class="titleClasses">
         <slot name="title">{{ title }}</slot>

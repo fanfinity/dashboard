@@ -92,6 +92,24 @@ function trend(values) {
   }
 }
 
+/**
+ * `destination_type` → the word a human uses for it.
+ *
+ * A MAP AND NOT A `capitalize()`, deliberately: the casing is the product's
+ * ("ClickHouse", "BigQuery"), and a type nobody has written a word for falls
+ * through to nothing rather than to a title-cased slug. The flow node then draws
+ * its pipe count alone, which is what it did before this existed.
+ */
+const DESTINATION_TYPE_LABELS = {
+  clickhouse: 'ClickHouse',
+  bigquery: 'BigQuery',
+  snowflake: 'Snowflake',
+  postgres: 'Postgres',
+  redshift: 'Redshift',
+  s3: 'Amazon S3',
+  webhook: 'Webhook'
+}
+
 /** Flow-column node tone: green flowing, amber configured-but-idle, grey off. */
 function tone(enabled, volume) {
   if (!enabled) return 'off'
@@ -461,6 +479,17 @@ export function useDashboardHome() {
     const { sources, destinations } = nodes.value
     const items = []
 
+    // NOTHING IS OUTSTANDING BEFORE THE FIRST SOURCE, and saying otherwise was
+    // the loudest thing on a brand-new account's Dashboard. Registration
+    // provisions a ClickHouse warehouse, so a workspace with no source still has
+    // one enabled destination with no pipe pointing at it — which trips the
+    // orphan rule below and printed "Enabled, but no pipe delivers to it" in an
+    // amber banner, plus a `Needs attention: 1` card, above a screen whose
+    // actual message is "connect a source". Both were true readings of the
+    // record and neither named an action, because the only action is the one the
+    // band at the top of the page already carries.
+    if (!sources.length) return items
+
     for (const s of sources) {
       if (s.isEnabled && !s.pipes.length) {
         items.push({
@@ -585,6 +614,14 @@ export function useDashboardHome() {
       return Number(volume) > 0 ? 'healthy' : 'idle'
     }
 
+    const pipeText = n => (n === 1 ? '1 pipe' : `${n} pipes`)
+
+    // Nothing can be flowing anywhere, so nothing on this picture should be
+    // drawn as though it had stalled. The destination chips say `Ready` in the
+    // brand tone instead of `Idle` in grey, and the hint says the warehouse is
+    // waiting rather than counting a zero at the reader.
+    const awaitingFirstSource = sources.length === 0
+
     return {
       sources: sources.map(s => ({
         id: s.id,
@@ -595,15 +632,33 @@ export function useDashboardHome() {
         status: nodeStatus(s.isEnabled, s.eventCountLastHour),
         to: { name: 'sources-detail', params: { id: s.id } }
       })),
-      destinations: destinations.map(d => ({
-        id: d.id,
-        name: d.name,
-        subtype: d.destinationType ?? '',
-        hint: `${d.pipes.length} pipe${d.pipes.length === 1 ? '' : 's'}`,
-        isEnabled: d.isEnabled !== false,
-        status: nodeStatus(d.isEnabled, d.deliveryCountLastHour),
-        to: { name: 'destinations-detail', params: { id: d.id } }
-      })),
+      destinations: destinations.map(d => {
+        const typeLabel = DESTINATION_TYPE_LABELS[d.destinationType] ?? ''
+        const waiting = awaitingFirstSource && d.isEnabled !== false
+        return {
+          id: d.id,
+          name: d.name,
+          subtype: d.destinationType ?? '',
+          // WHAT IT IS, then how much of it is wired up. The row used to read
+          // `0 pipes` on its own, which on a fresh account is a count of
+          // something the reader has not been asked for yet sitting where the
+          // description of the warehouse should be. The type is read off the
+          // record — `destination_type` — so this names ClickHouse only where
+          // ClickHouse is what the backend said. It is NOT the prototype's
+          // "Included with your account": nothing on this payload measures
+          // billing, which is the same line `destinationProvisioning.js`
+          // draws.
+          hint: [typeLabel, waiting ? '' : pipeText(d.pipes.length)]
+            .filter(Boolean)
+            .join(' · '),
+          note: waiting ? 'Waiting for your first source' : '',
+          isEnabled: d.isEnabled !== false,
+          status: nodeStatus(d.isEnabled, d.deliveryCountLastHour),
+          statusLabel: waiting ? 'Ready' : '',
+          statusTone: waiting ? 'brand' : '',
+          to: { name: 'destinations-detail', params: { id: d.id } }
+        }
+      }),
       links: links.map(({ pipe, source, destination }) => ({
         id: pipe.id,
         sourceId: source.id,

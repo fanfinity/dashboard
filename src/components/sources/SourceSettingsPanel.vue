@@ -274,9 +274,16 @@ const {
 } = useSourceWriteKeys()
 
 const keyCreating = ref(false)
-// The one place a new key's plaintext lives, for as long as its dialog is open.
+// The one place a new key's value lives, for as long as its dialog is open.
 // The backend stores a hash, so this is the only copy in existence — hence one
 // owner, and a single line that clears it.
+//
+// It holds the `keyId:secret` PAIR, not the bare `plaintext` off the response.
+// Jitsu accepts only the pair — `Source.write_key` is stored composed, and the
+// create route's own comment says the dashboard is what composes it — so
+// revealing `plaintext` alone handed people a value that silently failed ingest
+// wherever they pasted it. `useSourceWriteKeys.create()` returns both; this is
+// the one worth showing.
 const newKeyPlaintext = ref('')
 
 function loadKeys() {
@@ -298,7 +305,7 @@ async function onCreateKey({ kind, name }) {
       })
       return
     }
-    if (!res.data.plaintext) {
+    if (!res.data.writeKey) {
       // The key exists and its value did not come back. Nothing can show it
       // now, so say that rather than opening a dialog on an empty string.
       $q.notify({
@@ -311,7 +318,7 @@ async function onCreateKey({ kind, name }) {
       })
       return
     }
-    newKeyPlaintext.value = res.data.plaintext
+    newKeyPlaintext.value = res.data.writeKey
   } finally {
     keyCreating.value = false
   }

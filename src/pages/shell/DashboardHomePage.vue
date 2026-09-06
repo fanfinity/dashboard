@@ -7,57 +7,87 @@
          `--container-sfere-page` (80rem / 1280px) — that token is the
          marketing-site measure and left ~40% of a wide monitor empty here. -->
     <div class="mx-auto w-full max-w-[1400px]">
-      <!-- On the first run the <h1> IS the headline. EmptyState draws its title
-           at 14px semibold, so a welcome put there would be a label above a
-           button while the biggest text on the screen still read "Dashboard".
-           PageHeader renders 24px in the display face, it is the one <h1> the
-           smoke gate asserts on, and there is no dashboard here yet to label. -->
-      <PageHeader :title="title" :subtitle="subtitle">
-        <!-- No actions at all on the first run: the one thing that can be done
-             is the button in the setup diagram below, and a header CTA saying
-             the same words is a duplicate. Gated on `setupLoaded` as well as
-             `!firstRun` so a fresh account never paints the pair and then drops
-             them a moment later — a button that appears and vanishes reads as a
-             bug, an absence that fills in reads as loading. -->
-        <template v-if="setupLoaded && !firstRun" #actions>
+      <PageHeader
+        title="Dashboard"
+        subtitle="See how customer activity moves through Sfere, from your sources to your destinations"
+      >
+        <!-- THE ONE PIECE OF WARMTH ON THE SCREEN, and it is a <p> above the
+             <h1> rather than part of it: scripts/smoke.mjs asserts on the first
+             heading, and "Hello Anas 👋" is not the name of this screen. It is
+             deliberately NOT the mono uppercase `eyebrow` prop — that voice is
+             for section labels — hence the slot on PageHeader. The name is read
+             off `/v1/me` and the greeting drops it rather than guessing when
+             there is nothing name-shaped to read; see `friendlyName`. -->
+        <template #eyebrow>
+          <p class="text-sfere-sm font-medium text-sfere-fg-muted">{{
+            greeting
+          }}</p>
+        </template>
+
+        <template #actions>
+          <!-- THE CLOCK BELONGS TO REFRESH, NOT TO THE SUBTITLE. It used to be
+               appended to the purpose sentence as `… to your destinations ·
+               updated 17:10`, which pushed that sentence just past
+               PageHeader's `max-w-2xl` measure and wrapped the time onto a line
+               of its own under the <h1> — a two-line subtitle whose second line
+               was four characters. It is a reading of the data rather than a
+               statement of what the screen is for, so it sits beside the
+               control that takes it again. A <span>, not a <p>: Quasar's
+               unlayered `p { margin: 0 0 16px }` would push it off the row's
+               baseline (CLAUDE.md collision #5). -->
+          <span v-if="updatedLabel" class="text-sfere-xs text-sfere-fg-muted">{{
+            updatedLabel
+          }}</span>
+          <!-- Default size, deliberately. These two shipped at `size="sm"` and
+               were the only header actions in the app at that size, drawing the
+               Dashboard's verbs as a squatter, wider pill than Sources or Pipes
+               draw theirs. `md` is the kit default and is the house row height
+               — 40px, the same as SfereIconButton `md` (`size-10`) and the
+               `h-10` input ToolbarSearch wraps; `sm` is 36px and `lg` is 44px.
+               Those are pinned in SfereButton's own `min-h-*` ramp now rather
+               than falling out of the padding, which is what let a bordered
+               `secondary` stand 2px taller than a borderless `primary` in this
+               very row and draw its label a weight lighter besides. See
+               CLAUDE.md collision #9 — nothing on this page works around it. -->
           <SfereButton
             variant="secondary"
-            size="sm"
             :loading="loading"
             @click="refresh"
             >{{ loading ? 'Refreshing…' : 'Refresh' }}</SfereButton
           >
-          <SfereButton size="sm" :to="{ name: 'sources-new' }"
+          <!-- ONE PRIMARY AT A TIME. The header carries this on every
+               populated state, which is the convention on all fourteen list
+               screens and the reason neither empty column in the topology used
+               to have a button of its own. When a band is up, though, that band
+               IS the call to action — bigger, with the sentence explaining it —
+               and a second identical pill 40px above it just makes the reader
+               check whether the two do the same thing. Refresh stays either
+               way. -->
+          <SfereButton v-if="!bandVisible" :to="{ name: 'sources-new' }"
             >Connect a source</SfereButton
           >
         </template>
       </PageHeader>
 
-      <!-- The door back into a parked arrival. Above the tracker because it is
-           the more specific of the two: the tracker answers "how far is this
-           workspace?" for everybody at 0 of 3, this answers "you left the
-           welcome flow part-way" for the one reader who did. It removes itself
-           the moment a source exists — see `resumeVisible`. -->
+      <!-- The door back into a parked arrival, and the only setup surface on
+           this screen: the three-step tracker that used to sit under it is
+           gone, so Sources, Destinations and Pipes carry the one-line
+           `SetupReminderStrip` and this band answers "you left the welcome flow
+           part-way" for the one reader who did. It removes itself the moment a
+           source exists — see `resumeVisible`. -->
       <SetupResumeBand
         v-if="resumeVisible"
         :intent="onboardingIntent ?? ''"
         @resume="requestResume"
       />
 
-      <!-- The setup tracker sits above every other state, including the loading
-           and error branches below: it reads three list endpoints of its own, so
-           it can be useful precisely when the dashboard aggregate is not. This is
-           the canonical progress surface — Sources, Destinations and Pipes each
-           show a one-line reminder pointing back here. -->
-      <SetupProgressPanel
-        v-if="setupVisible"
-        class="mb-4"
-        :steps="setupSteps"
-        :done-count="setupDone"
-        :total="setupTotal"
-        :complete="setupComplete"
-        :unavailable="setupUnavailable"
-        @dismiss="dismissSetup"
+      <!-- No source on the account at all — whatever anybody did or did not do
+           during sign-up. Mutually exclusive with the band above (that one is
+           about a parked arrival, this one about the account) and it removes
+           itself the moment a source exists, so neither is dismissible. -->
+      <WorkspaceReadyBand
+        v-else-if="workspaceReadyVisible"
+        :has-warehouse="hasWarehouse"
       />
 
       <!-- 1. Loading -->
@@ -74,23 +104,8 @@
         @retry="refresh"
       />
 
-      <!-- 3. First run — no source, no destination, no pipe. THE SETUP DIAGRAM
-           ABOVE IS THIS SCREEN, so nothing renders here.
-
-           What a brand-new account needs first is the SHAPE of the work — three
-           steps, in a fixed order, each gated by the one before it — and a
-           topology of an empty workspace would be two column headings and a
-           blank. Losing `data-smoke="empty"` on this branch is safe: it is not a
-           failure condition for scripts/smoke.mjs, and PageHeader still renders
-           the one non-empty <h1> the gate asserts on. Nothing invents a third
-           data-smoke attribute to compensate.
-
-           The skeleton and error branches above deliberately still win over
-           this: a dashboard aggregate that failed has to say so even on a
-           workspace with nothing set up, because the setup reads are three
-           different endpoints and their success is no evidence about this one. -->
-      <template v-else-if="!firstRun">
-        <!-- 4. The aggregate has no endpoint. Distinct from "nothing is flowing"
+      <template v-else>
+        <!-- 3. The aggregate has no endpoint. Distinct from "nothing is flowing"
              and it has to stay distinct: a 404 and an idle workspace look
              identical in the data and mean opposite things to the reader. -->
         <EmptyState
@@ -101,22 +116,25 @@
             Pipes each still read their own endpoint."
         />
 
-        <!-- 5. Nothing is configured at all — and note this branch is reached
-             only when `firstRun` could NOT be established, i.e. when the three
-             setup reads failed or have no endpoint. So it must not render the
-             topology or the counts: `flow.*.total` is `items.length` on an array
-             that is empty both when the workspace is empty and when the read
-             never happened, and `formatNumber(0)` prints a confident `0` for
-             both. Mutually exclusive with the populated branch on purpose — an
-             empty picture over four zeroes beside a "no data yet" notice is
-             three surfaces asserting a measurement nobody took. -->
-        <EmptyState
-          v-else-if="isEmpty"
-          title="No data is flowing yet"
-          :description="emptyDescription"
-        />
+        <!-- 4. Anything else — including an account with nothing on it at all.
+             THERE USED TO BE A FIFTH BRANCH HERE and its removal is a
+             considered reversal. An `isEmpty` guard sent a workspace with no
+             source, destination or pipe to a bare `EmptyState`, on the stated
+             grounds that `flow.*.total` is `items.length` on an array that is
+             empty both when the workspace is empty and when the read never
+             happened. The second half of that is answered one branch up: with
+             `apiMissing` and `error` both false the read succeeded, so a zero
+             here was counted rather than missed, which is precisely the
+             distinction `src/lib/emptyValue.js` exists to let a screen make.
 
-        <!-- 6. Populated.
+             What it cost was the one reader who most needed a picture. A new
+             account got a sentence in the middle of an empty card, while the
+             topology — two dashed placeholders, the hub, and the rail between
+             them — says the same thing and also says what the shape of the
+             answer will be. The band above names the next step, and the counts
+             below are four honest zeroes. -->
+
+        <!-- 5. Populated.
              `grid`, not `flex flex-col`. Quasar ships an unlayered
              `.flex { display:flex; flex-wrap: wrap }` and the layered
              `flex-nowrap` utility loses to it, so a column of blocks here is a
@@ -146,26 +164,48 @@
                 :destinations-to="{ name: 'destinations' }"
               >
                 <!-- NO BUTTON IN EITHER EMPTY COLUMN, deliberately. The
-                     topology only renders in the populated branch, which is
-                     reached with `setupLoaded && !firstRun` — and that is
-                     exactly the condition the header's own actions are gated
-                     on, so a `Connect a source` here would sit a few hundred
-                     pixels below an identical one in the top right. Every add
-                     affordance on this app lives in the header; a second copy
-                     inside the content is the duplicate row this port was asked
-                     to keep out. The copy still names the next step, and the
-                     control for it is the one already on screen. -->
+                     header already carries `Connect a source`, so one here
+                     would sit a few hundred pixels below an identical control.
+                     Every add affordance on this app lives in the header; a
+                     second copy inside the content is the duplicate row this
+                     port was asked to keep out. The copy still names the next
+                     step, and the control for it is the one already on
+                     screen. -->
                 <template #sources-empty>
                   <div
-                    class="sfere-flush grid gap-1.5 rounded-sfere-lg border border-dashed border-sfere-line bg-sfere-fill p-4"
+                    class="flex flex-nowrap! items-center justify-between gap-4 rounded-sfere-lg border border-dashed border-sfere-line bg-sfere-fill p-4"
                   >
-                    <p class="text-sfere-sm font-semibold text-sfere-fg"
-                      >No sources connected yet</p
+                    <div class="sfere-flush grid min-w-0 flex-1 gap-1.5">
+                      <p class="text-sfere-sm font-semibold text-sfere-fg"
+                        >No sources connected yet</p
+                      >
+                      <p class="text-sfere-xs text-sfere-fg-muted"
+                        >A website, an online store, a mobile app or your own
+                        backend.</p
+                      >
+                    </div>
+                    <!-- THIS REVERSES "NO BUTTON IN EITHER EMPTY COLUMN", and
+                         only for the sources one. The old rule was right about
+                         its reason — the header carries `Connect a source`, so
+                         a second copy a few hundred pixels below it is the
+                         duplicate row this port was asked to keep out — and the
+                         header's copy is now hidden whenever a band is up,
+                         which is exactly when this placeholder renders. So
+                         there is no duplicate to avoid; there is an empty slot
+                         in a picture, and the thing that fills it. The
+                         DESTINATIONS placeholder still has none, because
+                         nothing the reader can press fills it: a warehouse
+                         arrives with the first source. -->
+                    <SfereButton
+                      class="shrink-0"
+                      size="sm"
+                      :to="{ name: 'sources-new' }"
                     >
-                    <p class="text-sfere-xs text-sfere-fg-muted"
-                      >Connect a website, an online store, a mobile app or your
-                      own backend, and activity starts arriving here.</p
-                    >
+                      <template #icon>
+                        <SfereIcon name="plus" size="sm" />
+                      </template>
+                      Add source
+                    </SfereButton>
                   </div>
                 </template>
 
@@ -232,7 +272,7 @@
 </template>
 
 <script setup>
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import CardPanel from '@/components/ui/CardPanel.vue'
 import NoticeBanner from '@/components/ui/NoticeBanner.vue'
 import EmptyState from '@/components/ui/EmptyState.vue'
@@ -240,10 +280,11 @@ import ErrorState from '@/components/ui/ErrorState.vue'
 import LoadingState from '@/components/ui/LoadingState.vue'
 import PageHeader from '@/components/ui/PageHeader.vue'
 import SfereButton from '@/components/ui/SfereButton.vue'
+import SfereIcon from '@/components/ui/SfereIcon.vue'
 import StatCard from '@/components/ui/StatCard.vue'
 import FlowTopology from '@/components/flow/FlowTopology.vue'
-import SetupProgressPanel from '@/components/shell/SetupProgressPanel.vue'
 import SetupResumeBand from '@/components/shell/SetupResumeBand.vue'
+import WorkspaceReadyBand from '@/components/shell/WorkspaceReadyBand.vue'
 import {
   formatClock,
   formatNumber,
@@ -251,6 +292,7 @@ import {
 } from '@/composables/useDashboardHome'
 import { useSetupProgress } from '@/composables/useSetupProgress'
 import { useOnboarding } from '@/composables/useOnboarding'
+import { me } from '@/composables/useMe'
 import { NOT_KNOWN } from '@/lib/emptyValue'
 
 // Home, as one picture and four numbers.
@@ -280,33 +322,45 @@ const {
   attention,
   flow,
   deliverySuccess,
-  updatedAt,
-  isEmpty
+  updatedAt
 } = useDashboardHome()
 
 // Setup progress is its own three reads, deliberately separate from the
 // dashboard aggregate — see useSetupProgress for why it is derived rather than
 // stored.
 const {
-  steps: setupSteps,
   doneCount: setupDone,
-  total: setupTotal,
-  complete: setupComplete,
   unavailable: setupUnavailable,
   loaded: setupLoaded,
   load: loadSetup
 } = useSetupProgress()
 
-// ------------------------------------------------------------------ first run
+// A refetch that the arrival triggered is a FIRST paint, not a manual refresh,
+// and every count-derived branch on this page has to treat it as one. Until it
+// lands, the counts on screen were taken before the arrival ran, so a reader who
+// just watched it provision a source would see the resume band that belongs to
+// the account as it was at sign-up. `setupKnown` is what those branches read
+// instead of `setupLoaded`.
+const settling = ref(false)
 
-// "This workspace has nothing at all" — and it has to be KNOWN to be that, not
-// merely unmeasured. `setupUnavailable` is the load-bearing half: any of the
-// three reads failing or having no endpoint makes the counts a guess, and a
-// welcome screen built on a guess would tell someone with a full pipeline that
-// they have not started. Those cases fall through to the populated branch, which
-// claims nothing about configuration.
-const firstRun = computed(
-  () => setupLoaded.value && !setupUnavailable.value && setupDone.value === 0
+const setupKnown = computed(() => setupLoaded.value && !settling.value)
+
+// ------------------------------------------------------- the empty workspace
+
+/**
+ * No source on the account. Not "nothing is flowing" and not "the read failed":
+ * this branch is only ever reached with `apiMissing` and `error` both false, so
+ * the zero was counted.
+ */
+const noSources = computed(() => flow.value.sources.total === 0)
+
+// Whether there is a warehouse to describe. Read off the record rather than
+// assumed from "registration provisions one": that is true today and is a
+// backend behaviour this screen does not own, and the band's sentence is the
+// only place on the Dashboard that says a warehouse exists. `subtype` is the
+// aggregate's own `destination_type`.
+const hasWarehouse = computed(() =>
+  topology.value.destinations.some(d => d.subtype === 'clickhouse')
 )
 
 // ---------------------------------------------------------------- stat cards
@@ -336,8 +390,12 @@ const summaryStats = computed(() => {
     {
       label: 'Sources',
       value: formatNumber(sources.total),
-      hint:
-        sources.flowing === sources.total
+      // No hint at zero. "0 enabled" under a 0 restates the figure in words,
+      // and on the one screen where every card reads 0 that is four lines of
+      // nothing said twice.
+      hint: !sources.total
+        ? ''
+        : sources.flowing === sources.total
           ? `${sources.enabled} enabled`
           : `${sources.flowing} of ${sources.total} sending`
     },
@@ -349,20 +407,35 @@ const summaryStats = computed(() => {
     {
       label: 'Destinations',
       value: formatNumber(destinations.total),
-      hint: `${destinations.enabled} enabled`
+      hint: destinations.total ? `${destinations.enabled} enabled` : ''
     },
-    attentionCount
+    // THE FOURTH SLOT ANSWERS WHICHEVER QUESTION THE ACCOUNT IS ACTUALLY ON.
+    // A delivery percentage is the right thing to show a working workspace and
+    // the wrong thing to show one that has never received an event — over no
+    // attempts it is NOT_KNOWN, which is honest and also the least useful
+    // sentence on a first-run screen. With no source, the card names the step
+    // instead. `Needs attention` still wins where there is something to act on,
+    // and it cannot collide with this one: `attention` is empty by definition
+    // before the first source exists.
+    noSources.value
       ? {
-          label: 'Needs attention',
-          value: formatNumber(attentionCount),
-          hint: attentionCount === 1 ? 'One thing to check' : 'Things to check',
-          tone: 'warn'
+          label: 'Source setup',
+          value: 'Not started',
+          hint: 'Connect your first source'
         }
-      : {
-          label: 'Delivery success',
-          value: deliveryLabel.value,
-          hint: deliveryHint.value
-        }
+      : attentionCount
+        ? {
+            label: 'Needs attention',
+            value: formatNumber(attentionCount),
+            hint:
+              attentionCount === 1 ? 'One thing to check' : 'Things to check',
+            tone: 'warn'
+          }
+        : {
+            label: 'Delivery success',
+            value: deliveryLabel.value,
+            hint: deliveryHint.value
+          }
   ]
 })
 
@@ -391,20 +464,6 @@ const attentionTitle = computed(() => {
 
 // --------------------------------------------------------------------- setup
 
-// Dismissal is per-browser and only offered once setup is complete, so nobody
-// can hide the tracker while it still has something to tell them. It is not
-// per-account state worth a backend field: the panel is a nudge, and a nudge
-// someone has read is a nudge they can put away.
-const SETUP_DISMISS_KEY = 'sfere_setup_tracker_dismissed'
-const setupDismissed = ref(localStorage.getItem(SETUP_DISMISS_KEY) === '1')
-
-const setupVisible = computed(
-  () =>
-    setupLoaded.value &&
-    !setupUnavailable.value &&
-    !(setupComplete.value && setupDismissed.value)
-)
-
 // The parked arrival, if there is one.
 //
 // GATED ON `setupDone === 0`, NOT ON THE RECORD ALONE, and that is what keeps it
@@ -416,61 +475,129 @@ const setupVisible = computed(
 // source. Deriving the visibility from the count instead means the band is
 // correct in both directions with nothing to keep in step.
 //
-// `setupLoaded && !setupUnavailable` for the same reason `firstRun` carries it:
-// with the three list reads unanswered, `setupDone` is 0 because nothing has
-// been counted, not because nothing exists.
+// `setupKnown && !setupUnavailable` because with the three list reads
+// unanswered, `setupDone` is 0 because nothing has been counted, not because
+// nothing exists.
 const {
   paused: onboardingPaused,
   intent: onboardingIntent,
+  sourceId: onboardingSourceId,
+  arrivalClosedCount,
   requestResume
 } = useOnboarding()
 
+// `setupDone === 0 || the arrival made a source` — and the second half is what
+// the seven-beat rebuild owes this gate. The count rule was written when the
+// arrival's last question was the category and it created nothing, so any
+// progress the tracker could see had to have come from somewhere else. The
+// arrival creates a real source at its fifth beat now, so parking on connect,
+// verify or setup — the three most likely beats to walk away from — makes
+// `setupDone` at least 1 by the reader's own hand, and the band that is their
+// only way back would remove itself for the work they just did. Keying the
+// exception on the RECORDED source id keeps the original guarantee intact:
+// somebody who parked at the category beat and built a source from the Sources
+// screen an hour later has no `sourceId`, so the band still goes.
 const resumeVisible = computed(
   () =>
     onboardingPaused.value &&
-    setupLoaded.value &&
+    setupKnown.value &&
     !setupUnavailable.value &&
-    setupDone.value === 0
+    (setupDone.value === 0 || Boolean(onboardingSourceId.value))
 )
-
-function dismissSetup() {
-  localStorage.setItem(SETUP_DISMISS_KEY, '1')
-  setupDismissed.value = true
-}
 
 // The skeleton is for the first paint only — a manual refresh keeps the
 // populated screen on-screen rather than collapsing it back to grey bars.
 const loaded = ref(false)
 
-const showSkeleton = computed(() => loading.value && !loaded.value)
+const showSkeleton = computed(
+  () => (loading.value && !loaded.value) || settling.value
+)
+
+// ------------------------------------------------------------------ greeting
+
+/**
+ * The signed-in person's first name, or '' when there is nothing name-shaped to
+ * read.
+ *
+ * `display_name` is optional on the backend `User`, so the fallback is the email
+ * local part — but only when it looks like a name. `anas@…` becomes `Anas`;
+ * `m.anas`, `billing`, `no-reply` and `a1b2c3` do not, because "Hello No-reply
+ * 👋" is worse than no greeting at all and the whole point of the line is that
+ * it sounds like a person wrote it. Returning '' is a supported answer, not a
+ * failure — see `greeting`.
+ */
+function friendlyName(user) {
+  const display = (user?.display_name ?? '').trim()
+  if (display) return display.split(/\s+/)[0]
+
+  const local = (user?.email ?? '').split('@')[0] ?? ''
+  if (!/^[a-z]{2,20}$/i.test(local)) return ''
+  return local[0].toUpperCase() + local.slice(1).toLowerCase()
+}
+
+const greeting = computed(() => {
+  const name = friendlyName(me.value)
+  return name ? `Hello ${name} 👋` : 'Welcome back 👋'
+})
+
+// The parked arrival wins where there is one: it can resume a half-finished
+// flow, which is strictly more than this band's link into the create form. Both
+// are gated on the same `setupKnown` as the resume band — until the three list
+// reads land, `setupDone` is 0 because nothing has been counted rather than
+// because nothing exists, and a band that appears and then vanishes on the same
+// screen is worse than one that arrives a beat late.
+const workspaceReadyVisible = computed(
+  () =>
+    noSources.value &&
+    setupKnown.value &&
+    !setupUnavailable.value &&
+    !showSkeleton.value &&
+    !error.value &&
+    !apiMissing.value
+)
+
+// What the header reads to stand its own primary action down.
+const bandVisible = computed(
+  () => resumeVisible.value || workspaceReadyVisible.value
+)
 
 async function refresh() {
   await Promise.all([load(), loadSetup()])
   loaded.value = true
 }
 
-// What the metrics are waiting for, which is not the same question the tracker
-// answers: a workspace can have all three pieces and still be waiting for the
-// first event to arrive.
-const emptyDescription = computed(() =>
-  setupComplete.value
-    ? 'Your source, destination and pipe are all in place. This fills in as soon as the first events arrive.'
-    : 'Finish the setup steps above and this screen fills in with live activity.'
-)
+// THE ARRIVAL CLOSED OVER THIS PAGE, so everything on it is out of date.
+//
+// `onMounted` is not enough and cannot be: the arrival is a surface over a
+// fully-rendered Home rather than a route, deliberately (a `/welcome` route
+// would replace MainLayout and take `[data-smoke="nav"]` with it), so this page
+// mounts BEFORE the first beat and nothing remounts it when the last one
+// closes. Its reads therefore describe the account as it was at sign-up: no
+// source, no destination, no pipe. That is what put a reader who had just
+// watched the arrival provision all three on "Let's get your activity data
+// flowing · 0 / 3 done".
+//
+// Refetching rather than trusting what the arrival built is the same rule
+// `useSetupProgress` is built on — the tracker is derived from three list reads
+// and never from a stored flag, so the way to bring it up to date is to read
+// again, not to tell it what happened.
+async function refreshAfterArrival() {
+  settling.value = true
+  try {
+    await refresh()
+  } finally {
+    settling.value = false
+  }
+}
 
-const title = computed(() =>
-  firstRun.value ? "Let's get your activity data flowing" : 'Dashboard'
-)
+watch(arrivalClosedCount, refreshAfterArrival)
 
-const subtitle = computed(() => {
-  // Nothing under the headline on the first run: "last hour · updated 10:32"
-  // frames a measurement, and on the first run there is none to frame —
-  // printing it would be the confident-zero mistake in sentence form.
-  if (firstRun.value) return ''
-  const lead =
-    'See how customer activity moves through Sfere, from your sources to your destinations'
+// When these numbers were taken, next to the control that takes them again.
+// Absent rather than "Not known" when the aggregate carries no timestamp: this
+// is chrome on a refresh button, not a measurement the screen owes the reader.
+const updatedLabel = computed(() => {
   const at = formatClock(updatedAt.value)
-  return at ? `${lead} · updated ${at}` : lead
+  return at ? `Updated ${at}` : ''
 })
 
 onMounted(refresh)

@@ -46,7 +46,11 @@
       <!-- Table of contents. Hidden below lg: at that width the sections are
            short enough to scroll, and a horizontal chip rail would compete
            with the specimens it is meant to introduce. -->
-      <aside class="w-52 shrink-0 max-lg:hidden">
+      <!-- `max-lg:hidden!`, with the suffix: an `<aside>` carries Quasar's
+           unlayered `display: block` from its HTML5 normalize line, which a
+           layered display utility loses to. Without it this rail stayed on at
+           every width. CLAUDE.md collision #10. -->
+      <aside class="w-52 shrink-0 max-lg:hidden!">
         <nav class="sticky top-28" aria-label="Design system sections">
           <p
             class="mb-3 font-sfere-mono text-sfere-label uppercase text-sfere-fg-muted"

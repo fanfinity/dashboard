@@ -1,8 +1,8 @@
 <template>
   <q-page class="p-6">
-    <!-- One content cap for the header, the toolbar and the table, so all
-         three share a left AND a right edge. Same measure and the same
-         reasoning as DashboardHomePage.vue: 1400px is deliberately wider than
+    <!-- One content cap for the header, the bands and the rows, so all three
+         share a left AND a right edge. Same measure and the same reasoning as
+         DashboardHomePage.vue: 1400px is deliberately wider than
          `--container-sfere-page` (80rem), which is the marketing-site measure
          and left ~40% of a wide monitor empty here, and it sits on the page
          rather than in MainLayout because the layout is shared with screens
@@ -12,13 +12,9 @@
     <div class="mx-auto w-full max-w-[1400px]">
       <PageHeader
         title="Sources"
-        subtitle="Every event stream and cloud app feeding the fan graph."
+        subtitle="The places where customer activity enters Sfere."
       >
-        <!-- Stream-only actions. On the Connectors tab a "New source" button would
-             be pointing at the wrong flow — you pick a connector from the catalog
-             itself — and its search box would compete with the catalog's own. -->
-        <template v-if="view === 'streams'" #actions>
-          <ToolbarSearch v-model="query" placeholder="Search sources..." />
+        <template #actions>
           <SfereIconButton
             icon="plus"
             label="New source"
@@ -28,9 +24,6 @@
         </template>
       </PageHeader>
 
-      <!-- Underline tabs switch the page's primary content; the pill row below
-           filters one list. That is exactly the split TabNav documents, and the two
-           shapes are what stop a filter reading like a navigation change. -->
       <!-- Where this screen sits in first-run setup. One line only; the
            full tracker is on the Dashboard, deliberately in one place. -->
       <SetupReminderStrip
@@ -41,24 +34,20 @@
         :unavailable="setupUnavailable"
       />
 
-      <!-- What a source IS, for somebody who has not met the word before. Above
-           the tabs rather than inside the streams tab: it defines the noun in
-           the `<h1>`, which is true of the connector catalog and the store
-           connection lists too.
-
-           DISMISSIBLE, and that is the whole reason it can exist. This sentence
+      <!-- What a source IS, for somebody who has not met the word before.
+           DISMISSIBLE, and that is the whole reason it can exist: this sentence
            is worth a lot on the first visit and nothing on the hundredth, and a
            permanent band would tax every later visit to pay for the first one.
            `IntroBand` remembers the dismissal per browser. -->
       <IntroBand
-        class="mb-4"
+        class="mb-6"
         storage-key="sources-intro"
         eyebrow="Start with where activity happens"
         title="A source connects customer activity to Sfere."
-        body="Your website, online store, mobile app or your own backend can each
-          be a source. You can connect more than one of the same kind — two
-          websites, several stores — and each connection is its own source with
-          its own pipes."
+        body="Your website, online store, or mobile app can each be a source.
+          You can connect more than one of the same type, for example two
+          websites or multiple stores. Each connection becomes its own source
+          and can have its own pipe."
       >
         <!-- The aside answers the question the body provokes: "and then what?".
              It is the same promise the first-run overlay makes, said again where
@@ -71,110 +60,75 @@
               >What happens after you add one?</p
             >
             <p class="text-sfere-xs text-sfere-fg-muted"
-              >Sfere starts receiving the activity and, for a website or an
-              online store, provisions your included warehouse and the pipe into
-              it in the same step. You can add more destinations and pipes
-              later.</p
+              >Sfere receives the activity, prepares your included Sfere Data
+              Warehouse powered by ClickHouse, and creates the first data flow.
+              You can add or change destinations and pipes later.</p
             >
           </div>
         </template>
       </IntroBand>
 
-      <TabNav v-model="view" :tabs="viewTabs" />
-
-      <ConnectorCatalog v-if="view === 'connectors'" />
-
-      <!-- `sources` is passed in so a store can be joined to the source built from
-           it: `ZidConnection` carries no source id and `Source` carries no
-           connection id, only a matching `store_id`. -->
-      <ZidConnectionsPanel v-else-if="view === 'zid'" :sources="sources" />
-      <SallaConnectionsPanel v-else-if="view === 'salla'" :sources="sources" />
-
-      <template v-else>
-        <div class="mb-4">
-          <TabNav v-model="tab" :tabs="tabs" variant="pill" />
-        </div>
-
-        <DataTable
-          :columns="columns"
-          :rows="visible"
-          :loading="loading"
-          :error="error"
-          :api-missing="apiMissing"
-          row-key="id"
-          clickable-rows
-          @retry="load"
-          @row-click="open"
+      <!-- `grid gap-1`, never `mt-*` on the `<p>`: every paragraph in this repo
+           carries Quasar's unlayered `margin: 0 0 16px`, so a layered `mt-1`
+           computes to zero and the pair renders on a flat 16px rhythm
+           (collision #5). `sfere-flush` zeroes the bottom margin the same rule
+           would otherwise leave under the last line. -->
+      <div class="sfere-flush mb-3 grid gap-1">
+        <h2 class="font-sfere-display text-sfere-h4! font-bold text-sfere-fg"
+          >Your sources</h2
         >
-          <!-- `sfere-flush` because this cell owns the spacing of its two
-               lines. The name used to sit in an `items-center` flex row holding
-               an "Upgrade to …" badge, and that row zeroed Quasar's unlayered
-               `p { margin: 0 0 16px }` for free (collision #5); dropping the row
-               with the badge would have pushed the slug 16px down instead. -->
-          <template #cell-name="{ row }">
-            <div class="sfere-flush">
-              <p class="font-medium text-ink">{{ row.name }}</p>
-              <p class="text-xs text-subtle">{{ row.slug }}</p>
-            </div>
-          </template>
+        <p class="text-sfere-xs text-sfere-fg-muted"
+          >Every connected instance appears separately, even when two sources
+          are the same type.</p
+        >
+      </div>
 
-          <template #cell-sourceType="{ value }">
-            <StatusBadge tone="neutral" :label="sourceTypeLabel(value)" />
-          </template>
+      <!-- The four states DataTable used to own. Hand-composed here because the
+           rows are cards rather than a table, but out of the SAME kit
+           components — `ErrorState` and `EmptyState` carry the only two
+           `data-smoke` attributes in the repo, and scripts/smoke.mjs has
+           nothing to assert on if a screen hand-rolls its own. -->
+      <LoadingState v-if="loading" variant="table" :rows="4" />
 
-          <template #cell-isEnabled="{ value }">
-            <StatusBadge
-              :tone="value ? 'success' : 'neutral'"
-              :label="value ? 'Enabled' : 'Paused'"
-            />
-          </template>
+      <ErrorState v-else-if="error" :message="error" @retry="load" />
 
-          <!-- `formatCount` already reads a missing value as an em dash, and it
-               has to stay that way here: the backend's Source record carries no
-               per-hour counter (it is a `sources.json` field), so a `?? 0` would
-               report a measured zero for every live source. -->
-          <template #cell-eventCountLastHour="{ value }">{{
-            formatCount(value)
-          }}</template>
+      <EmptyState
+        v-else-if="apiMissing"
+        title="No API yet"
+        description="This screen doesn't have a live backend endpoint yet. Switch back to demo data in Settings, or check back once it ships."
+      />
 
-          <!-- No wrapper element: the column is `align: 'right'`, so
-               SfereTable's own `text-right` already pushes RowActionsMenu's
-               inline-grid root to the cell's right edge — and a flex wrapper
-               here would be one more of Quasar's unlayered wrapping `.flex`
-               containers for nothing. The menu reports a choice and acts on
-               nothing; both branches still open the confirms below. -->
-          <template #cell-actions="{ row }">
-            <RowActionsMenu
-              :label="`Actions for ${row.name}`"
-              :actions="rowActions(row)"
-              @select="onRowAction(row, $event)"
-            />
-          </template>
+      <EmptyState
+        v-else-if="!sources.length"
+        title="No sources yet"
+        description="Connect a website, an online store or a mobile app to start collecting customer activity."
+      >
+        <template #cta>
+          <SfereButton variant="primary" size="sm" :to="{ name: 'sources-new' }"
+            >Connect your first source</SfereButton
+          >
+        </template>
+      </EmptyState>
 
-          <!-- Two different "no rows" cases: nothing configured yet (offer the
-               primary CTA) and nothing matching the filters (offer a way back). -->
-          <template #empty>
-            <EmptyState :title="emptyTitle" :description="emptyDescription">
-              <template #cta>
-                <button
-                  v-if="!sources.length"
-                  class="flex h-9 items-center gap-1.5 rounded-lg bg-brand px-3.5 text-sm font-medium text-white shadow-sm hover:opacity-90"
-                  @click="router.push({ name: 'sources-new' })"
-                >
-                  Connect your first source
-                </button>
-                <button
-                  v-else
-                  class="rounded-lg border border-line2 bg-white px-3 py-1.5 text-sm font-medium text-brand hover:bg-fill"
-                  @click="clearFilters"
-                >
-                  Clear filters
-                </button>
-              </template>
-            </EmptyState>
-          </template>
-        </DataTable>
-      </template>
+      <!-- `@container` here and the queries on the ROW, because a container
+           query is answered by a container's descendants and never by the
+           container itself. Viewport breakpoints would be the wrong question:
+           the sidebar collapses without changing the viewport, so one 1024px
+           window has two content widths (collision #6).
+
+           `grid gap-2.5` and not `flex flex-col`: Quasar's unlayered `.flex` is
+           a WRAPPING flex, so a column of cards would wrap into a second column
+           rather than growing (collision #4). -->
+      <div v-else class="@container grid gap-2.5">
+        <SourceInstanceRow
+          v-for="source in sources"
+          :key="source.id"
+          :source="source"
+          :activity="activityBySourceId.get(source.id) ?? null"
+          :actions="rowActions(source)"
+          @action="onRowAction(source, $event)"
+        />
+      </div>
 
       <!-- Same verb and the same sentence as the detail screen's confirm: one
            action told two ways is how "Delete" and "Move to trash" ended up
@@ -199,34 +153,43 @@
 </template>
 
 <script setup>
-import { computed, onMounted, ref, watch } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
+import { computed, onMounted, ref } from 'vue'
 import { useQuasar } from 'quasar'
 import PageHeader from '@/components/ui/PageHeader.vue'
-import TabNav from '@/components/ui/TabNav.vue'
-import DataTable from '@/components/ui/DataTable.vue'
-import StatusBadge from '@/components/ui/StatusBadge.vue'
+import LoadingState from '@/components/ui/LoadingState.vue'
+import ErrorState from '@/components/ui/ErrorState.vue'
 import EmptyState from '@/components/ui/EmptyState.vue'
-import ToolbarSearch from '@/components/ui/ToolbarSearch.vue'
+import SfereButton from '@/components/ui/SfereButton.vue'
 import SfereIconButton from '@/components/ui/SfereIconButton.vue'
 import ConfirmDialog from '@/components/ui/ConfirmDialog.vue'
-import RowActionsMenu from '@/components/ui/RowActionsMenu.vue'
 import SetupReminderStrip from '@/components/shell/SetupReminderStrip.vue'
 import IntroBand from '@/components/ui/IntroBand.vue'
+import SourceInstanceRow from '@/components/sources/SourceInstanceRow.vue'
 import { useSetupProgress } from '@/composables/useSetupProgress'
-import ConnectorCatalog from '@/components/sources/ConnectorCatalog.vue'
-import ZidConnectionsPanel from '@/components/sources/ZidConnectionsPanel.vue'
-import SallaConnectionsPanel from '@/components/sources/SallaConnectionsPanel.vue'
-import {
-  formatCount,
-  sourceTypeLabel,
-  useSources
-} from '@/composables/useSources'
+import { useSources } from '@/composables/useSources'
+import { useFlowActivity } from '@/composables/useFlowActivity'
 import { notifyMutationResult } from '@/composables/useMutationFeedback'
 
-// The reminder strip needs the same three counts the Dashboard tracker
-// derives. Read here rather than passed down: this page has no parent to
-// pass it, and the reads are cached by the browser for the round trip.
+// THE SCREEN IS THE PROTOTYPE'S: a header, two teaching cards, "Your sources",
+// and one bordered card per connected instance. Four things it used to carry
+// are gone, and the reasoning is the same for all four — the prototype has none
+// of them and each was chrome standing between the reader and the list.
+//
+// - Event streams / Connectors tabs. The catalog is a screen again at
+//   `/connectors`, a SUB-screen of this one, so it keeps a back link and stays
+//   off the sidebar. See ConnectorsPage.vue.
+// - Zid stores / Salla stores tabs. `ZidConnectionsPanel.vue` and
+//   `SallaConnectionsPanel.vue` are left in place unreferenced, the same way
+//   `PipeFlow.vue` and the ten `*TrashPage.vue` files were. Authorising a store
+//   is unaffected: `ZidAuthorizePanel` is still on the create form and
+//   `ZidSetupWizard` is still on the source detail screen, which is where a
+//   merchant meets both.
+// - The All / Enabled / Paused pill row. A source's state is on its own card
+//   now, in a chip that says which of three things is true; a filter above the
+//   list to hide two of them is a control for a list long enough to need one.
+// - The search box. Same reason, and the same thing to revisit first if an
+//   account ever carries enough sources to scroll.
+
 const {
   steps: setupSteps,
   total: setupTotal,
@@ -235,8 +198,6 @@ const {
   load: loadSetupProgress
 } = useSetupProgress()
 
-const router = useRouter()
-const route = useRoute()
 const $q = useQuasar()
 const {
   sources,
@@ -248,127 +209,19 @@ const {
   remove: removeSource
 } = useSources()
 
-const query = ref('')
-const tab = ref('all')
+// Pipes, destinations and event counts for the three cells the `Source` record
+// itself cannot fill. Its failures are deliberately NOT wired into `loading` or
+// `error` above: this is the secondary layer on a screen whose subject is the
+// source list, so a missing aggregate degrades three cells to "Not known"
+// rather than taking the table down — the rule `PipeFunctionChips` follows for
+// its own library read.
+const { bySourceId: activityBySourceId, load: loadActivity } = useFlowActivity()
+
 const confirmDelete = ref(false)
 const target = ref(null)
 
-// Which half of the page you are looking at, held in ?tab= so the Connectors
-// catalog is linkable and survives a reload. It is a query rather than a child
-// route because both halves are the same screen with the same <h1> — a route
-// would put "Connectors" back in the sidebar, which is what this change undid.
-const VIEWS = ['streams', 'connectors', 'zid', 'salla']
-
-const view = ref(VIEWS.includes(route.query.tab) ? route.query.tab : 'streams')
-
-const viewTabs = [
-  { key: 'streams', label: 'Event streams' },
-  { key: 'connectors', label: 'Connectors' },
-  // Third view rather than a screen, same reasoning as Connectors: authorising a
-  // Zid store is a step in adding a source, and both halves share this <h1>.
-  { key: 'zid', label: 'Zid stores' },
-  { key: 'salla', label: 'Salla stores' }
-]
-
-// `replace` so flipping tabs does not stack history entries the back button then
-// has to chew through. The default view writes no query at all, keeping /sources
-// clean as the canonical URL.
-watch(view, next => {
-  const tabQuery = next === 'streams' ? undefined : next
-  if (route.query.tab === tabQuery) return
-  router.replace({ query: { ...route.query, tab: tabQuery } })
-})
-
-// Someone editing the URL, or arriving via the /connectors redirect, moves the
-// tabs rather than being ignored.
-watch(
-  () => route.query.tab,
-  next => {
-    view.value = VIEWS.includes(next) ? next : 'streams'
-  }
-)
-
-const columns = [
-  { key: 'name', label: 'Source', sortable: true },
-  { key: 'sourceType', label: 'Type', sortable: true },
-  { key: 'isEnabled', label: 'Status', sortable: true },
-  {
-    key: 'eventCountLastHour',
-    label: 'Events / hour',
-    sortable: true,
-    align: 'right'
-  },
-  // No Pipes column: `pipeCount` is a sources.json invention with no field
-  // behind it on the backend's `Source`, so on a real account the cell was
-  // blank on every row — a header promising a count nobody measured.
-  // 72px: SfereTable pads a cell `px-4` either side of a 36px kebab. The
-  // 190px this held was measured for two text buttons, and keeping it would
-  // spend the width this page just reclaimed on an empty gutter.
-  { key: 'actions', label: '', align: 'right', width: '72px' }
-]
-
-// Each tab is a predicate over a source; 'all' has none.
-const TAB_PREDICATES = {
-  enabled: s => s.isEnabled,
-  paused: s => !s.isEnabled
-}
-
-// There is no "Upgrade available" tab, and its badge is gone from the name cell
-// with it. Both read `latestTemplateVersion`, which is a `sources.json` fixture
-// field absent from the backend's Source schema — so in the default real mode
-// the count was permanently 0 and selecting the tab filtered to an empty table.
-// A control that can never do anything is worse than an absent one.
-const tabs = computed(() => [
-  { key: 'all', label: 'All', count: sources.value.length },
-  {
-    key: 'enabled',
-    label: 'Enabled',
-    count: sources.value.filter(TAB_PREDICATES.enabled).length
-  },
-  {
-    key: 'paused',
-    label: 'Paused',
-    count: sources.value.filter(TAB_PREDICATES.paused).length
-  }
-])
-
-const SEARCH_FIELDS = ['name', 'slug', 'description', 'templateId']
-
-const visible = computed(() => {
-  const q = query.value.trim().toLowerCase()
-  const predicate = TAB_PREDICATES[tab.value]
-  return sources.value.filter(s => {
-    if (predicate && !predicate(s)) return false
-    if (!q) return true
-    return SEARCH_FIELDS.some(f =>
-      String(s[f] ?? '')
-        .toLowerCase()
-        .includes(q)
-    )
-  })
-})
-
-const emptyTitle = computed(() =>
-  sources.value.length ? 'No sources match your filters' : 'No sources yet'
-)
-
-const emptyDescription = computed(() =>
-  sources.value.length
-    ? 'Try a different search term, or switch back to the All tab.'
-    : 'Connect a website, an app or a ticketing system to start collecting fan events.'
-)
-
-function clearFilters() {
-  query.value = ''
-  tab.value = 'all'
-}
-
-function open(row) {
-  router.push({ name: 'sources-detail', params: { id: row.id } })
-}
-
 // Built per row rather than hoisted to a module constant: the first label
-// depends on `row.isEnabled`. Each label is the word for word the matching
+// depends on `row.isEnabled`. Each label is word for word the matching
 // ConfirmDialog's confirm button, so the menu item and the button that carries
 // it out never describe the same action two ways.
 function rowActions(row) {
@@ -385,8 +238,8 @@ function rowActions(row) {
   ]
 }
 
-// The menu never acts, so both branches land on the confirm the old row buttons
-// opened — Pause included, which still asks in BOTH directions.
+// The menu never acts, so both branches land on a confirm — Pause included,
+// which still asks in BOTH directions.
 function onRowAction(row, key) {
   if (key === 'toggle') askToggle(row)
   else if (key === 'delete') ask(row)
@@ -472,8 +325,9 @@ async function remove() {
 
 onMounted(() => {
   load()
-  // Deliberately not awaited alongside `load()`: the strip is secondary, and a
-  // slow setup read must not hold the table's first paint.
+  // Neither of these is awaited alongside `load()`: both are secondary, and a
+  // slow read on either must not hold the list's first paint.
   loadSetupProgress()
+  loadActivity()
 })
 </script>

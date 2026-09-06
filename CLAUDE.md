@@ -137,10 +137,10 @@ Hash mode has one consequence worth internalising: the whole route lives after t
 so an in-page `href="#some-id"` **replaces the route** instead of scrolling. Anchor navigation
 has to go through `scrollIntoView` — see `src/pages/design-system/DesignSystemPage.vue`.
 
-### Eight Quasar/Tailwind cascade collisions
+### Ten Quasar/Tailwind cascade collisions
 
 Tailwind v4 emits utilities into `@layer utilities`; Quasar's base stylesheet is **unlayered**,
-and unlayered CSS beats layered CSS regardless of specificity. All eight of these have cost real
+and unlayered CSS beats layered CSS regardless of specificity. All ten of these have cost real
 time:
 
 1. **Headings need the important _suffix_** — `text-2xl!`, never `!text-2xl`. Covered at length
@@ -200,7 +200,7 @@ not-allowed }`, so `disabled:opacity-45` and `disabled:cursor-not-allowed` are d
    `.sfere-flush > p` for a container that already spaces its children with `gap`. There is
    deliberately **no blanket `p { margin: 0 }`**: stacked prose still wants its rhythm, and
    the smoke gate cannot see a spacing regression, so a global reset would be an unverifiable
-   change to all 51 screens at once.
+   change to all 52 screens at once.
 6. **`auto-fit` grid tracks measure a card at min-content and keep the answer.** An
    `auto-fit` track is min-content-sized in the first pass, and the min-content height of a
    `SelectableCard` — a #4 wrapping flex — at that width is enormous, so the row keeps it:
@@ -252,6 +252,53 @@ not-allowed }`, so `disabled:opacity-45` and `disabled:cursor-not-allowed` are d
    `rounded-sfere`, `rounded-sfere-lg` or `rounded-sfere-xl` by name. The fourteen pre-Sfere
    dialogs still carry a bare `rounded-lg` and still render at 4px; they are a known issue, not a
    pattern to copy.
+
+9. **A `<button>` throws away its own `text-*`, `leading-*` and `font-*` utilities, and that is
+   how one SfereButton came to look nothing like the one beside it.** Quasar ships unlayered
+   `button, input, optgroup, select, textarea { font: inherit }` — the `font` **shorthand**, so it
+   resets font-size, line-height _and_ font-weight in one declaration — and unlayered beats
+   layered, so every type utility a `<button>` declares is dead. The tell is that the **same
+   component disagrees with itself**: `SfereButton` renders a `router-link` when it carries `to`
+   and a `<button>` when it does not, and an `<a>` is not in that selector list. Measured on
+   `/design-system`, one identical class string drew **600 weight / 13px / 13px line-height** as
+   an `<a>` and **400 / 14px / 21px** as a `<button>` — which is what put a light-weight, 2px
+   taller `Refresh` next to a semibold `Connect a source` in the Dashboard header, reported as
+   two controls that were plainly not the same control. The fix is the important **suffix** on
+   each of them (`text-sfere-sm!`, `leading-none!`, `font-semibold!`), and it is on `SfereButton`
+   and `TabNav` — whose tabs are `<button>`s and had been drawing at 400 rather than the declared
+   500 on every tab bar in the app. `SfereIconButton` declares no size or weight (its glyph is an
+   SVG and its box is `size-10`), so it never showed this. **Any new control that renders a
+   `<button>` and states a size or a weight owes the suffix.**
+   **The height half is a different mechanism and needs both fixes**: a border is 2px of box on a
+   padding-sized pill, so a bordered `secondary` stood 2px taller than a borderless `primary` in
+   the same `items-center` row. Every entry in `sfereButtonVariants.js` therefore declares a
+   border — `border-transparent` where it should not be seen — and the width is declared **per
+   variant** rather than once in the base list, because a base `border-transparent` and a variant
+   `border-sfere-line` are two border-**colour** utilities in one layer and which wins is
+   Tailwind's ordering rather than the order written. With both fixed, `SfereButton` sizes pin the
+   ramp `SfereIconButton` already used — `min-h-9` / `min-h-10` / `min-h-11`, i.e. 36 / 40 / 44 —
+   so the kit's own Density specimen ("one control height across the kit, so an input, a select
+   and a medium button line up on a row") is true rather than aspirational; `md` had been
+   rendering 43px against 40px inputs, selects and icon buttons. `min-h-*` and not `h-*`, so a
+   label that wraps grows the pill instead of being clipped.
+
+10. **A display utility on `<section>`, `<header>`, `<nav>`, `<aside>`, `<main>`, `<footer>`,
+    `<figure>`, `<details>`, `<summary>`, `<menu>` or `<figcaption>` is a dead class.** Quasar
+    ships the HTML5 normalize line — `article, aside, details, figcaption, figure, footer, header,
+main, menu, nav, section, summary { display: block }` — **unlayered**, and unlayered beats
+    layered whatever the specificity, so a layered `contents`, `grid`, `hidden` or `max-lg:hidden`
+    on one of those eleven tags computes to `block`. Confirmed by walking the matched rules in the
+    browser, not inferred. `flex` is the exception and only by accident: Quasar's own unlayered
+    `.flex` (collision #4) is what wins there, which is why every `<header class="flex">` in this
+    repo looks fine and hides the rule from you.
+    Three instances, all fixed with the important **suffix**: `FlowTopology`'s two
+    `@min-[52rem]:contents!` sections — without it the whole diagram mis-lays out, since the
+    sections stay grid items and the headings and cards land wherever auto-placement puts them —
+    and, found by grepping for the pattern rather than by a bug report, `max-lg:hidden!` on
+    `LoginPage`'s dark pitch panel and `DesignSystemPage`'s rail. **The login one was a real
+    shipped bug**: that panel is 46% of the window and was meant to be gone below 1024px, so every
+    narrow window and every phone got the sign-in form squeezed into the remaining half. Measured
+    at 900px before and after.
 
 The house dialog surface is one string — `rounded-sfere-xl! border border-sfere-line
 bg-sfere-surface shadow-sfere-pop` — and a new dialog copies it rather than improvising.
@@ -335,7 +382,7 @@ This makes `PageHeader` the one route-aware component in the kit. It takes a `ba
 override the manifest, or `null` to suppress the link on a screen that has a parent but should
 not offer the trip back; see `docs/ui-conventions.md` under `PageHeader.vue`.
 
-**The connector catalog is connectable**: picking a card in `/sources?tab=connectors` opens
+**The connector catalog is connectable**: picking a card on `/connectors` opens
 `ConnectorConnectPanel.vue` above the grid — named credential fields for Firebase, MongoDB,
 Shopify, Stripe and GA4, a generic JSON box for the rest, plus a sync schedule. The field specs
 live in `src/config/connectorCredentials.js` because `GET /v1/connectors` returns a name, a
@@ -489,6 +536,37 @@ Its verification asks the backend whether a real event arrived (`listSourceEvent
 proposal's "paste your URL and we'll look for the script" checker was **not** built, because the
 CSP blocks that cross-origin fetch and it would only prove the tag is on the page.
 
+**"Does this source have events?" IS ONE FUNCTION NOW, AND IT IS ASKED ON ARRIVAL RATHER THAN ON
+A CLICK.** `checkSourceEvents()` in `src/lib/sourceEventCheck.js` owns the request
+(`listSourceEvents`, page 1 size 1), the `total > 0` test and the four states it can report; the
+three surfaces that ask — `WebSdkSetupPanel`, `SourceInstallGuide` and `useFirstRunSetup`'s verify
+beat — map those states onto their own wording and nothing else. It **never throws**: every caller
+renders a state, so a rejected promise would only mean each of them writing the same try/catch
+again. A **`400` is `unsupported`, not an error**, which is the line `useSourceWriteKeys()` already
+draws (400 = no Jitsu site yet, 404 = no endpoint) rather than a second rule.
+
+Two bugs are what made it one function, and both were the same mistake in different clothes: **a
+live source was being asked to prove it**. `WebSdkSetupPanel` held both of its steps as per-browser
+`localStorage` flags, so a source that had been receiving events for a month said "2 steps to go
+live" to anyone on a second machine or after a cleared cache — a stored flag disagreeing with
+reality, which is exactly what `useSetupProgress` is built to avoid. Worse, its step-2 button was
+`:disabled="!step1Done"` and the only thing that set `step1Done` was clicking **Copy snippet**, so
+somebody whose tag was already installed — by a teammate, through a tag manager, in an earlier
+session — had to copy a snippet they did not need in order to unlock the check that would have told
+them they were done. And `SourceInstallGuide` opened at "Waiting for first event" on a tab most of
+its readers reach weeks after going live. Both now ask first.
+
+Three details of the arrival probe are load-bearing. It **renders nothing until it settles**
+(`probing` in the panel), or an already-live source flashes its go-live card for one request and
+then has it yanked away, which reads as a glitch rather than as an answer. It is **silent on
+failure**: finding events writes the success banner, finding none writes nothing at all, because
+the reader has not pressed anything and an amber troubleshooting list is the screen answering a
+question nobody asked. And it **neither celebrates nor emits `verified`** — the confetti and the
+create page's "Source verified" toast belong to a check somebody ran, not to opening a tab. The
+guide's success sentence is a **computed** (`resultMessage`) rather than a string frozen at check
+time, because the probe usually runs before the detail page's own pipes read resolves, and a
+message baked then tells a source with a provisioned ClickHouse pipe to go and add a destination.
+
 **The method tabs are a narrowing, not a re-ordering**, and `methodsForSource()` is the table
 that does it: a website gets HTML / React / NPM, a mobile source gets Native apps alone, an HTTP
 API source gets HTTP / NPM. It used to show all five to everyone and merely lead with the likely
@@ -506,13 +584,14 @@ that closes it**; do not reconstruct the template from a slug or a local cache.
 
 The product backlog (54 screens, GitHub issues #16–#69) is scaffolded: every screen already
 exists as a stub page at its final path. Implementing one means **rewriting that file in place**,
-never creating a file and registering a route. The manifest itself is **51 screens** now — the
+never creating a file and registering a route. The manifest itself is **52 screens** now — the
 backlog count is the issue count, not the route count, and the two stopped matching in both
 directions: `/team`, `/billing` and the Functions screens were added outside the issue list, and
-then two consolidations took routes back out and one addition put two back. It went 60 → 58 when
+then two consolidations took routes back out and two additions put three back. It went 60 → 58 when
 Secrets and Authorizations became tabs on `/settings`, **58 → 49 when the ten per-module
-`/x/trash` screens became one `/trash`**, and 49 → 51 when `/profiles` and `/profiles/:id` landed
-with the Salla connector. Every one of those old URLs still resolves, as **named** redirects in `routes.js` —
+`/x/trash` screens became one `/trash`**, 49 → 51 when `/profiles` and `/profiles/:id` landed
+with the Salla connector, and **51 → 52 when `/connectors` came back off the `/sources` tab bar**
+— a reversal, and the one entry in that list that went the other way. Every one of those old URLs still resolves, as **named** redirects in `routes.js` —
 `{ name: 'secrets' }`, `{ name: 'sources-trash' }` and the other ten — because a named link
 elsewhere in the app still points at them and an unresolved name logs the console warning smoke
 fails on. Ten of the redirects are new and the names are the reason they exist: the targets are
@@ -548,12 +627,20 @@ say which switch shows the shape. Settings → Members still exists and still re
 should be merged the day the members endpoint ships — not before, since merging them now would
 mean picking which of two fixtures is canonical.
 
-One place the nav deliberately departs from one-row-per-route: **Connectors is a tab on
-`/sources`**, not a screen. Browsing connector _types_ is a step in adding a source, so it lives
-in `src/components/sources/ConnectorCatalog.vue` behind `/sources?tab=connectors`, and the old
-`/connectors` URL redirects there from `routes.js`. Tab state is a query rather than a child route
-because both halves are the same screen with the same `<h1>` — a child route would put Connectors
-back in the sidebar, which is exactly what this undid.
+**Connectors was a tab on `/sources` and is a screen again, and that is a reversal with half of
+the old argument intact.** It lived at `/connectors`, became `/sources?tab=connectors` on the
+grounds that browsing connector _types_ is a step in adding a source, and came back when the
+Sources list was rebuilt against the prototype — which has no tab bar, so the thing holding the
+catalog was gone and three live callers pointed at it (the `/connectors` URL itself, the
+`connector` intent in `sourceIntents.js`, and `MainLayout`'s first-run "Something else" branch).
+
+The half that survived is the sidebar. It is a **sub-screen** — `parent: { name: 'sources' }` in
+the manifest — so it renders `← Sources` from `PageHeader` and has **no rail row of its own**,
+which is what the consolidation was actually protecting. `ConnectorsPage.vue` is a shell: the
+search, the grid, `ConnectorConnectPanel` and all four states are still
+`src/components/sources/ConnectorCatalog.vue`, unchanged, because the tab's behaviour was never
+what was wrong with it. The `/connectors` redirect in `routes.js` is deleted rather than
+repointed — the path is a real route again.
 
 **Secrets and Authorizations went the same way**, and they are the reason `/settings` now carries
 `?tab=` too. Both used to be permanent rows in the sidebar's bottom menu, above Settings, on a rail
@@ -729,7 +816,7 @@ of** `<router-view>` when `route.meta.group` is inactive. Deliberately not a `be
 guard can only redirect, which throws away the URL you asked for. This way the address survives,
 the real page component never mounts (so nothing it fetches on mount runs), and
 `ComingSoonPanel` renders the screen's own title as a real `<h1>` — which is what lets
-`pnpm smoke:dist` keep walking **all 51 routes** instead of being narrowed to the active few.
+`pnpm smoke:dist` keep walking **all 52 routes** instead of being narrowed to the active few.
 Any new gating must preserve that; a redirect would silently drop the gate to ~6 routes.
 **Hiding the sidebar rows did not touch this**: `/audiences` still renders `ComingSoonPanel` with
 its own `<h1>`, it just has no row pointing at it. Hide the rows, keep the gate.
@@ -889,7 +976,7 @@ its section** rather than a wrapper, so any pass that removes rows can strand on
 ordering ever comes back it belongs on top of that function rather than beside it.
 
 **`pnpm smoke:dist` cannot cover this flow, and that is structural rather than an oversight.** The
-gate signs in as an EXISTING account and walks 51 routes — which is exactly the path that must
+gate signs in as an EXISTING account and walks 52 routes — which is exactly the path that must
 never see the arrival, so a green run says nothing about whether the beats work. Verifying a
 change here means registering a NEW account and driving all seven beats, plus a sign-in and a
 wiped-storage sign-in to confirm neither reopens it. **A reload mid-flow is now part of that
@@ -901,12 +988,27 @@ gate sign-in on email verification, so a throwaway account is a working way to c
 
 **The arrival is over a fully-rendered Home, never a route — full-page or not.** A `/welcome`
 route would replace `MainLayout`, so `[data-smoke="nav"]` would never appear and
-`pnpm smoke:dist` would fail at sign-in for all 51 routes rather than on one screen. Three
+`pnpm smoke:dist` would fail at sign-in for all 52 routes rather than on one screen. Three
 consequences any change here has to preserve: the page beneath stays mounted, the arrival renders
 **no `<h1>`** (smoke asserts on the first one, which belongs to the page — the beats' headlines
 are `<h2>` carrying `text-sfere-h1!`/`text-sfere-h2!`, because the size is the point and the size
 is a token), and it opens **only on `/`** — a deep link to `/errors` from Slack must not be met by
 it. `MainLayout` binds it to `route.path`, which is also what closes it on navigation.
+
+**THE FOURTH CONSEQUENCE IS THAT HOME'S DATA IS STALE THE MOMENT THE ARRIVAL CLOSES**, and it
+shipped that way: the page mounts before the first beat, so its three setup reads describe an
+account with no source — and by the last beat the arrival has created one, plus a ClickHouse
+destination and a pipeline on a `web` or `zid` template. Nothing remounts the page, because
+closing the arrival _is_ arriving at the dashboard, so a reader who had just watched all three get
+built landed on `Let's get your activity data flowing · 0 / 3 done`. `useOnboarding` therefore
+carries an in-memory **`arrivalClosedCount`**, bumped by `MainLayout.finishArrival()` — the one
+funnel every exit goes through, finished, parked, handed off or navigated away from — and
+`DashboardHomePage` watches it and refetches. It **refetches rather than being told what was
+built**, which is the rule `useSetupProgress` is built on. While that refetch is in flight the page
+sets `settling`, and every count-derived branch reads **`setupKnown` (`setupLoaded && !settling`)**
+rather than `setupLoaded`: without it the reader still lands on `0 / 3 done` and merely watches it
+correct itself, which is the same bug with a shorter fuse. Any new surface that mutates the account
+from over a mounted page owes the same signal.
 
 It is a `maximized persistent q-dialog` rather than a hand-rolled `fixed inset-0`, for the focus
 trap, the scroll lock and the teleport; see the dialog-collisions section above for why
@@ -1011,8 +1113,15 @@ is inert until it is pressed, and pressing it is the only thing in the app that 
 and then had no route back to the three screens that would have connected their data.
 
 **The band is keyed on the record, not on the count — and gated on both.** `resumeVisible` is
-`paused && setupLoaded && !setupUnavailable && setupDone === 0`, so somebody who parked the arrival
-and then connected a source from the Sources screen an hour later does not keep the band. There is
+`paused && setupKnown && !setupUnavailable && (setupDone === 0 || sourceId)`, so somebody who parked
+the arrival and then connected a source from the Sources screen an hour later does not keep the
+band. **The `sourceId` half is what the seven-beat rebuild owes that gate**: the count rule was
+written when the arrival created nothing, so any progress the tracker could see had to have come
+from somewhere else — but the arrival creates a real source at its fifth beat now, so parking on
+connect, verify or setup makes `setupDone` at least 1 by the reader's own hand, and the band that
+is their only way back would remove itself for the work they had just done. Keying the exception on
+the **recorded** source id keeps the original guarantee: a reader who parked at the category beat
+has no `sourceId`, so a source built later on the Sources screen still takes the band away. There is
 deliberately **no stored completion flag**: that is the thing `useSetupProgress` exists to avoid,
 since it can disagree with reality the moment the only source is deleted. Two states, from the
 record alone: a category was chosen (amber, "Finish connecting your online store") or it was not
@@ -1127,64 +1236,38 @@ headline on arrival.
 
 ### Three other first-run surfaces
 
-**The setup tracker** (`useSetupProgress.js` + `components/shell/SetupProgressPanel.vue`) answers
-"source → destination → pipe, how far am I?" It is **derived, never stored**: three list reads,
-no `setupComplete` flag anywhere, because a flag can disagree with reality the moment someone
-deletes their only pipe. All three domains have live endpoints, so unlike most of the app it is
-accurate in the default real mode. It lives on the Dashboard **and nowhere else** — Sources,
-Destinations and Pipes each render the one-line `SetupReminderStrip` pointing back at it, because
-four copies of the same three steps is four things to keep in agreement. The strip shows the step
-the _workspace_ is on, not the step the screen is; it hides itself once all three exist. The
-panel is dismissible only after that, and the dismissal is `localStorage`.
+**The setup tracker** (`useSetupProgress.js`) answers "source → destination → pipe, how far am
+I?" It is **derived, never stored**: three list reads, no `setupComplete` flag anywhere, because a
+flag can disagree with reality the moment someone deletes their only pipe. All three domains have
+live endpoints, so unlike most of the app it is accurate in the default real mode.
 
-**At zero of three the Dashboard leads with the setup diagram, and that is a reversal of what
-this file used to say.** It previously said one sentence and one button, with the tracker gated
-off; the duplication that argued for was real, but hiding the tracker was the wrong half to drop.
-What a brand-new account needs first is the **shape** of the work — three steps, in a fixed order,
-each gated by the one before it — and a sentence plus a `Connect your first source` button states
-the goal while hiding all of it, then swaps in a different-looking surface the moment step one
-lands. So `SetupProgressPanel` is no longer three cards but a **node-and-wire diagram**, and
-`setupVisible` no longer excludes `firstRun`: one surface answers "how far am I?" at 0, 1, 2 and 3.
+**IT HAS NO SURFACE ON THE DASHBOARD ANY MORE, AND `SetupProgressPanel.vue` IS DELETED.** The
+Dashboard used to lead with it — three cards at first, then a full-width node-and-wire diagram
+that was the whole screen at zero of three — and this file argued at length for both shapes. It
+was removed on request, and what the removal is actually right about is that the Dashboard's own
+topology answers the same question out of the reader's own records, one card lower: at zero of
+three the empty columns say "No sources connected yet" and "Your warehouse arrives with your first
+source", and the header's `Connect a source` is the one control either version offered. The
+`firstRun` branch went with it — there is no `<h1>` swap to "Let's get your activity data flowing",
+no suppressed subtitle and no gated header actions, so the page is `PageHeader` → resume band →
+skeleton / error / apiMissing / empty / populated for everybody. `setupVisible`,
+`onboardingCompleted` and `firstRun` are all gone from `DashboardHomePage`; `settling` and
+`setupKnown` survive because the resume band still reads them.
 
-`DashboardHomePage`'s `firstRun` is still `setupLoaded && !setupUnavailable && setupDone === 0`,
-still a branch in the existing chain (skeleton → error → firstRun → empty → populated), and that
-branch now renders **nothing** — the diagram above it is the screen. The `<h1>` swap to "Let's get
-your activity data flowing" and the suppressed header actions and subtitle both stay, and the
-diagram's own single CTA is the one button. **The headline is the `<h1>` and not an `EmptyState`
-title** on purpose: `EmptyState` renders its title at 14px semibold, so a welcome put there would
-be a label above a button while the word "Dashboard" stayed the largest text on a screen with
-nothing to dashboard — and `EmptyState` reaches every screen, so it is not the thing to restyle
-for one. Smoke is unaffected: still exactly one `<h1>`, still rendered by `PageHeader`, still
-non-empty, and losing `data-smoke="empty"` on that branch is safe because it is not a failure
-condition. Do **not** invent a third `data-smoke` attribute to compensate. The skeleton and error
-branches deliberately still win over `firstRun`: the setup reads are three different endpoints, so
-their success is no evidence about the dashboard aggregate, and a failed aggregate has to say so.
-
-Four things about the diagram are load-bearing. **`locked` and `blockedBy` are derived in the
-panel**, not added to `useSetupProgress` — a step that is neither `done` nor `current` is one the
-chain has not reached, and what blocks it is the step in front of it, so the shared composable
-gains no second consumer contract. **The wires animate only at three of three**, never at "both
-ends of this wire are done": with a source and a destination but no pipe, both ends of the first
-wire are green and nothing whatsoever is moving between them. Even at three the claim stays "the
-path is built" — nothing there measures throughput. **The rail spans the panel's full width.** It
-shipped briefly capped at `max-w-[46rem]`, because across the card's 1400px each wire stretches to
-~430px and three markers that far apart start reading as separate dots rather than one chain; that
-was reversed on review, since a capped rail left the right half of the card empty while the
-header, blurb and footer all span it, which read as a figure dropped into a panel rather than the
-panel's subject. Do not re-cap it without narrowing the footer row too. And the locked state is a
-**dashed border plus a drawn padlock**, so it
-survives being read without colour; it is deliberately not `disabled:opacity-*`, which Quasar's
-unlayered `[disabled]` rule makes a dead class everywhere in this repo.
-
-`SetupReminderStrip` still renders on Sources, Destinations and Pipes at zero of three: there it is
-the only thing saying "connect a source comes first, but you can set this up now".
+**`SetupReminderStrip` is the only setup tracker left**, on Sources, Destinations and Pipes. It
+shows the step the _workspace_ is on, not the step the screen is, and hides itself once all three
+exist — so at zero of three it is still the thing saying "connect a source comes first, but you
+can set this up now". **Its `See full setup progress` link is deleted**, not repointed: it pointed
+at the Dashboard panel, and a link promising a fuller breakdown that no longer exists is worse
+than no link. If a full tracker is ever wanted back, it is a new surface and a new argument, not a
+revert — the file is gone and the page no longer has the branch to hang it on.
 
 **The resume band** (`components/shell/SetupResumeBand.vue`) is the door back into a parked
 arrival, and it is documented in full under Onboarding above. The one thing to know here is why it
-is not a third setup tracker: `SetupProgressPanel` answers "how far is this workspace?" for
-everybody at 0 of 3 out of three live list reads, while this answers "you left the arrival
-part-way" for the one reader who did — so it is keyed on the onboarding record and is absent for
-everybody else. It sits **above** the panel, because it is the more specific of the two.
+is not a setup tracker: it answers "you left the arrival part-way" for the one reader who did, so
+it is keyed on the onboarding record rather than on a count and is absent for everybody else. With
+the Dashboard panel gone it is now the **only** thing between the header and the state chain on
+that screen.
 
 **The post-registration interstitial** (`components/onboarding/AccountSetupOverlay.vue`) covers
 the gap between a created account and the dashboard, when the session settles, `/v1/me` is read
@@ -1248,7 +1331,7 @@ need endpoints, and neither has a placeholder in the UI.
 matching. Keep exactly one of each — that is why sign-up has no confirm-password field, and why
 the password show/hide toggle is `type="button"` and the input starts as `type="password"`. A
 bare `<button>` inside a `<form>` submits by default, so an unmarked toggle would give the gate
-two matches for `button[type=submit]` and fail sign-in for all 51 routes before a single screen
+two matches for `button[type=submit]` and fail sign-in for all 52 routes before a single screen
 rendered.
 
 **Settings → General used to carry a role picker** — the second surface for the persona
@@ -1287,6 +1370,21 @@ where it goes?_ Six panels answering around it read as a report rather than as a
 render correctly; they have no call site on Home any more. Monitoring and Live events are where a
 throughput chart and an error list belong next, and that is a move, not a rebuild.
 
+**The header carries one sentence and the clock sits with Refresh.** The purpose line used to end
+`· updated 17:10`, which measured 682px against `PageHeader`'s `max-w-2xl` (672px) and wrapped the
+time onto a second line of four characters under the `<h1>` — measured in the browser at Inter
+14px, not estimated. The sentence alone is 580px and fits. When the numbers were read is a
+different claim from what the screen is for, so it is a `<span>` beside the control that takes
+them again (a `<p>` there would carry Quasar's phantom 16px off the row's baseline, collision #5).
+The two header actions also lost their `size="sm"`: `sm` is 36px and `md` is 40px, which is the
+row height every other screen's `#actions` keeps — `SfereIconButton` `md` is `size-10` and
+`ToolbarSearch` wraps an `h-10` input — so the Dashboard had been drawing the same two verbs as a
+squatter, wider pill than Sources or Pipes draw them. **Those two numbers used to read 37px and
+41px, and both were true when written**: the ramp was padding-derived and drifted per variant and
+per rendered tag, which is collision #9 above. It is pinned now (`min-h-9`/`min-h-10`/`min-h-11`),
+so a `secondary` Refresh and a `primary` Connect a source are the same box — which is what they
+were reported as failing to be.
+
 **Every one of the four counts is measured.** `DashboardTotals` carries sources, destinations,
 pipes/`pipes_enabled` and `events_received`; delivery success is a ratio of two of those. The
 fourth card **swaps** to a `tone="warn"` "Needs attention" count when there is something to act on,
@@ -1309,20 +1407,61 @@ beside it could disagree about the same account. Node `status` is derived from w
 measured — `events_received` per source, `events_delivered` per destination — and a node whose
 count is absent reports `idle` ("nothing is moving"), never `healthy`.
 
-**At zero of three the setup diagram is still the screen** and the topology does not render: a
-topology of an empty workspace is two column headings and a blank. `SetupProgressPanel` is
-unchanged and still sits above every other state, including loading and error, because it reads
-three list endpoints of its own and can be useful precisely when the aggregate is not.
+**At zero of three the topology IS the screen, and it now draws the genuinely empty workspace
+too.** The setup diagram used to sit above every state, including loading and error, and to be the
+whole screen on a brand-new account; it is deleted (see "Three other first-run surfaces"). What
+replaced its last job is a **second** reversal: an `isEmpty` branch used to catch "no source, no
+destination, no pipe" and answer with a bare `EmptyState`, on the stated grounds that `flow.*.total`
+is `items.length` on an array that is empty both when the workspace is empty and when the read never
+happened. The second half of that is answered one branch up — with `apiMissing` and `error` both
+false the read succeeded, so the zero was counted rather than missed, which is the distinction
+`src/lib/emptyValue.js` exists to let a screen make. The branch is gone, and the one reader who most
+needed a picture gets one: two dashed placeholders, the hub, and the rail between them.
 
-**Neither empty column carries a button, and that is a rule rather than an oversight.** The
-topology renders only in the populated branch, reached on `setupLoaded && !firstRun` — which is
-the same condition `PageHeader`'s `#actions` are gated on, so a `Connect a source` inside the
-empty sources column would sit a few hundred pixels under an identical one in the top right. Every
-add affordance in this app is a header action; a second copy in the content is the duplicate row
-that was explicitly designed out. The empty column still names the next step in words. An
-`EmptyState` `#cta` on a list screen is a **different** case and stays: it renders only when the
-table has no rows at all, which is the one moment the header button is not the obvious thing on
-screen, and it is the convention on all 51 screens.
+**THE SOURCES COLUMN CARRIES A BUTTON NOW AND THE DESTINATIONS COLUMN STILL DOES NOT, and the old
+blanket rule is worth reading before changing either.** It said neither empty column may carry one,
+because `PageHeader` carries `Connect a source` on every state of this screen and a second copy in
+the content is the duplicate row this port was asked to keep out. That reason is intact and is what
+changed: the header's copy is **hidden whenever a band is up** (`bandVisible`), which is exactly
+when the placeholder renders, so there is no duplicate left to avoid — there is an empty slot in a
+picture and the control that fills it. The destinations placeholder keeps none, because nothing the
+reader can press fills it: a warehouse arrives with the first source. An `EmptyState` `#cta` on a
+list screen is a **different** case again and stays: it renders only when the table has no rows at
+all, and it is the convention on all 52 screens.
+
+**One primary action on screen at a time is the rule that replaced it.** Both bands carry
+`Connect a source`, sized and captioned; the header stands its own copy down while either is
+visible and keeps `Refresh`. Do not restore the header button unconditionally without also taking
+the button out of the empty column — three routes to `/sources/new` above the fold reads as three
+different things to try.
+
+**A band above the picture says which of the two "nothing here" states the account is in.**
+`SetupResumeBand` is the parked arrival and is keyed on the onboarding record;
+`components/shell/WorkspaceReadyBand.vue` is the account — **no source, whatever anybody did or did
+not do at sign-up** — and its button is a plain link into the create flow. The resume band wins
+where both would apply, since resuming a half-finished flow is strictly more than a link to a form.
+Neither is dismissible and neither needs to be: both describe a state that ends by itself the moment
+a source exists. The warehouse sentence in the second one is gated on a ClickHouse destination
+actually being on the payload rather than on "registration provisions one" — that is a backend
+behaviour this screen does not own, and it is the only place on the Dashboard that says a warehouse
+exists. **"Included with your account" is still not said**, for the reason
+`destinationProvisioning.js` gives at length: nothing here measures billing.
+
+**Nothing needs attention before the first source, and saying otherwise was the loudest thing on a
+new account's Dashboard.** Registration provisions a warehouse, so a workspace with no source still
+has one enabled destination with no pipe pointing at it — which tripped the orphan rule and printed
+"Enabled, but no pipe delivers to it" in an amber banner, plus a `Needs attention: 1` card, above a
+screen whose actual message is "connect a source". Both were true readings of the record and neither
+named an action. `attention` returns `[]` at zero sources; the fourth stat card reads
+`Source setup / Not started` instead of a delivery percentage over no attempts, and the destination
+node says `Ready` rather than the grey `Idle` that reads as a fault nobody can fix.
+
+**The greeting is a `<p>` above the `<h1>`, through `PageHeader`'s new `#eyebrow` slot.** Not the
+`eyebrow` prop: `SfereEyebrow` is mono, uppercase and 0.18em-tracked by design and exposes no way to
+soften that, so "Hello Anas 👋" through it would be shouted in the voice reserved for 'COLLECT'. The
+name is read off `/v1/me` — `display_name` first, then the email local part **only when it looks
+like a name** — and the line falls back to "Welcome back 👋" rather than greeting `No-reply`. It
+must stay a `<p>`: `scripts/smoke.mjs` asserts on the first heading and that belongs to the page.
 
 **The page stacks with `grid gap-4`, not `flex flex-col gap-4`, and that is a bug fix rather than a
 preference.** Quasar's unlayered `.flex { display:flex; flex-wrap: wrap }` makes every flex
@@ -1334,9 +1473,9 @@ whose child is a plain block. **Prefer `grid gap-*` for a vertical stack anywher
 
 ### `src/components/flow/**` — one diagram, five call sites
 
-There were already three hand-rolled flow pictures in the app (`SetupProgressPanel`'s node rail,
-`ProvisionedPipePanel`'s three-node chain, `PipeTopology`'s grouped cards) and this port would have
-added two more. It adds one component family instead:
+There were already three hand-rolled flow pictures in the app (the deleted `SetupProgressPanel`'s
+node rail, `ProvisionedPipePanel`'s three-node chain, `PipeTopology`'s grouped cards) and this port
+would have added two more. It adds one component family instead:
 
 - **`FlowTopology.vue`** — the two columns and the hub, with the connectors drawn in SVG. Used by
   the Dashboard and by the Pipes screen's Visual view.
@@ -1353,6 +1492,41 @@ Five things about it are load-bearing:
 - **The wires are measured, not laid out.** Each node registers its element and the curves are
   computed from real bounding boxes on mount, on resize and on data change. Fixed offsets per row
   index break the moment a name wraps to two lines — which is a copy edit, not a code change.
+  `HUB_R` is half the hub circle's rendered diameter and has to move with `FlowHub`'s size, or the
+  curves are drawn under the mark.
+- **With nothing to draw, it draws dashed rails rather than nothing**, and they are **measured
+  wires like any other**. No pipe means no curve, so two columns and a circle sat on one card with
+  no relationship between them at the one moment the picture has a job to do. The first attempt was
+  a CSS rule across the hub's own cell, and it was the misalignment that got it reported: a line at
+  the centre of the WHOLE box, headings included, while the cards it was meant to join sat lower and
+  at two different heights. Drawn from the real bounding boxes they land on the cards by
+  construction, whatever a copy edit does to either one's height. The empty placeholder registers an
+  anchor (`EMPTY`) exactly as a node does. Dashed, hairline and particle-free, because nothing is
+  connected — a different claim from the solid wires beside them. They render **only when a column
+  is empty**, which is narrower than "no pipes": three sources and two destinations with nothing
+  joining them would need six rails to say what the needs-attention banner already says.
+- **The hub and the two card stacks share a grid row and are all `self-center` in it**, which is
+  what makes their midpoints equal — by construction, rather than by a measurement somebody has to
+  keep true. Two attempts got this wrong first and both are worth knowing. Centring the circle in
+  the whole box put it above the cards, because the box includes each heading and its `mb-3`.
+  Correcting that with a measured `translateY` aligned it and then **overflowed the card**: a
+  transform moves an element without changing its layout box, so nothing grew to contain the
+  circle and its halo hung out of the bottom of the panel. A real second row fixes both, and
+  `FlowHub`'s 128px then sets the row's height instead of escaping it.
+- **The hub cell's `py-4` is the halo's own `-inset-4`**, reserved so the glow sits inside the
+  layout instead of hanging off it. The halo is absolutely positioned and contributes no height,
+  so on any short diagram — a single card each side — the row ended flush with the circle and the
+  glow spent the card's whole bottom padding, leaving about 5px to the border where the headings
+  above had 20. Keep the two numbers in step.
+- **All three of the hub's numbers are measured** — centre and radius off the rendered circle — so
+  changing the column widths or `FlowHub`'s size cannot leave the wires drawn under the mark. A
+  hardcoded `HUB_R` did exactly that.
+- **The hub names the product**: `FlowTopology` draws it `size="lg" variant="lockup"` with a
+  two-layer halo. `FlowChain` stays on `size="sm"` and the mark, and `variant="lockup"` is not the
+  default, because the lockup is 5:1 and any smaller circle either overflows or shrinks it to an
+  unreadable line. The halo is two absolutely-positioned siblings at `-z-10`, not a `shadow`: the
+  root is a stacking context, so only the part extending past the circle's rounded background is
+  ever painted, which is the ring — and it costs no blur.
 - **Position is not CSS-transitioned.** A transition on `d` on top of per-frame re-measurement is
   the wobbling-line bug every diagram library eventually files. The only motion is one particle per
   connector.
@@ -1364,15 +1538,72 @@ Five things about it are load-bearing:
   without changing the viewport, so one 1024px window has two content widths. Note that the
   `@container` element and the element reading the query must be **two different nodes** — a
   container query is answered by a container's descendants, never by the container itself.
+- **Its two `<section>`s are `@min-[52rem]:contents!` and the suffix is not optional** — see
+  cascade collision #10. Without it they stay grid items, the explicit `col-start`/`row-start` on
+  their children do nothing, and the destinations column ends up squeezed into the hub's 10.5rem
+  track.
+- **The narrow half is `@max-[52rem]:`, and `max-@min-[52rem]:` IS A DEAD CLASS.** The second
+  spelling reads like the composition of `max-*` and `@min-*`, and Tailwind emits **nothing** for it
+  — no `@container not (width>=52rem)` block is generated at all, verified against the built CSS
+  rather than assumed. All three of `FlowTopology`, `FlowChain` and `FlowWire` were written that
+  way, so ten utilities did nothing: a stacked chain's connector never turned vertical, its
+  travelling dot never hid, and the topology drew its wires diagonally across the stacked columns
+  instead of hiding them. The `@max-[46rem]:` form the onboarding screens use does emit its block,
+  which is the form CLAUDE.md's collision #2 already names. Grep for `max-@min-` before adding one.
 - **`isEnabled: false` beats whatever `status` says.** A paused pipe reports `idle`, which is true
   and also indistinguishable from "switched on and receiving nothing" — the one state somebody
   needs to act on. Naming the pause is what separates the two.
+- **`FlowNode` takes `statusTone` as well as `statusLabel`**, for the narrower case still: a node
+  the page knows is waiting rather than stalled. `idle` is grey because "on and receiving nothing"
+  usually wants looking at, but on a workspace with no source there is nothing to receive. Never
+  pass `success` for something unmeasured — that is the claim the whole diagram avoids.
 
 ### What the ported screens do and do not claim
 
-Four screens were rebuilt against the prototype in the same pass. Each dropped
+Six screens were rebuilt against the prototype. Each dropped
 something the prototype printed, and the reason is the same every time: **the
 backend does not measure it, and a confident number is worse than a gap.**
+
+**Sources.** The list is the prototype's: header, the two teaching cards, a
+"Your sources" heading, and one bordered **card** per connected instance —
+`SourceInstanceRow.vue`, five cells (name + type, pipes + destination, activity,
+status chip, kebab). It is not a `DataTable`, because the prototype's cell is a
+two-line pair and a table would need eight columns to say what four pairs say.
+Four things came off it, all of them chrome between the reader and the list:
+the **Event streams / Connectors** tabs (the catalog is a screen again — see the
+Connectors note above), the **Zid stores / Salla stores** tabs, the
+**All / Enabled / Paused** pill row, and the **search box**. Search is the first
+thing to revisit if an account ever carries enough sources to scroll.
+
+- **`ZidConnectionsPanel.vue` and `SallaConnectionsPanel.vue` are unreferenced,
+  not deleted**, the same way `PipeFlow.vue` and the ten `*TrashPage.vue` files
+  are. Authorising a store is unaffected: `ZidAuthorizePanel` is still on the
+  create form and `ZidSetupWizard` is still on the source detail screen, which is
+  where a merchant meets both. What is genuinely gone is the _list_ of authorised
+  stores; nothing else read `useZidConnections()` for that view.
+- **The four kit states are hand-composed on the page**, since the rows are cards
+  rather than a table — but out of the SAME `LoadingState` / `ErrorState` /
+  `EmptyState` components, because those carry the only two `data-smoke`
+  attributes in the repo and a hand-rolled error block leaves
+  `scripts/smoke.mjs` with nothing to assert on.
+- **The chip's precision tracks the data's**, deliberately. With a count in hand
+  it says `Active` or `No recent activity` (amber card, the prototype's
+  `.warning-row`); with none it says `Enabled`, which is the only thing the
+  record itself asserts, and does not imply traffic nobody measured. `Paused`
+  wins over all three.
+- **The row is a card with a link in it, not a `<div onclick>`.** The name is a
+  real `router-link` — keyboard-reachable, middle-clickable — and the card's own
+  `@click` is pointer convenience that skips anything originating in an `<a>` or
+  `<button>`, so the kebab and the teleported menu are unaffected.
+- **The prototype's "+ Add source" is a labelled button and ours is not.** The
+  header action stays `SfereIconButton`, because that is the convention on all
+  fourteen list screens and the noun is already in the `<h1>` beside it —
+  changing it is an app-wide decision, not a Sources one. Same on Destinations.
+- **Neither screen grew a row-level Delete**, and the prototype has one on both.
+  Destinations still offers Pause/Enable alone, in a one-item kebab, for the
+  reason recorded below: writing destructive confirm copy for a screen from
+  scratch is a product decision, not a side effect of a row rebuild. Sources
+  keeps the Delete it already had.
 
 **Pipes.** List gets the intro band, three stat cards (Total / Active /
 Destinations in use), a **Visual | List** toggle — Visual is the default and is
@@ -1403,9 +1634,21 @@ cannot take the table down.
   Left in place rather than deleted, the same way the ten `*TrashPage.vue` files
   were.
 
-**Destinations.** The included-warehouse hero is an `IntroBand tone="brand"` with
-the ClickHouse card in its `#aside`; the detail screen gains a hero band, four
-stat cards and **Overview / Pipes / Configuration / Tables / SQL console**.
+**Destinations.** The list is the Sources list's twin, and deliberately so: the
+prototype's `.resource-row` is `.instance-row` with the same five cells and
+near-identical tracks, so `DestinationInstanceRow.vue` is
+`SourceInstanceRow.vue`'s sibling — bordered cards, no `DataTable`, no filter
+tabs, no search, the same hand-composed kit states, the same clickable-card-with-
+a-real-link, the same amber row. The included-warehouse hero is an
+`IntroBand tone="brand"` with the ClickHouse card in its `#aside`; the detail
+screen gains a hero band, four stat cards and **Overview / Pipes / Configuration
+/ Tables / SQL console**.
+
+**They are two components and not one generic `ResourceRow`.** The cells differ
+in what they MEAN, not only in what they hold — cell three is "events received"
+on one screen and "who provisioned this" on the other, and the amber rule needs
+three conditions on a destination against one on a source. A shared component
+would take five slots and a props object and come out longer than both.
 
 - **The hero is present tense and carries no number**, deliberately: the
   prototype's "Your Sfere Data Warehouse is **already set up** for you" is false
@@ -1414,21 +1657,34 @@ stat cards and **Overview / Pipes / Configuration / Tables / SQL console**.
   tense, so on a brand-new account it sits above an empty table claiming a
   warehouse that does not exist yet. "Sfere sets up your data warehouse for you"
   is true at zero destinations and at five.
-- **The Pipes column is deleted from the list, not rewired.** `pipeCount` is a
-  fixture invention; wiring `usePipes()` for a count column would pay for
-  `joinEnds()`'s two `size=100` reads and discard the join. The real inbound-pipe
-  count lives on the detail screen, where the join is used. This resolves the
-  Sources/Destinations inconsistency this file used to record as open.
-- **"Delivered (1h)" is gone** from the list and the pipes table —
-  `deliveryCountLastHour` is on neither `Destination` nor `Pipeline`, and it went
-  through `formatCount`, which prints a confident `0` for `undefined`.
+- **The Pipes COLUMN is still deleted, and the pipe count came back as a card
+  cell.** `destinations.json`'s `pipeCount` remains a fixture invention with
+  nothing behind it on the backend's `Destination`, and wiring `usePipes()` for
+  it would still pay for `joinEnds()`'s two `size=100` reads and discard the
+  join. `DashboardDestinationStat.pipe_count` is a different, real field, and
+  `useFlowActivity()` reads it out of the same one aggregate call the Sources
+  row uses. The detail screen's own count is unchanged.
+- **"Delivered (1h)" is still gone as a printed number** — `deliveryCountLastHour`
+  is on neither `Destination` nor `Pipeline`, and it went through `formatCount`,
+  which prints a confident `0` for `undefined`. `events_delivered` from the
+  aggregate appears only where null and zero can be told apart, which is the
+  row's amber state: enabled **and** at least one pipe points at it **and** the
+  window counted zero rows. All three halves drop a different false positive,
+  and `null` ("the analytics store did not answer") must never colour a card —
+  that is the same distinction `deliverySuccess` exists for on the Dashboard.
+- **The third cell says who built it, not "Included".** The prototype prints
+  "Included / Sfere covers the warehouse", which is the billing claim the
+  Provisioning stat card already refuses. `destinationProvisioning.js` is the
+  shared derivation behind both, so the list and the detail screen cannot
+  describe one record two ways; it also carries the reasoning for why
+  `clickhouse_database` and not `destination_type` is the discriminator.
 - **The fourth stat card is "Provisioning", not the prototype's "Availability /
   Included".** "Included" is a billing claim and nothing on the record measures
   billing; `clickhouse_database` measures who _built_ the warehouse, which is the
   honest half of the same sentence. The cost promise stays in the band's
   editorial copy, where it is a statement about the product rather than a reading
   of a row.
-- **The Template column became Type.** `DestinationTemplateBadge`'s fallback
+- **The Template column became Type, and Type is now the line under the name.** `DestinationTemplateBadge`'s fallback
   asserts "Custom — hand-configured, not created from a template", which is false
   for every ClickHouse destination the backend provisions itself.
 - **Delete copy no longer promises a trash.** `DELETE …/destinations/{id}` is a
@@ -1772,7 +2028,7 @@ so Quasar's own controls match. **Never hardcode a hex in a screen** — that is
 brand changed, and the alias layer only works if nothing bypasses it.
 
 **There is one kit.** The pre-Sfere primitives were replaced in place, not deprecated alongside
-it: all 51 screens now render Sfere components.
+it: all 52 screens now render Sfere components.
 
 Rules for touching it:
 
@@ -1848,7 +2104,7 @@ Nothing in this repo is off-limits to edit. But a handful of files are load-bear
 changing one changes every screen at once, so they are worth a moment's thought and a line in the
 commit message rather than a drive-by edit mid-task:
 
-`src/router/**` (the manifest generates all 51 routes) · `src/layouts/MainLayout.vue` (the nav
+`src/router/**` (the manifest generates all 52 routes) · `src/layouts/MainLayout.vue` (the nav
 is the IA, and the feature gate lives in its `q-page-container`) · `src/components/ui/**` (the
 kit) · `src/config/features.js` + `src/composables/useFeatures.js` (which modules are switched
 on at all) · `src/config/sourceIntents.js` + `src/config/firstRun.js` (the one category
@@ -2000,9 +2256,40 @@ exists to prevent.`sendMutation()`and`fetchCollection()`resolve`path` the same w
    below. Both list screens carried a sortable **Pipes** column reading it, and neither
    `Source` nor `Destination` has such a field, so on a real account the cell was blank on every
    row — a header promising a count nobody took. It is gone from **both**
-   `SourcesListPage` and `DestinationsListPage`. The real inbound-pipe count survives only on
+   `SourcesListPage` and `DestinationsListPage`. The real inbound-pipe count survives on
    the destination DETAIL screen, where `usePipes()`'s join is already being paid for, and it
    prints `NOT_KNOWN` rather than `0` whenever that read has not succeeded (`pipesCounted`).
+
+   **A pipe count is back on the Sources list, and it is a different field rather than a
+   reprieve for that one.** The prototype's row prints "1 pipe / Sfere Data Warehouse", and all
+   of it is measured — just not on `Source`. `GET /v1/accounts/{id}/dashboard` answers
+   `sources[]` with **`pipe_count`** and **`events_received`** and `pipes[]` with
+   `destination_id`/`destination_name`, so one aggregate call fills three cells that eleven
+   fields on the record cannot. `src/composables/useFlowActivity.js` is that reader, and
+   it serves the Destinations row too — one payload, one adapter, so the two screens cannot
+   disagree about what `pipe_count` means.
+   Three things about it a change here has to keep:
+
+   - **A missing entry is the whole "not known" contract.** `bySourceId` holds a source only if
+     the read described it, so a caller never asks whether a value was measured: absent →
+     `NOT_KNOWN`, `eventCount: 0` → a counted zero, which is the one state that honestly reads
+     as "No recent activity" and tints the card amber. This is the `formatCount` rule expressed
+     as a data shape rather than as a formatter.
+   - **It is deliberately not `useDiagram()`**, which has the same three arrays and looks
+     cheaper. That endpoint's `events_in_window` is hard-coded `0` on every real response
+     (`account_insights.py` — per-window counts need ClickHouse), which is exactly why
+     `adaptPipelineDiagram` sets `countsMeasured: false` and drops the keys. Building the row on
+     it would mark every live source "No recent activity". It IS the mock-mode reader, because
+     `pipes-diagram.json` carries real numbers.
+   - **Its failures never reach the page's `loading`/`error`.** It is the secondary layer on a
+     screen whose subject is the source list, so a dead aggregate degrades three cells and
+     leaves the table alone — the rule `PipeFunctionChips` follows for its library read.
+
+   **The one cell the prototype prints that nothing measures is "8 sec ago / Last activity".**
+   No endpoint carries a per-source last-event timestamp (`last_synced_at` is the sync
+   high-water mark, and it is null for every `web` source). The cell says the thing that IS
+   measured — incoming events in the dashboard's 60-minute window — in the same two-line shape.
+   Do not fill it with `updated_at`, which moves when somebody renames the source.
 
    Grep the merged `openapi/fanfinity-api.json` before adding an `api` path — `/v1/dashboard`
    and `/v1/errors` were drafted flat and shipped account-scoped and merged, which is exactly
@@ -2134,7 +2421,45 @@ exists to prevent.`sendMutation()`and`fetchCollection()`resolve`path` the same w
    explains, `404` to `apiMissing`, and everything else to `error`. `hasIngestSettings(source)`
    is the matching narrowing on the other panel — `source_type === 'web'` and nothing else.
 
-   **`pnpm smoke:dist` now walks all 51 routes against whatever `VITE_API_BASE` points at**,
+   **ROTATING A WRITE KEY MOVES NOTHING ON THE RECORD, AND THE DASHBOARD IS WHAT MAKES THE
+   ROTATION VISIBLE.** `Source.write_key` is written once, at create, to the key issued with the
+   Jitsu site (`_mappers.py`: `write_key=source.write_key or source.jitsu_site_id`).
+   `POST …/write-keys` mints a key and `DELETE …/write-keys/{id}` revokes one, and **neither
+   touches that field** — so re-reading the source after a rotation returns exactly what it
+   returned before. Every install snippet in the app read `source.writeKey`, so a rotation
+   changed nothing on the Setup instructions tab, and revoking the original left the page
+   handing out a key ingest rejects, silently, with a green "Verified" hero above it.
+
+   Two halves fix it, both in `useSourceWriteKeys.js`. **A key minted this session wins**:
+   `create()` records a `public` key in a module-level map and `snippetWriteKey(source)` is the
+   one reader every snippet surface goes through — `SourceInstallGuide`, `WebSdkSetupPanel` and
+   the create flow's step 3, so the two snippets on the detail screen cannot disagree. It is
+   **session-only and never persisted**, for the reason `useOnboarding` records `sourceId` and
+   refuses the key beside it: the value exists once, in the create response, so `localStorage`
+   would park a live credential on disk to save a click. The banner on the guide says so, because
+   a reload puts the record's key back. `revoke()` forgets a key it was holding, so revoking the
+   replacement falls back rather than leaving a dead key on screen.
+
+   **And the record's key is checked before it is printed.** The list carries ids and hints,
+   never values, which is enough: `Source.write_key` is a `keyId:secret` pair, so an id half that
+   no longer appears in `listSourceWriteKeys` has been revoked. `SourceInstallGuide` then renders
+   a warn banner and passes `''` to `methodsForSource`, which falls back to its `your-write-key`
+   placeholder — a snippet that looks complete and collects nothing is worse than one that
+   visibly needs a value. The check is **skipped wherever it could only guess**: preview mode, a
+   record whose key is the bare `jitsu_site_id` fallback (no id half to match), and whenever a
+   session-minted key already answers the question. A read still in flight, or one that came back
+   `noSite`/`apiMissing`/failed, prints the record's key exactly as before rather than accusing
+   it of being revoked.
+
+   **`plaintext` on the create response is the BARE SECRET, and the dashboard composes the
+   pair.** The route's own comment says so ("The dashboard renders/copies it as
+   `{key.id}:{plaintext}`"), and it is right: `Source.write_key` is stored composed, and Jitsu
+   rejects the secret on its own. `SecretRevealDialog` was showing the bare `plaintext`, so every
+   key anyone rotated to would have failed wherever they pasted it. `composeWriteKey()` is the
+   one place that joins them, and `create()` returns both — `plaintext` for a caller asking
+   whether a secret came back at all, `writeKey` for anything a human will paste.
+
+   **`pnpm smoke:dist` now walks all 52 routes against whatever `VITE_API_BASE` points at**,
    because that is what the default mode does. It used to be hermetic. If you need the old
    behaviour, set `sfere_data_source_mode` to `mock` in the browser profile the run uses, or
    flip the default — do not add a smoke-only branch to `useDataSource`, which would mean the
@@ -2233,6 +2558,62 @@ This shapes several decisions and will break new code that ignores it:
 
 ## Authentication
 
+**IDENTITY IS NOW ONE IDENTITY PLATFORM TENANT PER ACCOUNT, and that is what broke every
+existing login for a day.** Verified working again 2026-09-06 against `api-staging.sfere.io`
+(`git_sha` `aeaeddc`): sign-in, `GET /v1/me` and a source create all succeed. The dashboard
+needed **no code change** for it, which is worth stating because the outage looked like a
+client bug and is not one — `login_user` resolves the account whose tenant holds the email and
+signs in scoped to that tenant, entirely server-side.
+
+Three consequences a reader hitting a 401 should check before touching `useAuth`:
+
+- **A user that only ever existed at the project level is in no tenant, and no password will
+  work.** That is not a stale credential, it is an account that has to be registered again.
+  `SMOKE_EMAIL` was in exactly that state and had to be re-created; `scripts/smoke.mjs` says so
+  on a 401 rather than repeating the old project-level explanation.
+- **`POST /v1/register` provisions the whole account** — tenant, owner, `acc_<uuid>` schema,
+  ClickHouse database, Jitsu workspace and a **default `Warehouse` ClickHouse destination**.
+  When one of those steps fails it answers `502` carrying the upstream error verbatim, which
+  on staging was a 400-character Python repr of a Google metadata-service 404. `useAuth`
+  therefore does **not** pass a 5xx through to the reader: 4xx still says exactly what the
+  backend said (the address is taken, the password is too short), 5xx gets one written
+  sentence and the raw detail goes to the console.
+- **`/v1/me` can answer `200` with an empty `memberships` array.** It builds that array from
+  the token's `account_id`/`role` custom claims, and provisioning stamps those best-effort, so
+  a tenant user whose claim write failed signs in fine and has no account behind them. Read as
+  a success that is the worse failure — a shell where `currentAccount` is null and every screen
+  says "No API yet" — so `useMe` reports it as `accountMissing`, same as a 403.
+
+**`Account` lost `slug`**, and `RegisterResponse` gained `tenant_id` (its description says to
+pass it to `/v1/auth/token`, but `Body_login` has no tenant field — the backend finds the
+tenant itself, so `signIn` is unchanged). Nothing here reads a slug; every account-scoped URL
+is built from `account.id`. `openapi/fanfinity-api.json` is stale against staging — re-pull it
+with `pnpm openapi` and expect the `/v1/accounts/{account_id}/profiles` pair plus ~39 changed
+schemas.
+
+**TWO THINGS THE SAME BACKEND WORK BROKE, both measured on 2026-09-06 and neither fixed here:**
+
+- **`GET /v1/connectors` now requires an admin API key**, answering
+  `401 Invalid admin API key` to a perfectly good user Bearer token. `/connectors` therefore
+  renders `ErrorState` — "Couldn't load the connector catalog" — and it is the one route
+  `pnpm smoke:dist` fails on in real mode (49/51, and the second failure is that same 401
+  landing in the next route's console). Either the endpoint gets a user-scoped read or
+  `useConnectorCatalog` needs an honest "catalog is admin-only" state; a red error screen on a
+  browse surface is the wrong answer to both.
+- **`POST …/sources/provisioned` no longer provisions a destination or a pipeline.** The
+  warehouse moved from per-source to **per-account**: registration builds one `Warehouse`
+  ClickHouse destination, and the **plain** `POST …/sources` links each new source to it with a
+  Pipeline row. `/provisioned` is the legacy full-stack path and skips that linking — so
+  `useSourcesAPI().create()`, which posts there deliberately to get the pipe, now yields a
+  source with **no destination and no pipe**. Measured: creating a `web` source left the
+  account at 0 destinations and 0 pipelines, and its events endpoint answers
+  `400 Source has no data pipeline yet`. This is precisely the silent failure the
+  `create()` doc comment and the provisioning table below warn about — no console error, no
+  `ErrorState`, so the gate stays green and only a human reading step 3 sees it. **The fix is
+  to stop posting to `/provisioned`**, but it is not a one-line swap: the plain create's
+  linking is best-effort and skips silently when the account has no default destination, which
+  is the state the smoke account is in. Settle what step 3 claims before switching the path.
+
 Sign-in goes through the **Fanfinity backend**, not the Firebase SDK. The browser no longer
 talks to Identity Platform directly (there is no `firebase` dependency and no `src/firebase.js`).
 This was a deliberate switch: `/v1/register` creates users at the Identity Platform **project**
@@ -2259,10 +2640,50 @@ removes the mismatch and makes the backend the single source of truth for the Fi
 - `src/router/index.js`'s `beforeEach` gates `requiresAuth` routes on `isAuthenticated`
   (token presence), then confirms a backend account via `waitForAccount()`; a missing account
   clears tokens and redirects to `/login`. neither `/login` nor `/signup` carries `requiresAuth` meta.
+- **`accountMissing` now has two shapes, and the second one is the flip's doing.** It used to
+  mean a `403`/`404` from `GET /v1/me` alone. `/me` builds its memberships array from the
+  token's `account_id`/`role` **claims** now, so a token carrying neither answers
+  `200 {user, memberships: []}` rather than a `403` — and provisioning stamps those claims in a
+  best-effort step, so a tenant user whose claim write failed signs in perfectly well with no
+  account behind them. Read as a success that is the worse failure of the two: sign-in reports
+  success, the guard lets the reader in, and the shell renders with `currentAccount` null and
+  every screen saying "No API yet". `loadMe()` therefore sets `accountMissing` on an **empty
+  memberships array after a successful read** as well, and `LoginPage` checks it on the
+  **sign-up** branch too — without that, a registration whose claims did not land would run the
+  2.5s setup overlay, hand the reader to `/`, and be bounced back to `/login` having said
+  nothing.
 
 The access token is a short-lived (~1h) Firebase ID token; the backend also returns a refresh
 token so sessions survive past that. **Multi-tenancy is now a backend concern** — the dashboard
 sends no `tenantId` and needs no `VITE_FIREBASE_*` config.
+
+### The tenant-per-account flip, and what it cost
+
+Staging runs `sha-aeaeddc` (the backend's `fix/sfere-reg-flow`), which is the **Firebase
+tenant-per-account identity flip**: identity is Firebase-only, each account is its own Identity
+Platform tenant, the Postgres `users`/`memberships` mirror is gone, and the role rides on a JWT
+claim. The backend's own handoff (`docs/identity-firebase-flip-handoff.md` in `../backend`) calls
+it a **greenfield reset with no backfill**, and that is the part with teeth:
+
+- **Every pre-flip account was dropped**, `SMOKE_EMAIL` included. They answer
+  `401 Invalid email or password` because no tenant holds the address any more. This is not a
+  dashboard bug and there is nothing here to fix — **the account has to be registered again**.
+  It has been, so sign-in and `pnpm smoke:dist` work; if `401` comes back after a future reset,
+  re-register rather than going looking for a regression.
+- **`POST /v1/register` provisions a whole account now** — tenant → owner → ClickHouse database →
+  Jitsu workspace — so it fails in ways the old one could not, and it fails as a `502` carrying
+  the upstream error verbatim. `useAuth.js` does **not** pass a 5xx through: staging spent a while
+  answering with a 400-character Python repr of a Google metadata-service 404 naming an internal
+  service account, and that is not something a reader typed, can fix, or should see. 5xx gets one
+  written sentence, the raw detail goes to the console, and every 4xx still says exactly what the
+  backend said.
+
+**The wire contract did not move**, which is why nothing here changed to match it: login is still
+form-encoded `grant_type`/`username`/`password` to `/v1/auth/token`, and the backend resolves the
+tenant from the email itself. `RegisterResponse` gained a `tenant_id` whose description says to
+pass it to `/v1/auth/token`; the login route takes no such field and does not need one — checked
+against the deployed spec and the route source, not assumed. `Account` lost `slug`, which no
+screen reads. Regenerating `src/api/` (`pnpm openapi`) is a pending tidy-up, not a fix.
 
 ## Environment / secrets
 

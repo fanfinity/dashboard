@@ -48,7 +48,12 @@
     <template v-else>
       <!-- The write key, once, at the top. Every snippet below already has it
            inlined; this row exists for the person who is pasting it into a
-           config file the guide does not cover. -->
+           config file the guide does not cover.
+
+           IT IS NOT `source.writeKey`. That field is a snapshot of the first key
+           the source was ever issued and the backend never moves it onto a
+           rotated one, so it is right only until somebody rotates — see
+           `snippetWriteKey()`. -->
       <div
         class="flex flex-wrap items-center justify-between gap-3 rounded-sfere-lg border border-sfere-line bg-sfere-fill px-4 py-3"
       >
@@ -60,6 +65,7 @@
         </div>
         <div class="flex shrink-0 items-center gap-2">
           <SfereButton
+            v-if="writeKey"
             variant="ghost"
             size="sm"
             @click="revealed = !revealed"
@@ -68,14 +74,35 @@
           <SfereButton
             variant="secondary"
             size="sm"
-            :disabled="!source.writeKey"
-            @click="
-              emit('copy', { label: 'Write key', value: source.writeKey })
-            "
+            :disabled="!writeKey"
+            @click="emit('copy', { label: 'Write key', value: writeKey })"
             >Copy key</SfereButton
           >
         </div>
       </div>
+
+      <!-- Rotated in this session. Said out loud because the snippets below have
+           silently changed under anyone who had them open, and because this key
+           is held in memory only — a reload puts the record's key back on
+           screen, and somebody who has not pasted it yet needs to know that
+           before they reload. -->
+      <NoticeBanner
+        v-if="mintedKey"
+        tone="success"
+        title="Showing the key you just created"
+        message="Every snippet below now carries it. It is held for this browser tab only — the backend shows a key's value once — so paste it before you reload, or come back and mint another."
+      />
+
+      <!-- The key on the source's record has been revoked. The snippets carry a
+           placeholder rather than a dead key: a snippet that looks complete and
+           silently collects nothing is the worst thing this page could hand
+           somebody, and it is what shipped before this branch existed. -->
+      <NoticeBanner
+        v-else-if="recordKeyRevoked"
+        tone="warn"
+        title="The key this source was created with has been revoked"
+        :message="revokedMessage"
+      />
 
       <NoticeBanner
         tone="info"
@@ -185,7 +212,7 @@
             :disabled="checking"
             size="sm"
             data-tour="source-verify"
-            @click="check"
+            @click="check()"
             >{{ verified ? 'Check again' : 'Check for events' }}</SfereButton
           >
           <p v-if="lastChecked" class="text-xs text-subtle"
@@ -199,7 +226,7 @@
           :tone="result.tone"
           :title="result.title"
         >
-          <p class="text-sm">{{ result.message }}</p>
+          <p class="text-sm">{{ resultMessage }}</p>
           <ul
             v-if="result.fixes"
             class="mt-2 flex list-disc flex-col gap-1 pl-5 text-sm"
@@ -213,7 +240,7 @@
 </template>
 
 <script setup>
-import { computed, ref, watch } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import CardPanel from '@/components/ui/CardPanel.vue'
 import NoticeBanner from '@/components/ui/NoticeBanner.vue'
 import StatusBadge from '@/components/ui/StatusBadge.vue'
@@ -222,10 +249,15 @@ import SfereButton from '@/components/ui/SfereButton.vue'
 import SfereCode from '@/components/ui/SfereCode.vue'
 import SfereTable from '@/components/ui/SfereTable.vue'
 import { methodsForSource } from '@/lib/sourceInstallSnippets'
-import { listSourceEvents } from '@/api/fanfinity'
-import { currentAccount, waitForAccount } from '@/composables/useMe'
+import { checkSourceEvents } from '@/lib/sourceEventCheck'
 import { useConfetti } from '@/composables/useConfetti'
 import { useGuidedTour } from '@/composables/useGuidedTour'
+import {
+  mintedWriteKeyFor,
+  snippetWriteKey,
+  useSourceWriteKeys,
+  writeKeyIdOf
+} from '@/composables/useSourceWriteKeys'
 
 // Step 3 of the guided source flow, and also the "Setup instructions" tab on a
 // source's detail page — the same content in both places, because the person who
@@ -265,6 +297,12 @@ const checking = ref(false)
 const verified = ref(false)
 const result = ref(null)
 const lastChecked = ref('')
+// How many events the last successful check saw. Held apart from `result` so the
+// sentence beside it can be DERIVED rather than frozen at check time: the arrival
+// probe below runs on mount, which is usually before the detail page's own pipes
+// read has resolved, so a message baked then would tell a source with a
+// provisioned ClickHouse pipe to go and add a destination.
+const eventTotal = ref(0)
 
 // The first real event is the moment the whole setup was for, so it gets the
 // same burst the provisioned pipeline does.
@@ -287,7 +325,74 @@ const { fire: fireConfetti } = useConfetti()
 const { end: endTour } = useGuidedTour()
 let celebrated = false
 
-const methods = computed(() => methodsForSource(props.source))
+// ------------------------------------------------------------- the write key
+//
+// WHICH KEY THE SNIPPETS CARRY, AND WHY IT IS NOT SIMPLY `source.writeKey`.
+// `Source.write_key` is written once, when the source is created, and no
+// backend route moves it: `POST …/write-keys` mints a key and
+// `DELETE …/write-keys/{id}` revokes one, and neither touches the field. So a
+// rotation changed nothing on this page — the snippet went on inlining the
+// original key — and once the original was revoked the page was handing out a
+// key that ingest rejects, with no sign anything was wrong. That is the bug
+// this block exists for, and it has two halves:
+//
+//  1. A key minted in this session is preferred, so a rotation is visible in
+//     the snippet immediately. `snippetWriteKey()` owns that lookup; the Web
+//     SDK panel reads the same function, so the two snippets on the detail
+//     screen cannot disagree.
+//  2. Failing that, the record's key is CHECKED against the live list before it
+//     is printed. The list carries ids and hints, never values, which is enough:
+//     the record's key is a `keyId:secret` pair, so a key id that no longer
+//     appears in the list has been revoked.
+//
+// The check is skipped wherever it could only guess — preview mode (no backend
+// behind the source), a record whose key is the bare `jitsu_site_id` fallback
+// (no id half to match), and whenever a session-minted key already answers the
+// question. `keysChecked` gates the verdict so a read still in flight, or one
+// that came back `noSite`/`apiMissing`/failed, prints the record's key exactly
+// as it always did rather than accusing it of being revoked.
+const { keys: liveKeys, load: loadWriteKeys } = useSourceWriteKeys()
+const keysChecked = ref(false)
+
+const mintedKey = computed(() => mintedWriteKeyFor(props.source?.id))
+
+// Newest first, because the one worth naming in the banner below is the one
+// most likely to be the replacement somebody just minted.
+const livePublicKeys = computed(() =>
+  liveKeys.value
+    .filter(k => k.kind === 'public')
+    .slice()
+    .sort((a, b) => String(b.createdAt ?? '').localeCompare(a.createdAt ?? ''))
+)
+
+const recordKeyRevoked = computed(() => {
+  if (mintedKey.value) return false
+  if (!keysChecked.value || !liveKeys.value.length) return false
+  const id = writeKeyIdOf(props.source?.writeKey)
+  if (!id) return false
+  return !liveKeys.value.some(k => k.id === id)
+})
+
+// '' rather than the record's key once that key is known to be revoked, which
+// is what makes the snippets fall back to their `your-write-key` placeholder.
+const writeKey = computed(() =>
+  recordKeyRevoked.value ? '' : snippetWriteKey(props.source)
+)
+
+async function checkRecordKey() {
+  keysChecked.value = false
+  if (props.preview) return
+  if (!props.source?.id) return
+  if (mintedKey.value) return
+  if (!writeKeyIdOf(props.source.writeKey)) return
+  await loadWriteKeys(props.source.id)
+  keysChecked.value = true
+}
+
+onMounted(checkRecordKey)
+watch(() => props.source?.id, checkRecordKey)
+
+const methods = computed(() => methodsForSource(props.source, writeKey.value))
 
 const method = ref(methods.value[0]?.key ?? '')
 
@@ -309,10 +414,18 @@ const active = computed(
 )
 
 const shownKey = computed(() => {
-  const key = props.source.writeKey ?? ''
-  if (!key) return 'provisioning…'
+  const key = writeKey.value
+  if (!key) return recordKeyRevoked.value ? 'revoked' : 'provisioning…'
   if (revealed.value) return key
   return `${key.slice(0, 12)}${'•'.repeat(Math.max(key.length - 12, 6))}`
+})
+
+const revokedMessage = computed(() => {
+  const live = livePublicKeys.value
+  const replacement = live.length
+    ? `Another browser key (…${live[0].hint}) is live, but a key's value is only ever shown once, when it is created — paste the value you copied then in place of “your-write-key” below.`
+    : 'This source has no live browser key at all, so nothing sent to it can be accepted.'
+  return `Anything still sending on it is being rejected. ${replacement} You can mint a replacement on the Settings tab; do that here and every snippet on this page picks it up straight away.`
 })
 
 const verifiedMessage = computed(() =>
@@ -329,6 +442,16 @@ const arrivedNext = computed(() =>
     : 'Nothing else to do here. Add a destination next so they have somewhere to go.'
 )
 
+// The banner body. Only the success case is computed — the rest carry their own
+// wording and nothing about them changes after the check.
+const resultMessage = computed(() => {
+  const r = result.value
+  if (!r) return ''
+  if (r.tone !== 'success') return r.message ?? ''
+  const n = eventTotal.value
+  return `${n} event${n === 1 ? '' : 's'} received so far. ${arrivedNext.value}`
+})
+
 const FIXES = [
   'Did you save and publish the page after adding the snippet?',
   'View the page source, not the editor. Is the tag actually in the served HTML?',
@@ -341,13 +464,21 @@ function stamp() {
   lastChecked.value = new Date().toLocaleTimeString()
 }
 
-async function check() {
-  checking.value = true
-  result.value = null
+// One request, two entry points. `silent` is the arrival probe: it updates the
+// badge and the hero but writes no banner and fires no confetti, because nobody
+// pressed anything. A loud version would greet every visit to this tab with
+// either a celebration for work done last month or an amber troubleshooting list
+// for a snippet the reader has not pasted yet.
+async function check({ silent = false } = {}) {
+  if (!silent) {
+    checking.value = true
+    result.value = null
+  }
 
   // Preview mode has no backend to ask. Rather than call and fail with a
   // confusing 404, say what this would do and let the flow continue.
   if (props.preview) {
+    if (silent) return
     await new Promise(r => setTimeout(r, 700))
     verified.value = true
     stamp()
@@ -362,50 +493,73 @@ async function check() {
     return
   }
 
-  try {
-    await waitForAccount()
-    const accountId = currentAccount.value?.id
-    if (!accountId) throw new Error('No account selected')
-
-    const { data } = await listSourceEvents(accountId, props.source.id, {
-      page: 1,
-      size: 1
-    })
+  const { state, total, message } = await checkSourceEvents(props.source.id)
+  if (!silent) {
+    checking.value = false
     stamp()
+  }
 
-    if ((data?.total ?? 0) > 0) {
-      verified.value = true
-      result.value = {
-        tone: 'success',
-        title: 'Events are arriving',
-        message: `${data.total} event${data.total === 1 ? '' : 's'} received so far. ${arrivedNext.value}`
-      }
-      if (!celebrated) {
-        celebrated = true
-        // Lower and smaller than the create page's burst: this one sits over a
-        // result panel someone is reading, not over a full-screen overlay.
-        fireConfetti({ count: 80, origin: { x: 0.5, y: 0.55 } })
-        endTour()
-      }
-      emit('verified')
-    } else {
-      result.value = {
-        tone: 'warn',
-        title: 'No events yet',
-        message:
-          'Nothing has reached this source. If you just pasted the snippet, load a page on your site and check again in a few seconds. If you already did:',
-        fixes: FIXES
-      }
+  if (state === 'found') {
+    verified.value = true
+    // The success panel is worth showing even on the silent pass: it carries the
+    // count and where the events are going, which is the answer somebody opened
+    // this tab for. What the silent pass suppresses is the celebration and the
+    // failure states, not the good news.
+    eventTotal.value = total
+    result.value = { tone: 'success', title: 'Events are arriving' }
+    if (!celebrated && !silent) {
+      celebrated = true
+      // Lower and smaller than the create page's burst: this one sits over a
+      // result panel someone is reading, not over a full-screen overlay.
+      fireConfetti({ count: 80, origin: { x: 0.5, y: 0.55 } })
+      endTour()
     }
-  } catch (e) {
-    stamp()
+    // Not on the silent pass. The create page answers this emit with a "Source
+    // verified" toast, and a toast for a check nobody ran is the same category of
+    // noise as the confetti above it.
+    if (!silent) emit('verified')
+    return
+  }
+
+  if (silent) return
+
+  if (state === 'unsupported') {
+    // A 400 means the source has no queryable event log yet, which is the normal
+    // state of every `event_stream` source until its SDK has initialised. Red is
+    // the wrong colour for "you have not finished installing it".
+    result.value = {
+      tone: 'info',
+      title: 'No event log to read yet',
+      message:
+        'This source has not received anything yet, so there is nothing to query. Run the app or load the page with the snippet installed, then check again.'
+    }
+    return
+  }
+
+  if (state === 'error') {
     result.value = {
       tone: 'danger',
       title: "Couldn't run the check",
-      message: e.message || 'The request failed.'
+      message
     }
-  } finally {
-    checking.value = false
+    return
+  }
+
+  result.value = {
+    tone: 'warn',
+    title: 'No events yet',
+    message:
+      'Nothing has reached this source. If you just pasted the snippet, load a page on your site and check again in a few seconds. If you already did:',
+    fixes: FIXES
   }
 }
+
+// ASK ON ARRIVAL, DON'T MAKE THEM CLICK. This guide is the source detail page's
+// Setup instructions tab as well as the create flow's last step, so most of the
+// people who open it are coming back to a source that has been live for weeks —
+// and it used to greet all of them with "Waiting for first event" until they
+// pressed a button to be told what the backend already knew.
+onMounted(() => {
+  if (props.verify) check({ silent: true })
+})
 </script>

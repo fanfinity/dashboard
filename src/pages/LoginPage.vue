@@ -20,11 +20,17 @@
        `type="password"` — a bare <button> in a <form> submits by default, which
        would give the gate two matches for `button[type=submit]`. -->
   <div class="flex min-h-screen">
-    <!-- Left: the pitch. Hidden below lg with `max-lg:hidden`, never a bare
-         `hidden` — Quasar ships `.hidden { display:none !important }` unlayered,
-         so `hidden lg:flex` would be invisible at every width. -->
+    <!-- Left: the pitch. Hidden below lg with `max-lg:hidden!`, and BOTH halves
+         of that are load-bearing. Never a bare `hidden` — Quasar ships
+         `.hidden { display:none !important }` unlayered, so `hidden lg:flex`
+         would be invisible at every width. And never without the important
+         suffix on an `<aside>`: Quasar's HTML5 normalize line sets
+         `display: block` on `article, aside, … section`, unlayered, so the
+         layered `max-lg:hidden` lost to it and this panel took 46% of every
+         screen narrower than 1024px — the width where it least fits. Measured
+         at 900px, not assumed. CLAUDE.md collision #10. -->
     <aside
-      class="relative w-[46%] shrink-0 overflow-hidden bg-sfere-ink p-12 max-lg:hidden"
+      class="relative w-[46%] shrink-0 overflow-hidden bg-sfere-ink p-12 max-lg:hidden!"
     >
       <div
         class="login-glow pointer-events-none absolute -left-40 -top-40 size-[34rem] rounded-full"
@@ -457,6 +463,23 @@ async function submit(event) {
       // a full-page welcome over a workspace they had been using for months.
       // Arming it here means a sign-in can never reach it. `signUp` has already
       // awaited `loadMe()`, so the record gets a real uid to be scoped to.
+      // Registration provisions a whole account now — Identity Platform tenant,
+      // owner claims, ClickHouse database, Jitsu workspace — and its external
+      // steps are best-effort, so a 201 is not proof the caller's token carries
+      // the `account_id`/`role` claims `/v1/me` builds its membership from.
+      // Without them the setup overlay would run its 2.5s, hand the reader to
+      // `/`, and the router guard would bounce them straight back here having
+      // said nothing. `signUp` has already awaited `loadMe()`, so this reads the
+      // answer that call got.
+      if (accountMissing.value) {
+        await logOut()
+        Notify.create({
+          type: 'negative',
+          message:
+            'Your account was created, but no workspace is attached to this login yet. Try signing in again in a moment.'
+        })
+        return
+      }
       beginFirstRun()
       destination.value = route.query.redirect || '/'
       settingUp.value = true

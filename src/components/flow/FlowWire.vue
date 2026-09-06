@@ -48,12 +48,12 @@ const rootClasses = computed(() => [
   'relative grid shrink-0 place-items-center',
   // Horizontal in a row, vertical once the chain stacks — the connector has to
   // follow the layout or it points across the gap between two stacked cards.
-  'h-6 w-10 max-@min-[52rem]:h-6 max-@min-[52rem]:w-full'
+  'h-6 w-10 @max-[52rem]:h-6 @max-[52rem]:w-full'
 ])
 
 const railClasses = computed(() => [
   'absolute rounded-full',
-  'h-px w-full max-@min-[52rem]:h-full max-@min-[52rem]:w-px',
+  'h-px w-full @max-[52rem]:h-full @max-[52rem]:w-px',
   (props.onDark ? RAILS_DARK : RAILS)[props.tone]
 ])
 
@@ -62,7 +62,7 @@ const railClasses = computed(() => [
 // rather than along it. The rail alone still says the two ends are joined.
 const dotClasses = computed(() => [
   'animate-sfere-travel absolute size-1.5 rounded-full',
-  'max-@min-[52rem]:hidden',
+  '@max-[52rem]:hidden',
   props.onDark ? 'bg-sfere-300' : 'bg-sfere-brand'
 ])
 </script>

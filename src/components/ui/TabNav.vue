@@ -58,7 +58,12 @@ const listClasses = computed(() =>
 function tabClasses(key) {
   const active = props.modelValue === key
   const base = [
-    'inline-flex items-center gap-2 text-sfere-sm font-medium',
+    // Important SUFFIX on both type utilities, and both are load-bearing: a tab
+    // is a <button>, and Quasar's unlayered `button { font: inherit }` resets
+    // font-size, line-height and font-weight past any layered utility, so every
+    // tab bar in the app drew at the inherited 400 instead of the 500 declared
+    // here. CLAUDE.md collision #9 — SfereButton carries the same fix.
+    'inline-flex items-center gap-2 text-sfere-sm! font-medium!',
     'transition duration-150 ease-sfere-ui',
     'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sfere-500/60',
     props.onDark && 'focus-visible:ring-offset-transparent'

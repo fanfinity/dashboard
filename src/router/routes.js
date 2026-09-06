@@ -103,15 +103,6 @@ const routes = [
     children
   },
 
-  // The connector catalog stopped being a screen of its own and became a tab on
-  // /sources — browsing connector *types* is how you add a source, so it belongs
-  // in that page rather than beside it in the sidebar. This keeps the old URL
-  // working instead of 404-ing anyone who bookmarked it.
-  {
-    path: '/connectors',
-    redirect: '/sources?tab=connectors'
-  },
-
   // Same move, for the same reason: Secrets and Authorizations are workspace
   // configuration you set up once, not screens you work in, so they are tabs on
   // /settings rather than two permanent rows in the sidebar. Both old URLs keep

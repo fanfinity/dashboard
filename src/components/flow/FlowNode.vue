@@ -18,7 +18,7 @@
 
     <StatusBadge
       v-if="status"
-      :tone="statusMeta.tone"
+      :tone="statusTone || statusMeta.tone"
       :label="statusLabel || statusMeta.label"
       class="shrink-0"
     />
@@ -67,6 +67,14 @@ const props = defineProps({
   // Overrides the word on the chip without changing its colour, for a screen
   // whose vocabulary is narrower than the endpoint's ("No recent activity").
   statusLabel: { type: String, default: '' },
+  // And the colour, for the narrower case still: a node the page knows is
+  // waiting rather than stalled. `idle` is grey because "switched on and
+  // receiving nothing" usually wants looking at — but on a workspace with no
+  // source at all there is nothing for the destination to receive, so grey
+  // reads as a fault the reader cannot fix. Pass a StatusBadge tone to say
+  // what the page knows and the record does not. Never pass `success` for
+  // something unmeasured; that is the claim the whole diagram avoids.
+  statusTone: { type: String, default: '' },
   to: { type: [String, Object], default: null },
   // Draws the warn treatment regardless of status. For the one node a page is
   // pointing at.

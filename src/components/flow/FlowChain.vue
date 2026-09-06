@@ -2,7 +2,7 @@
   <!-- The `@container` element and the element reading the query have to be two
        different nodes: a container query is answered by a container's
        DESCENDANTS, never by the container itself, so `@container` and
-       `max-@min-[52rem]:flex-col` on one div would silently never stack. -->
+       `@max-[52rem]:flex-col` on one div would silently never stack. -->
   <div class="@container">
     <div :class="rootClasses">
       <div class="min-w-0 flex-1">
@@ -85,6 +85,6 @@ const flowing = computed(() => meta.value.flowing)
 
 const rootClasses = computed(() => [
   'flex flex-nowrap items-center gap-3',
-  'max-@min-[52rem]:flex-col max-@min-[52rem]:items-stretch'
+  '@max-[52rem]:flex-col @max-[52rem]:items-stretch'
 ])
 </script>

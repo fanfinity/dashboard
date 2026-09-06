@@ -92,6 +92,18 @@ export const screens = [
     issue: 23
   },
   {
+    // A SUB-SCREEN, not a rail row: `parent` gives it "← Sources" and keeps it
+    // out of the sidebar, which is the half of the tab consolidation that was
+    // right. It came back off the tab bar when the Sources list was rebuilt
+    // against the prototype — see ConnectorsPage.vue's header comment.
+    path: '/connectors',
+    name: 'connectors',
+    component: 'sources/ConnectorsPage.vue',
+    title: 'Connectors',
+    group: 'sources',
+    parent: { name: 'sources', label: 'Sources' }
+  },
+  {
     path: '/demo-event-inspector',
     name: 'demo-event-inspector',
     component: 'demo/DemoEventInspectorPage.vue',
@@ -522,8 +534,10 @@ export const screens = [
 // left here only because nobody has made that call yet, not because it
 // cannot be made.
 //
-// /connectors used to live here. It is now a tab inside /sources rather than a
-// route of its own — routes.js redirects the old URL to /sources?tab=connectors.
+// /connectors used to live here, then spent a while as a tab inside /sources.
+// It is a real screen again — a sub-screen of Sources (`parent`), so it has a
+// back link and still no sidebar row — because the prototype's Sources list has
+// no tab bar to hold it. It is in `screens` above, so smoke walks it.
 //
 // /events-demo used to live here too. It drove a third-party ingestion SDK
 // straight from the browser behind a consent banner; the dashboard has no

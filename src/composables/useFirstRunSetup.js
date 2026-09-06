@@ -1,6 +1,7 @@
 import { computed, ref } from 'vue'
-import { getSource, listSourceEvents, testSource } from '@/api/fanfinity'
+import { getSource, testSource } from '@/api/fanfinity'
 import { camelizeKeys } from '@/lib/apiShape'
+import { checkSourceEvents } from '@/lib/sourceEventCheck'
 import { currentAccount, waitForAccount } from '@/composables/useMe'
 import { useSourcesAPI } from '@/composables/useSourcesAPI'
 import { useSourceProvisioning } from '@/composables/useSourceProvisioning'
@@ -233,11 +234,12 @@ async function createWithUniqueName({ name, templateId, sourceType, storeId }) {
 /**
  * Has a real event reached this source?
  *
- * THE SAME QUESTION AND THE SAME SUCCESS TEST AS `SourceInstallGuide`, on
- * purpose: `listSourceEvents(page 1, size 1)` and `total > 0`. Anything cleverer
- * here — a snippet-presence probe, a longer window — would be a second answer to
- * a question the app already answers one way, and the reader meets that other
- * answer on the source's own Setup instructions tab a week later.
+ * THE SAME QUESTION AND THE SAME SUCCESS TEST AS `SourceInstallGuide`, and now
+ * literally the same code: `checkSourceEvents()` in `src/lib/sourceEventCheck.js`
+ * owns the request, the `total > 0` test and the 400-is-ordinary rule. This
+ * function only maps its four states onto the beat's `tone`, and adds the
+ * `preview` fifth one, which is the single thing about the question that is
+ * specific to the arrival.
  */
 async function checkEvents() {
   if (preview.value) {
@@ -256,45 +258,24 @@ async function checkEvents() {
 
   checking.value = true
   checkResult.value = null
-  try {
-    await waitForAccount()
-    const accountId = currentAccount.value?.id
-    if (!accountId) throw new Error('No account selected')
+  const { state, total, message } = await checkSourceEvents(source.value.id)
+  checking.value = false
+  lastCheckedAt.value = new Date().toLocaleTimeString()
 
-    const { data } = await listSourceEvents(accountId, source.value.id, {
-      page: 1,
-      size: 1
-    })
-    const total = data?.total ?? 0
-    lastCheckedAt.value = new Date().toLocaleTimeString()
-
-    if (total > 0) {
-      verified.value = true
-      checkResult.value = { tone: 'success', state: 'found', total }
-      return
-    }
-    checkResult.value = { tone: 'warn', state: 'empty' }
-  } catch (e) {
-    // A `400` IS AN ORDINARY STATE HERE, NOT A FAILURE, and reporting it as one
-    // was measured rather than imagined: the events endpoint answers 400 for a
-    // source with no queryable event log — every `event_stream` source until its
-    // SDK has initialised — so an iOS reader pressing the only button on the beat
-    // got a red "Couldn't run the check" for having done nothing wrong.
-    // `useSourceWriteKeys()` already draws this exact line for the same reason
-    // (400 means "no Jitsu site yet", 404 means "no endpoint"), so this follows
-    // it rather than inventing a second rule.
-    if (e?.status === 400) {
-      checkResult.value = { tone: 'info', state: 'unsupported' }
-      return
-    }
-    checkResult.value = {
-      tone: 'danger',
-      state: 'error',
-      message: e?.body?.detail || e?.message || 'The request failed.'
-    }
-  } finally {
-    checking.value = false
+  if (state === 'found') {
+    verified.value = true
+    checkResult.value = { tone: 'success', state: 'found', total }
+    return
   }
+  if (state === 'unsupported') {
+    checkResult.value = { tone: 'info', state: 'unsupported' }
+    return
+  }
+  if (state === 'error') {
+    checkResult.value = { tone: 'danger', state: 'error', message }
+    return
+  }
+  checkResult.value = { tone: 'warn', state: 'empty' }
 }
 
 /**

@@ -261,7 +261,11 @@ try {
       '       must be a real account on VITE_API_BASE (an account from the old\n' +
       '       project-level flow will not resolve). ensureSmokeAccount() self-heals\n' +
       '       this by registering on a 401 — reaching here means VITE_API_BASE was\n' +
-      '       unset for this step, or that registration itself failed above.'
+      '       unset for this step, or that registration itself failed above. If it\n' +
+      '       failed with a 502 "failed to create tenant", the staging pod is\n' +
+      '       missing its identity-provisioner Workload Identity binding: that is a\n' +
+      '       backend outage, not a credentials problem. See CLAUDE.md under\n' +
+      '       Authentication.'
   }
   console.error(
     'smoke: sign-in did not reach the app shell.\n' +
